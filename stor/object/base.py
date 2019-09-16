@@ -7,9 +7,11 @@ from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
 from stor import db
+from stor import exceptions
 
 
 logger = logging.getLogger(__name__)
+
 
 class StorObject(base.VersionedObject):
     OBJ_PROJECT_NAMESPACE = 'stor'
@@ -32,16 +34,16 @@ class CinderPersistentObject(object):
     def cinder_ovo_cls_init(cls):
         try:
             cls.model = db.get_model_for_versioned_object(cls)
-        except (ImportError, AttributeError) as e:
+        except (ImportError, AttributeError):
             msg = ("Couldn't find ORM model for Persistent Versioned "
-                    "Object %s.") % cls.obj_name()
+                   "Object %s.") % cls.obj_name()
             logger.exception("Failed to initialize object.")
-            raise exception.ProgrammingError(reason=msg)
+            raise exceptions.ProgrammingError(reason=msg)
 
     @classmethod
     def _get_expected_attrs(cls, context, *args, **kwargs):
         return None
-     
+
     @classmethod
     def get_by_id(cls, context, id, *args, **kwargs):
         if 'id' not in cls.fields:
@@ -72,3 +74,40 @@ class CinderPersistentObject(object):
         obj._context = context
         obj.obj_reset_changes()
         return obj
+
+    def refresh(self):
+        # To refresh we need to have a model and for the model to have an id
+        # field
+        if 'id' not in self.fields:
+            msg = ('VersionedObject %s cannot retrieve object by id.' %
+                   self.obj_name())
+            raise NotImplementedError(msg)
+
+        current = self.get_by_id(self._context, self.id)
+
+        # Copy contents retrieved from the DB into self
+        my_data = vars(self)
+        my_data.clear()
+        my_data.update(vars(current))
+
+    @classmethod
+    def exists(cls, context, id_):
+        return db.resource_exists(context, cls.model, id_)
+
+
+class StorComparableObject(base.ComparableVersionedObject):
+    def __eq__(self, obj):
+        if hasattr(obj, 'obj_to_primitive'):
+            return self.obj_to_primitive() == obj.obj_to_primitive()
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class ObjectListBase(base.ObjectListBase):
+    pass
+
+
+class StorObjectSerializer(base.VersionedObjectSerializer):
+    OBJ_BASE_CLASS = StorObject
