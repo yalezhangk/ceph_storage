@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+service Scheduler {
+    rpc GetCephConf(StorageLocation) returns (CephConf) {}
+    rpc AppendCephMonitor(SRequest) returns (SResponse) {}
+}
+
+message SRequest {
+  string key = 1;
+}
+
+message SResponse {
+  string value = 1;
+}
+
+message StorageLocation {
+  string location = 1;
+}
+
+message CephConf {
+  string content = 1;
+  string location = 2;
+}
