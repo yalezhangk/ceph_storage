@@ -13,9 +13,40 @@ from stor import exceptions
 logger = logging.getLogger(__name__)
 
 
+class StorObjectRegistry(base.VersionedObjectRegistry):
+    def registration_hook(self, cls, index):
+        setattr(objects, cls.obj_name(), cls)
+
+        # If registering class has a callable initialization method, call it.
+        if isinstance(getattr(cls, 'stor_ovo_cls_init', None),
+                      Callable):
+            cls.stor_ovo_cls_init()
+
+
 class StorObject(base.VersionedObject):
     OBJ_PROJECT_NAMESPACE = 'stor'
 
+    def stor_obj_get_changes(self):
+        """Returns a dict of changed fields with tz unaware datetimes.
+
+        Any timezone aware datetime field will be converted to UTC timezone
+        and returned as timezone unaware datetime.
+
+        This will allow us to pass these fields directly to a db update
+        method as they can't have timezone information.
+        """
+        # Get dirtied/changed fields
+        changes = self.obj_get_changes()
+
+        # Look for datetime objects that contain timezone information
+        for k, v in changes.items():
+            if isinstance(v, datetime.datetime) and v.tzinfo:
+                # Remove timezone information and adjust the time according to
+                # the timezone information's offset.
+                changes[k] = v.replace(tzinfo=None) - v.utcoffset()
+
+        # Return modified dict
+        return changes
 
 class StorObjectDictCompat(base.VersionedObjectDictCompat):
     pass
@@ -31,7 +62,7 @@ class CinderPersistentObject(object):
     OPTIONAL_FIELDS = ()
 
     @classmethod
-    def cinder_ovo_cls_init(cls):
+    def stor_ovo_cls_init(cls):
         try:
             cls.model = db.get_model_for_versioned_object(cls)
         except (ImportError, AttributeError):

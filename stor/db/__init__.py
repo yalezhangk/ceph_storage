@@ -1,4 +1,1 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from .api import *
+from .db.api import *  # noqa
