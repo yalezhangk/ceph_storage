@@ -3,6 +3,8 @@
 import logging
 import six
 
+from oslo_versionedobjects import exception as obj_exc
+
 from stor.i18n import _
 
 
@@ -60,3 +62,25 @@ class StorException(Exception):
 
     def __unicode__(self):
         return self.msg
+
+
+ObjectActionError = obj_exc.ObjectActionError
+
+
+class ProgrammingError(StorException):
+    message = _('Programming error in Stor: %(reason)s')
+
+
+class NotAuthorized(StorException):
+    message = _("Not authorized.")
+    code = 403
+
+
+class NotFound(StorException):
+    message = _("Resource could not be found.")
+    code = 404
+    safe = True
+
+
+class VolumeNotFound(NotFound):
+    message = _("Volume %(volume_id)s could not be found.")

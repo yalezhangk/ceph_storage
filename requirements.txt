@@ -4,3 +4,4 @@ oslo.versionedobjects
 oslo.db
 oslo.utils
 oslo.config
+pymysql

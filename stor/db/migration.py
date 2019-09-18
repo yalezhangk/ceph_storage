@@ -8,7 +8,7 @@ from stevedore import driver
 from stor.db.sqlalchemy import api as db_api
 
 
-INIT_VERSION = 122
+INIT_VERSION = 0
 
 _IMPL = None
 _LOCK = threading.Lock()

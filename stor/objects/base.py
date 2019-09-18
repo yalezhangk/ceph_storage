@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+try:
+    from collections.abc import Callable
+except ImportError:
+    from collections import Callable
 
 import logging
+import datetime
 
 from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
 from stor import db
-from stor import exceptions
+from stor import exception
+from stor import objects
 
 
 logger = logging.getLogger(__name__)
+obj_make_list = base.obj_make_list
 
 
 class StorObjectRegistry(base.VersionedObjectRegistry):
@@ -48,11 +55,12 @@ class StorObject(base.VersionedObject):
         # Return modified dict
         return changes
 
+
 class StorObjectDictCompat(base.VersionedObjectDictCompat):
     pass
 
 
-class CinderPersistentObject(object):
+class StorPersistentObject(object):
     fields = {
         'created_at': fields.DateTimeField(nullable=True),
         'updated_at': fields.DateTimeField(nullable=True),
@@ -69,7 +77,7 @@ class CinderPersistentObject(object):
             msg = ("Couldn't find ORM model for Persistent Versioned "
                    "Object %s.") % cls.obj_name()
             logger.exception("Failed to initialize object.")
-            raise exceptions.ProgrammingError(reason=msg)
+            raise exception.ProgrammingError(reason=msg)
 
     @classmethod
     def _get_expected_attrs(cls, context, *args, **kwargs):

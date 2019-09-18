@@ -44,3 +44,7 @@ class VolumeStatus(BaseStorEnum):
            RESERVED, AWAITING_TRANSFER, BACKING_UP,
            ERROR_BACKING_UP, ERROR_EXTENDING, DOWNLOADING,
            UPLOADING, RETYPING, EXTENDING)
+
+
+class VolumeStatusField(BaseEnumField):
+    AUTO_TYPE = VolumeStatus()

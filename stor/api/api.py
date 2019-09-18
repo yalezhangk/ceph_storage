@@ -1,23 +1,30 @@
 import logging
+import sys
 
 import tornado.ioloop
 import tornado.web
 
 from ..scheduler import SchedulerClientManager
 from ..agent import AgentClientManager
+from stor import objects
+from stor import version
+from stor.common.config import CONF
 
 logger = logging.getLogger(__name__)
+
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("Hello, world")
 
+
 class CephConfHandler(tornado.web.RequestHandler):
     def get(self):
-        location='example'
-        schduler  = SchedulerClientManager()
+        location = 'example'
+        scheduler = SchedulerClientManager()
         res = scheduler.get_client().get_ceph_conf(location=location)
         self.write(res)
+
 
 class HostDisksHandler(tornado.web.RequestHandler):
     def get(self):
@@ -28,21 +35,30 @@ class HostDisksHandler(tornado.web.RequestHandler):
         disks = agent.get_client("whx-ceph-1").get_host_disks(host)
         self.write(disks)
 
+
 class AppendCephMonitorHandler(tornado.web.RequestHandler):
     def get(self):
-        location='example'
-        schduler  = SchedulerClientManager()
-        res = schduler.get_client().AppendCephMonitor(location=location)
+        location = 'example'
+        scheduler = SchedulerClientManager()
+        res = scheduler.get_client().AppendCephMonitor(location=location)
         self.write(res)
 
-if __name__ == "__main__":
-    logging.basicConfig(level="DEBUG")
-    logger.info("server run on xxxx")
+
+def main():
+    objects.register_all()
     application = tornado.web.Application([
         (r"/", MainHandler),
         (r"/cephconf", CephConfHandler),
         (r"/host/disks", HostDisksHandler),
         (r"/host/appendmon", AppendCephMonitorHandler),
     ])
+    logger.info("server run on xxxx")
     application.listen(8888)
     tornado.ioloop.IOLoop.current().start()
+
+
+if __name__ == "__main__":
+    CONF(sys.argv[1:], project='stor',
+         version=version.version_string())
+    logging.setup(CONF, "cinder")
+    main()

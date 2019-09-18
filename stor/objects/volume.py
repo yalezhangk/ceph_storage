@@ -4,7 +4,7 @@
 from oslo_versionedobjects import fields
 
 from stor import db
-from stor import exceptions
+from stor import exception
 from stor import objects
 from stor.objects import base
 from stor.objects import fields as s_fields
@@ -31,8 +31,8 @@ class Volume(base.StorPersistentObject, base.StorObject,
 
     def create(self):
         if self.obj_attr_is_set('id'):
-            raise exceptions.ObjectActionError(action='create',
-                                               reason='already created')
+            raise exception.ObjectActionError(action='create',
+                                              reason='already created')
         updates = self.stor_obj_get_changes()
 
         db_volume = db.volume_create(self._context, updates)

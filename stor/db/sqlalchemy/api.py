@@ -19,7 +19,6 @@ from oslo_utils import timeutils
 import six
 import sqlalchemy
 from sqlalchemy import or_, and_, case
-from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy import sql
 from sqlalchemy.sql.expression import literal_column
@@ -213,7 +212,6 @@ def model_query(context, model, *args, **kwargs):
     """
     session = kwargs.get('session') or get_session()
     read_deleted = kwargs.get('read_deleted') or context.read_deleted
-    project_only = kwargs.get('project_only')
 
     query = session.query(model, *args)
 
@@ -229,14 +227,7 @@ def model_query(context, model, *args, **kwargs):
         raise Exception(
             _("Unrecognized read_deleted value '%s'") % read_deleted)
 
-    if project_only and is_user_context(context):
-        if model is models.VolumeAttachment:
-            # NOTE(dulek): In case of VolumeAttachment, we need to join
-            # `project_id` through `volume` relationship.
-            query = query.filter(models.Volume.project_id ==
-                                 context.project_id)
-        else:
-            query = query.filter_by(project_id=context.project_id)
+    query = query.filter_by()
 
     return query
 
@@ -316,170 +307,6 @@ def apply_like_filters(model):
             return _process_model_like_filter(model, query, regex_filters)
         return _decorator
     return decorator_filters
-
-
-@require_context
-def _volume_get_query(context, session=None, project_only=False,
-                      joined_load=True):
-    """Get the query to retrieve the volume.
-
-    :param context: the context used to run the method _volume_get_query
-    :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
-    :returns: updated query or None
-    """
-    if not joined_load:
-        return model_query(context, models.Volume, session=session,
-                           project_only=project_only)
-    if is_admin_context(context):
-        return model_query(context, models.Volume, session=session,
-                           project_only=project_only).\
-            options(joinedload('volume_metadata')).\
-            options(joinedload('volume_admin_metadata')).\
-            options(joinedload('volume_type')).\
-            options(joinedload('volume_attachment')).\
-            options(joinedload('consistencygroup')).\
-            options(joinedload('group'))
-    else:
-        return model_query(context, models.Volume, session=session,
-                           project_only=project_only).\
-            options(joinedload('volume_metadata')).\
-            options(joinedload('volume_type')).\
-            options(joinedload('volume_attachment')).\
-            options(joinedload('consistencygroup')).\
-            options(joinedload('group'))
-
-
-@require_context
-def _volume_get(context, volume_id, session=None, joined_load=True):
-    result = _volume_get_query(context, session=session, project_only=True,
-                               joined_load=joined_load)
-    if joined_load:
-        result = result.options(joinedload('volume_type.extra_specs'))
-    result = result.filter_by(id=volume_id).first()
-
-    if not result:
-        raise exception.VolumeNotFound(volume_id=volume_id)
-
-    return result
-
-
-@require_context
-def volume_get(context, volume_id):
-    return _volume_get(context, volume_id)
-
-
-@require_admin_context
-def volume_get_all(context, marker=None, limit=None, sort_keys=None,
-                   sort_dirs=None, filters=None, offset=None):
-    """Retrieves all volumes.
-
-    If no sort parameters are specified then the returned volumes are sorted
-    first by the 'created_at' key and then by the 'id' key in descending
-    order.
-
-    :param context: context to query under
-    :param marker: the last item of the previous page, used to determine the
-                   next page of results to return
-    :param limit: maximum number of items to return
-    :param sort_keys: list of attributes by which results should be sorted,
-                      paired with corresponding item in sort_dirs
-    :param sort_dirs: list of directions in which results should be sorted,
-                      paired with corresponding item in sort_keys
-    :param filters: dictionary of filters; values that are in lists, tuples,
-                    or sets cause an 'IN' operation, while exact matching
-                    is used for other values, see _process_volume_filters
-                    function for more information
-    :returns: list of matching volumes
-    """
-    session = get_session()
-    with session.begin():
-        # Generate the query
-        query = _generate_paginate_query(context, session, marker, limit,
-                                         sort_keys, sort_dirs, filters, offset)
-        # No volumes would match, return empty list
-        if query is None:
-            return []
-        return query.all()
-
-
-PAGINATION_HELPERS = {
-}
-
-
-def _generate_paginate_query(context, session, marker, limit, sort_keys,
-                             sort_dirs, filters, offset=None,
-                             paginate_type=models.Volume):
-    """Generate the query to include the filters and the paginate options.
-
-    Returns a query with sorting / pagination criteria added or None
-    if the given filters will not yield any results.
-
-    :param context: context to query under
-    :param session: the session to use
-    :param marker: the last item of the previous page; we returns the next
-                    results after this value.
-    :param limit: maximum number of items to return
-    :param sort_keys: list of attributes by which results should be sorted,
-                      paired with corresponding item in sort_dirs
-    :param sort_dirs: list of directions in which results should be sorted,
-                      paired with corresponding item in sort_keys
-    :param filters: dictionary of filters; values that are in lists, tuples,
-                    or sets cause an 'IN' operation, while exact matching
-                    is used for other values, see _process_volume_filters
-                    function for more information
-    :param offset: number of items to skip
-    :param paginate_type: type of pagination to generate
-    :returns: updated query or None
-    """
-    get_query, process_filters, get = PAGINATION_HELPERS[paginate_type]
-
-    sort_keys, sort_dirs = process_sort_params(sort_keys,
-                                               sort_dirs,
-                                               default_dir='desc')
-    query = get_query(context, session=session)
-
-    if filters:
-        query = process_filters(query, filters)
-        if query is None:
-            return None
-
-    marker_object = None
-    if marker is not None:
-        marker_object = get(context, marker, session)
-
-    return sqlalchemyutils.paginate_query(query, paginate_type, limit,
-                                          sort_keys,
-                                          marker=marker_object,
-                                          sort_dirs=sort_dirs,
-                                          offset=offset)
-
-
-CALCULATE_COUNT_HELPERS = {
-}
-
-
-def calculate_resource_count(context, resource_type, filters):
-    """Calculate total count with filters applied"""
-
-    session = get_session()
-    if resource_type not in CALCULATE_COUNT_HELPERS.keys():
-        raise exception.InvalidInput(
-            reason=_("Model %s doesn't support "
-                     "counting resource.") % resource_type)
-    get_query, process_filters = CALCULATE_COUNT_HELPERS[resource_type]
-    query = get_query(context, session=session)
-    if filters:
-        query = process_filters(query, filters)
-        if query is None:
-            return 0
-    return query.with_entities(func.count()).scalar()
 
 
 @apply_like_filters(model=models.Volume)
@@ -568,6 +395,151 @@ def _process_volume_filters(query, filters):
     if filter_dict:
         query = query.filter_by(**filter_dict)
     return query
+
+
+@require_context
+def _volume_get_query(context, session=None, project_only=False,
+                      joined_load=True):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run the method _volume_get_query
+    :param session: the session to use
+    :param project_only: the boolean used to decide whether to query the
+                         volume in the current project or all projects
+    :param joined_load: the boolean used to decide whether the query loads
+                        the other models, which join the volume model in
+                        the database. Currently, the False value for this
+                        parameter is specially for the case of updating
+                        database during volume migration
+    :returns: updated query or None
+    """
+    return model_query(context, models.Volume, session=session,
+                       project_only=project_only)
+
+
+@require_context
+def _volume_get(context, volume_id, session=None, joined_load=True):
+    result = _volume_get_query(context, session=session, project_only=True,
+                               joined_load=joined_load)
+    result = result.filter_by(id=volume_id).first()
+
+    if not result:
+        raise exception.VolumeNotFound(volume_id=volume_id)
+
+    return result
+
+
+@require_context
+def volume_get(context, volume_id):
+    return _volume_get(context, volume_id)
+
+
+@require_context
+def volume_get_all(context, marker=None, limit=None, sort_keys=None,
+                   sort_dirs=None, filters=None, offset=None):
+    """Retrieves all volumes.
+
+    If no sort parameters are specified then the returned volumes are sorted
+    first by the 'created_at' key and then by the 'id' key in descending
+    order.
+
+    :param context: context to query under
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :returns: list of matching volumes
+    """
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(context, session, marker, limit,
+                                         sort_keys, sort_dirs, filters, offset)
+        # No volumes would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+PAGINATION_HELPERS = {
+    models.Volume: (_volume_get_query, _process_volume_filters, _volume_get),
+}
+
+
+def _generate_paginate_query(context, session, marker, limit, sort_keys,
+                             sort_dirs, filters, offset=None,
+                             paginate_type=models.Volume):
+    """Generate the query to include the filters and the paginate options.
+
+    Returns a query with sorting / pagination criteria added or None
+    if the given filters will not yield any results.
+
+    :param context: context to query under
+    :param session: the session to use
+    :param marker: the last item of the previous page; we returns the next
+                    results after this value.
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :param offset: number of items to skip
+    :param paginate_type: type of pagination to generate
+    :returns: updated query or None
+    """
+    get_query, process_filters, get = PAGINATION_HELPERS[paginate_type]
+
+    sort_keys, sort_dirs = process_sort_params(sort_keys,
+                                               sort_dirs,
+                                               default_dir='desc')
+    query = get_query(context, session=session)
+
+    if filters:
+        query = process_filters(query, filters)
+        if query is None:
+            return None
+
+    marker_object = None
+    if marker is not None:
+        marker_object = get(context, marker, session)
+
+    return sqlalchemyutils.paginate_query(query, paginate_type, limit,
+                                          sort_keys,
+                                          marker=marker_object,
+                                          sort_dirs=sort_dirs,
+                                          offset=offset)
+
+
+CALCULATE_COUNT_HELPERS = {
+}
+
+
+def calculate_resource_count(context, resource_type, filters):
+    """Calculate total count with filters applied"""
+
+    session = get_session()
+    if resource_type not in CALCULATE_COUNT_HELPERS.keys():
+        raise exception.InvalidInput(
+            reason=_("Model %s doesn't support "
+                     "counting resource.") % resource_type)
+    get_query, process_filters = CALCULATE_COUNT_HELPERS[resource_type]
+    query = get_query(context, session=session)
+    if filters:
+        query = process_filters(query, filters)
+        if query is None:
+            return 0
+    return query.with_entities(func.count()).scalar()
 
 
 def process_sort_params(sort_keys, sort_dirs, default_keys=None,
@@ -690,8 +662,6 @@ def get_model_for_versioned_object(versioned_object):
         model_name = versioned_object
     else:
         model_name = versioned_object.obj_name()
-    if model_name == 'BackupImport':
-        return models.Backup
     return getattr(models, model_name)
 
 

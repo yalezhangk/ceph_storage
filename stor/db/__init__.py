@@ -1,1 +1,1 @@
-from .db.api import *  # noqa
+from stor.db.api import *  # noqa

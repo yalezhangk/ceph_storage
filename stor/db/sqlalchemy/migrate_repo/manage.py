@@ -15,7 +15,7 @@
 
 import os
 
-from cinder.db.sqlalchemy import migrate_repo
+from stor.db.sqlalchemy import migrate_repo
 
 from migrate.versioning.shell import main
 
