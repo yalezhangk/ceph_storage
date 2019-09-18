@@ -1,7 +1,10 @@
 tornado
 grpcio
+protobuf
 oslo.versionedobjects
 oslo.db
 oslo.utils
 oslo.config
 pymysql
+etcd3
+

@@ -1,14 +1,15 @@
-import logging
 import sys
 
 import tornado.ioloop
 import tornado.web
+from oslo_log import log as logging
 
 from ..scheduler import SchedulerClientManager
 from ..agent import AgentClientManager
 from stor import objects
 from stor import version
 from stor.common.config import CONF
+from stor.api.handlers import get_routers
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +47,14 @@ class AppendCephMonitorHandler(tornado.web.RequestHandler):
 
 def main():
     objects.register_all()
-    application = tornado.web.Application([
+    routers = [
         (r"/", MainHandler),
         (r"/cephconf", CephConfHandler),
         (r"/host/disks", HostDisksHandler),
         (r"/host/appendmon", AppendCephMonitorHandler),
-    ])
+    ]
+    routers = routers + get_routers()
+    application = tornado.web.Application(routers)
     logger.info("server run on xxxx")
     application.listen(8888)
     tornado.ioloop.IOLoop.current().start()
