@@ -82,5 +82,17 @@ class NotFound(StorException):
     safe = True
 
 
+class Duplicate(StorException):
+    pass
+
+
 class VolumeNotFound(NotFound):
     message = _("Volume %(volume_id)s could not be found.")
+
+
+class ClusterNotFound(NotFound):
+    message = _("Cluster %(cluster_id)s could not be found.")
+
+
+class ClusterExists(Duplicate):
+    message = _("Cluster %(cluster_id)s already exists.")

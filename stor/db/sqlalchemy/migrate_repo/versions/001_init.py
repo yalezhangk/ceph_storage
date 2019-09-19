@@ -1,7 +1,7 @@
 import datetime
 
 from oslo_config import cfg
-from sqlalchemy import Boolean, Column, DateTime, Integer
+from sqlalchemy import Boolean, Column, DateTime, Index
 from sqlalchemy import MetaData, String, Table
 
 
@@ -17,24 +17,22 @@ CREATED_AT = datetime.datetime.now()  # noqa
 
 def define_tables(meta):
 
-    volumes = Table(
-        'volumes', meta,
+    clusters = Table(
+        'clusters', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', String(36), primary_key=True, nullable=False),
-        Column('user_id', String(255)),
-        Column('project_id', String(255)),
-        Column('size', Integer),
-        Column('status', String(255)),
+        Column('table_id', String(36)),
         Column('display_name', String(255)),
         Column('display_description', String(255)),
+        Index('table_id_idx', 'table_id', unique=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
 
-    return [volumes]
+    return [clusters]
 
 
 def upgrade(migrate_engine):

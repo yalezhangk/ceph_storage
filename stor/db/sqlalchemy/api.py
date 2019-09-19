@@ -19,6 +19,7 @@ from oslo_utils import timeutils
 import six
 import sqlalchemy
 from sqlalchemy import or_, and_, case
+from sqlalchemy import MetaData
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy import sql
 from sqlalchemy.sql.expression import literal_column
@@ -152,7 +153,7 @@ def require_volume_exists(f):
 
     @functools.wraps(f)
     def wrapper(context, volume_id, *args, **kwargs):
-        if not resource_exists(context, models.Volume, volume_id):
+        if not resource_exists(context, models.get_volume(context), volume_id):
             raise exception.VolumeNotFound(volume_id=volume_id)
         return f(context, volume_id, *args, **kwargs)
     return wrapper
@@ -240,7 +241,7 @@ def model_query(context, model, *args, **kwargs):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_create(context, values):
 
-    volume_ref = models.Volume()
+    volume_ref = models.get_volume(context)
     if not values.get('id'):
         values['id'] = str(uuid.uuid4())
     volume_ref.update(values)
@@ -262,7 +263,7 @@ def volume_destroy(context, volume_id):
                           'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Volume, session=session).\
+        model_query(context, models.get_volume(context), session=session).\
             filter_by(id=volume_id).\
             update(updated_values)
     del updated_values['updated_at']
@@ -294,7 +295,7 @@ def _process_model_like_filter(model, query, filters):
 
 def apply_like_filters(model):
     def decorator_filters(process_exact_filters):
-        def _decorator(query, filters):
+        def _decorator(context, query, filters):
             exact_filters = filters.copy()
             regex_filters = {}
             for key, value in filters.items():
@@ -303,56 +304,17 @@ def apply_like_filters(model):
                 if key.endswith('~'):
                     exact_filters.pop(key)
                     regex_filters[key.rstrip('~')] = value
-            query = process_exact_filters(query, exact_filters)
+            query = process_exact_filters(context, query, exact_filters)
             return _process_model_like_filter(model, query, regex_filters)
         return _decorator
     return decorator_filters
 
 
-@apply_like_filters(model=models.Volume)
-def _process_volume_filters(query, filters):
-    """Common filter processing for Volume queries.
-
-    Filter values that are in lists, tuples, or sets cause an 'IN' operator
-    to be used, while exact matching ('==' operator) is used for other values.
-
-    A filter key/value of 'no_migration_targets'=True causes volumes with
-    either a NULL 'migration_status' or a 'migration_status' that does not
-    start with 'target:' to be retrieved.
-
-    A 'metadata' filter key must correspond to a dictionary value of metadata
-    key-value pairs.
-
-    :param query: Model query to use
-    :param filters: dictionary of filters
-    :returns: updated query or None
-    """
+def _process_volume_filters(ctxt, query, filters):
     filters = filters.copy()
-
-    # 'no_migration_targets' is unique, must be either NULL or
-    # not start with 'target:'
-    if filters.get('no_migration_targets', False):
-        filters.pop('no_migration_targets')
-        try:
-            column_attr = getattr(models.Volume, 'migration_status')
-            conditions = [column_attr == None,  # noqa
-                          column_attr.op('NOT LIKE')('target:%')]
-            query = query.filter(or_(*conditions))
-        except AttributeError:
-            LOG.debug("'migration_status' column could not be found.")
-            return None
-
-    # Apply exact match filters for everything else, ensure that the
-    # filter value exists on the model
     for key in filters.keys():
-        # metadata/glance_metadata is unique, must be a dict
-        if key in ('metadata', 'glance_metadata'):
-            if not isinstance(filters[key], dict):
-                LOG.debug("'%s' filter value is not valid.", key)
-                return None
-            continue
         try:
-            column_attr = getattr(models.Volume, key)
+            column_attr = getattr(models.get_volume(ctxt), key)
             # Do not allow relationship properties since those require
             # schema specific knowledge
             prop = getattr(column_attr, 'property')
@@ -369,23 +331,9 @@ def _process_volume_filters(query, filters):
 
     # Iterate over all filters, special case the filter if necessary
     for key, value in filters.items():
-        if key == 'metadata':
-            # model.VolumeMetadata defines the backref to Volumes as
-            # 'volume_metadata' or 'volume_admin_metadata', use those as
-            # column attribute keys
-            col_attr = getattr(models.Volume, 'volume_metadata')
-            col_ad_attr = getattr(models.Volume, 'volume_admin_metadata')
-            for k, v in value.items():
-                query = query.filter(or_(col_attr.any(key=k, value=v),
-                                         col_ad_attr.any(key=k, value=v)))
-        elif key == 'glance_metadata':
-            # use models.Volume.volume_glance_metadata as column attribute key.
-            col_gl_attr = models.Volume.volume_glance_metadata
-            for k, v in value.items():
-                query = query.filter(col_gl_attr.any(key=k, value=v))
-        elif isinstance(value, (list, tuple, set, frozenset)):
+        if isinstance(value, (list, tuple, set, frozenset)):
             # Looking for values in a list; apply to query directly
-            column_attr = getattr(models.Volume, key)
+            column_attr = getattr(models.get_volume(ctxt), key)
             query = query.filter(column_attr.in_(value))
         else:
             # OK, simple exact match; save for later
@@ -413,7 +361,7 @@ def _volume_get_query(context, session=None, project_only=False,
                         database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.Volume, session=session,
+    return model_query(context, models.get_volume(context), session=session,
                        project_only=project_only)
 
 
@@ -460,22 +408,20 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
     session = get_session()
     with session.begin():
         # Generate the query
-        query = _generate_paginate_query(context, session, marker, limit,
-                                         sort_keys, sort_dirs, filters, offset)
+        query = _generate_paginate_query(
+            context, session, models.get_volume(context),
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset,
+            paginate_type="volume")
         # No volumes would match, return empty list
         if query is None:
             return []
         return query.all()
 
 
-PAGINATION_HELPERS = {
-    models.Volume: (_volume_get_query, _process_volume_filters, _volume_get),
-}
-
-
-def _generate_paginate_query(context, session, marker, limit, sort_keys,
+def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
                              sort_dirs, filters, offset=None,
-                             paginate_type=models.Volume):
+                             paginate_type=None):
     """Generate the query to include the filters and the paginate options.
 
     Returns a query with sorting / pagination criteria added or None
@@ -498,6 +444,8 @@ def _generate_paginate_query(context, session, marker, limit, sort_keys,
     :param paginate_type: type of pagination to generate
     :returns: updated query or None
     """
+    if not paginate_type:
+        raise exception.ProgrammingError(reason="paginate_type not found")
     get_query, process_filters, get = PAGINATION_HELPERS[paginate_type]
 
     sort_keys, sort_dirs = process_sort_params(sort_keys,
@@ -506,7 +454,7 @@ def _generate_paginate_query(context, session, marker, limit, sort_keys,
     query = get_query(context, session=session)
 
     if filters:
-        query = process_filters(query, filters)
+        query = process_filters(context, query, filters)
         if query is None:
             return None
 
@@ -514,7 +462,7 @@ def _generate_paginate_query(context, session, marker, limit, sort_keys,
     if marker is not None:
         marker_object = get(context, marker, session)
 
-    return sqlalchemyutils.paginate_query(query, paginate_type, limit,
+    return sqlalchemyutils.paginate_query(query, model, limit,
                                           sort_keys,
                                           marker=marker_object,
                                           sort_dirs=sort_dirs,
@@ -642,6 +590,144 @@ def volumes_update(context, values_list):
 
 ###############################
 
+@apply_like_filters(model=models.Cluster)
+def _process_cluster_filters(context, query, filters):
+    if filters:
+        filters_dict = {}
+        for key, value in filters.items():
+            filters_dict[key] = value
+
+        if filters_dict:
+            query = query.filter_by(**filters_dict)
+    return query
+
+
+@require_context
+def _cluster_get_query(context, session=None):
+    return model_query(context, models.Cluster, session=session)
+
+
+@require_context
+def _cluster_get(context, cluster_id, session=None, joined_load=True):
+    result = _cluster_get_query(context, session=session)
+    result = result.filter_by(id=cluster_id).first()
+
+    if not result:
+        raise exception.ClusterNotFound(cluster_id=cluster_id)
+
+    return result
+
+
+@require_context
+def cluster_get(context, cluster_id):
+    return _cluster_get(context, cluster_id)
+
+
+@require_context
+def cluster_get_all(context, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Cluster, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset, paginate_type="cluster")
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@handle_db_data_error
+@require_context
+def cluster_update(context, cluster_id, values):
+    session = get_session()
+    with session.begin():
+        query = _cluster_get_query(context, session, joined_load=False)
+        result = query.filter_by(id=cluster_id).update(values)
+        if not result:
+            raise exception.ClusterNotFound(cluster_id=cluster_id)
+
+
+@handle_db_data_error
+@require_context
+def clusters_update(context, values_list):
+    session = get_session()
+    with session.begin():
+        cluster_refs = []
+        for values in values_list:
+            cluster_id = values['id']
+            values.pop('id')
+            cluster_ref = _cluster_get(context, cluster_id, session=session)
+            cluster_ref.update(values)
+            cluster_refs.append(cluster_ref)
+
+        return cluster_refs
+
+
+@require_context
+def cluster_check_table_id(context, table_id):
+    clusters = cluster_get_all(context, filters={"table_id": table_id})
+    if clusters:
+        return True
+    return False
+
+
+@require_context
+def cluster_get_new_uuid(context):
+    while True:
+        uid = str(uuid.uuid4())
+        table_id = uid[0:8]
+        if cluster_check_table_id(context, table_id):
+            continue
+        return uid
+
+
+def create_cluster_tables(context, table_id):
+    meta = MetaData()
+    meta.bind = get_engine()
+
+    tables = models.get_cluster_tables(context, meta, table_id)
+
+    for table in tables:
+        table.create()
+
+
+@handle_db_data_error
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def cluster_create(context, values):
+
+    if not values.get('id'):
+        uid = cluster_get_new_uuid(context)
+        values['id'] = uid
+        values['table_id'] = uid[0:8]
+    else:
+        uid = values.get('id')
+        values['table_id'] = uid[0:8]
+        if cluster_check_table_id(context, values['table_id']):
+            raise exception.ClusterExists(cluster_id=uid)
+
+    cluster_ref = models.Cluster()
+    cluster_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(cluster_ref)
+
+    create_cluster_tables(context, values['table_id'])
+
+    return _cluster_get(context, values['id'], session=session)
+
+
+###############################
+
+
+PAGINATION_HELPERS = {
+    "volume": (_volume_get_query, _process_volume_filters, _volume_get),
+    "cluster": (_cluster_get_query, _process_cluster_filters, _cluster_get),
+}
+
 
 @require_context
 def resource_exists(context, model, resource_id, session=None):
@@ -655,14 +741,6 @@ def resource_exists(context, model, resource_id, session=None):
     session = session or get_session()
     query = session.query(sql.exists().where(and_(*conditions)))
     return query.scalar()
-
-
-def get_model_for_versioned_object(versioned_object):
-    if isinstance(versioned_object, six.string_types):
-        model_name = versioned_object
-    else:
-        model_name = versioned_object.obj_name()
-    return getattr(models, model_name)
 
 
 def _get_get_method(model):

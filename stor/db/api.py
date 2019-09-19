@@ -79,15 +79,38 @@ def volumes_update(context, values_list):
     return IMPL.volumes_update(context, values_list)
 
 
+###############
+
+
+def cluster_create(context, values):
+    return IMPL.cluster_create(context, values)
+
+
+def cluster_destroy(context, cluster_id):
+    return IMPL.cluster_destroy(context, cluster_id)
+
+
+def cluster_get(context, cluster_id):
+    return IMPL.cluster_get(context, cluster_id)
+
+
+def cluster_get_all(context, *args, **kwargs):
+    return IMPL.cluster_get_all(context, *args, **kwargs)
+
+
+def cluster_update(context, cluster_id, values):
+    return IMPL.cluster_update(context, cluster_id, values)
+
+
+def clusters_update(context, values_list):
+    return IMPL.clusters_update(context, values_list)
+
+
 ###################
 
 
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
-
-
-def get_model_for_versioned_object(versioned_object):
-    return IMPL.get_model_for_versioned_object(versioned_object)
 
 
 def get_by_id(context, model, id, *args, **kwargs):

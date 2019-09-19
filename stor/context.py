@@ -3,11 +3,12 @@ from stor.i18n import _
 
 class RequestContext(object):
     def __init__(self, user_id=None, project_id=None, is_admin=False,
-                 read_deleted='no'):
+                 read_deleted='no', cluster=None):
         self.user_id = user_id
         self.project_id = project_id
         self.is_admin = is_admin
         self.read_deleted = read_deleted
+        self.cluster = cluster
 
     def to_dict(self):
         return {
@@ -15,6 +16,7 @@ class RequestContext(object):
             "project_id": self.project_id,
             "read_deleted": self.read_deleted,
             "is_admin": self.is_admin,
+            "cluster": self.cluster,
         }
 
     @classmethod
@@ -22,6 +24,7 @@ class RequestContext(object):
         return cls(user_id=values['user_id'],
                    project_id=values['project_id'],
                    read_deleted=values['read_deleted'],
+                   cluster=values['cluster'],
                    is_admin=values['is_admin'])
 
     def _get_read_deleted(self):

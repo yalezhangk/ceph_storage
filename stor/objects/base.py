@@ -24,11 +24,6 @@ class StorObjectRegistry(base.VersionedObjectRegistry):
     def registration_hook(self, cls, index):
         setattr(objects, cls.obj_name(), cls)
 
-        # If registering class has a callable initialization method, call it.
-        if isinstance(getattr(cls, 'stor_ovo_cls_init', None),
-                      Callable):
-            cls.stor_ovo_cls_init()
-
 
 class StorObject(base.VersionedObject):
     OBJ_PROJECT_NAMESPACE = 'stor'
@@ -70,16 +65,6 @@ class StorPersistentObject(object):
     OPTIONAL_FIELDS = ()
 
     @classmethod
-    def stor_ovo_cls_init(cls):
-        try:
-            cls.model = db.get_model_for_versioned_object(cls)
-        except (ImportError, AttributeError):
-            msg = ("Couldn't find ORM model for Persistent Versioned "
-                   "Object %s.") % cls.obj_name()
-            logger.exception("Failed to initialize object.")
-            raise exception.ProgrammingError(reason=msg)
-
-    @classmethod
     def _get_expected_attrs(cls, context, *args, **kwargs):
         return None
 
@@ -90,7 +75,7 @@ class StorPersistentObject(object):
                    cls.obj_name())
             raise NotImplementedError(msg)
 
-        orm_obj = db.get_by_id(context, cls.model, id, *args, **kwargs)
+        orm_obj = db.get_by_id(context, cls.obj_name(), id, *args, **kwargs)
         # We pass parameters because fields to expect may depend on them
         expected_attrs = cls._get_expected_attrs(context, *args, **kwargs)
         kargs = {}

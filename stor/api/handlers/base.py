@@ -3,6 +3,7 @@
 from tornado.web import RequestHandler
 
 from stor.context import RequestContext
+from stor import objects
 
 
 class BaseAPIHandler(RequestHandler):
@@ -24,7 +25,11 @@ class BaseAPIHandler(RequestHandler):
         self.write({"error": msg})
 
     def get_context(self):
-        return RequestContext(user_id="xxx", project_id="stor", is_admin=False)
+        cluster_id = self.request.headers['Cluster-Id']
+        cluster = objects.Cluster(
+            id=cluster_id, table_id=cluster_id[0:8])
+        return RequestContext(user_id="xxx", project_id="stor", is_admin=False,
+                              cluster=cluster)
 
     def get_current_user(self):
         token_id = self.request.headers.get('token-id')
