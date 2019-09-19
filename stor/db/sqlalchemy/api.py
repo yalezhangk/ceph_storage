@@ -19,7 +19,6 @@ from oslo_utils import timeutils
 import six
 import sqlalchemy
 from sqlalchemy import or_, and_, case
-from sqlalchemy import MetaData
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy import sql
 from sqlalchemy.sql.expression import literal_column
@@ -153,7 +152,7 @@ def require_volume_exists(f):
 
     @functools.wraps(f)
     def wrapper(context, volume_id, *args, **kwargs):
-        if not resource_exists(context, models.get_volume(context), volume_id):
+        if not resource_exists(context, models.Volume, volume_id):
             raise exception.VolumeNotFound(volume_id=volume_id)
         return f(context, volume_id, *args, **kwargs)
     return wrapper
@@ -241,7 +240,7 @@ def model_query(context, model, *args, **kwargs):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_create(context, values):
 
-    volume_ref = models.get_volume(context)
+    volume_ref = models.Volume
     if not values.get('id'):
         values['id'] = str(uuid.uuid4())
     volume_ref.update(values)
@@ -263,7 +262,7 @@ def volume_destroy(context, volume_id):
                           'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.get_volume(context), session=session).\
+        model_query(context, models.Volume, session=session).\
             filter_by(id=volume_id).\
             update(updated_values)
     del updated_values['updated_at']
@@ -314,7 +313,7 @@ def _process_volume_filters(ctxt, query, filters):
     filters = filters.copy()
     for key in filters.keys():
         try:
-            column_attr = getattr(models.get_volume(ctxt), key)
+            column_attr = getattr(models.Volume, key)
             # Do not allow relationship properties since those require
             # schema specific knowledge
             prop = getattr(column_attr, 'property')
@@ -333,7 +332,7 @@ def _process_volume_filters(ctxt, query, filters):
     for key, value in filters.items():
         if isinstance(value, (list, tuple, set, frozenset)):
             # Looking for values in a list; apply to query directly
-            column_attr = getattr(models.get_volume(ctxt), key)
+            column_attr = getattr(models.Volume, key)
             query = query.filter(column_attr.in_(value))
         else:
             # OK, simple exact match; save for later
@@ -361,7 +360,7 @@ def _volume_get_query(context, session=None, project_only=False,
                         database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.get_volume(context), session=session,
+    return model_query(context, models.Volume, session=session,
                        project_only=project_only)
 
 
@@ -409,7 +408,7 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
-            context, session, models.get_volume(context),
+            context, session, models.Volume,
             marker, limit,
             sort_keys, sort_dirs, filters, offset,
             paginate_type="volume")
@@ -684,16 +683,6 @@ def cluster_get_new_uuid(context):
         return uid
 
 
-def create_cluster_tables(context, table_id):
-    meta = MetaData()
-    meta.bind = get_engine()
-
-    tables = models.get_cluster_tables(context, meta, table_id)
-
-    for table in tables:
-        table.create()
-
-
 @handle_db_data_error
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
@@ -714,8 +703,6 @@ def cluster_create(context, values):
     session = get_session()
     with session.begin():
         session.add(cluster_ref)
-
-    create_cluster_tables(context, values['table_id'])
 
     return _cluster_get(context, values['id'], session=session)
 

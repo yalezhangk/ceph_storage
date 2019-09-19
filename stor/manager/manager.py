@@ -1,17 +1,14 @@
 from concurrent import futures
-import time
 import logging
 import json
-import threading
 import queue
 import inspect
 
-import grpc
 
-from . import scheduler_pb2
-from . import scheduler_pb2_grpc
-from ..service import ServiceBase
-from ..agent import AgentClientManager
+from stor.proto import stor_pb2
+from stor.proto import stor_pb2_grpc
+from stor.service import ServiceBase
+from stor.agent import AgentClientManager
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -37,14 +34,15 @@ osd pool default pgp num = 333
 osd crush chooseleaf type = 1
 """
 
-class SchedulerQueue(queue.Queue):
+
+class ManagerQueue(queue.Queue):
     pass
 
 
-worker_queue = SchedulerQueue()
+worker_queue = ManagerQueue()
 
 
-class SchedulerTasks:
+class ManagerTasks:
     def append_ceph_monitor(self, ceph_monitor_host=None):
         agent = AgentClientManager()
         agent.get_client("whx-ceph-1").start_service()
@@ -60,14 +58,12 @@ class SchedulerTasks:
         return maps
 
 
-
-
-class SchedulerRpcService(scheduler_pb2_grpc.SchedulerServicer):
+class ManagerRpcService(stor_pb2_grpc.ManagerServicer):
 
     def GetCephConf(self, request, context):
         logger.debug("try get ceph conf with location "
                      "{}".format(request.location))
-        return scheduler_pb2.CephConf(content=example, location=request.location)
+        return stor_pb2.CephConf(content=example, location=request.location)
 
     def AppendCephMonitor(self, request, context):
         logger.debug("try append ceph monitor")
@@ -77,18 +73,18 @@ class SchedulerRpcService(scheduler_pb2_grpc.SchedulerServicer):
                 "ceph_monitor_host": "whx-ceph-1"
             }
         })
-        return scheduler_pb2.SResponse(value="Success")
+        return stor_pb2.SResponse(value="Success")
 
 
-class SchedulerService(ServiceBase):
-    service_name = "scheduler"
+class ManagerService(ServiceBase):
+    service_name = "manager"
     rpc_endpoint = None
     rpc_ip = "172.159.4.11"
     rpc_port = 50051
     executor = None
 
     def __init__(self):
-        super(SchedulerService, self).__init__()
+        super(ManagerService, self).__init__()
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port
@@ -96,14 +92,15 @@ class SchedulerService(ServiceBase):
 
     def start_workers(self):
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
-        
+
     def rpc_register_service(self, server):
-        scheduler_pb2_grpc.add_SchedulerServicer_to_server(SchedulerRpcService(), server)
+        stor_pb2_grpc.add_ManagerServicer_to_server(
+            ManagerRpcService(), server)
 
     def run(self):
         self.start_workers()
         self.start()
-        maps = SchedulerTasks().get_task_maps()
+        maps = ManagerTasks().get_task_maps()
         try:
             while True:
                 item = worker_queue.get()
@@ -120,4 +117,4 @@ if __name__ == '__main__':
     logging.basicConfig(
         level='DEBUG',
         format='%(asctime)s :: %(levelname)s :: %(message)s')
-    SchedulerService().run()
+    ManagerService().run()

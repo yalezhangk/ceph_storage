@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+service Manager {
+    rpc GetCephConf(StorageLocation) returns (CephConf) {}
+    rpc AppendCephMonitor(Request) returns (Response) {}
+    rpc VolumeGet(IdRequest) returns (Volume) {}
+    rpc VolumeUpdate(Volume) returns (Volume) {}
+    rpc VolumeDelete(Volume) returns (Volume) {}
+    rpc VolumeList(ListRequest) returns (stream Volume) {}
+}
+
+service Agent {
+    rpc GetDiskInfo(Request) returns (Response) {}
+    rpc WriteCephConf(Request) returns (Response) {}
+    rpc InstallPackage(Request) returns (Response) {}
+    rpc StartService(Request) returns (Response) {}
+}
+
+message Request {
+  string key = 1;
+}
+
+message Response {
+  string value = 1;
+}
+
+message IdRequest{
+  string id = 1;
+}
+
+message ListRequest {
+  string marker = 1;
+  string limit = 2;
+  string sort_keys = 3;
+  string sort_dirs = 4;
+  string filters = 5;
+  string offset = 6;
+}
+
+message Volume {
+  string id = 1;
+  string status = 2;
+  string size = 3;
+  string display_name = 4;
+  string display_description = 5;
+}
+
+message StorageLocation {
+  string location = 1;
+}
+
+message CephConf {
+  string content = 1;
+  string location = 2;
+}
+
