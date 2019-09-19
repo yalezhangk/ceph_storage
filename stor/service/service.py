@@ -3,6 +3,7 @@ import time
 import logging
 import threading
 import socket
+import json
 
 import etcd3
 import grpc
@@ -26,28 +27,34 @@ class RPCService(stor_pb2_grpc.RPCServerServicer):
         self.serializer = RequestContextSerializer(obj_serializer)
 
     def call(self, request, context):
-        logger.debug("get rpc call: ctxt(%s), method(%s), args(%s),"
-                     " version(%s)".format(
+        logger.debug("get rpc call: ctxt(%s), method(%s), kwargs(%s),"
+                     " version(%s)" % (
                          request.context,
                          request.method,
-                         request.args,
+                         request.kwargs,
                          request.version,
                      ))
         method = request.method
-        ctxt = self.serializer.deserialize_context(request.context)
-        args = self.serializer.deserialize_entity(request.args)
+        ctxt = self.serializer.deserialize_context(json.loads(request.context))
+        kwargs = self.serializer.deserialize_entity(
+            ctxt, json.loads(request.kwargs))
         if not hasattr(self.api, method):
             raise exception.NoSuchMethod(method=method)
         func = getattr(self.api, method)
         try:
-            ret = func(ctxt, **args)
+            ret = func(ctxt, **kwargs)
+            logger.debug("%s ret: %s" % (
+                func.__name__,
+                json.dumps(
+                    self.serializer.serialize_entity(ctxt, ret))))
             res = stor_pb2.Response(
-                value=self.serializer.serialize_entity(ret)
+                value=json.dumps(self.serializer.serialize_entity(ctxt, ret))
             )
         except Exception as e:
+            raise e
             logger.exception(e)
             res = stor_pb2.Response(
-                value=self.serializer.serialize_entity({
+                value=self.serializer.serialize_entity(ctxt, {
                     "exception": str(e)
                 })
             )
@@ -56,6 +63,7 @@ class RPCService(stor_pb2_grpc.RPCServerServicer):
 
 class ServiceBase:
     name = None
+    cluster = None
     hostname = None
     rpc_endpoint = None
     rpc_ip = None
@@ -79,14 +87,15 @@ class ServiceBase:
         self.server.stop(0)
 
     def register_endpoint(self):
-        etcd = etcd3.client(host='172.159.4.11', port=2379)
+        etcd = etcd3.client(host='127.0.0.1', port=2379)
         lease = None
 
         while True:
             if not lease:
                 lease = etcd.lease(ttl=3)
                 etcd.put(
-                    '/t2stor/service/{}/{}'.format(
+                    '/t2stor/service/{}/{}/{}'.format(
+                        self.cluster,
                         self.service_name, self.hostname),
                     self.rpc_endpoint, lease=lease)
             time.sleep(2)

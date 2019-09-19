@@ -5,21 +5,26 @@ import json
 import grpc
 import etcd3
 
+from stor.service import stor_pb2
 from stor.service import stor_pb2_grpc
+from stor.objects import base as objects_base
+from stor.service.serializer import RequestContextSerializer
+
 
 logger = logging.getLogger(__name__)
 
 
 class BaseClientManager:
+    cluster = None
     channel = None
     service_name = None
     endpoints = None
     client_cls = None
 
     def __init__(self):
-        etcd = etcd3.client(host='172.159.4.11', port=2379)
+        etcd = etcd3.client(host='127.0.0.1', port=2379)
         values = etcd.get_prefix(
-            '/t2stor/service/{}'.format(self.service_name))
+            '/t2stor/service/{}/{}'.format(self.cluster, self.service_name))
         self.endpoints = {}
         if not values:
             raise Exception("Service {} not found".format(self.service_name))
@@ -49,7 +54,7 @@ class BaseClientManager:
 
     def get_stub(self, host=None):
         channel = self.get_channel(host=host)
-        stub = stor_pb2_grpc.StorStub(channel)
+        stub = stor_pb2_grpc.RPCServerStub(channel)
         return stub
 
     def get_client(self, host=None):
@@ -74,7 +79,22 @@ class BaseClient:
 
     def __init__(self, stub):
         self._stub = stub
+        obj_serializer = objects_base.StorObjectSerializer()
+        self.serializer = RequestContextSerializer(obj_serializer)
 
-    def __getattr__(self, key):
-        method = getattr(self._stub, key)
-        return method
+    # def __getattr__(self, key):
+    #     method = getattr(self._stub, key)
+    #     return method
+
+    def call(self, context, method, version="v1.0", **kwargs):
+        context = self.serializer.serialize_context(context)
+        kwargs = self.serializer.serialize_entity(context, kwargs)
+        response = self._stub.call(stor_pb2.Request(
+            context=json.dumps(context),
+            method=method,
+            kwargs=json.dumps(kwargs),
+            version=version
+        ))
+        ret = self.serializer.deserialize_entity(
+            context, json.loads(response.value))
+        return ret
