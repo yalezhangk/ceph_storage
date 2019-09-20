@@ -5,6 +5,8 @@ import json
 import grpc
 import etcd3
 
+from stor.service import stor_pb2_grpc
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,11 +18,12 @@ class BaseClientManager:
 
     def __init__(self):
         etcd = etcd3.client(host='172.159.4.11', port=2379)
-        values = etcd.get_prefix('/t2stor/service/{}'.format(self.service_name))
+        values = etcd.get_prefix(
+            '/t2stor/service/{}'.format(self.service_name))
         self.endpoints = {}
         if not values:
             raise Exception("Service {} not found".format(self.service_name))
-        for value, meta  in values:
+        for value, meta in values:
             endpoint = json.loads(value)
             hostname = meta.key.split(b"/")[-1].decode("utf-8")
             logger.info("Service {} found in host {}".format(
@@ -46,15 +49,12 @@ class BaseClientManager:
 
     def get_stub(self, host=None):
         channel = self.get_channel(host=host)
-        stub = self.register_stub(channel)
+        stub = stor_pb2_grpc.StorStub(channel)
         return stub
-
-    def register_stub(self, channel):
-        raise NotImplementedError("register_stub not Implemented")
 
     def get_client(self, host=None):
         return self.client_cls(self.get_stub(host=host))
-    
+
     def get_clients(self, hosts=None):
         raise NotImplementedError("get_stub not Implemented")
 
@@ -78,4 +78,3 @@ class BaseClient:
     def __getattr__(self, key):
         method = getattr(self._stub, key)
         return method
-

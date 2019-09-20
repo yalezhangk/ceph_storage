@@ -96,3 +96,7 @@ class ClusterNotFound(NotFound):
 
 class ClusterExists(Duplicate):
     message = _("Cluster %(cluster_id)s already exists.")
+
+
+class NoSuchMethod(NotFound):
+    message = _("Method %(method)s not found.")

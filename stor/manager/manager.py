@@ -2,11 +2,7 @@ from concurrent import futures
 import logging
 import json
 import queue
-import inspect
 
-
-from stor.proto import stor_pb2
-from stor.proto import stor_pb2_grpc
 from stor.service import ServiceBase
 from stor.agent import AgentClientManager
 
@@ -39,78 +35,43 @@ class ManagerQueue(queue.Queue):
     pass
 
 
-worker_queue = ManagerQueue()
+class ManagerAPI(object):
+    def __init__(self):
+        self.worker_queue = ManagerQueue()
+        self.executor = futures.ThreadPoolExecutor(max_workers=10)
 
+    def get_ceph_conf(self, request, context):
+        logger.debug("try get ceph conf with location "
+                     "{}".format(request.location))
+        return example
 
-class ManagerTasks:
-    def append_ceph_monitor(self, ceph_monitor_host=None):
+    def _append_ceph_monitor(self, ceph_monitor_host=None):
         agent = AgentClientManager()
         agent.get_client("whx-ceph-1").start_service()
         agent.get_client("whx-ceph-1").write_ceph_conf()
 
-    def get_task_maps(self):
-        members = inspect.getmembers(self, predicate=inspect.ismethod)
-        maps = {}
-        for name, method in members:
-            if name.startswith("_"):
-                continue
-            maps[name] = method
-        return maps
-
-
-class ManagerRpcService(stor_pb2_grpc.ManagerServicer):
-
-    def GetCephConf(self, request, context):
-        logger.debug("try get ceph conf with location "
-                     "{}".format(request.location))
-        return stor_pb2.CephConf(content=example, location=request.location)
-
-    def AppendCephMonitor(self, request, context):
+    def append_ceph_monitor(self, request, context):
         logger.debug("try append ceph monitor")
-        worker_queue.put({
-            "action": "append_ceph_monitor",
-            "args": {
-                "ceph_monitor_host": "whx-ceph-1"
-            }
-        })
-        return stor_pb2.SResponse(value="Success")
+        self.executor.submit(
+            self._append_ceph_monitor,
+            ceph_monitor_host="whx-ceph-1"
+        )
+        return "Apply"
 
 
 class ManagerService(ServiceBase):
     service_name = "manager"
     rpc_endpoint = None
-    rpc_ip = "172.159.4.11"
-    rpc_port = 50051
-    executor = None
+    rpc_ip = "192.168.211.129"
+    rpc_port = 2080
 
     def __init__(self):
         super(ManagerService, self).__init__()
+        self.api = ManagerAPI()
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port
         })
-
-    def start_workers(self):
-        self.executor = futures.ThreadPoolExecutor(max_workers=10)
-
-    def rpc_register_service(self, server):
-        stor_pb2_grpc.add_ManagerServicer_to_server(
-            ManagerRpcService(), server)
-
-    def run(self):
-        self.start_workers()
-        self.start()
-        maps = ManagerTasks().get_task_maps()
-        try:
-            while True:
-                item = worker_queue.get()
-                if item['action'] in maps:
-                    self.executor.submit(maps[item['action']], **item['args'])
-                else:
-                    raise NotImplementedError("action=%s" % item['action'])
-
-        except KeyboardInterrupt:
-            self.stop()
 
 
 if __name__ == '__main__':

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+service RPCServer{
+    rpc call(Request) returns (Response) {}
+}
+
+message Request {
+  string context = 1;
+  string method = 2;
+  string kwargs = 3;
+  string version = 4;
+}
+
+message Response {
+  string value = 1;
+}
