@@ -40,9 +40,9 @@ class ManagerAPI(object):
         self.worker_queue = ManagerQueue()
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
 
-    def get_ceph_conf(self, request, context):
+    def get_ceph_conf(self, ctxt, ceph_host):
         logger.debug("try get ceph conf with location "
-                     "{}".format(request.location))
+                     "{}".format(ceph_host))
         return example
 
     def _append_ceph_monitor(self, ceph_monitor_host=None):
@@ -61,6 +61,7 @@ class ManagerAPI(object):
 
 class ManagerService(ServiceBase):
     service_name = "manager"
+    cluster = "default"
     rpc_endpoint = None
     rpc_ip = "192.168.211.129"
     rpc_port = 2080
