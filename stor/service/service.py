@@ -7,16 +7,27 @@ import json
 
 import etcd3
 import grpc
+from oslo_config import cfg
 
 from stor.service import stor_pb2
 from stor.service import stor_pb2_grpc
 from stor import exception
+from stor import objects
+from stor.common.config import CONF
 from stor.objects import base as objects_base
 from stor.service.serializer import RequestContextSerializer
 
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+
+cluster_opts = [
+    cfg.StrOpt('cluster_id',
+               default='',
+               help='Cluster ID'),
+]
+
+CONF.register_opts(cluster_opts)
 
 
 class RPCService(stor_pb2_grpc.RPCServerServicer):
@@ -61,9 +72,9 @@ class RPCService(stor_pb2_grpc.RPCServerServicer):
         return res
 
 
-class ServiceBase:
+class ServiceBase(object):
     name = None
-    cluster = None
+    cluster_id = None
     hostname = None
     rpc_endpoint = None
     rpc_ip = None
@@ -71,9 +82,13 @@ class ServiceBase:
     service = None
     api = None
 
-    def __init__(self):
+    def __init__(self, hostname=None):
+        objects.register_all()
+        if hostname:
+            self.hostname = hostname
         if not self.hostname:
             self.hostname = socket.gethostname()
+        self.cluster_id = CONF.cluster_id
 
     def start_rpc(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -86,23 +101,30 @@ class ServiceBase:
     def stop_rpc(self):
         self.server.stop(0)
 
-    def register_endpoint(self):
+    def _register_endpoint(self):
         etcd = etcd3.client(host='127.0.0.1', port=2379)
+        lease = etcd.lease(ttl=3)
+        logger.debug("etcd server(%s) cluster_id(%s) service_name(%s)" % (
+            "127.0.0.1", self.cluster_id, self.service_name
+        ))
+        etcd.put(
+            '/t2stor/service/{}/{}/{}'.format(
+                self.cluster_id,
+                self.service_name, self.hostname),
+            self.rpc_endpoint, lease=lease)
+        return lease
+
+    def register_endpoint(self):
         lease = None
 
         while True:
             if not lease:
-                lease = etcd.lease(ttl=3)
-                etcd.put(
-                    '/t2stor/service/{}/{}/{}'.format(
-                        self.cluster,
-                        self.service_name, self.hostname),
-                    self.rpc_endpoint, lease=lease)
+                lease = self._register_endpoint()
             time.sleep(2)
             res = lease.refresh()[0]
             if res.TTL == 0:
                 lease = None
-            logger.debug("lease refresh")
+            # logger.debug("lease refresh")
 
     def start_heartbeat(self):
         thread = threading.Thread(target=self.register_endpoint, args=())

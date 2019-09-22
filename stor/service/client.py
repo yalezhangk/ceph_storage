@@ -15,16 +15,21 @@ logger = logging.getLogger(__name__)
 
 
 class BaseClientManager:
-    cluster = None
+    cluster_id = None
     channel = None
     service_name = None
     endpoints = None
     client_cls = None
 
-    def __init__(self):
+    def __init__(self, cluster_id=None):
+        if cluster_id:
+            self.cluster_id = cluster_id
+        logger.debug("etcd server(%s) cluster_id(%s) service_name(%s)" % (
+            "127.0.0.1", self.cluster_id, self.service_name
+        ))
         etcd = etcd3.client(host='127.0.0.1', port=2379)
         values = etcd.get_prefix(
-            '/t2stor/service/{}/{}'.format(self.cluster, self.service_name))
+            '/t2stor/service/{}/{}'.format(self.cluster_id, self.service_name))
         self.endpoints = {}
         if not values:
             raise Exception("Service {} not found".format(self.service_name))

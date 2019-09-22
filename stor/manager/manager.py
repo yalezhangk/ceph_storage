@@ -1,10 +1,15 @@
 from concurrent import futures
-import logging
 import json
 import queue
+import sys
+
+from oslo_log import log as logging
 
 from stor.service import ServiceBase
 from stor.agent import AgentClientManager
+from stor import version
+from stor import objects
+from stor.common.config import CONF
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -45,6 +50,15 @@ class ManagerAPI(object):
                      "{}".format(ceph_host))
         return example
 
+    def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                       sort_dirs=None, filters=None, offset=None):
+        return objects.VolumeList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+    def volume_get(self, ctxt, volume_id):
+        return objects.Volume.get_by_id(ctxt, volume_id)
+
     def _append_ceph_monitor(self, ceph_monitor_host=None):
         agent = AgentClientManager()
         agent.get_client("whx-ceph-1").start_service()
@@ -61,22 +75,21 @@ class ManagerAPI(object):
 
 class ManagerService(ServiceBase):
     service_name = "manager"
-    cluster = "default"
     rpc_endpoint = None
     rpc_ip = "192.168.211.129"
     rpc_port = 2080
 
     def __init__(self):
-        super(ManagerService, self).__init__()
         self.api = ManagerAPI()
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port
         })
+        super(ManagerService, self).__init__()
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level='DEBUG',
-        format='%(asctime)s :: %(levelname)s :: %(message)s')
+    CONF(sys.argv[1:], project='stor',
+         version=version.version_string())
+    logging.setup(CONF, "stor")
     ManagerService().run()

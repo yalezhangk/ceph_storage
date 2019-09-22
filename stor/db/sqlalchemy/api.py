@@ -742,7 +742,7 @@ def _get_get_method(model):
 
     # General conversion
     # Convert camel cased model name to snake format
-    s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', model.__name__)
+    s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', model)
     # Get method must be snake formatted model name concatenated with _get
     method_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower() + '_get'
     return globals().get(method_name)
