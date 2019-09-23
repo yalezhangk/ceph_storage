@@ -36,13 +36,13 @@ osd crush chooseleaf type = 1
 """
 
 
-class ManagerQueue(queue.Queue):
+class AdminQueue(queue.Queue):
     pass
 
 
-class ManagerAPI(object):
+class AdminAPI(object):
     def __init__(self):
-        self.worker_queue = ManagerQueue()
+        self.worker_queue = AdminQueue()
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
 
     def get_ceph_conf(self, ctxt, ceph_host):
@@ -72,24 +72,27 @@ class ManagerAPI(object):
         )
         return "Apply"
 
+    def cluster_import(self, ctxt):
+        pass
 
-class ManagerService(ServiceBase):
-    service_name = "manager"
+
+class AdminService(ServiceBase):
+    service_name = "admin"
     rpc_endpoint = None
     rpc_ip = "192.168.211.129"
     rpc_port = 2080
 
     def __init__(self):
-        self.api = ManagerAPI()
+        self.api = AdminAPI()
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port
         })
-        super(ManagerService, self).__init__()
+        super(AdminService, self).__init__()
 
 
 if __name__ == '__main__':
     CONF(sys.argv[1:], project='stor',
          version=version.version_string())
     logging.setup(CONF, "stor")
-    ManagerService().run()
+    AdminService().run()

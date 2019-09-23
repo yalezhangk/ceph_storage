@@ -7,7 +7,7 @@ from stor.service import BaseClientManager
 from stor.context import RequestContext
 
 
-class ManagerClient(BaseClient):
+class AdminClient(BaseClient):
 
     def get_ceph_conf(self, ctxt, ceph_host=None):
         response = self.call(ctxt, method="get_ceph_conf", ceph_host=ceph_host)
@@ -30,16 +30,16 @@ class ManagerClient(BaseClient):
         return response
 
 
-class ManagerClientManager(BaseClientManager):
+class AdminClientManager(BaseClientManager):
     cluster = "default"
-    service_name = "manager"
-    client_cls = ManagerClient
+    service_name = "admin"
+    client_cls = AdminClient
 
 
 if __name__ == '__main__':
     logging.basicConfig(level="DEBUG")
     objects.register_all()
-    client = ManagerClientManager(cluster_id='7be530ce').get_client("devel")
+    client = AdminClientManager(cluster_id='7be530ce').get_client("devel")
     ctxt = RequestContext(user_id="xxx", project_id="stor", is_admin=False)
     print(client.get_ceph_conf(ctxt))
     print(client.volume_get_all(ctxt))
