@@ -9,13 +9,14 @@ from stor import version
 from stor.common.config import CONF
 from stor.api.handlers import get_routers
 
+
 logger = logging.getLogger(__name__)
 
 
 def main():
     objects.register_all()
     routers = get_routers()
-    application = tornado.web.Application(routers)
+    application = tornado.web.Application(routers, debug=CONF.debug)
     logger.info("server run on xxxx")
     application.listen(8888)
     tornado.ioloop.IOLoop.current().start()

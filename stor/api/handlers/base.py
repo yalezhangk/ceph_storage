@@ -7,6 +7,7 @@ from tornado.web import RequestHandler
 
 from stor.context import RequestContext
 from stor import exception
+from stor.manager.client import ManagerClientManager
 
 
 class BaseAPIHandler(RequestHandler):
@@ -82,3 +83,10 @@ class RPCAPIHandler(BaseAPIHandler):
             raise exception.ClusterIDNotFound()
         return RequestContext(user_id="xxx", project_id="stor", is_admin=False,
                               cluster_id=cluster_id)
+
+    def get_manager_client(self, ctxt):
+        client = ManagerClientManager(
+            cluster_id=ctxt.cluster_id[0:8],
+            async_support=True
+        ).get_client()
+        return client

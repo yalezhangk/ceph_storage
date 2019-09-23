@@ -99,6 +99,11 @@ class ClusterIDNotFound(NotFound):
     message = _("Cluster ID could not be found.")
 
 
+class EndpointNotFound(NotFound):
+    code = 400
+    message = _("Endpoint for %(service_name):%(hostname) could not be found.")
+
+
 class ClusterExists(Duplicate):
     message = _("Cluster %(cluster_id)s already exists.")
 
