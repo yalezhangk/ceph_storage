@@ -106,6 +106,29 @@ def clusters_update(context, values_list):
     return IMPL.clusters_update(context, values_list)
 
 
+##################
+
+
+def rpc_service_create(context, values):
+    return IMPL.rpc_service_create(context, values)
+
+
+def rpc_service_destroy(context, rpc_service_id):
+    return IMPL.rpc_service_destroy(context, rpc_service_id)
+
+
+def rpc_service_get(context, rpc_service_id):
+    return IMPL.rpc_service_get(context, rpc_service_id)
+
+
+def rpc_service_get_all(context, *args, **kwargs):
+    return IMPL.rpc_service_get_all(context, *args, **kwargs)
+
+
+def rpc_service_update(context, rpc_service_id, values):
+    return IMPL.rpc_service_update(context, rpc_service_id, values)
+
+
 ###################
 
 

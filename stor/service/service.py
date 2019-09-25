@@ -19,7 +19,6 @@ from stor.service.serializer import RequestContextSerializer
 
 
 logger = logging.getLogger(__name__)
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 cluster_opts = [
     cfg.StrOpt('cluster_id',
@@ -30,9 +29,9 @@ cluster_opts = [
 CONF.register_opts(cluster_opts)
 
 
-class RPCService(stor_pb2_grpc.RPCServerServicer):
+class RPCHandler(stor_pb2_grpc.RPCServerServicer):
     def __init__(self, api, *args, **kwargs):
-        super(RPCService, self).__init__(*args, **kwargs)
+        super(RPCHandler, self).__init__(*args, **kwargs)
         self.api = api
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
@@ -80,7 +79,7 @@ class ServiceBase(object):
     rpc_ip = None
     rpc_port = None
     service = None
-    api = None
+    handler = None
 
     def __init__(self, hostname=None):
         objects.register_all()
@@ -93,7 +92,7 @@ class ServiceBase(object):
     def start_rpc(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         stor_pb2_grpc.add_RPCServerServicer_to_server(
-            RPCService(self.api), server)
+            RPCHandler(self.handler), server)
         server.add_insecure_port('{}:{}'.format(self.rpc_ip, self.rpc_port))
         server.start()
         self.server = server
@@ -137,11 +136,3 @@ class ServiceBase(object):
 
     def stop(self):
         self.stop_rpc()
-
-    def run(self):
-        self.start()
-        try:
-            while True:
-                time.sleep(_ONE_DAY_IN_SECONDS)
-        except KeyboardInterrupt:
-            self.stop()

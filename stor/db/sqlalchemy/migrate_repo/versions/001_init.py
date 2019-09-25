@@ -49,7 +49,22 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    return [clusters, volumes]
+    rpc_services = Table(
+        "rpc_services", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('service_name', String(36)),
+        Column('hostname', String(36)),
+        Column('cluster_id', String(36)),
+        Column('endpoint', String(255)),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    return [clusters, volumes, rpc_services]
 
 
 def upgrade(migrate_engine):

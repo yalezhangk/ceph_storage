@@ -410,8 +410,7 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
         query = _generate_paginate_query(
             context, session, models.Volume,
             marker, limit,
-            sort_keys, sort_dirs, filters, offset,
-            paginate_type="volume")
+            sort_keys, sort_dirs, filters, offset)
         # No volumes would match, return empty list
         if query is None:
             return []
@@ -419,8 +418,7 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
-                             sort_dirs, filters, offset=None,
-                             paginate_type=None):
+                             sort_dirs, filters, offset=None):
     """Generate the query to include the filters and the paginate options.
 
     Returns a query with sorting / pagination criteria added or None
@@ -428,6 +426,7 @@ def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
 
     :param context: context to query under
     :param session: the session to use
+    :param model: db model
     :param marker: the last item of the previous page; we returns the next
                     results after this value.
     :param limit: maximum number of items to return
@@ -440,12 +439,9 @@ def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
                     is used for other values, see _process_volume_filters
                     function for more information
     :param offset: number of items to skip
-    :param paginate_type: type of pagination to generate
     :returns: updated query or None
     """
-    if not paginate_type:
-        raise exception.ProgrammingError(reason="paginate_type not found")
-    get_query, process_filters, get = PAGINATION_HELPERS[paginate_type]
+    get_query, process_filters, get = PAGINATION_HELPERS[model]
 
     sort_keys, sort_dirs = process_sort_params(sort_keys,
                                                sort_dirs,
@@ -631,7 +627,7 @@ def cluster_get_all(context, marker=None, limit=None, sort_keys=None,
         query = _generate_paginate_query(
             context, session, models.Cluster, marker, limit,
             sort_keys, sort_dirs, filters,
-            offset, paginate_type="cluster")
+            offset)
         # No clusters would match, return empty list
         if query is None:
             return []
@@ -710,9 +706,116 @@ def cluster_create(context, values):
 ###############################
 
 
+def _rpc_service_get_query(context, session=None):
+    return model_query(context, models.RPCService, session=session)
+
+
+def _rpc_service_get(context, rpc_service_id, session=None):
+    result = _rpc_service_get_query(context, session)
+    result = result.filter_by(id=rpc_service_id).first()
+
+    if not result:
+        raise exception.RPCServiceNotFound(rpc_service_id=rpc_service_id)
+
+    return result
+
+
+@require_context
+def rpc_service_create(context, values):
+    rpc_service_ref = models.RPCService()
+    rpc_service_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(rpc_service_ref)
+
+    return _rpc_service_get(context, values['id'], session=session)
+
+
+def rpc_service_destroy(context, rpc_service_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.RPCService, session=session).\
+            filter_by(id=rpc_service_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def rpc_service_get(context, rpc_service_id):
+    return _rpc_service_get(context, rpc_service_id)
+
+
+@require_context
+def rpc_service_get_all(context, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.RPCService, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def rpc_service_update(context, rpc_service_id, values):
+    session = get_session()
+    with session.begin():
+        query = _rpc_service_get_query(context, session)
+        result = query.filter_by(id=rpc_service_id).update(values)
+        if not result:
+            raise exception.RPCServiceNotFound(rpc_service_id=rpc_service_id)
+
+
+###############################
+
+
+def is_valid_model_filters(model, filters, exclude_list=None):
+    """Return True if filter values exist on the model
+
+    :param model: a model
+    :param filters: dictionary of filters
+    """
+    for key in filters.keys():
+        if exclude_list and key in exclude_list:
+            continue
+        key = key.rstrip('~')
+        if not hasattr(model, key):
+            LOG.debug("'%s' filter key is not valid.", key)
+            return False
+    return True
+
+
+def process_filters(model):
+    def _process_filters(query, filters):
+        if filters:
+            # Ensure that filters' keys exist on the model
+            if not is_valid_model_filters(model, filters):
+                return
+
+            # Apply exact matches
+            if filters:
+                query = query.filter_by(**filters)
+        return query
+    return _process_filters
+
+
 PAGINATION_HELPERS = {
-    "volume": (_volume_get_query, _process_volume_filters, _volume_get),
-    "cluster": (_cluster_get_query, _process_cluster_filters, _cluster_get),
+    models.Volume: (_volume_get_query, _process_volume_filters, _volume_get),
+    models.Cluster: (_cluster_get_query, _process_cluster_filters,
+                     _cluster_get),
+    models.RPCService: (_rpc_service_get_query,
+                        process_filters(models.RPCService), _rpc_service_get),
+
 }
 
 

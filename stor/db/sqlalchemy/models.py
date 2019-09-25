@@ -45,6 +45,17 @@ class Cluster(BASE, StorBase):
     display_description = Column(String(255))
 
 
+class RPCService(BASE, StorBase):
+    """Represents a block storage device that can be attached to a vm."""
+    __tablename__ = 'rpc_services'
+
+    id = Column(Integer, primary_key=True)
+    service_name = Column(String(36))
+    hostname = Column(String(36))
+    cluster_id = Column(String(36))
+    endpoint = Column(String(255))
+
+
 class Datacenter(BASE, StorBase):
     __tablename__ = "datacenters"
 

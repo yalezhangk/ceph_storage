@@ -18,14 +18,14 @@ example = {
     "disks": [{
         "name": "vda",
         "size": 3 * 1024**3,
-    },{
+    }, {
         "name": "vdb",
         "size": 5 * 1024**3,
     }]
 }
 
 
-class Agent(agent_pb2_grpc.AgentServicer):
+class AgentHandler(agent_pb2_grpc.AgentServicer):
 
     def GetDiskInfo(self, request, context):
         logger.debug("get disk info")
@@ -63,8 +63,13 @@ class AgentService(ServiceBase):
             "port": self.rpc_port
         })
 
-    def rpc_register_service(self, server):
-        agent_pb2_grpc.add_AgentServicer_to_server(Agent(), server)
+
+def run_loop():
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        exit(0)
 
 
 if __name__ == '__main__':
@@ -75,6 +80,5 @@ if __name__ == '__main__':
     if len(sys.argv) < 3:
         print("%s hostname ip" % sys.argv[0])
         exit(0)
-    AgentService(hostname=sys.argv[1], ip=sys.argv[2]).run()
-
-
+    AgentService(hostname=sys.argv[1], ip=sys.argv[2]).start()
+    run_loop()

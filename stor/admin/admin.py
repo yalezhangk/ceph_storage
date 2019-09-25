@@ -2,6 +2,7 @@ from concurrent import futures
 import json
 import queue
 import sys
+import time
 
 from oslo_log import log as logging
 
@@ -40,7 +41,7 @@ class AdminQueue(queue.Queue):
     pass
 
 
-class AdminAPI(object):
+class AdminHandler(object):
     def __init__(self):
         self.worker_queue = AdminQueue()
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
@@ -73,6 +74,11 @@ class AdminAPI(object):
         return "Apply"
 
     def cluster_import(self, ctxt):
+        """Cluster import"""
+        pass
+
+    def cluster_new(self, ctxt):
+        """Deploy a new cluster"""
         pass
 
 
@@ -83,7 +89,7 @@ class AdminService(ServiceBase):
     rpc_port = 2080
 
     def __init__(self):
-        self.api = AdminAPI()
+        self.api = AdminHandler()
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port
@@ -91,8 +97,17 @@ class AdminService(ServiceBase):
         super(AdminService, self).__init__()
 
 
+def run_loop():
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        exit(0)
+
+
 if __name__ == '__main__':
     CONF(sys.argv[1:], project='stor',
          version=version.version_string())
     logging.setup(CONF, "stor")
-    AdminService().run()
+    AdminService().start()
+    run_loop()

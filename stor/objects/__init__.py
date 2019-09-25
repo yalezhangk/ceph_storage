@@ -8,3 +8,4 @@ def register_all():
     # need to receive it via RPC.
     __import__('stor.objects.volume')
     __import__('stor.objects.cluster')
+    __import__('stor.objects.rpc_service')
