@@ -86,6 +86,7 @@ class RPCAPIHandler(BaseAPIHandler):
 
     def get_manager_client(self, ctxt):
         client = AdminClientManager(
+            ctxt,
             cluster_id=ctxt.cluster_id[0:8],
             async_support=True
         ).get_client()

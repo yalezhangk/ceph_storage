@@ -309,7 +309,7 @@ def apply_like_filters(model):
     return decorator_filters
 
 
-def _process_volume_filters(ctxt, query, filters):
+def _process_volume_filters(query, filters):
     filters = filters.copy()
     for key in filters.keys():
         try:
@@ -449,7 +449,7 @@ def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
     query = get_query(context, session=session)
 
     if filters:
-        query = process_filters(context, query, filters)
+        query = process_filters(query, filters)
         if query is None:
             return None
 
@@ -586,7 +586,7 @@ def volumes_update(context, values_list):
 ###############################
 
 @apply_like_filters(model=models.Cluster)
-def _process_cluster_filters(context, query, filters):
+def _process_cluster_filters(query, filters):
     if filters:
         filters_dict = {}
         for key, value in filters.items():

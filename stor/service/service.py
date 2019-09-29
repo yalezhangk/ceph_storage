@@ -30,9 +30,9 @@ CONF.register_opts(cluster_opts)
 
 
 class RPCHandler(stor_pb2_grpc.RPCServerServicer):
-    def __init__(self, api, *args, **kwargs):
+    def __init__(self, handler, *args, **kwargs):
         super(RPCHandler, self).__init__(*args, **kwargs)
-        self.api = api
+        self.handler = handler
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
 
@@ -48,9 +48,9 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
         ctxt = self.serializer.deserialize_context(json.loads(request.context))
         kwargs = self.serializer.deserialize_entity(
             ctxt, json.loads(request.kwargs))
-        if not hasattr(self.api, method):
+        if not hasattr(self.handler, method):
             raise exception.NoSuchMethod(method=method)
-        func = getattr(self.api, method)
+        func = getattr(self.handler, method)
         try:
             ret = func(ctxt, **kwargs)
             logger.debug("%s ret: %s" % (

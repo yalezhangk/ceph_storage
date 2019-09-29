@@ -89,7 +89,7 @@ class AdminService(ServiceBase):
     rpc_port = 2080
 
     def __init__(self):
-        self.api = AdminHandler()
+        self.handler = AdminHandler()
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port

@@ -55,7 +55,7 @@ class StorException(Exception):
         # kwargs doesn't match a variable in the message
         # log the issue and the kwargs
         logger.exception('Exception in string format operation:')
-        logger.error(self.__name__)
+        logger.error(self.__class__.__name__)
         for name, value in self.kwargs.items():
             logger.error("%(name)s: %(value)s",
                          {'name': name, 'value': value})
@@ -105,7 +105,8 @@ class ClusterIDNotFound(NotFound):
 
 class EndpointNotFound(NotFound):
     code = 400
-    message = _("Endpoint for %(service_name):%(hostname) could not be found.")
+    message = _("Endpoint for %(service_name)s:%(hostname)s "
+                "could not be found.")
 
 
 class ClusterExists(Duplicate):

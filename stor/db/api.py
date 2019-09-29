@@ -121,8 +121,11 @@ def rpc_service_get(context, rpc_service_id):
     return IMPL.rpc_service_get(context, rpc_service_id)
 
 
-def rpc_service_get_all(context, *args, **kwargs):
-    return IMPL.rpc_service_get_all(context, *args, **kwargs)
+def rpc_service_get_all(context, filters, marker, limit,
+                        offset, sort_keys, sort_dirs):
+    return IMPL.rpc_service_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
 
 
 def rpc_service_update(context, rpc_service_id, values):

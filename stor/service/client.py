@@ -7,6 +7,7 @@ import etcd3
 from tornado.ioloop import IOLoop
 from tornado.gen import Future
 
+from stor import objects
 from stor.service import stor_pb2
 from stor.service import stor_pb2_grpc
 from stor.objects import base as objects_base
@@ -30,17 +31,20 @@ class BaseClientManager:
     endpoints = None
     client_cls = None
 
-    def __init__(self, cluster_id=None, async_support=False):
+    def __init__(self, context, cluster_id=None, async_support=False):
+        self.context = context
         self.async_support = async_support
         if cluster_id:
             self.cluster_id = cluster_id
         logger.debug("etcd server(%s) cluster_id(%s) service_name(%s)" % (
             "127.0.0.1", self.cluster_id, self.service_name
         ))
+
+    def _get_endpoints_etcd(self):
         etcd = etcd3.client(host='127.0.0.1', port=2379)
         values = etcd.get_prefix(
             '/t2stor/service/{}/{}'.format(self.cluster_id, self.service_name))
-        self.endpoints = {}
+        endpoints = {}
         if not values:
             raise Exception("Service {} not found".format(self.service_name))
         for value, meta in values:
@@ -48,16 +52,33 @@ class BaseClientManager:
             hostname = meta.key.split(b"/")[-1].decode("utf-8")
             logger.info("Service {} found in host {}".format(
                 self.service_name, hostname))
-            self.endpoints[hostname] = endpoint
+            endpoints[hostname] = endpoint
+        return endpoints
+
+    def _get_endpoints_db(self):
+        services = objects.RPCServiceList.get_all(
+            self.context,
+            filters={
+                "cluster_id": self.cluster_id,
+                "service_name": self.service_name
+            }
+        )
+        if not services:
+            return {}
+        endpoints = {v.hostname: json.loads(v.endpoint) for v in services}
+        return endpoints
 
     def get_endpoints(self):
+        if not self.endpoints:
+            self.endpoints = self._get_endpoints_db()
         return self.endpoints
 
     def get_endpoint(self, hostname=None):
+        endpoints = self.get_endpoints()
         if not hostname:
-            for hostname, endpoint in self.endpoints.items():
+            for hostname, endpoint in endpoints.items():
                 return endpoint
-        if hostname not in self.endpoints:
+        if hostname not in endpoints:
             raise exception.EndpointNotFound(
                 service_name=self.service_name, hostname=hostname)
         return self.endpoints[hostname]
