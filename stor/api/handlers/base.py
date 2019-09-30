@@ -84,7 +84,7 @@ class RPCAPIHandler(BaseAPIHandler):
         return RequestContext(user_id="xxx", project_id="stor", is_admin=False,
                               cluster_id=cluster_id)
 
-    def get_manager_client(self, ctxt):
+    def get_admin_client(self, ctxt):
         client = AdminClientManager(
             ctxt,
             cluster_id=ctxt.cluster_id[0:8],
