@@ -1,14 +1,13 @@
-from concurrent import futures
 import sys
 import time
-import logging
 import json
 
-import grpc
+from oslo_log import log as logging
 
-from . import agent_pb2
-from . import agent_pb2_grpc
-from ..service import ServiceBase
+from stor.service import ServiceBase
+from stor import version
+from stor.common.config import CONF
+
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)
@@ -25,43 +24,43 @@ example = {
 }
 
 
-class AgentHandler(agent_pb2_grpc.AgentServicer):
+class AgentHandler(object):
 
-    def GetDiskInfo(self, request, context):
-        logger.debug("get disk info")
-        return agent_pb2.Response(value=json.dumps(example))
+    def disk_get_all(self, context):
+        logger.debug("disk get all")
+        return []
 
-    def WriteCephConf(self, request, context):
+    def ceph_conf_write(self, context, conf):
         logger.debug("Write Ceph Conf")
-        return agent_pb2.Response(value="Success")
+        return True
 
-    def InstallPackage(self, request, context):
+    def package_install(self, context, packages):
         logger.debug("Install Package")
-        return agent_pb2.Response(value="Success")
+        return True
 
-    def StartService(self, request, context):
+    def service_start(self, context, service_info):
         logger.debug("Install Package")
         time.sleep(1)
         logger.debug("Start Service")
         time.sleep(1)
-        return agent_pb2.Response(value="Success")
+        return True
 
 
 class AgentService(ServiceBase):
     service_name = "agent"
     rpc_endpoint = None
-    rpc_ip = "172.159.4.11"
-    rpc_port = 50052
+    rpc_ip = "192.168.211.129"
+    rpc_port = 2082
 
     def __init__(self, hostname=None, ip=None):
-        super(AgentService, self).__init__()
-        self.hostname = hostname
+        self.handler = AgentHandler()
         if ip:
             self.rpc_ip = ip
         self.rpc_endpoint = json.dumps({
             "ip": self.rpc_ip,
             "port": self.rpc_port
         })
+        super(AgentService, self).__init__(hostname=hostname)
 
 
 def run_loop():
@@ -73,12 +72,8 @@ def run_loop():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level="DEBUG",
-        format='%(asctime)s :: %(levelname)s :: %(message)s'
-    )
-    if len(sys.argv) < 3:
-        print("%s hostname ip" % sys.argv[0])
-        exit(0)
-    AgentService(hostname=sys.argv[1], ip=sys.argv[2]).start()
+    CONF(sys.argv[1:], project='stor',
+         version=version.version_string())
+    logging.setup(CONF, "stor")
+    AgentService().start()
     run_loop()

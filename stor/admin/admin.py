@@ -60,19 +60,6 @@ class AdminHandler(object):
     def volume_get(self, ctxt, volume_id):
         return objects.Volume.get_by_id(ctxt, volume_id)
 
-    def _append_ceph_monitor(self, ceph_monitor_host=None):
-        agent = AgentClientManager()
-        agent.get_client("whx-ceph-1").start_service()
-        agent.get_client("whx-ceph-1").write_ceph_conf()
-
-    def append_ceph_monitor(self, request, context):
-        logger.debug("try append ceph monitor")
-        self.executor.submit(
-            self._append_ceph_monitor,
-            ceph_monitor_host="whx-ceph-1"
-        )
-        return "Apply"
-
     def cluster_import(self, ctxt):
         """Cluster import"""
         pass

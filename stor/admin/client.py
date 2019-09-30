@@ -1,10 +1,14 @@
 from __future__ import print_function
-import logging
+import sys
+
+from oslo_log import log as logging
 
 from stor import objects
+from stor.common.config import CONF
 from stor.service import BaseClient
 from stor.service import BaseClientManager
 from stor.context import RequestContext
+from stor import version
 
 
 class AdminClient(BaseClient):
@@ -12,10 +16,6 @@ class AdminClient(BaseClient):
     def get_ceph_conf(self, ctxt, ceph_host=None):
         response = self.call(ctxt, method="get_ceph_conf", ceph_host=ceph_host)
         return response
-
-    def AppendCephMonitor(self, location=None):
-        response = self._stub.AppendCephMonitor()
-        return response.value
 
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
@@ -37,10 +37,13 @@ class AdminClientManager(BaseClientManager):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level="DEBUG")
+    CONF(sys.argv[1:], project='stor',
+         version=version.version_string())
+    logging.setup(CONF, "stor")
     objects.register_all()
-    client = AdminClientManager(cluster_id='7be530ce').get_client("devel")
     ctxt = RequestContext(user_id="xxx", project_id="stor", is_admin=False)
+    client = AdminClientManager(
+        ctxt, cluster_id='7be530ce').get_client("devel")
     print(client.get_ceph_conf(ctxt))
     print(client.volume_get_all(ctxt))
-    print(client.volume_get(ctxt, "0601c6dc-39eb-4b9f-af19-0c50268d39e9"))
+    print(client.volume_get(ctxt, "a0a1ae78-d923-44aa-841e-75c4fb4fed88"))
