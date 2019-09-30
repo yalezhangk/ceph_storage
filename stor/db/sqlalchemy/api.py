@@ -779,6 +779,79 @@ def rpc_service_update(context, rpc_service_id, values):
 ###############################
 
 
+def _node_get_query(context, session=None):
+    return model_query(context, models.Node, session=session)
+
+
+def _node_get(context, node_id, session=None):
+    result = _node_get_query(context, session)
+    result = result.filter_by(id=node_id).first()
+
+    if not result:
+        raise exception.NodeNotFound(node_id=node_id)
+
+    return result
+
+
+@require_context
+def node_create(context, values):
+    node_ref = models.Node()
+    node_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(node_ref)
+
+    return _node_get(context, values['id'], session=session)
+
+
+def node_destroy(context, node_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Node, session=session).\
+            filter_by(id=node_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def node_get(context, node_id):
+    return _node_get(context, node_id)
+
+
+@require_context
+def node_get_all(context, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Node, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def node_update(context, node_id, values):
+    session = get_session()
+    with session.begin():
+        query = _node_get_query(context, session)
+        result = query.filter_by(id=node_id).update(values)
+        if not result:
+            raise exception.NodeNotFound(node_id=node_id)
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 

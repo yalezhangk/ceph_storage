@@ -26,4 +26,10 @@ DB Sync:
 
 Tests
 =====
-  python3 -m unittest stor.tests.unit
+Simple test file
+  
+  python3 -m unittest stor.tests.unit.objects.test_node
+
+All tests
+ 
+  python3 -m stestr --test-path stor.tests.unit run

@@ -2,6 +2,7 @@ import datetime
 
 from oslo_config import cfg
 from sqlalchemy import Boolean, Column, DateTime, Index, Integer
+from sqlalchemy import ForeignKey, BigInteger
 from sqlalchemy import MetaData, String, Table
 
 
@@ -64,7 +65,62 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    return [clusters, volumes, rpc_services]
+    node = Table(
+        "nodes", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('hostname', String(255)),
+        Column('ip_address', String(32)),
+        Column('gateway_ip_address', String(32)),
+        Column('storage_cluster_ip_address', String(32)),
+        Column('storage_public_ip_address', String(32)),
+        Column('password', String(32)),
+        Column('status', String(255)),
+        Column('role_base', Boolean),
+        Column('role_admin', Boolean),
+        Column('role_monitor', Boolean),
+        Column('role_storage', Boolean),
+        Column('role_block_gateway', Boolean),
+        Column('role_object_gateway', Boolean),
+        Column('vendor', String(255)),
+        Column('model', String(255)),
+        Column('cpu_num', String(255)),
+        Column('cpu_model', String(255)),
+        Column('cpu_core_num', String(255)),
+        Column('mem_num', BigInteger),
+        Column('sys_type', String(255)),
+        Column('sys_version', String(255)),
+        Column('rack_id', Integer, ForeignKey('racks.id')),
+        Column('time_diff', BigInteger),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    datacenter = Table(
+        "datacenters", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('name', String(255)),
+    )
+
+    rack = Table(
+        "racks", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('name', String(255)),
+        Column('datacenter_id', Integer, ForeignKey('datacenters.id')),
+    )
+
+    return [clusters, volumes, rpc_services, node, datacenter, rack]
 
 
 def upgrade(migrate_engine):

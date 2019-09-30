@@ -76,7 +76,6 @@ class Node(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     hostname = Column(String(255))
-    last_sync = Column(DateTime)
     ip_address = Column(String(32))
     gateway_ip_address = Column(String(32))
     storage_cluster_ip_address = Column(String(32))

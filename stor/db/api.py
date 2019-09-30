@@ -135,6 +135,32 @@ def rpc_service_update(context, rpc_service_id, values):
 ###################
 
 
+def node_create(context, values):
+    return IMPL.node_create(context, values)
+
+
+def node_destroy(context, node_id):
+    return IMPL.node_destroy(context, node_id)
+
+
+def node_get(context, node_id):
+    return IMPL.node_get(context, node_id)
+
+
+def node_get_all(context, filters, marker, limit,
+                 offset, sort_keys, sort_dirs):
+    return IMPL.node_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def node_update(context, node_id, values):
+    return IMPL.node_update(context, node_id, values)
+
+
+###################
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

@@ -98,6 +98,10 @@ class RPCServiceNotFound(NotFound):
     message = _("RPCService %(rpc_service_id)s could not be found.")
 
 
+class NodeNotFound(NotFound):
+    message = _("Node %(node_id)s could not be found.")
+
+
 class ClusterIDNotFound(NotFound):
     code = 400
     message = _("Cluster ID could not be found.")

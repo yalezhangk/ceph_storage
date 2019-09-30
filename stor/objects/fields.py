@@ -48,3 +48,16 @@ class VolumeStatus(BaseStorEnum):
 
 class VolumeStatusField(BaseEnumField):
     AUTO_TYPE = VolumeStatus()
+
+
+class NodeStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVATE = 'activate'
+    DELETING = 'deleting'
+    ERROR = 'error'
+
+    ALL = (CREATING, ACTIVATE, DELETING, ERROR)
+
+
+class NodeStatusField(BaseEnumField):
+    AUTO_TYPE = NodeStatus()
