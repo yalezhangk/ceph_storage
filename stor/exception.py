@@ -119,3 +119,12 @@ class ClusterExists(Duplicate):
 
 class NoSuchMethod(NotFound):
     message = _("Method %(method)s not found.")
+
+
+class RunCommandError(NotFound):
+    message = _("Command: %(cmd)s ReturnCode: %(return_code)s "
+                "Stderr: %(stderr)s Stdout: %(stdout)s.")
+
+
+class RunCommandArgsError(NotFound):
+    message = _("Argument 'args' to run_command must be list or string")
