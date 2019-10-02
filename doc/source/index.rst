@@ -10,6 +10,8 @@ Welcome to Stor's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   mariadb.rst
+
    
 
 
