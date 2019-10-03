@@ -6,6 +6,8 @@ from oslo_log import log as logging
 
 from stor.service import ServiceBase
 from stor import version
+from stor.agent.tools.base import Executor
+from stor.agent.tools.service import Service
 from stor.common.config import CONF
 
 
@@ -26,6 +28,13 @@ example = {
 
 class AgentHandler(object):
 
+    def _get_executor(self):
+        return Executor()
+
+    @property
+    def executor(self):
+        return self._get_executor()
+
     def disk_get_all(self, context):
         logger.debug("disk get all")
         return []
@@ -45,22 +54,19 @@ class AgentHandler(object):
         time.sleep(1)
         return True
 
+    def service_restart(self, context,  name):
+        logger.debug("Service restart: %s", name)
+        tool = Service(self.executor)
+        tool.restart(name)
+        return True
+
 
 class AgentService(ServiceBase):
     service_name = "agent"
-    rpc_endpoint = None
-    rpc_ip = "192.168.211.129"
-    rpc_port = 2082
 
-    def __init__(self, hostname=None, ip=None):
+    def __init__(self):
         self.handler = AgentHandler()
-        if ip:
-            self.rpc_ip = ip
-        self.rpc_endpoint = json.dumps({
-            "ip": self.rpc_ip,
-            "port": self.rpc_port
-        })
-        super(AgentService, self).__init__(hostname=hostname)
+        super(AgentService, self).__init__()
 
 
 def run_loop():
@@ -75,5 +81,7 @@ if __name__ == '__main__':
     CONF(sys.argv[1:], project='stor',
          version=version.version_string())
     logging.setup(CONF, "stor")
-    AgentService().start()
+    agent = AgentService()
+    agent.start()
     run_loop()
+    agent.stop()

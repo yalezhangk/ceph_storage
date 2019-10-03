@@ -65,6 +65,31 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
+    datacenter = Table(
+        "datacenters", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('name', String(255)),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    rack = Table(
+        "racks", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('name', String(255)),
+        Column('datacenter_id', Integer, ForeignKey('datacenters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
     node = Table(
         "nodes", meta,
         Column('created_at', DateTime),
@@ -99,28 +124,7 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    datacenter = Table(
-        "datacenters", meta,
-        Column('created_at', DateTime),
-        Column('updated_at', DateTime),
-        Column('deleted_at', DateTime),
-        Column('deleted', Boolean),
-        Column('id', Integer, primary_key=True, nullable=False),
-        Column('name', String(255)),
-    )
-
-    rack = Table(
-        "racks", meta,
-        Column('created_at', DateTime),
-        Column('updated_at', DateTime),
-        Column('deleted_at', DateTime),
-        Column('deleted', Boolean),
-        Column('id', Integer, primary_key=True, nullable=False),
-        Column('name', String(255)),
-        Column('datacenter_id', Integer, ForeignKey('datacenters.id')),
-    )
-
-    return [clusters, volumes, rpc_services, node, datacenter, rack]
+    return [clusters, volumes, rpc_services, datacenter, rack, node]
 
 
 def upgrade(migrate_engine):

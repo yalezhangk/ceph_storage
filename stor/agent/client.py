@@ -29,6 +29,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "package_install", packages=packages)
         return response
 
+    def service_restart(self, ctxt, name):
+        response = self.call(ctxt, "service_restart", name=name)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"
@@ -43,4 +47,5 @@ if __name__ == '__main__':
     ctxt = RequestContext(user_id="xxx", project_id="stor", is_admin=False)
     client = AgentClientManager(
         ctxt, cluster_id='7be530ce').get_client("devel")
-    print(client.disk_get_all(ctxt))
+    # print(client.disk_get_all(ctxt))
+    print(client.service_restart(ctxt, "chronyd"))

@@ -71,16 +71,9 @@ class AdminHandler(object):
 
 class AdminService(ServiceBase):
     service_name = "admin"
-    rpc_endpoint = None
-    rpc_ip = "192.168.211.129"
-    rpc_port = 2080
 
     def __init__(self):
         self.handler = AdminHandler()
-        self.rpc_endpoint = json.dumps({
-            "ip": self.rpc_ip,
-            "port": self.rpc_port
-        })
         super(AdminService, self).__init__()
 
 
@@ -96,5 +89,7 @@ if __name__ == '__main__':
     CONF(sys.argv[1:], project='stor',
          version=version.version_string())
     logging.setup(CONF, "stor")
-    AdminService().start()
+    admin = AdminService()
+    admin.start()
     run_loop()
+    admin.stop()

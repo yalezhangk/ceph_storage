@@ -86,6 +86,7 @@ class BaseClientManager:
     def get_stub(self, hostname=None):
         endpoint = self.get_endpoint(hostname)
         url = "{}:{}".format(endpoint['ip'], endpoint['port'])
+        logger.debug("Try connect: %s", url)
         channel = grpc.insecure_channel(url)
         stub = stor_pb2_grpc.RPCServerStub(channel)
         return stub

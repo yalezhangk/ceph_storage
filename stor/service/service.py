@@ -75,27 +75,31 @@ class ServiceBase(object):
     name = None
     cluster_id = None
     hostname = None
-    rpc_endpoint = None
-    rpc_ip = None
-    rpc_port = None
     service = None
     handler = None
 
-    def __init__(self, hostname=None):
+    def __init__(self, hostname=None, rpc_ip=None, rpc_port=None):
         objects.register_all()
-        if hostname:
-            self.hostname = hostname
-        if not self.hostname:
-            self.hostname = socket.gethostname()
+        self.hostname = hostname if hostname else CONF.hostname
         self.cluster_id = CONF.cluster_id
+        self.rpc_ip = rpc_ip if rpc_ip else CONF.my_ip
+        port_conf = "{}_port".format(self.service_name)
+        self.rpc_port = rpc_port if rpc_port else getattr(CONF, port_conf)
+        self.rpc_endpoint = json.dumps({
+            "ip": self.rpc_ip,
+            "port": self.rpc_port
+        })
+        logger.debug(self.rpc_endpoint)
 
     def start_rpc(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         stor_pb2_grpc.add_RPCServerServicer_to_server(
             RPCHandler(self.handler), server)
-        server.add_insecure_port('{}:{}'.format(self.rpc_ip, self.rpc_port))
+        port = '{}:{}'.format(self.rpc_ip, self.rpc_port)
+        server.add_insecure_port(port)
         server.start()
         self.server = server
+        logger.debug("RPC server started on %s", port)
 
     def stop_rpc(self):
         self.server.stop(0)
@@ -132,7 +136,7 @@ class ServiceBase(object):
 
     def start(self):
         self.start_rpc()
-        self.start_heartbeat()
+        # self.start_heartbeat()
 
     def stop(self):
         self.stop_rpc()
