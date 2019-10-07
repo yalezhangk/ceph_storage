@@ -63,5 +63,7 @@ def service():
     application = tornado.web.Application(routers, debug=CONF.debug)
     application.listen(CONF.api_port)
     ioloop = tornado.ioloop.IOLoop.current()
-    WebSocketService(ioloop).start()
+    websocket = WebSocketService(ioloop)
+    websocket.start()
     tornado.ioloop.IOLoop.current().start()
+    websocket.stop()
