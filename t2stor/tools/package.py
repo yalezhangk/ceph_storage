@@ -3,7 +3,7 @@
 import six
 import logging
 
-from t2stor.agent.tools.base import ToolBase
+from t2stor.tools.base import ToolBase
 from t2stor.exception import RunCommandError
 
 logger = logging.getLogger(__name__)
