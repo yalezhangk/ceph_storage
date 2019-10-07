@@ -47,13 +47,13 @@ class Executor(object):
     def __del__(self):
         self.close()
 
-    def run_command(self, args):
+    def run_command(self, args, timeout=None):
         logger.debug("Run Command: {}".format(args))
         if not isinstance(args, (list, six.binary_type, six.text_type)):
             raise RunCommandArgsError()
 
         if self.ssh:
-            return self.run_remote_command(args)
+            return self.run_remote_command(args, timeout=timeout)
         else:
             return self.run_local_command(args)
 
@@ -66,9 +66,10 @@ class Executor(object):
         rc = cmd.returncode
         return (rc, stdout, stderr)
 
-    def run_remote_command(self, args):
-        cmd = ' '.join(args)
-        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+    def run_remote_command(self, args, timeout=None):
+        if isinstance(args, list):
+            args = ' '.join(args)
+        stdin, stdout, stderr = self.ssh.exec_command(args, timeout=timeout)
         rc = stdout.channel.recv_exit_status()
         # TODO: Need a better way.
         stdout, stderr = stdout.read(), stderr.read()
@@ -79,8 +80,8 @@ class ToolBase(object):
     def __init__(self, executor):
         self.executor = executor
 
-    def run_command(self, args):
-        return self.executor.run_command(args)
+    def run_command(self, args, **kwargs):
+        return self.executor.run_command(args, **kwargs)
 
 
 def test():
