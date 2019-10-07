@@ -6,15 +6,15 @@ Services:
 
 1. api: Provide API interface for UI.
 
-  python3 -m t2stor.cmd.api --config-file build/api.ini
+  python3 -m t2stor.cmd.api --config-file build/api.conf
 
 2. admin: Deploy and admin ceph clusters.
 
-  python3 -m t2stor.cmd.admin --config-file build/admin.ini
+  python3 -m t2stor.cmd.admin --config-file build/admin.conf
 
 3. agent: Manage node.
 
-  python3 -m t2stor.cmd.agent --config-file build/agent.ini
+  python3 -m t2stor.cmd.agent --config-file build/agent.conf
 
 
 Tools
@@ -22,7 +22,7 @@ Tools
 
 DB Sync:
 
-  python3 -m t2stor.cmd.manage --config-file build/api.ini db sync
+  python3 -m t2stor.cmd.manage --config-file build/api.conf db sync
 
 Tests
 =====
