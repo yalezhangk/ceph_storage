@@ -52,7 +52,7 @@ class RPCService(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     service_name = Column(String(36))
     hostname = Column(String(36))
-    cluster_id = Column(String(36))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
     endpoint = Column(String(255))
 
 
@@ -61,6 +61,7 @@ class Datacenter(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
+    cluster_id = Column(String(36))
 
 
 class Rack(BASE, StorBase):
@@ -69,6 +70,7 @@ class Rack(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     datacenter_id = Column(String(36), ForeignKey('datacenters.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Node(BASE, StorBase):
@@ -98,6 +100,7 @@ class Node(BASE, StorBase):
     sys_version = Column(String(255))
     rack_id = Column(String(36), ForeignKey('racks.id'))
     time_diff = Column(BigInteger)
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Disk(BASE, StorBase):
@@ -121,6 +124,7 @@ class Disk(BASE, StorBase):
     role = Column(String(32), default='data', index=True)
     partition_num = Column(Integer)
     node_id = Column(String(36), ForeignKey('nodes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class DiskPartition(BASE, StorBase):
@@ -136,6 +140,7 @@ class DiskPartition(BASE, StorBase):
     role = Column(String(32), default='cache', index=True)
     node_id = Column(String(36), ForeignKey('nodes.id'))
     disk_id = Column(String(36), ForeignKey('disks.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Network(BASE, StorBase):
@@ -150,6 +155,7 @@ class Network(BASE, StorBase):
     type = Column(String(32))
     speed = Column(Integer)
     node_id = Column(String(36), ForeignKey('nodes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Service(BASE, StorBase):
@@ -159,6 +165,7 @@ class Service(BASE, StorBase):
     name = Column(String(32), index=True)
     node_id = Column(String(36), ForeignKey('nodes.id'))
     status = Column(String(32))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Osd(BASE, StorBase):
@@ -181,6 +188,7 @@ class Osd(BASE, StorBase):
     cache_partition_id = Column(String(36), ForeignKey('disk_partitions.id'))
     db_partition_id = Column(String(36), ForeignKey('disk_partitions.id'))
     pool_id = Column(String(36), ForeignKey('pools.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Pool(BASE, StorBase):
@@ -204,6 +212,7 @@ class Pool(BASE, StorBase):
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     threshold = Column(Float)
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class Volume(BASE, StorBase):
@@ -214,6 +223,7 @@ class Volume(BASE, StorBase):
     status = Column(String(255))  # TODO(vish): enum?
     display_name = Column(String(255))
     display_description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class VolumeSnapshot(BASE, StorBase):
@@ -227,6 +237,8 @@ class VolumeSnapshot(BASE, StorBase):
     size = Column(BigInteger)
     used = Column(BigInteger)
     volume_id = Column(String(36), ForeignKey('volumes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
 
 class SysConfig(BASE, StorBase):
     __tablename__ = "sys_configs"
@@ -237,3 +249,4 @@ class SysConfig(BASE, StorBase):
     value = Column(String(255))
     value_type = Column(String(36))
     display_description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))

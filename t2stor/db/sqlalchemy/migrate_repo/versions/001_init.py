@@ -46,6 +46,7 @@ def define_tables(meta):
         Column('status', String(255)),
         Column('display_name', String(255)),
         Column('display_description', String(255)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -59,7 +60,7 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True, nullable=False),
         Column('service_name', String(36)),
         Column('hostname', String(36)),
-        Column('cluster_id', String(36)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
         Column('endpoint', String(255)),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
@@ -73,6 +74,7 @@ def define_tables(meta):
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(255)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -86,6 +88,7 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(255)),
         Column('datacenter_id', Integer, ForeignKey('datacenters.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -120,6 +123,7 @@ def define_tables(meta):
         Column('sys_version', String(255)),
         Column('rack_id', Integer, ForeignKey('racks.id')),
         Column('time_diff', BigInteger),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
