@@ -56,6 +56,6 @@ if __name__ == '__main__':
     client = AdminClientManager(
         ctxt, cluster_id='7be530ce').get_client("devel")
     re = client.cluster_install_agent(
-        ctxt, ip_address="127.0.0.1", password='a'
+        ctxt, ip_address="192.168.211.128", password='aaaaaa'
     )
     print(re)

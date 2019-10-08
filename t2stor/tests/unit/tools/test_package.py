@@ -19,7 +19,7 @@ class TestServiceTool(test.TestCase):
         tool = YumPackage(Executor())
         tool.install(package_name)
         run_command.assert_called_once_with(
-            ['yum', 'install', package_name]
+            ['yum', 'install', '-y', package_name]
         )
 
     @mock.patch.object(Executor, 'run_command')
@@ -28,7 +28,7 @@ class TestServiceTool(test.TestCase):
         package_names = ['a', 'b']
         tool = YumPackage(Executor())
         tool.install(package_names)
-        cmd = ['yum', 'install']
+        cmd = ['yum', 'install', '-y']
         cmd.extend(package_names)
         run_command.assert_called_once_with(cmd)
 
@@ -39,7 +39,7 @@ class TestServiceTool(test.TestCase):
         enable_repos = ['r1', 'r2']
         tool = YumPackage(Executor())
         tool.install(package_names, enable_repos=enable_repos)
-        cmd = ['yum', 'install']
+        cmd = ['yum', 'install', '-y']
         cmd.extend([
             '--disablerepo=*',
             '--enablerepo={}'.format(','.join(enable_repos))
@@ -54,5 +54,5 @@ class TestServiceTool(test.TestCase):
         tool = YumPackage(Executor())
         tool.uninstall(package_name)
         run_command.assert_called_once_with(
-            ['yum', 'uninstall', package_name]
+            ['yum', 'remove', '-y', package_name]
         )

@@ -20,7 +20,7 @@ class PackageBase(ToolBase):
 class YumPackage(PackageBase):
     def install(self, names, **kwargs):
         logger.debug("Install Package: {}".format(names))
-        cmd = ["yum", "install"]
+        cmd = ["yum", "install", "-y"]
         enable_repos = kwargs.pop("enable_repos", None)
         if enable_repos:
             if isinstance(enable_repos, six.string_types):
@@ -38,7 +38,7 @@ class YumPackage(PackageBase):
 
     def uninstall(self, names):
         logger.debug("Uninstall Package: {}".format(names))
-        cmd = ["yum", "uninstall"]
+        cmd = ["yum", "remove", '-y']
         if isinstance(names, six.string_types):
             names = [names]
         cmd.extend(names)
