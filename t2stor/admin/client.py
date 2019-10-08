@@ -35,6 +35,11 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "volume_get", volume_id=volume_id)
         return response
 
+    def cluster_install_agent(self, ctxt, ip_address, password=None):
+        response = self.call(ctxt, "cluster_install_agent",
+                             ip_address=ip_address, password=password)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
@@ -50,6 +55,7 @@ if __name__ == '__main__':
     ctxt = RequestContext(user_id="xxx", project_id="stor", is_admin=False)
     client = AdminClientManager(
         ctxt, cluster_id='7be530ce').get_client("devel")
-    print(client.get_ceph_conf(ctxt))
-    print(client.volume_get_all(ctxt))
-    print(client.volume_get(ctxt, "a0a1ae78-d923-44aa-841e-75c4fb4fed88"))
+    re = client.cluster_install_agent(
+        ctxt, ip_address="127.0.0.1", password='a'
+    )
+    print(re)

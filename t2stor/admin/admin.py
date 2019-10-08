@@ -15,7 +15,7 @@ from t2stor.tools.base import Executor
 from t2stor.tools.ceph import Ceph as CephTool
 from t2stor.tools.package import Package as PackageTool
 from t2stor.tools.service import Service as ServiceTool
-from t2stor.tools.service import Docker as DockerTool
+from t2stor.tools.docker import Docker as DockerTool
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -88,7 +88,7 @@ class AdminHandler(object):
                              'mgr_hosts': mgr_hosts})
         return cluster_info
 
-    def cluster_install_agent(self, ip_address, password):
+    def cluster_install_agent(self, ctxt, ip_address, password):
         logger.debug("Install agent on {}".format(ip_address))
         ssh_client = Executor()
         ssh_client.connect(hostname=ip_address, password=password)
@@ -97,12 +97,14 @@ class AdminHandler(object):
         service_tool = ServiceTool(ssh_client)
         service_tool.start('docker')
         docker_tool = DockerTool(ssh_client)
-        docker_tool.load("/opt/t2stor/repo/files/t2stor.tar")
-        docker_tool.start(
+        docker_tool.image_load("/opt/t2stor/repo/files/t2stor.tar")
+        docker_tool.run(
             image="t2stor/t2stor:v2.3",
+            command="agent",
             name="t2stor_portal",
-            volume=[("/etc/t2stor", "/etc/t2stor")]
+            volumes=[("/etc/t2stor", "/etc/t2stor")]
         )
+        return True
 
 
 class AdminService(ServiceBase):

@@ -9,7 +9,7 @@ from t2stor.exception import RunCommandError
 logger = logging.getLogger(__name__)
 
 
-class Package(ToolBase):
+class PackageBase(ToolBase):
     def install(self, names, **kwargs):
         raise NotImplementedError("Method Not ImplementedError")
 
@@ -17,7 +17,7 @@ class Package(ToolBase):
         raise NotImplementedError("Method Not ImplementedError")
 
 
-class YumPackage(Package):
+class YumPackage(PackageBase):
     def install(self, names, **kwargs):
         logger.debug("Install Package: {}".format(names))
         cmd = ["yum", "install"]
@@ -47,3 +47,16 @@ class YumPackage(Package):
             return True
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
+
+
+class Package(ToolBase):
+    def __init__(self, executor, *args, **kwargs):
+        super(Package, self).__init__(executor, *args, **kwargs)
+        # TODO: select yum or apt
+        self.tool = YumPackage(executor)
+
+    def install(self, names, **kwargs):
+        self.tool.install(names=names, **kwargs)
+
+    def uninstall(self, names, **kwargs):
+        self.tool.uninstall(names=names, **kwargs)
