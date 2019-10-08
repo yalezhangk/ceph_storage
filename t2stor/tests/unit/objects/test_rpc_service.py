@@ -43,7 +43,7 @@ class TestRPCService(test_objects.BaseObjectsTestCase):
         rpc_service.create()
         self.assertEqual(fake_rpc_service['id'], rpc_service.id)
         self.assertEqual(fake_rpc_service['hostname'],
-                         fake_rpc_service['hostname'])
+                         rpc_service.hostname)
 
     @mock.patch('t2stor.db.rpc_service_update')
     def test_save(self, rpc_service_update):

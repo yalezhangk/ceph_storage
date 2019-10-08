@@ -161,6 +161,32 @@ def node_update(context, node_id, values):
 ###################
 
 
+def datacenter_create(context, values):
+    return IMPL.datacenter_create(context, values)
+
+
+def datacenter_destroy(context, datacenter_id):
+    return IMPL.datacenter_destroy(context, datacenter_id)
+
+
+def datacenter_get(context, datacenter_id):
+    return IMPL.datacenter_get(context, datacenter_id)
+
+
+def datacenter_get_all(context, filters, marker, limit,
+                       offset, sort_keys, sort_dirs):
+    return IMPL.datacenter_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def datacenter_update(context, datacenter_id, values):
+    return IMPL.datacenter_update(context, datacenter_id, values)
+
+
+###################
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

@@ -825,7 +825,7 @@ def node_get(context, node_id):
 
 @require_context
 def node_get_all(context, marker=None, limit=None, sort_keys=None,
-                        sort_dirs=None, filters=None, offset=None):
+                 sort_dirs=None, filters=None, offset=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -847,6 +847,79 @@ def node_update(context, node_id, values):
         result = query.filter_by(id=node_id).update(values)
         if not result:
             raise exception.NodeNotFound(node_id=node_id)
+
+
+###############################
+
+
+def _datacenter_get_query(context, session=None):
+    return model_query(context, models.Datacenter, session=session)
+
+
+def _datacenter_get(context, datacenter_id, session=None):
+    result = _datacenter_get_query(context, session)
+    result = result.filter_by(id=datacenter_id).first()
+
+    if not result:
+        raise exception.DatacenterNotFound(datacenter_id=datacenter_id)
+
+    return result
+
+
+@require_context
+def datacenter_create(context, values):
+    datacenter_ref = models.Datacenter()
+    datacenter_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(datacenter_ref)
+
+    return _datacenter_get(context, values['id'], session=session)
+
+
+def datacenter_destroy(context, datacenter_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Datacenter, session=session).\
+            filter_by(id=datacenter_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def datacenter_get(context, datacenter_id):
+    return _datacenter_get(context, datacenter_id)
+
+
+@require_context
+def datacenter_get_all(context, marker=None, limit=None, sort_keys=None,
+                       sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Datacenter, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def datacenter_update(context, datacenter_id, values):
+    session = get_session()
+    with session.begin():
+        query = _datacenter_get_query(context, session)
+        result = query.filter_by(id=datacenter_id).update(values)
+        if not result:
+            raise exception.DatacenterNotFound(datacenter_id=datacenter_id)
 
 
 ###############################

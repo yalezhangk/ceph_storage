@@ -64,7 +64,7 @@ class TestNode(NodeCompareTestCase):
         node.create()
         self.assertEqual(fake_node['id'], node.id)
         self.assertEqual(fake_node['hostname'],
-                         fake_node['hostname'])
+                         node.hostname)
 
     @mock.patch('t2stor.db.node_update')
     def test_save(self, node_update):

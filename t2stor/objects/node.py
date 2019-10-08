@@ -78,10 +78,3 @@ class NodeList(base.ObjectListBase, base.StorObject):
         expected_attrs = Node._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.Node,
                                   nodes, expected_attrs=expected_attrs)
-
-    @classmethod
-    def get_all_by_pool(cls, context, pool):
-        nodes = db.node_get_all_by_node(context, pool)
-        expected_attrs = Node._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), objects.Node,
-                                  nodes, expected_attrs=expected_attrs)

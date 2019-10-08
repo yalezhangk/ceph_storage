@@ -10,3 +10,4 @@ def register_all():
     __import__('t2stor.objects.cluster')
     __import__('t2stor.objects.rpc_service')
     __import__('t2stor.objects.node')
+    __import__('t2stor.objects.datacenter')
