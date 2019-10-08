@@ -194,7 +194,7 @@ class TestServiceTool(test.TestCase):
         run_command.return_value = (0, get_osds_re, "")
         tool = Ceph(Executor())
         re = tool.get_osds()
-        self.assertEqual(['172.160.6.70', '172.160.6.69'], re)
+        self.assertEqual(sorted(['172.160.6.70', '172.160.6.69']), sorted(re))
         run_command.assert_called_once_with(
            "ceph osd dump --format json-pretty", timeout=30
         )

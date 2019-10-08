@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Docker(ToolBase):
-    def run(self, name, image, command, volumes, envs):
+    def run(self, name, image, command=None, volumes=None, envs=None):
         """Run container
 
         :param name: the container name
@@ -24,6 +24,7 @@ class Docker(ToolBase):
         cmd.extend(["--name", name])
         cmd.extend(["--network", "host"])
         cmd.extend(["-v", "/etc/localtime:/etc/localtime:ro"])
+        volumes = volumes or []
         for volume in volumes:
             if len(volume) == 2:
                 cmd.extend(["-v", "{}:{}".format(volume[0], volume[1])])
@@ -32,9 +33,12 @@ class Docker(ToolBase):
                     volume[0], volume[1], volume[2])])
             else:
                 raise ProgrammingError('volumes args error')
+        envs = envs or []
         for k, v in envs:
             cmd.extend(["-e", "{}={}".format(k, v)])
-        cmd.extend([image, command])
+        cmd.append(image)
+        if command:
+            cmd.append(command)
 
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
@@ -78,6 +82,15 @@ class Docker(ToolBase):
         cmd = ["docker", "volume", "rm", name]
         if force:
             cmd.append("-f")
+        rc, stdout, stderr = self.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
+    def image_load(self, filename):
+        logger.debug("Docker load rm: {}".format(filename))
+        cmd = ["docker", "load", "-i", filename]
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
             return True

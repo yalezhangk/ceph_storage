@@ -65,3 +65,12 @@ class TestServiceTool(test.TestCase):
         tool.volume_rm(container_name, force=True)
         cmd = ['docker', 'volume', 'rm', container_name, "-f"]
         run_command.assert_called_once_with(cmd)
+
+    @mock.patch.object(Executor, 'run_command')
+    def test_docker_image_load(self, run_command):
+        run_command.return_value = (0, "", "")
+        filename = "test"
+        tool = Docker(Executor())
+        tool.image_load(filename)
+        cmd = ['docker', 'load', '-i', filename]
+        run_command.assert_called_once_with(cmd)

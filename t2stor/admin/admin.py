@@ -12,7 +12,10 @@ from t2stor import version
 from t2stor import objects
 from t2stor.common.config import CONF
 from t2stor.tools.base import Executor
-from t2stor.tools.ceph import Ceph
+from t2stor.tools.ceph import Ceph as CephTool
+from t2stor.tools.package import Package as PackageTool
+from t2stor.tools.service import Service as ServiceTool
+from t2stor.tools.service import Docker as DockerTool
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -74,7 +77,7 @@ class AdminHandler(object):
         logger.debug("detect an exist cluster from {}".format(ip_address))
         ssh_client = Executor()
         ssh_client.connect(hostname=ip_address, password=password)
-        tool = Ceph(ssh_client)
+        tool = CephTool(ssh_client)
         cluster_info = {}
         mon_hosts = tool.get_mons()
         osd_hosts = tool.get_osds()
@@ -84,6 +87,22 @@ class AdminHandler(object):
                              'osd_hosts': osd_hosts,
                              'mgr_hosts': mgr_hosts})
         return cluster_info
+
+    def cluster_install_agent(self, ip_address, password):
+        logger.debug("Install agent on {}".format(ip_address))
+        ssh_client = Executor()
+        ssh_client.connect(hostname=ip_address, password=password)
+        package_tool = PackageTool(ssh_client)
+        package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
+        service_tool = ServiceTool(ssh_client)
+        service_tool.start('docker')
+        docker_tool = DockerTool(ssh_client)
+        docker_tool.load("/opt/t2stor/repo/files/t2stor.tar")
+        docker_tool.start(
+            image="t2stor/t2stor:v2.3",
+            name="t2stor_portal",
+            volume=[("/etc/t2stor", "/etc/t2stor")]
+        )
 
 
 class AdminService(ServiceBase):
