@@ -73,3 +73,22 @@ class Ceph(ToolBase):
         osd_hosts = list(set(osd_hosts))
 
         return osd_hosts
+
+    def get_networks(self):
+        logger.debug("detect cluster networks")
+
+        cmd = "ceph-conf --lookup cluster_network"
+        rc, stdout, stderr = self.run_command(cmd, timeout=1)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        cluster_network = stdout
+
+        cmd = "ceph-conf --lookup public_network"
+        rc, stdout, stderr = self.run_command(cmd, timeout=1)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        public_network = stdout
+
+        return cluster_network, cluster_network

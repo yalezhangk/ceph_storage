@@ -3,6 +3,7 @@
 
 import logging
 import json
+from tornado import gen
 
 from t2stor import objects
 from t2stor.api.handlers.base import BaseAPIHandler

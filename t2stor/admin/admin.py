@@ -66,10 +66,13 @@ class AdminHandler(object):
         mon_hosts = tool.get_mons()
         osd_hosts = tool.get_osds()
         mgr_hosts = tool.get_mgrs()
+        cluster_network, public_network = tool.get_networks()
 
         cluster_info.update({'mon_hosts': mon_hosts,
                              'osd_hosts': osd_hosts,
-                             'mgr_hosts': mgr_hosts})
+                             'mgr_hosts': mgr_hosts,
+                             'public_network': public_network,
+                             'cluster_network': cluster_network})
         return cluster_info
 
     def cluster_install_agent(self, ctxt, ip_address, password):

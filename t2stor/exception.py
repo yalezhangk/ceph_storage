@@ -85,6 +85,8 @@ class NotFound(StorException):
 class Duplicate(StorException):
     pass
 
+class SysConfigNotFound(NotFound):
+    message = _("Sys Config %(key)s could not be found.")
 
 class VolumeNotFound(NotFound):
     message = _("Volume %(volume_id)s could not be found.")

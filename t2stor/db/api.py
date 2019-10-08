@@ -35,6 +35,13 @@ def dispose_engine():
     else:
         return
 
+###############
+def sysconfig_get(context, service_id, key):
+    return IMPL.sysconfig_get(context, service_id, key)
+
+def sysconfig_update_or_create(context, service_id, key, value, value_type=None):
+    return IMPL.sysconfig_update_or_create(context, service_id, key, value, value_type)
+##############
 
 ###############
 

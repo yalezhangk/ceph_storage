@@ -13,3 +13,4 @@ def register_all():
     __import__('t2stor.objects.datacenter')
     __import__('t2stor.objects.rack')
     __import__('t2stor.objects.osd')
+    __import__('t2stor.objects.sysconfig')

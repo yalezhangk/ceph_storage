@@ -227,3 +227,13 @@ class VolumeSnapshot(BASE, StorBase):
     size = Column(BigInteger)
     used = Column(BigInteger)
     volume_id = Column(String(36), ForeignKey('volumes.id'))
+
+class SysConfig(BASE, StorBase):
+    __tablename__ = "sys_configs"
+
+    id = Column(Integer, primary_key=True)
+    service_id = Column(String(36))
+    key = Column(String(255))
+    value = Column(String(255))
+    value_type = Column(String(36))
+    display_description = Column(String(255))

@@ -55,8 +55,9 @@ class NodeStatus(BaseStorEnum):
     ACTIVATE = 'activate'
     DELETING = 'deleting'
     ERROR = 'error'
+    DEPLOYING = 'deploying'
 
-    ALL = (CREATING, ACTIVATE, DELETING, ERROR)
+    ALL = (CREATING, ACTIVATE, DELETING, ERROR, DEPLOYING)
 
 
 class NodeStatusField(BaseEnumField):

@@ -467,6 +467,63 @@ def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
 CALCULATE_COUNT_HELPERS = {
 }
 
+@require_context
+def _sysconfig_get_query(context, session=None, project_only=False,
+                      joined_load=True):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run the method _volume_get_query
+    :param session: the session to use
+    :param project_only: the boolean used to decide whether to query the
+                         volume in the current project or all projects
+    :param joined_load: the boolean used to decide whether the query loads
+                        the other models, which join the volume model in
+                        the database. Currently, the False value for this
+                        parameter is specially for the case of updating
+                        database during volume migration
+    :returns: updated query or None
+    """
+    return model_query(context, models.SysConfig, session=session,
+                       project_only=project_only)
+
+@require_context
+def _sysconfig_get(context, service_id, key, session=None, joined_load=True):
+    result = _sysconfig_get_query(context, session=session, project_only=True,
+                               joined_load=joined_load)
+    result = result.filter_by(service_id=service_id, key=key).first()
+
+    if not result:
+        raise exception.SysConfigNotFound(key=key)
+
+    return result
+
+@require_context
+def _sysconfig_create(context, service_id, key, value, value_type):
+    config_ref = models.SysConfig()
+    config_ref.update(service_id=service_id, key=key,
+                    value=value, value_type=value_type)
+    session = get_session()
+    with session.begin():
+        session.add(config_ref)
+
+    return _sysconfig_get(context, service_id, key, session=session)
+
+@require_context
+def sysconfig_get(context, service_id, key):
+    return _sysconfig_get(context, service_id, key)
+
+@require_context
+def sysconfig_update_or_create(context, service_id, key, value, value_type):
+    session = get_session()
+    with session.begin():
+        query = _volume_get_query(context, session, joined_load=False)
+        result = query.filter_by(service_id=service_id, key=key).first()
+        if not result:
+            result = _sysconfig_create(context, service_id, key, value, value_type)
+        else:
+            result.update(value=value)
+
+        return result
 
 def calculate_resource_count(context, resource_type, filters):
     """Calculate total count with filters applied"""
