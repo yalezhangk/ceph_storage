@@ -75,6 +75,18 @@ class Executor(object):
         stdout, stderr = stdout.read(), stderr.read()
         return (rc, stdout, stderr)
 
+    def write(self, filename, content):
+        if self.ssh:
+            ftp = self.ssh.open_sftp()
+            f = ftp.file(filename, "w", -1)
+            f.write(content)
+            f.flush()
+            ftp.close()
+        else:
+            f = open(filename, "w")
+            f.write(content)
+            f.close()
+
 
 class ToolBase(object):
     def __init__(self, executor):
