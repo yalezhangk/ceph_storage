@@ -14,7 +14,7 @@ class Ceph(ToolBase):
         logger.debug("detect active mgr from cluster")
 
         cmd = "ceph mgr dump --format json-pretty"
-        rc, stdout, stderr = self.run_command(cmd, timeout=30)
+        rc, stdout, stderr = self.run_command(cmd, timeout=1)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
@@ -33,7 +33,7 @@ class Ceph(ToolBase):
         logger.debug("detect mons from cluster")
 
         cmd = "ceph mon dump --format json-pretty"
-        rc, stdout, stderr = self.run_command(cmd, timeout=30)
+        rc, stdout, stderr = self.run_command(cmd, timeout=1)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
@@ -54,7 +54,7 @@ class Ceph(ToolBase):
         logger.debug("detect osds from cluster")
 
         cmd = "ceph osd dump --format json-pretty"
-        rc, stdout, stderr = self.run_command(cmd, timeout=30)
+        rc, stdout, stderr = self.run_command(cmd, timeout=1)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)

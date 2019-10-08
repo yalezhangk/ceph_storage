@@ -73,7 +73,7 @@ class AdminHandler(object):
         """Deploy a new cluster"""
         pass
 
-    def cluster_get_info(self, ip_address, password=None):
+    def cluster_get_info(self, ctxt, ip_address, password=None):
         logger.debug("detect an exist cluster from {}".format(ip_address))
         ssh_client = Executor()
         ssh_client.connect(hostname=ip_address, password=password)
