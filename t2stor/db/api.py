@@ -213,6 +213,32 @@ def rack_update(context, rack_id, values):
 ###################
 
 
+def osd_create(context, values):
+    return IMPL.osd_create(context, values)
+
+
+def osd_destroy(context, osd_id):
+    return IMPL.osd_destroy(context, osd_id)
+
+
+def osd_get(context, osd_id):
+    return IMPL.osd_get(context, osd_id)
+
+
+def osd_get_all(context, filters, marker, limit,
+                offset, sort_keys, sort_dirs):
+    return IMPL.osd_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def osd_update(context, osd_id, values):
+    return IMPL.osd_update(context, osd_id, values)
+
+
+###################
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

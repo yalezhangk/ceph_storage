@@ -998,6 +998,79 @@ def rack_update(context, rack_id, values):
 ###############################
 
 
+def _osd_get_query(context, session=None):
+    return model_query(context, models.Osd, session=session)
+
+
+def _osd_get(context, osd_id, session=None):
+    result = _osd_get_query(context, session)
+    result = result.filter_by(id=osd_id).first()
+
+    if not result:
+        raise exception.OsdNotFound(osd_id=osd_id)
+
+    return result
+
+
+@require_context
+def osd_create(context, values):
+    osd_ref = models.Osd()
+    osd_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(osd_ref)
+
+    return _osd_get(context, values['id'], session=session)
+
+
+def osd_destroy(context, osd_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Osd, session=session).\
+            filter_by(id=osd_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def osd_get(context, osd_id):
+    return _osd_get(context, osd_id)
+
+
+@require_context
+def osd_get_all(context, marker=None, limit=None, sort_keys=None,
+                sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Osd, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def osd_update(context, osd_id, values):
+    session = get_session()
+    with session.begin():
+        query = _osd_get_query(context, session)
+        result = query.filter_by(id=osd_id).update(values)
+        if not result:
+            raise exception.OsdNotFound(osd_id=osd_id)
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
