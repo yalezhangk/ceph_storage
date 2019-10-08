@@ -11,6 +11,8 @@ from t2stor.agent import AgentClientManager
 from t2stor import version
 from t2stor import objects
 from t2stor.common.config import CONF
+from t2stor.tools.base import Executor
+from t2stor.tools.ceph import Ceph
 
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -67,6 +69,21 @@ class AdminHandler(object):
     def cluster_new(self, ctxt):
         """Deploy a new cluster"""
         pass
+
+    def cluster_get_info(self, ip_address, password=None):
+        logger.debug("detect an exist cluster from {}".format(ip_address))
+        ssh_client = Executor()
+        ssh_client.connect(hostname=ip_address, password=password)
+        tool = Ceph(ssh_client)
+        cluster_info = {}
+        mon_hosts = tool.get_mons()
+        osd_hosts = tool.get_osds()
+        mgr_hosts = tool.get_mgrs()
+
+        cluster_info.update({'mon_hosts': mon_hosts,
+                             'osd_hosts': osd_hosts,
+                             'mgr_hosts': mgr_hosts})
+        return cluster_info
 
 
 class AdminService(ServiceBase):
