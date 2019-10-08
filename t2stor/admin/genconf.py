@@ -32,6 +32,38 @@ agent_port=2083
 connection = mysql+pymysql://stor:stor@192.168.211.129/stor
 """
 
+yum_repo = """
+[t2stor-base]
+name=Base packages and requirements
+baseurl=http://192.168.103.167:8080/repo/base
+enabled=1
+gpgcheck=0
+
+[t2stor-ceph]
+name=Ceph packages
+baseurl=http://192.168.103.167:8080/repo/ceph-rpms
+enabled=1
+gpgcheck=0
+
+[t2stor-tools]
+name=Some useful tools
+baseurl=http://192.168.103.167:8080/repo/tools
+enabled=1
+gpgcheck=0
+
+[t2stor-elasticsearch]
+name=Elasticsearch and java packages
+baseurl=http://192.168.103.167:8080/repo/elasticsearch
+enabled=1
+gpgcheck=0
+
+[t2stor-portal]
+name=portal
+baseurl=http://192.168.103.167:8080/repo/portal
+enabled=1
+gpgcheck=0
+"""
+
 
 def get_agent_conf(node_ip):
     return agent_conf.format(my_ip=node_ip)
