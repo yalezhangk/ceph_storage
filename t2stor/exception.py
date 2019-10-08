@@ -107,7 +107,7 @@ class DatacenterNotFound(NotFound):
 
 
 class RackNotFound(NotFound):
-    message = _("Rack %(datacenter_id)s could not be found.")
+    message = _("Rack %(rack_id)s could not be found.")
 
 
 class ClusterIDNotFound(NotFound):
