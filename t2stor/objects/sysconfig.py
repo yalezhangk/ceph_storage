@@ -7,12 +7,11 @@ from t2stor import db
 from t2stor import exception
 from t2stor import objects
 from t2stor.objects import base
-from t2stor.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
 class SysConfig(base.StorPersistentObject, base.StorObject,
-           base.StorObjectDictCompat, base.StorComparableObject):
+                base.StorObjectDictCompat, base.StorComparableObject):
 
     fields = {
         'id': fields.IntegerField(),
@@ -29,34 +28,34 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
                                               reason='already created')
         updates = self.stor_obj_get_changes()
 
-        db_node = db.node_create(self._context, updates)
-        self._from_db_object(self._context, self, db_node)
+        db_sys_config = db.sys_config_create(self._context, updates)
+        self._from_db_object(self._context, self, db_sys_config)
 
     def save(self):
         updates = self.stor_obj_get_changes()
         if updates:
-            db.node_update(self._context, self.id, updates)
+            db.sys_config_update(self._context, self.id, updates)
 
         self.obj_reset_changes()
 
     def destroy(self):
-        updated_values = db.node_destroy(self._context, self.id)
+        updated_values = db.sys_config_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
 
 @base.StorObjectRegistry.register
-class NodeList(base.ObjectListBase, base.StorObject):
+class SysConfigList(base.ObjectListBase, base.StorObject):
 
     fields = {
-        'objects': fields.ListOfObjectsField('Node'),
+        'objects': fields.ListOfObjectsField('SysConfig'),
     }
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        nodes = db.node_get_all(context, filters, marker, limit, offset,
-                                sort_keys, sort_dirs)
-        expected_attrs = Node._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), objects.Node,
-                                  nodes, expected_attrs=expected_attrs)
+        sys_configs = db.sys_config_get_all(context, filters, marker, limit, offset,
+                                            sort_keys, sort_dirs)
+        expected_attrs = SysConfig._get_expected_attrs(context)
+        return base.obj_make_list(context, cls(context), objects.SysConfig,
+                                  sys_configs, expected_attrs=expected_attrs)

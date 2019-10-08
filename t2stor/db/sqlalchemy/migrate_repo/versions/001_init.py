@@ -128,7 +128,24 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    return [clusters, volumes, rpc_services, datacenter, rack, node]
+    sysconf = Table(
+        "sysconfs", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('service_id', String(36)),
+        Column('key', String(255)),
+        Column('value', String(255)),
+        Column('value_type', String(36)),
+        Column('display_description', String(255)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    return [clusters, volumes, rpc_services, datacenter, rack, node, sysconf]
 
 
 def upgrade(migrate_engine):

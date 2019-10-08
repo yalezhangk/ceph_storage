@@ -467,63 +467,6 @@ def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
 CALCULATE_COUNT_HELPERS = {
 }
 
-@require_context
-def _sysconfig_get_query(context, session=None, project_only=False,
-                      joined_load=True):
-    """Get the query to retrieve the volume.
-
-    :param context: the context used to run the method _volume_get_query
-    :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
-    :returns: updated query or None
-    """
-    return model_query(context, models.SysConfig, session=session,
-                       project_only=project_only)
-
-@require_context
-def _sysconfig_get(context, service_id, key, session=None, joined_load=True):
-    result = _sysconfig_get_query(context, session=session, project_only=True,
-                               joined_load=joined_load)
-    result = result.filter_by(service_id=service_id, key=key).first()
-
-    if not result:
-        raise exception.SysConfigNotFound(key=key)
-
-    return result
-
-@require_context
-def _sysconfig_create(context, service_id, key, value, value_type):
-    config_ref = models.SysConfig()
-    config_ref.update(service_id=service_id, key=key,
-                    value=value, value_type=value_type)
-    session = get_session()
-    with session.begin():
-        session.add(config_ref)
-
-    return _sysconfig_get(context, service_id, key, session=session)
-
-@require_context
-def sysconfig_get(context, service_id, key):
-    return _sysconfig_get(context, service_id, key)
-
-@require_context
-def sysconfig_update_or_create(context, service_id, key, value, value_type):
-    session = get_session()
-    with session.begin():
-        query = _volume_get_query(context, session, joined_load=False)
-        result = query.filter_by(service_id=service_id, key=key).first()
-        if not result:
-            result = _sysconfig_create(context, service_id, key, value, value_type)
-        else:
-            result.update(value=value)
-
-        return result
 
 def calculate_resource_count(context, resource_type, filters):
     """Calculate total count with filters applied"""
@@ -1123,6 +1066,79 @@ def osd_update(context, osd_id, values):
         result = query.filter_by(id=osd_id).update(values)
         if not result:
             raise exception.OsdNotFound(osd_id=osd_id)
+
+
+###############################
+
+
+def _sys_config_get_query(context, session=None):
+    return model_query(context, models.SysConfig, session=session)
+
+
+def _sys_config_get(context, sys_config_id, session=None):
+    result = _sys_config_get_query(context, session)
+    result = result.filter_by(id=sys_config_id).first()
+
+    if not result:
+        raise exception.SysConfigNotFound(sys_config_id=sys_config_id)
+
+    return result
+
+
+@require_context
+def sys_config_create(context, values):
+    sys_config_ref = models.SysConfig()
+    sys_config_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(sys_config_ref)
+
+    return _sys_config_get(context, values['id'], session=session)
+
+
+def sys_config_destroy(context, sys_config_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.SysConfig, session=session).\
+            filter_by(id=sys_config_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def sys_config_get(context, sys_config_id):
+    return _sys_config_get(context, sys_config_id)
+
+
+@require_context
+def sys_config_get_all(context, marker=None, limit=None, sort_keys=None,
+                       sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.SysConfig, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def sys_config_update(context, sys_config_id, values):
+    session = get_session()
+    with session.begin():
+        query = _sys_config_get_query(context, session)
+        result = query.filter_by(id=sys_config_id).update(values)
+        if not result:
+            raise exception.SysConfigNotFound(sys_config_id=sys_config_id)
 
 
 ###############################

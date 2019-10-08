@@ -36,12 +36,30 @@ def dispose_engine():
         return
 
 ###############
-def sysconfig_get(context, service_id, key):
-    return IMPL.sysconfig_get(context, service_id, key)
 
-def sysconfig_update_or_create(context, service_id, key, value, value_type=None):
-    return IMPL.sysconfig_update_or_create(context, service_id, key, value, value_type)
-##############
+
+def sys_config_create(context, values):
+    return IMPL.sys_config_create(context, values)
+
+
+def sys_config_destroy(context, sys_config_id):
+    return IMPL.sys_config_destroy(context, sys_config_id)
+
+
+def sys_config_get(context, sys_config_id):
+    return IMPL.sys_config_get(context, sys_config_id)
+
+
+def sys_config_get_all(context, filters, marker, limit,
+                       offset, sort_keys, sort_dirs):
+    return IMPL.sys_config_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def sys_config_update(context, sys_config_id, values):
+    return IMPL.sys_config_update(context, sys_config_id, values)
+
 
 ###############
 
