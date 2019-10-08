@@ -187,6 +187,32 @@ def datacenter_update(context, datacenter_id, values):
 ###################
 
 
+def rack_create(context, values):
+    return IMPL.rack_create(context, values)
+
+
+def rack_destroy(context, rack_id):
+    return IMPL.rack_destroy(context, rack_id)
+
+
+def rack_get(context, rack_id):
+    return IMPL.rack_get(context, rack_id)
+
+
+def rack_get_all(context, filters, marker, limit,
+                 offset, sort_keys, sort_dirs):
+    return IMPL.rack_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def rack_update(context, rack_id, values):
+    return IMPL.rack_update(context, rack_id, values)
+
+
+###################
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

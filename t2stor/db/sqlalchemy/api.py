@@ -925,6 +925,79 @@ def datacenter_update(context, datacenter_id, values):
 ###############################
 
 
+def _rack_get_query(context, session=None):
+    return model_query(context, models.Rack, session=session)
+
+
+def _rack_get(context, rack_id, session=None):
+    result = _rack_get_query(context, session)
+    result = result.filter_by(id=rack_id).first()
+
+    if not result:
+        raise exception.RackNotFound(rack_id=rack_id)
+
+    return result
+
+
+@require_context
+def rack_create(context, values):
+    rack_ref = models.Rack()
+    rack_ref.update(values)
+    session = get_session()
+    with session.begin():
+        session.add(rack_ref)
+
+    return _rack_get(context, values['id'], session=session)
+
+
+def rack_destroy(context, rack_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Rack, session=session).\
+            filter_by(id=rack_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def rack_get(context, rack_id):
+    return _rack_get(context, rack_id)
+
+
+@require_context
+def rack_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Rack, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def rack_update(context, rack_id, values):
+    session = get_session()
+    with session.begin():
+        query = _rack_get_query(context, session)
+        result = query.filter_by(id=rack_id).update(values)
+        if not result:
+            raise exception.RackNotFound(rack_id=rack_id)
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
