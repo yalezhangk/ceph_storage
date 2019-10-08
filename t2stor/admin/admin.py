@@ -42,6 +42,8 @@ class AdminHandler(object):
 
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
+        filters = filters or {}
+        filters['cluster_id'] = ctxt.cluster_id
         return objects.VolumeList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
@@ -71,8 +73,8 @@ class AdminHandler(object):
         cluster_info.update({'mon_hosts': mon_hosts,
                              'osd_hosts': osd_hosts,
                              'mgr_hosts': mgr_hosts,
-                             'public_network': public_network,
-                             'cluster_network': cluster_network})
+                             'public_network': str(public_network),
+                             'cluster_network': str(cluster_network)})
         return cluster_info
 
     def cluster_install_agent(self, ctxt, ip_address, password):

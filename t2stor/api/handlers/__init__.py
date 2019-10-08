@@ -3,6 +3,7 @@
 from t2stor.api.handlers.volumes import VolumeHandler
 from t2stor.api.handlers.volumes import VolumeListHandler
 from t2stor.api.handlers.clusters import ClusterHandler
+from t2stor.api.handlers.clusters import ClusterDetectHandler
 
 
 def get_routers():
