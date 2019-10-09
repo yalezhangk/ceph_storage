@@ -39,7 +39,7 @@ def define_tables(meta):
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
-        Column('id', String(36), primary_key=True, nullable=False),
+        Column('id', Integer, primary_key=True, nullable=False),
         Column('user_id', String(255)),
         Column('project_id', String(255)),
         Column('size', Integer),

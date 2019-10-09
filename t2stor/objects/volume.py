@@ -15,7 +15,7 @@ class Volume(base.StorPersistentObject, base.StorObject,
              base.StorObjectDictCompat, base.StorComparableObject):
 
     fields = {
-        'id': fields.UUIDField(),
+        'id': fields.IntegerField(),
 
         'status': s_fields.VolumeStatusField(nullable=True),
         'size': fields.IntegerField(nullable=True),

@@ -218,7 +218,7 @@ class Pool(BASE, StorBase):
 class Volume(BASE, StorBase):
     __tablename__ = "volumes"
 
-    id = Column(String(36), primary_key=True)
+    id = Column(Integer, primary_key=True)
     size = Column(Integer)
     status = Column(String(255))  # TODO(vish): enum?
     display_name = Column(String(255))
