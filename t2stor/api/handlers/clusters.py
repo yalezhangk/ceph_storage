@@ -30,6 +30,7 @@ class ClusterHandler(BaseAPIHandler):
             {"id": cluster.id, "name": cluster.name}
         ))
 
+
 class ClusterDetectHandler(RPCAPIHandler):
     @gen.coroutine
     def get(self):
@@ -37,7 +38,8 @@ class ClusterDetectHandler(RPCAPIHandler):
         ip_address = self.get_argument('ip_address')
         password = self.get_argument('password')
         client = self.get_admin_client(ctxt)
-        cluster_info = yield client.cluster_get_info(ctxt, ip_address, password=password)
+        cluster_info = yield client.cluster_get_info(
+            ctxt, ip_address, password=password)
         self.write(json.dumps(
             {"cluster_info": cluster_info}
         ))

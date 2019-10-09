@@ -6,13 +6,13 @@ import json
 
 from tornado import gen
 
-from t2stor.api.handlers.base import RPCAPIHandler
+from t2stor.api.handlers.base import ClusterAPIHandler
 
 
 logger = logging.getLogger(__name__)
 
 
-class VolumeListHandler(RPCAPIHandler):
+class VolumeListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
         ctxt = self.get_context()
@@ -23,7 +23,8 @@ class VolumeListHandler(RPCAPIHandler):
         ]))
 
 
-class VolumeHandler(RPCAPIHandler):
+class VolumeHandler(ClusterAPIHandler):
+    @gen.coroutine
     def get(self, volume_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)

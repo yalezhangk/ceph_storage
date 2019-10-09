@@ -73,7 +73,7 @@ class BaseAPIHandler(RequestHandler):
             super(BaseAPIHandler, self)._handle_request_exception(e)
 
 
-class RPCAPIHandler(BaseAPIHandler):
+class ClusterAPIHandler(BaseAPIHandler):
 
     def get_context(self):
         cluster_id = self.get_query_argument('cluster_id', default=None)
