@@ -33,3 +33,7 @@ Simple test file
 All tests
  
   python3 -m stestr --test-path t2stor.tests.unit run
+
+More
+=====
+See doc
