@@ -3,7 +3,9 @@
 
 import logging
 import json
+
 from tornado import gen
+from tornado.escape import json_decode
 
 from t2stor import objects
 from t2stor.api.handlers.base import BaseAPIHandler
@@ -17,18 +19,27 @@ class ClusterHandler(BaseAPIHandler):
     def get(self):
         ctxt = self.get_context()
         clusters = objects.ClusterList.get_all(ctxt)
-        self.write(json.dumps([
-            {"id": vol.id} for vol in clusters
-        ]))
+        self.write(json.dumps({
+            "clusters": [
+                {
+                    "id": c.id,
+                    "name": c.name
+                } for c in clusters
+            ]
+        }))
 
     def post(self):
         ctxt = self.get_context()
-        name = self.get_argument('name')
-        cluster = objects.Cluster(ctxt, display_name=name)
+        data = json_decode(self.request.body)
+        cluster_data = data.get("cluster")
+        cluster = objects.Cluster(ctxt, display_name=cluster_data.get('name'))
         cluster.create()
-        self.write(json.dumps(
-            {"id": cluster.id, "name": cluster.name}
-        ))
+        self.write(json.dumps({
+            "cluster": {
+                "id": cluster.id,
+                "name": cluster.name
+            }
+        }))
 
 
 class ClusterDetectHandler(ClusterAPIHandler):

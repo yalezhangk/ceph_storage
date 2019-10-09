@@ -294,7 +294,7 @@ def _process_model_like_filter(model, query, filters):
 
 def apply_like_filters(model):
     def decorator_filters(process_exact_filters):
-        def _decorator(context, query, filters):
+        def _decorator(query, filters):
             exact_filters = filters.copy()
             regex_filters = {}
             for key, value in filters.items():
@@ -303,7 +303,7 @@ def apply_like_filters(model):
                 if key.endswith('~'):
                     exact_filters.pop(key)
                     regex_filters[key.rstrip('~')] = value
-            query = process_exact_filters(context, query, exact_filters)
+            query = process_exact_filters(query, exact_filters)
             return _process_model_like_filter(model, query, regex_filters)
         return _decorator
     return decorator_filters
