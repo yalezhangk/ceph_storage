@@ -22,6 +22,7 @@ class Volume(base.StorPersistentObject, base.StorObject,
 
         'display_name': fields.StringField(nullable=True),
         'display_description': fields.StringField(nullable=True),
+        'cluster_id': fields.UUIDField(),
     }
 
     @property

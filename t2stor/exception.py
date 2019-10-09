@@ -148,3 +148,7 @@ class RunCommandArgsError(StorException):
 
 class CephException(StorException):
     message = _("Ceph exception")
+
+
+class Invalid(StorException):
+    message = _("%(msg)s")

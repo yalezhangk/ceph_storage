@@ -240,9 +240,7 @@ def model_query(context, model, *args, **kwargs):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_create(context, values):
 
-    volume_ref = models.Volume
-    if not values.get('id'):
-        values['id'] = str(uuid.uuid4())
+    volume_ref = models.Volume()
     volume_ref.update(values)
 
     session = get_session()

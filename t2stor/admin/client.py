@@ -25,6 +25,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def volume_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "volume_create", data=data)
+        return response
+
     def cluster_get_info(self, ctxt, ip_address, password=None):
         response = self.call(
             ctxt, "cluster_get_info", ip_address=ip_address,

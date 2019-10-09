@@ -41,6 +41,15 @@ class AdminHandler(object):
     def volume_get(self, ctxt, volume_id):
         return objects.Volume.get_by_id(ctxt, volume_id)
 
+    def volume_create(self, ctxt, data):
+        v = objects.Volume(
+            ctxt, cluster_id=ctxt.cluster_id,
+            display_name=data.get('display_name'),
+            size=data.get('size')
+        )
+        v.create()
+        return v
+
     def cluster_import(self, ctxt):
         """Cluster import"""
         pass

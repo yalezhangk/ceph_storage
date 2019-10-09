@@ -36,6 +36,7 @@ class RpcServiceListHandler(ClusterAPIHandler):
     def post(self):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        data = data.get("rpc_service")
         r = objects.RPCService(
             ctxt, cluster_id=ctxt.cluster_id, hostname=data.get('hostname'),
             service_name=data.get('service_name'),
@@ -43,7 +44,7 @@ class RpcServiceListHandler(ClusterAPIHandler):
         )
         r.create()
         self.write(json_encode({
-            "RPCService": {
+            "rpc_service": {
                 "id": r.id,
                 "hostname": r.hostname,
                 "endpoint": json_decode(r.endpoint),
@@ -59,7 +60,7 @@ class RpcServiceHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         r = objects.RPCServiceList.get_by_id(ctxt, rpc_service_id)
         self.write(json_encode({
-            "RPCService": {
+            "rpc_service": {
                 "id": r.id,
                 "hostname": r.hostname,
                 "endpoint": json_decode(r.endpoint),
@@ -72,8 +73,9 @@ class RpcServiceHandler(ClusterAPIHandler):
     def post(self, rpc_service_id):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        rpc_service_data = data.get("rpc_service")
         r = objects.RPCServiceList.get_by_id(ctxt, rpc_service_id)
-        for k, v in six.iteritems(data):
+        for k, v in six.iteritems(rpc_service_data):
             if k != "endpoint":
                 setattr(r, k, v)
             else:
@@ -81,7 +83,7 @@ class RpcServiceHandler(ClusterAPIHandler):
 
         r.save()
         self.write(json_encode({
-            "RPCService": {
+            "rpc_service": {
                 "id": r.id,
                 "hostname": r.hostname,
                 "endpoint": json_decode(r.endpoint),
@@ -96,7 +98,7 @@ class RpcServiceHandler(ClusterAPIHandler):
         r = objects.RPCServiceList.get_by_id(ctxt, rpc_service_id)
         r.delete()
         self.write(json_encode({
-            "RPCService": {
+            "rpc_service": {
                 "id": r.id,
                 "hostname": r.hostname,
                 "endpoint": json_decode(r.endpoint),

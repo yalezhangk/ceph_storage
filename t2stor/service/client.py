@@ -56,6 +56,8 @@ class BaseClientManager:
         return endpoints
 
     def _get_endpoints_db(self):
+        logger.debug("endpints search: cluster_id(%s), service_name(%s)",
+                     self.cluster_id, self.service_name)
         services = objects.RPCServiceList.get_all(
             self.context,
             filters={
@@ -66,6 +68,7 @@ class BaseClientManager:
         if not services:
             return {}
         endpoints = {v.hostname: json.loads(v.endpoint) for v in services}
+        logger.debug("endpints: %s", endpoints)
         return endpoints
 
     def get_endpoints(self):
