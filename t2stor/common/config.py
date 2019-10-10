@@ -10,8 +10,8 @@ logging.register_options(CONF)
 
 core_opts = [
     cfg.StrOpt('state_path',
-               default='/var/lib/cinder',
-               help="Top-level directory for maintaining cinder's state"), ]
+               default='/var/lib/t2stor',
+               help="Top-level directory for maintaining t2stor's state"), ]
 
 global_opts = [
     cfg.HostAddressOpt('my_ip',
