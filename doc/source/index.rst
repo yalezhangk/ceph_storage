@@ -11,6 +11,7 @@ Welcome to Stor's documentation!
    :caption: Contents:
 
    mariadb.rst
+   cache.rst
 
    
 

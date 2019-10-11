@@ -7,10 +7,10 @@ Create DB and User
 
 Create db and user
 
-.. code-block:: sql
+.. code-block:: shell
    :caption: prepare.sql
    :name: prepare.sql
-  
+
    CREATE DATABASE stor;
    GRANT ALL PRIVILEGES ON stor.* TO 'stor'@'localhost' \
      IDENTIFIED BY 'STOR_DBPASS';
