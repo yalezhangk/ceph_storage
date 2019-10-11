@@ -4,12 +4,14 @@ from t2stor.api.handlers.volumes import VolumeHandler
 from t2stor.api.handlers.volumes import VolumeListHandler
 from t2stor.api.handlers.clusters import ClusterHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
+from t2stor.api.handlers.rpc_service import RpcServiceListHandler
 
 
 def get_routers():
     return [
         (r"/clusters", ClusterHandler),
         (r"/cluster_detect", ClusterDetectHandler),
+        (r"/rpc_services", RpcServiceListHandler),
         (r"/volumes", VolumeListHandler),
-        (r"/volumes/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})", VolumeHandler),
+        (r"/volumes/([0-9]*)", VolumeHandler),
     ]

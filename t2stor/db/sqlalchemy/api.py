@@ -247,9 +247,9 @@ def volume_create(context, values):
 
     session = get_session()
     with session.begin():
-        session.add(volume_ref)
+        volume_ref.save(session)
 
-    return _volume_get(context, values['id'], session=session)
+    return volume_ref
 
 
 @require_admin_context
@@ -726,9 +726,9 @@ def rpc_service_create(context, values):
     rpc_service_ref.update(values)
     session = get_session()
     with session.begin():
-        session.add(rpc_service_ref)
+        rpc_service_ref.save(session)
 
-    return _rpc_service_get(context, values['id'], session=session)
+    return rpc_service_ref
 
 
 def rpc_service_destroy(context, rpc_service_id):
@@ -799,9 +799,9 @@ def node_create(context, values):
     node_ref.update(values)
     session = get_session()
     with session.begin():
-        session.add(node_ref)
+        node_ref.save(session)
 
-    return _node_get(context, values['id'], session=session)
+    return node_ref
 
 
 def node_destroy(context, node_id):
@@ -872,9 +872,9 @@ def datacenter_create(context, values):
     datacenter_ref.update(values)
     session = get_session()
     with session.begin():
-        session.add(datacenter_ref)
+        datacenter_ref.save(session)
 
-    return _datacenter_get(context, values['id'], session=session)
+    return datacenter_ref
 
 
 def datacenter_destroy(context, datacenter_id):
@@ -945,9 +945,9 @@ def rack_create(context, values):
     rack_ref.update(values)
     session = get_session()
     with session.begin():
-        session.add(rack_ref)
+        rack_ref.save(session)
 
-    return _rack_get(context, values['id'], session=session)
+    return rack_ref
 
 
 def rack_destroy(context, rack_id):
@@ -1018,9 +1018,9 @@ def osd_create(context, values):
     osd_ref.update(values)
     session = get_session()
     with session.begin():
-        session.add(osd_ref)
+        osd_ref.save()
 
-    return _osd_get(context, values['id'], session=session)
+    return osd_ref
 
 
 def osd_destroy(context, osd_id):
@@ -1091,9 +1091,9 @@ def sys_config_create(context, values):
     sys_config_ref.update(values)
     session = get_session()
     with session.begin():
-        session.add(sys_config_ref)
+        sys_config_ref.save(session)
 
-    return _sys_config_get(context, values['id'], session=session)
+    return sys_config_ref
 
 
 def sys_config_destroy(context, sys_config_id):

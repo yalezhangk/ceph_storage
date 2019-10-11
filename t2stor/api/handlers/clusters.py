@@ -7,7 +7,7 @@ from tornado import gen
 
 from t2stor import objects
 from t2stor.api.handlers.base import BaseAPIHandler
-from t2stor.api.handlers.base import RPCAPIHandler
+from t2stor.api.handlers.base import ClusterAPIHandler
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class ClusterHandler(BaseAPIHandler):
         ))
 
 
-class ClusterDetectHandler(RPCAPIHandler):
+class ClusterDetectHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
         ctxt = self.get_context()
