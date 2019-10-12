@@ -14,16 +14,6 @@ def _warn_if_null_backend():
         LOG.warning("Cache enabled with backend dogpile.cache.null.")
 
 
-def get_memcached_client(expiration_time=0):
-    """Used ONLY when memcached is explicitly needed."""
-    # If the operator has [cache]/enabled flag on then we let oslo_cache
-    # configure the region from the configuration settings
-    if CONF.cache.enabled and CONF.cache.memcache_servers:
-        _warn_if_null_backend()
-        return CacheClient(
-                _get_default_cache_region(expiration_time=expiration_time))
-
-
 def get_client(expiration_time=0):
     """Used to get a caching client."""
     # If the operator has [cache]/enabled flag on then we let oslo_cache
