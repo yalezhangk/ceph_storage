@@ -5,6 +5,7 @@ oslo.versionedobjects
 oslo.db
 oslo.utils
 oslo.config
+oslo.cache
 pymysql
 etcd3
 paramiko
