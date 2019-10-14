@@ -1,6 +1,5 @@
 import sys
 import time
-import json
 
 from oslo_log import log as logging
 
@@ -54,7 +53,7 @@ class AgentHandler(object):
         time.sleep(1)
         return True
 
-    def service_restart(self, context,  name):
+    def service_restart(self, context, name):
         logger.debug("Service restart: %s", name)
         tool = Service(self.executor)
         tool.restart(name)

@@ -137,10 +137,14 @@ class NoSuchMethod(NotFound):
     message = _("Method %(method)s not found.")
 
 
-class RunCommandError(NotFound):
+class RunCommandError(StorException):
     message = _("Command: %(cmd)s ReturnCode: %(return_code)s "
                 "Stderr: %(stderr)s Stdout: %(stdout)s.")
 
 
-class RunCommandArgsError(NotFound):
+class RunCommandArgsError(StorException):
     message = _("Argument 'args' to run_command must be list or string")
+
+
+class CephException(StorException):
+    message = _("Ceph exception")

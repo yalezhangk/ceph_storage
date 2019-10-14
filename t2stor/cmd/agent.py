@@ -5,7 +5,7 @@ import sys
 from oslo_log import log as logging
 
 from t2stor.common.config import CONF
-from t2stor.agent import service
+from t2stor.agent.agent import service
 from t2stor import objects
 from t2stor import version
 

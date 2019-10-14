@@ -176,7 +176,7 @@ class TestServiceTool(test.TestCase):
         re = tool.get_mons()
         self.assertEqual(['172.160.6.71'], re)
         run_command.assert_called_once_with(
-           "ceph mon dump --format json-pretty", timeout=1
+            "ceph mon dump --format json-pretty", timeout=1
         )
 
     @mock.patch.object(Executor, 'run_command')
@@ -186,7 +186,7 @@ class TestServiceTool(test.TestCase):
         re = tool.get_mgrs()
         self.assertEqual(['172.160.6.71'], re)
         run_command.assert_called_once_with(
-           "ceph mgr dump --format json-pretty", timeout=1
+            "ceph mgr dump --format json-pretty", timeout=1
         )
 
     @mock.patch.object(Executor, 'run_command')
@@ -196,5 +196,5 @@ class TestServiceTool(test.TestCase):
         re = tool.get_osds()
         self.assertEqual(sorted(['172.160.6.70', '172.160.6.69']), sorted(re))
         run_command.assert_called_once_with(
-           "ceph osd dump --format json-pretty", timeout=1
+            "ceph osd dump --format json-pretty", timeout=1
         )

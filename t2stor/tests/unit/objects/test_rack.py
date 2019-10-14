@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import copy
 import mock
 from oslo_utils import timeutils
 import pytz
-
-from netaddr import IPAddress
 
 from t2stor import exception
 from t2stor import objects

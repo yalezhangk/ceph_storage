@@ -27,15 +27,33 @@ DB Sync:
 
   python3 -m t2stor.cmd.manage --config-file build/api.conf db sync
 
+Code Style
+===========
+
+import style
+
+.. code-block::
+  isort -rc -ns __init__.py --force-single-line-imports server/
+
+- line width 79
+
+
 Tests
 =====
-Simple test file
-  
+Simple unit test file
+
   python3 -m unittest t2stor.tests.unit.objects.test_node
 
-All tests
- 
+All unit tests
+
   python3 -m stestr --test-path t2stor.tests.unit run
+
+Tox:
+
+.. code-block::
+
+  tox
+
 
 More
 =====

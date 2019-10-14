@@ -5,7 +5,6 @@
 import mock
 
 from t2stor.tools.service import Service
-from t2stor.tools.base import ToolBase
 from t2stor.tools.base import Executor
 from t2stor import test
 

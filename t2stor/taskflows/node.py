@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from t2stor.tools.base import Executor
-from t2stor.tools.ceph import Ceph as CephTool
 from t2stor.tools.package import Package as PackageTool
 from t2stor.tools.service import Service as ServiceTool
 from t2stor.tools.docker import Docker as DockerTool
@@ -15,6 +14,9 @@ class NodeTask(object):
         pass
 
     def chrony_uninstall(self):
+        pass
+
+    def chrony_restart(self):
         pass
 
     def ceph_mon_install(self):

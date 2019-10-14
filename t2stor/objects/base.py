@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-try:
-    from collections.abc import Callable
-except ImportError:
-    from collections import Callable
 
 import logging
 import datetime
@@ -12,7 +8,6 @@ from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
 from t2stor import db
-from t2stor import exception
 from t2stor import objects
 
 

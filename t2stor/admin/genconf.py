@@ -67,4 +67,3 @@ gpgcheck=0
 
 def get_agent_conf(node_ip):
     return agent_conf.format(my_ip=node_ip)
-

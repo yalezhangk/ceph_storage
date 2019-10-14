@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import copy
 import mock
 from oslo_utils import timeutils
 import pytz
-
-from netaddr import IPAddress
 
 from t2stor import exception
 from t2stor import objects
@@ -29,7 +26,7 @@ class TestSysConfig(test_objects.BaseObjectsTestCase):
     @mock.patch('t2stor.db.get_by_id', return_value=fake_sys_config)
     def test_get_by_id(self, sys_config_get):
         sys_config = objects.SysConfig.get_by_id(self.context,
-                                                fake_sys_config['id'])
+                                                 fake_sys_config['id'])
         self._compare(self, fake_sys_config, sys_config)
         sys_config_get.assert_called_once_with(
             self.context, "SysConfig", fake_sys_config['id'])

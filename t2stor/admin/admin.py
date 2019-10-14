@@ -1,17 +1,12 @@
 from concurrent import futures
-import json
 import queue
-import sys
 import time
 
 from oslo_log import log as logging
 
 from t2stor.service import ServiceBase
-from t2stor.agent import AgentClientManager
 from t2stor.admin.genconf import ceph_conf
-from t2stor import version
 from t2stor import objects
-from t2stor.common.config import CONF
 from t2stor.tools.base import Executor
 from t2stor.tools.ceph import Ceph as CephTool
 from t2stor.taskflows.node import NodeTask

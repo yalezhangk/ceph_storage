@@ -2,7 +2,6 @@ from concurrent import futures
 import time
 import logging
 import threading
-import socket
 import json
 
 import etcd3

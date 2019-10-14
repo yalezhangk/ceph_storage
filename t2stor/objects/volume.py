@@ -60,7 +60,7 @@ class VolumeList(base.ObjectListBase, base.StorObject):
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        volumes = db.volume_get_all( 
+        volumes = db.volume_get_all(
             context, marker=marker, limit=limit,
             sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters,
