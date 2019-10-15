@@ -234,6 +234,38 @@ class AdminHandler(object):
 
     ###################
 
+    def osd_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None):
+        filters = filters or {}
+        return objects.OsdList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+    def osd_get(self, ctxt, osd_id):
+        return objects.Osd.get_by_id(ctxt, osd_id)
+
+    def osd_create(self, ctxt, data):
+        osd = objects.Osd(
+            ctxt, node_id=data.get('node_id'),
+            disk_id=data.get('disk_id'),
+            status='creating')
+        osd.create()
+        return osd
+
+    def osd_update(self, ctxt, osd_id, data):
+        osd = objects.Osd.get_by_id(ctxt, osd_id)
+        for k, v in six.iteritems(data):
+            setattr(osd, k, v)
+        osd.save()
+        return osd
+
+    def osd_delete(self, ctxt, osd_id):
+        osd = objects.Osd.get_by_id(ctxt, osd_id)
+        osd.destroy()
+        return osd
+
+    ###################
+
     def datacenter_create(self, ctxt):
         uid = str(uuid.uuid4())
         datacenter_name = "datacenter-{}".format(uid[0:8])

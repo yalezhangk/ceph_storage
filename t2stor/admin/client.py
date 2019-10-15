@@ -156,6 +156,31 @@ class AdminClient(BaseClient):
         return response
 
     ###################
+    def osd_get(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_get", osd_id=osd_id)
+        return response
+
+    def osd_create(self, ctxt, data):
+        response = self.call(ctxt, "osd_create", data=data)
+        return response
+
+    def osd_update(self, ctxt, osd_id, data):
+        response = self.call(ctxt, "osd_update", osd_id=osd_id, data=data)
+        return response
+
+    def osd_delete(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_delete", osd_id=osd_id)
+        return response
+
+    def osd_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "osd_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    ###################
 
     def datacenter_create(self, ctxt):
         response = self.call(ctxt, "datacenter_create")

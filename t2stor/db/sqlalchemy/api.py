@@ -2821,6 +2821,7 @@ def process_filters(model):
 PAGINATION_HELPERS = {
     models.Volume: (_volume_get_query, _process_volume_filters, _volume_get),
     models.Node: (_node_get_query, process_filters(models.Node), _node_get),
+    models.Osd: (_osd_get_query, process_filters(models.Osd), _osd_get),
     models.Cluster: (_cluster_get_query, _process_cluster_filters,
                      _cluster_get),
     models.RPCService: (_rpc_service_get_query,
