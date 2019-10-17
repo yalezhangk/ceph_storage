@@ -53,8 +53,7 @@ def define_tables(meta):
                ForeignKey('volume_client_groups.id')),
         Column('pool_id', Integer,
                ForeignKey('pools.id')),
-        Column('snapshot_id', Integer,
-               ForeignKey('snap')),
+        Column('snapshot_id', Integer),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -301,22 +300,24 @@ def define_tables(meta):
         Column('fsid', String(36), nullable=True),
         Column('mem_read_cache', BigInteger, nullable=True),
         Column('node_id', Integer, ForeignKey('nodes.id')),
-        Column('disk_id', Integer, ForeignKey('disks.id')),
-        Column('cache_partition_id', Integer,
-               ForeignKey('disk_partitions.id')),
-        Column('db_partition_id', Integer, ForeignKey('disk_partitions.id')),
-        Column('wal_partition_id', Integer, ForeignKey('disk_partitions.id')),
-        Column('journal_partition_id', Integer,
-               ForeignKey('disk_partitions.id')),
+        # Column('disk_id', Integer, ForeignKey('disks.id')),
+        # Column('cache_partition_id', Integer,
+        #        ForeignKey('disk_partitions.id')),
+        # Column('db_partition_id', Integer, ForeignKey('disk_partitions.id')),
+        # Column('wal_partition_id', Integer,
+        #        ForeignKey('disk_partitions.id')),
+        # Column('journal_partition_id', Integer,
+        #        ForeignKey('disk_partitions.id')),
         Column('pool_id', Integer, ForeignKey('pools.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
 
-    return [clusters, volume, volume_snapshot, rpc_services, datacenter,
-            rack, node, sysconf, volume_access_path, volume_ap_gateway,
-            volume_client_group, volume_client, pools, osds, osd_pools]
+    return [clusters, pools, volume_access_path, volume_client_group,
+            volume, volume_snapshot, rpc_services, datacenter,
+            rack, node, sysconf, volume_ap_gateway,
+            volume_client, osds, osd_pools]
 
 
 def upgrade(migrate_engine):
