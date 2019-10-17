@@ -217,7 +217,7 @@ class RBDProxy(object):
             logger.error("remove rbd: {} error".format(rbd_name))
             raise CephException(message=e)
 
-    def rbd_clone(self, p_v_name, p_s_name,  c_io_ctx, c_v_name):
+    def rbd_clone(self, p_v_name, p_s_name, c_io_ctx, c_v_name):
         try:
             self.rbd_inst.clone(
                 self.io_ctx, p_v_name, p_s_name, c_io_ctx, c_v_name)
