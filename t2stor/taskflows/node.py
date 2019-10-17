@@ -43,21 +43,35 @@ class NodeTask(object):
         service_tool.restart('chronyd')
 
     def ceph_mon_install(self):
+        # install package
+        # write ceph.conf
+        # start service
         pass
 
     def ceph_mon_uninstall(self):
+        # update ceph.conf
+        # stop service
+        # uninstall package
         pass
 
     def ceph_osd_install(self):
+        # write ceph.conf
+        # start service
         pass
 
     def ceph_osd_uninstall(self):
+        # update ceph.conf
+        # stop service
         pass
 
     def ceph_rgw_install(self):
+        # write ceph.conf
+        # start service
         pass
 
     def ceph_rgw_uninstall(self):
+        # update ceph.conf
+        # stop service
         pass
 
     def ceph_igw_install(self):
@@ -94,4 +108,7 @@ class NodeTask(object):
         )
 
     def t2stor_agent_uninstall(self):
+        # stop agent
+        # rm config file
+        # rm image
         pass
