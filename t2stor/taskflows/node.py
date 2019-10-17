@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from t2stor.tools.base import Executor
+from t2stor.tools.base import SSHExecutor
 from t2stor.tools.package import Package as PackageTool
 from t2stor.tools.service import Service as ServiceTool
 from t2stor.tools.docker import Docker as DockerTool
@@ -10,14 +11,36 @@ from t2stor.admin.genconf import get_agent_conf
 
 
 class NodeTask(object):
+    node = None
+
+    def __init__(self, node):
+        self.node = node
+
+    def get_ssh_executor(self):
+        return SSHExecutor(hostname=self.node.ip_address,
+                           password=self.node.password)
+
     def chrony_install(self):
-        pass
+        ssh = self.get_ssh_executor()
+        # install package
+        package_tool = PackageTool(ssh)
+        package_tool.install(["chrony"])
+        # write config
+        file_tool = FileTool(ssh)
+        file_tool.write("/etc/chrony.conf", get_agent_conf(None))
+        # start service
+        service_tool = ServiceTool(ssh)
+        service_tool.restart('chronyd')
 
     def chrony_uninstall(self):
-        pass
+        ssh = self.get_ssh_executor()
+        package_tool = PackageTool(ssh)
+        package_tool.uninstall(["chrony"])
 
     def chrony_restart(self):
-        pass
+        ssh = self.get_ssh_executor()
+        service_tool = ServiceTool(ssh)
+        service_tool.restart('chronyd')
 
     def ceph_mon_install(self):
         pass

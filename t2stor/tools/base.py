@@ -18,6 +18,35 @@ class Executor(object):
         """Command executor"""
         pass
 
+    def run_command(self, args, timeout=None):
+        logger.debug("Run Command: {}".format(args))
+        if not isinstance(args, (list, six.binary_type, six.text_type)):
+            raise RunCommandArgsError()
+
+        cmd = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        stdout, stderr = cmd.communicate()
+        rc = cmd.returncode
+        return (rc, stdout, stderr)
+
+    def write(self, filename, content):
+        f = open(filename, "w")
+        f.write(content)
+        f.close()
+
+
+class SSHExecutor(Executor):
+    ssh = None
+
+    def __init__(self, hostname=None, port=22, user='root', password=None,
+                 pkey=None):
+        """Command executor"""
+        super(SSHExecutor, self).__init__()
+        self.connect(hostname=hostname, port=port, user=user,
+                     password=password, pkey=pkey)
+
     def connect(self, hostname=None, port=22, user='root', password=None,
                 pkey=None):
         """connect remote host
@@ -52,21 +81,6 @@ class Executor(object):
         if not isinstance(args, (list, six.binary_type, six.text_type)):
             raise RunCommandArgsError()
 
-        if self.ssh:
-            return self.run_remote_command(args, timeout=timeout)
-        else:
-            return self.run_local_command(args)
-
-    def run_local_command(self, args):
-        cmd = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        stdout, stderr = cmd.communicate()
-        rc = cmd.returncode
-        return (rc, stdout, stderr)
-
-    def run_remote_command(self, args, timeout=None):
         if isinstance(args, list):
             args = ' '.join(args)
         stdin, stdout, stderr = self.ssh.exec_command(args, timeout=timeout)
@@ -76,16 +90,11 @@ class Executor(object):
         return (rc, stdout, stderr)
 
     def write(self, filename, content):
-        if self.ssh:
-            ftp = self.ssh.open_sftp()
-            f = ftp.file(filename, "w", -1)
-            f.write(content)
-            f.flush()
-            ftp.close()
-        else:
-            f = open(filename, "w")
-            f.write(content)
-            f.close()
+        ftp = self.ssh.open_sftp()
+        f = ftp.file(filename, "w", -1)
+        f.write(content)
+        f.flush()
+        ftp.close()
 
 
 class ToolBase(object):
@@ -104,7 +113,7 @@ def test():
     print(rc)
     print(out)
     print(err)
-    ex.connect("127.0.0.1", 22, 'root')
+    ex = SSHExecutor("127.0.0.1", 22, 'root')
     rc, out, err = ex.run_command(["ls", "/tmp"])
     print("Result:")
     print(rc)
