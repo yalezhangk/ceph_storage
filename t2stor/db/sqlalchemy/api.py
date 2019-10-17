@@ -1016,7 +1016,7 @@ def osd_create(context, values):
     osd_ref.update(values)
     session = get_session()
     with session.begin():
-        osd_ref.save()
+        osd_ref.save(session)
 
     return osd_ref
 
