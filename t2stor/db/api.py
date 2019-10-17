@@ -265,6 +265,170 @@ def osd_update(context, osd_id, values):
 
 ###################
 
+def volume_access_path_create(context, values):
+    """Create a volume from the values dictionary."""
+    return IMPL.volume_access_path_create(context, values)
+
+
+def volume_access_path_destroy(context, access_path_id):
+    """Destroy the volume or raise if it does not exist."""
+    return IMPL.volume_access_path_destroy(context, access_path_id)
+
+
+def volume_access_path_get(context, access_path_id):
+    """Get a volume or raise if it does not exist."""
+    return IMPL.volume_access_path_get(context, access_path_id)
+
+
+def volume_access_path_get_all(context, marker=None, limit=None,
+                               sort_keys=None, sort_dirs=None,
+                               filters=None, offset=None):
+    """Get all volumes."""
+    return IMPL.volume_access_path_get_all(
+        context, marker=marker, limit=limit,
+        sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters,
+        offset=offset)
+
+
+def volume_access_path_update(context, access_path_id, values):
+    """Set the given properties on a volume and update it.
+
+    Raises NotFound if volume does not exist.
+
+    """
+    return IMPL.volume_access_path_update(context, access_path_id, values)
+
+
+def volume_access_paths_update(context, values_list):
+    """Set the given properties on a list of volumes and update them.
+
+    Raises NotFound if a volume does not exist.
+    """
+    return IMPL.volume_access_paths_update(context, values_list)
+
+
+###############
+
+def volume_ap_gateway_create(context, values):
+    """Create a volume from the values dictionary."""
+    return IMPL.volume_ap_gateway_create(context, values)
+
+
+def volume_ap_gateway_destroy(context, ap_gateway_id):
+    """Destroy the volume or raise if it does not exist."""
+    return IMPL.volume_ap_gateway_destroy(context, ap_gateway_id)
+
+
+def volume_ap_gateway_get(context, ap_gateway_id):
+    """Get a volume or raise if it does not exist."""
+    return IMPL.volume_ap_gateway_get(context, ap_gateway_id)
+
+
+def volume_ap_gateway_get_all(context, marker=None, limit=None,
+                              sort_keys=None, sort_dirs=None,
+                              filters=None, offset=None):
+    """Get all volumes."""
+    return IMPL.volume_ap_gateway_get_all(
+        context, marker=marker, limit=limit,
+        sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters,
+        offset=offset)
+
+
+def volume_ap_gateway_update(context, ap_gateway_id, values):
+    """Set the given properties on a volume and update it.
+
+    Raises NotFound if volume does not exist.
+
+    """
+    return IMPL.volume_ap_gateway_update(context, ap_gateway_id, values)
+
+
+def volume_ap_gateways_update(context, values_list):
+    """Set the given properties on a list of volumes and update them.
+
+    Raises NotFound if a volume does not exist.
+    """
+    return IMPL.volume_ap_gateways_update(context, values_list)
+
+###############
+
+
+def volume_client_create(context, values):
+    """Create a volume from the values dictionary."""
+    return IMPL.volume_client_create(context, values)
+
+
+def volume_client_destroy(context, volume_client_id):
+    """Destroy the volume or raise if it does not exist."""
+    return IMPL.volume_client_destroy(context, volume_client_id)
+
+
+def volume_client_get(context, volume_client_id):
+    """Get a volume or raise if it does not exist."""
+    return IMPL.volume_client_get(context, volume_client_id)
+
+
+def volume_client_get_all(context, marker=None, limit=None,
+                          sort_keys=None, sort_dirs=None,
+                          filters=None, offset=None):
+    """Get all volumes."""
+    return IMPL.volume_client_get_all(
+        context, marker=marker, limit=limit,
+        sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters,
+        offset=offset)
+
+
+def volume_client_update(context, volume_client_id, values):
+    """Set the given properties on a volume and update it.
+
+    Raises NotFound if volume does not exist.
+
+    """
+    return IMPL.volume_client_update(context, volume_client_id, values)
+
+
+###############
+
+
+def volume_client_group_create(context, values):
+    """Create a volume from the values dictionary."""
+    return IMPL.volume_client_group_create(context, values)
+
+
+def volume_client_group_destroy(context, client_group_id):
+    """Destroy the volume or raise if it does not exist."""
+    return IMPL.volume_client_group_destroy(context, client_group_id)
+
+
+def volume_client_group_get(context, client_group_id):
+    """Get a volume or raise if it does not exist."""
+    return IMPL.volume_client_group_get(context, client_group_id)
+
+
+def volume_client_group_get_all(context, marker=None, limit=None,
+                                sort_keys=None, sort_dirs=None,
+                                filters=None, offset=None):
+    """Get all volumes."""
+    return IMPL.volume_client_group_get_all(
+        context, marker=marker, limit=limit,
+        sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters,
+        offset=offset)
+
+
+def volume_client_group_update(context, client_group_id, values):
+    """Set the given properties on a volume and update it.
+
+    Raises NotFound if volume does not exist.
+
+    """
+    return IMPL.volume_client_group_update(context, client_group_id, values)
+
+###############
+
 
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)

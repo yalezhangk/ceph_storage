@@ -252,7 +252,7 @@ def volume_create(context, values):
 
 @require_admin_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-def volume_destroy(context, volume_id):
+def volume_destroy(context, access_path_id):
     session = get_session()
     now = timeutils.utcnow()
     with session.begin():
@@ -261,7 +261,7 @@ def volume_destroy(context, volume_id):
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
         model_query(context, models.Volume, session=session).\
-            filter_by(id=volume_id).\
+            filter_by(id=access_path_id).\
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1141,6 +1141,572 @@ def sys_config_update(context, sys_config_id, values):
 
 ###############################
 
+@handle_db_data_error
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_access_path_create(context, values):
+
+    volume_access_path_ref = models.VolumeAccessPath()
+    volume_access_path_ref.update(values)
+
+    session = get_session()
+    with session.begin():
+        volume_access_path_ref.save(session)
+
+    return volume_access_path_ref
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_access_path_destroy(context, access_path_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'status': 'deleted',
+                          'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.VolumeAccessPath, session=session).\
+            filter_by(id=access_path_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def _volume_access_path_get_query(context, session=None, project_only=False,
+                                  joined_load=True):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run _volume_access_path_get_query
+    :param session: the session to use
+    :param project_only: the boolean used to decide whether to query the
+                         volume in the current project or all projects
+    :param joined_load: the boolean used to decide whether the query loads
+                        the other models, which join the volume model in
+                        the database. Currently, the False value for this
+                        parameter is specially for the case of updating
+                        database during volume migration
+    :returns: updated query or None
+    """
+    return model_query(context, models.VolumeAccessPath, session=session,
+                       project_only=project_only)
+
+
+@require_context
+def _volume_access_path_get(context, access_path_id, session=None,
+                            joined_load=True):
+    result = _volume_access_path_get_query(
+        context, session=session, project_only=True, joined_load=joined_load)
+    result = result.filter_by(id=access_path_id).first()
+
+    if not result:
+        raise exception.VolumeAccessPathNotFound(access_path_id=access_path_id)
+
+    return result
+
+
+@require_context
+def volume_access_path_get(context, access_path_id):
+    return _volume_access_path_get(context, access_path_id)
+
+
+@require_context
+def volume_access_path_get_all(context, marker=None,
+                               limit=None, sort_keys=None,
+                               sort_dirs=None, filters=None, offset=None):
+    """Retrieves all volumes.
+
+    If no sort parameters are specified then the returned volumes are sorted
+    first by the 'created_at' key and then by the 'id' key in descending
+    order.
+
+    :param context: context to query under
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :returns: list of matching volumes
+    """
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.VolumeAccessPath,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No volumes would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@handle_db_data_error
+@require_context
+def volume_access_path_update(context, access_path_id, values):
+    session = get_session()
+    with session.begin():
+        query = _volume_access_path_get_query(
+            context, session, joined_load=False)
+        result = query.filter_by(id=access_path_id).update(values)
+        if not result:
+            raise exception.VolumeAccessPathNotFound(
+                access_path_id=access_path_id)
+
+
+@handle_db_data_error
+@require_context
+def volume_access_paths_update(context, values_list):
+    session = get_session()
+    with session.begin():
+        volume_access_path_refs = []
+        for values in values_list:
+            access_path_id = values['id']
+            values.pop('id')
+            volume_access_path_ref = _volume_access_path_get(
+                context,
+                access_path_id,
+                session=session)
+            volume_access_path_ref.update(values)
+            volume_access_path_refs.append(volume_access_path_ref)
+
+        return volume_access_path_refs
+###############################
+
+
+@handle_db_data_error
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_ap_gateway_create(context, values):
+
+    volume_ap_gateway_ref = models.VolumeAPGateway()
+    volume_ap_gateway_ref.update(values)
+
+    session = get_session()
+    with session.begin():
+        volume_ap_gateway_ref.save(session)
+
+    return volume_ap_gateway_ref
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_ap_gateway_destroy(context, ap_gateway_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'status': 'deleted',
+                          'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.VolumeAPGateway, session=session).\
+            filter_by(id=ap_gateway_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def _volume_ap_gateway_get_query(context, session=None, project_only=False,
+                                 joined_load=True):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run _volume_ap_gateway_get_query
+    :param session: the session to use
+    :param project_only: the boolean used to decide whether to query the
+                         volume in the current project or all projects
+    :param joined_load: the boolean used to decide whether the query loads
+                        the other models, which join the volume model in
+                        the database. Currently, the False value for this
+                        parameter is specially for the case of updating
+                        database during volume migration
+    :returns: updated query or None
+    """
+    return model_query(context, models.VolumeAPGateway, session=session,
+                       project_only=project_only)
+
+
+@require_context
+def _volume_ap_gateway_get(context, ap_gateway_id, session=None,
+                           joined_load=True):
+    result = _volume_ap_gateway_get_query(
+        context, session=session, project_only=True, joined_load=joined_load)
+    result = result.filter_by(id=ap_gateway_id).first()
+
+    if not result:
+        raise exception.VolumeAPGatewayNotFound(ap_gateway_id=ap_gateway_id)
+
+    return result
+
+
+@require_context
+def volume_ap_gateway_get(context, ap_gateway_id):
+    return _volume_ap_gateway_get(context, ap_gateway_id)
+
+
+@require_context
+def volume_ap_gateway_get_all(context, marker=None,
+                              limit=None, sort_keys=None,
+                              sort_dirs=None, filters=None, offset=None):
+    """Retrieves all volumes.
+
+    If no sort parameters are specified then the returned volumes are sorted
+    first by the 'created_at' key and then by the 'id' key in descending
+    order.
+
+    :param context: context to query under
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :returns: list of matching volumes
+    """
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.VolumeAPGateway,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No volumes would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@handle_db_data_error
+@require_context
+def volume_ap_gateway_update(context, ap_gateway_id, values):
+    session = get_session()
+    with session.begin():
+        query = _volume_ap_gateway_get_query(
+            context, session, joined_load=False)
+        result = query.filter_by(id=ap_gateway_id).update(values)
+        if not result:
+            raise exception.VolumeAPGatewayNotFound(
+                ap_gateway_id=ap_gateway_id)
+
+
+@handle_db_data_error
+@require_context
+def volume_ap_gateways_update(context, values_list):
+    session = get_session()
+    with session.begin():
+        volume_ap_gateways_ref = []
+        for values in values_list:
+            ap_gateway_id = values['id']
+            values.pop('id')
+            volume_ap_gateway_ref = _volume_access_path_get(
+                context,
+                ap_gateway_id,
+                session=session)
+            volume_ap_gateway_ref.update(values)
+            volume_ap_gateways_ref.append(volume_ap_gateway_ref)
+
+        return volume_ap_gateways_ref
+
+
+###############################
+
+
+@handle_db_data_error
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_client_create(context, values):
+
+    volume_client_ref = models.VolumeClient()
+    volume_client_ref.update(values)
+
+    session = get_session()
+    with session.begin():
+        volume_client_ref.save(session)
+
+    return volume_client_ref
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_client_destroy(context, volume_client_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'status': 'deleted',
+                          'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.VolumeClient, session=session).\
+            filter_by(id=volume_client_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def _volume_client_get_query(context, session=None, project_only=False,
+                             joined_load=True):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run _volume_client_get_query
+    :param session: the session to use
+    :param project_only: the boolean used to decide whether to query the
+                         volume in the current project or all projects
+    :param joined_load: the boolean used to decide whether the query loads
+                        the other models, which join the volume model in
+                        the database. Currently, the False value for this
+                        parameter is specially for the case of updating
+                        database during volume migration
+    :returns: updated query or None
+    """
+    return model_query(context, models.VolumeClient, session=session,
+                       project_only=project_only)
+
+
+@require_context
+def _volume_client_get(context, volume_client_id, session=None,
+                       joined_load=True):
+    result = _volume_client_get_query(
+        context, session=session, project_only=True, joined_load=joined_load)
+    result = result.filter_by(id=volume_client_id).first()
+
+    if not result:
+        raise exception.VolumeClientNotFound(volume_client_id=volume_client_id)
+
+    return result
+
+
+@require_context
+def volume_client_get(context, volume_client_id):
+    return _volume_client_get(context, volume_client_id)
+
+
+@require_context
+def volume_client_get_all(context, marker=None,
+                          limit=None, sort_keys=None,
+                          sort_dirs=None, filters=None, offset=None):
+    """Retrieves all volumes.
+
+    If no sort parameters are specified then the returned volumes are sorted
+    first by the 'created_at' key and then by the 'id' key in descending
+    order.
+
+    :param context: context to query under
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :returns: list of matching volumes
+    """
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.VolumeClient,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No volumes would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@handle_db_data_error
+@require_context
+def volume_client_update(context, volume_client_id, values):
+    session = get_session()
+    with session.begin():
+        query = _volume_client_get_query(
+            context, session, joined_load=False)
+        result = query.filter_by(id=volume_client_id).update(values)
+        if not result:
+            raise exception.VolumeClientNotFound(
+                volume_client_id=volume_client_id)
+
+
+@handle_db_data_error
+@require_context
+def volume_clients_update(context, values_list):
+    session = get_session()
+    with session.begin():
+        volume_clients_ref = []
+        for values in values_list:
+            volume_client_id = values['id']
+            values.pop('id')
+            volume_client_ref = _volume_client_get(
+                context,
+                volume_client_id,
+                session=session)
+            volume_client_ref.update(values)
+            volume_clients_ref.append(volume_client_ref)
+
+        return volume_clients_ref
+
+
+###############################
+
+
+@handle_db_data_error
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_client_group_create(context, values):
+
+    volume_client_group_ref = models.VolumeClientGroup()
+    volume_client_group_ref.update(values)
+
+    session = get_session()
+    with session.begin():
+        volume_client_group_ref.save(session)
+
+    return volume_client_group_ref
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_client_group_destroy(context, client_group_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'status': 'deleted',
+                          'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.VolumeClientGroup, session=session).\
+            filter_by(id=client_group_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def _volume_client_group_get_query(context, session=None, project_only=False,
+                                   joined_load=True):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run _volume_client_group_get_query
+    :param session: the session to use
+    :param project_only: the boolean used to decide whether to query the
+                         volume in the current project or all projects
+    :param joined_load: the boolean used to decide whether the query loads
+                        the other models, which join the volume model in
+                        the database. Currently, the False value for this
+                        parameter is specially for the case of updating
+                        database during volume migration
+    :returns: updated query or None
+    """
+    return model_query(context, models.VolumeClientGroup, session=session,
+                       project_only=project_only)
+
+
+@require_context
+def _volume_client_group_get(context, client_group_id, session=None,
+                             joined_load=True):
+    result = _volume_client_group_get_query(
+        context, session=session, project_only=True, joined_load=joined_load)
+    result = result.filter_by(id=client_group_id).first()
+
+    if not result:
+        raise exception.VolumeClientGroupNotFound(
+            client_group_id=client_group_id)
+
+    return result
+
+
+@require_context
+def volume_client_group_get(context, client_group_id):
+    return _volume_client_group_get(context, client_group_id)
+
+
+@require_context
+def volume_client_group_get_all(context, marker=None,
+                                limit=None, sort_keys=None,
+                                sort_dirs=None, filters=None, offset=None):
+    """Retrieves all volumes.
+
+    If no sort parameters are specified then the returned volumes are sorted
+    first by the 'created_at' key and then by the 'id' key in descending
+    order.
+
+    :param context: context to query under
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :returns: list of matching volumes
+    """
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.VolumeClientGroup,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No volumes would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@handle_db_data_error
+@require_context
+def volume_client_group_update(context, client_group_id, values):
+    session = get_session()
+    with session.begin():
+        query = _volume_client_group_get_query(
+            context, session, joined_load=False)
+        result = query.filter_by(id=client_group_id).update(values)
+        if not result:
+            raise exception.VolumeClientGroupNotFound(
+                client_group_id=client_group_id)
+
+
+@handle_db_data_error
+@require_context
+def volume_client_groups_update(context, values_list):
+    session = get_session()
+    with session.begin():
+        volume_client_groups_ref = []
+        for values in values_list:
+            client_group_id = values['id']
+            values.pop('id')
+            volume_client_group_ref = _volume_client_group_get(
+                context,
+                client_group_id,
+                session=session)
+            volume_client_group_ref.update(values)
+            volume_client_groups_ref.append(volume_client_group_ref)
+
+        return volume_client_groups_ref
+
+
+###############################
+
 
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
@@ -1178,7 +1744,10 @@ PAGINATION_HELPERS = {
                      _cluster_get),
     models.RPCService: (_rpc_service_get_query,
                         process_filters(models.RPCService), _rpc_service_get),
-
+    models.VolumeAccessPath: (_volume_access_path_get_query),
+    models.VolumeAPGateway: (_volume_ap_gateway_get_query),
+    models.VolumeClient: (_volume_client_get_query),
+    models.VolumeClientGroup: (_volume_client_group_get_query),
 }
 
 
