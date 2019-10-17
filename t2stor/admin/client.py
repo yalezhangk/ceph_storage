@@ -14,12 +14,6 @@ from t2stor.service import BaseClientManager
 
 class AdminClient(BaseClient):
 
-    def get_ceph_conf(self, ctxt, ceph_host=None):
-        response = self.call(ctxt, method="get_ceph_conf", ceph_host=ceph_host)
-        return response
-
-    ###################
-
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
         response = self.call(
@@ -101,6 +95,11 @@ class AdminClient(BaseClient):
     def alert_rule_update(self, ctxt, alert_rule_id, data):
         response = self.call(ctxt, "alert_rule_update",
                              alert_rule_id=alert_rule_id,
+                             data=data)
+        return response
+
+    def node_roles_set(self, ctxt, node_id, data):
+        response = self.call(ctxt, "node_roles_set", node_id=node_id,
                              data=data)
         return response
 

@@ -36,6 +36,7 @@ from t2stor.api.handlers.nodes import NodeMetricsHistroyMonitorHandler
 from t2stor.api.handlers.nodes import NodeMetricsHistroyNetworkHandler
 from t2stor.api.handlers.nodes import NodeMetricsMonitorHandler
 from t2stor.api.handlers.nodes import NodeMetricsNetworkHandler
+from t2stor.api.handlers.nodes import NodeRoleHandler
 from t2stor.api.handlers.osds import OsdHandler
 from t2stor.api.handlers.osds import OsdListHandler
 from t2stor.api.handlers.osds import OsdMetricsHandler
@@ -104,6 +105,7 @@ def get_routers():
         (r"/networks/", NetworkListHandler),
         (r"/nodes/", NodeListHandler),
         (r"/nodes/([0-9]*)/", NodeHandler),
+        (r"/nodes/([0-9]*)/role/", NodeRoleHandler),
         (r"/nodes/([0-9]*)/metrics/", NodeMetricsMonitorHandler),
         (r"/nodes/([0-9]*)/history_metrics/",
             NodeMetricsHistroyMonitorHandler),
