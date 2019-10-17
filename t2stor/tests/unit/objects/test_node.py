@@ -16,6 +16,7 @@ from t2stor.tests.unit import objects as test_objects
 
 fake_node = {
     'id': 1,
+    'cluster_id': "3fc66dde-6c6b-42d2-983b-930198d0c2f5",
     'ip_address': "192.168.0.1",
     'gateway_ip_address': "192.168.0.1",
     'storage_cluster_ip_address': "192.168.0.1",
@@ -27,6 +28,7 @@ fake_node = {
     'role_storage': False,
     'role_block_gateway': False,
     'role_object_gateway': False,
+    'role_file_gateway': False,
     'hostname': "devel",
 }
 

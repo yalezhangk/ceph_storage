@@ -14,6 +14,7 @@ from t2stor.tests.unit import objects as test_objects
 fake_osd = {
     'id': 1,
     'name': "devel",
+    'cluster_id': "3fc66dde-6c6b-42d2-983b-930198d0c2f5",
     'pool_id': 1
 }
 
