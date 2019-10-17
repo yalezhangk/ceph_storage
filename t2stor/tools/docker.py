@@ -49,6 +49,15 @@ class Docker(ToolBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def restart(self, name):
+        logger.debug("Docker restart: {}".format(name))
+        cmd = ["docker", "restart", name]
+        rc, stdout, stderr = self.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
     def stop(self, name):
         logger.debug("Docker stop: {}".format(name))
         cmd = ["docker", "stop", name]

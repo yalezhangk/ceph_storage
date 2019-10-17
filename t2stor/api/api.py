@@ -41,7 +41,7 @@ class EchoWebSocket(WebSocketHandler):
             'cluster_id': context.cluster_id,
             'refresh': True,
             'payload': obj,
-            'resource_type': obj.obj_name(),
+            'resource_type': obj.obj_name() if obj else None,
             'operation_type': op_type
         }
         client.write_message(objects.json_encode(message))

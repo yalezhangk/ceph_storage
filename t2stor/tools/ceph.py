@@ -45,6 +45,20 @@ class CephTool(ToolBase):
 
         return cluster_network, public_network
 
+    def mon_install(self, hostname, fsid, ceph_auth='none'):
+
+        if ceph_auth == 'cephx':
+            # do cephx initial
+            pass
+        else:
+            cmd = ["ceph-mon", "--cluster", "ceph", "--setuser",
+                   "ceph", "--setgroup", "ceph", "--mkfs", "-i",
+                   hostname, "--fsid", fsid]
+            rc, stdout, stderr = self.run_command(cmd, timeout=60)
+            if rc:
+                raise RunCommandError(cmd=cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+
     def disk_prepare(self, backend, diskname, db_partition=None,
                      wal_partition=None, cache_partition=None,
                      journal_partition=None, fsid=None, osd_id=None):

@@ -1,18 +1,15 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import configparser
 import logging
 import os
 from pathlib import Path
 
 import paramiko
+from netaddr import IPAddress
+from netaddr import IPNetwork
 
 from t2stor import exception as exc
 from t2stor import objects
-from t2stor.admin.genconf import get_agent_conf
-from t2stor.admin.genconf import yum_repo
 from t2stor.agent.client import AgentClientManager
-from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
 from t2stor.tools.docker import Docker as DockerTool
 from t2stor.tools.file import File as FileTool
@@ -21,6 +18,50 @@ from t2stor.tools.service import Service as ServiceTool
 from t2stor.utils import template
 
 logger = logging.getLogger(__name__)
+
+
+class NodeMixin(object):
+    @classmethod
+    def _check_node_ip_address(cls, ctxt, data):
+        ip_address = data.get('ip_address')
+        storage_cluster_ip_address = data.get('storage_cluster_ip_address')
+        storage_public_ip_address = data.get('storage_public_ip_address')
+        admin_cidr = objects.sysconfig.sys_config_get(ctxt, key="admin_cidr")
+        public_cidr = objects.sysconfig.sys_config_get(ctxt, key="public_cidr")
+        cluster_cidr = objects.sysconfig.sys_config_get(ctxt,
+                                                        key="cluster_cidr")
+        if not all([ip_address,
+                    storage_cluster_ip_address,
+                    storage_public_ip_address]):
+            raise exc.Invalid('ip_address,storage_cluster_ip_address,'
+                              'storage_public_ip_address is required')
+
+        if objects.NodeList.get_all(ctxt, filters={"ip_address": ip_address}):
+            raise exc.Invalid("ip_address already exists!")
+        if IPAddress(ip_address) not in IPNetwork(admin_cidr):
+            raise exc.Invalid("admin ip not in admin cidr ({})"
+                              "".format(admin_cidr))
+        if objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "storage_cluster_ip_address": storage_cluster_ip_address
+            }
+        ):
+            raise exc.Invalid("storage_cluster_ip_address already exists!")
+        if IPAddress(storage_cluster_ip_address)not in IPNetwork(cluster_cidr):
+            raise exc.Invalid("cluster ip not in cluster cidr ({})"
+                              "".format(cluster_cidr))
+        if objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "storage_public_ip_address": storage_public_ip_address
+            }
+        ):
+            raise exc.Invalid("storage_public_ip_address already exists!")
+        if (IPAddress(storage_public_ip_address) not in
+                IPNetwork(public_cidr)):
+            raise exc.Invalid("public ip not in public cidr ({})"
+                              "".format(public_cidr))
 
 
 class NodeTask(object):
@@ -65,44 +106,110 @@ class NodeTask(object):
         return client
 
     def get_yum_repo(self):
-        repo_url = objects.sysconfig.sys_config_get("repo_url")
+        repo_url = objects.sysconfig.sys_config_get(self.ctxt, "repo_url")
         tpl = template.get('yum.repo.j2')
         repo = tpl.render(repo_baseurl=repo_url)
         return repo
 
+    def get_chrony_conf(self):
+        chrony_server = objects.sysconfig.sys_config_get(self.ctxt,
+                                                         "chrony_server")
+        tpl = template.get('chrony.conf.j2')
+        chrony_conf = tpl.render(chrony_server=chrony_server,
+                                 ip_address=str(self.node.ip_address))
+        return chrony_conf
+
+    def get_agent_conf(self):
+        admin_ip_address = objects.sysconfig.sys_config_get(
+            self.ctxt, "admin_ip_address")
+        api_port = objects.sysconfig.sys_config_get(
+            self.ctxt, "api_port")
+        websocket_port = objects.sysconfig.sys_config_get(
+            self.ctxt, "websocket_port")
+        admin_port = objects.sysconfig.sys_config_get(
+            self.ctxt, "admin_port")
+        agent_port = objects.sysconfig.sys_config_get(
+            self.ctxt, "agent_port")
+        database_user = objects.sysconfig.sys_config_get(
+            self.ctxt, "database_user")
+        database_password = objects.sysconfig.sys_config_get(
+            self.ctxt, "database_password")
+
+        tpl = template.get('agent.conf.j2')
+        agent_conf = tpl.render(
+            ip_address=str(self.node.ip_address),
+            admin_ip_address=admin_ip_address,
+            api_port=api_port,
+            websocket_port=websocket_port,
+            admin_port=admin_port,
+            agent_port=agent_port,
+            node_id=self.node.id,
+            cluster_id=self.node.cluster_id,
+            database_user=database_user,
+            database_password=database_password
+        )
+        return agent_conf
+
     def chrony_install(self):
         ssh = self.get_ssh_executor()
         # install package
-        package_tool = PackageTool(ssh)
-        package_tool.install(["chrony"])
-        # write config
         file_tool = FileTool(ssh)
-        file_tool.write("/etc/chrony.conf", get_agent_conf(None))
-        # start service
-        service_tool = ServiceTool(ssh)
-        service_tool.restart('chronyd')
+        file_tool.write("/etc/t2stor/chrony.conf",
+                        self.get_chrony_conf())
+
+        # run container
+        docker_tool = DockerTool(ssh)
+        docker_tool.run(
+            image="t2stor/chrony:v2.3",
+            privileged=True,
+            name="t2stor_chrony",
+            volumes=[("/etc/t2stor", "/etc/t2stor"),
+                     ("/var/log/t2stor", "/var/log/t2stor")]
+        )
 
     def chrony_uninstall(self):
-        ssh = self.get_ssh_executor()
-        package_tool = PackageTool(ssh)
-        package_tool.uninstall(["chrony"])
+        pass
 
     def chrony_update(self):
-        pass
-        # TODO 更新时间同步服务器配置
-        # file_tool = FileTool(ssh)
-        # file_tool.write("/etc/chrony.conf", get_agent_conf(None))
-
-    def chrony_restart(self):
         ssh = self.get_ssh_executor()
-        service_tool = ServiceTool(ssh)
-        service_tool.restart('chronyd')
+        # install package
+        file_tool = FileTool(ssh)
+        file_tool.write("/etc/t2stor/chrony.conf",
+                        self.get_chrony_conf())
+
+        # restart container
+        docker_tool = DockerTool(ssh)
+        docker_tool.restart('t2stor_chrony')
+
+    def node_exporter_install(self):
+        ssh = self.get_ssh_executor()
+        # run container
+        docker_tool = DockerTool(ssh)
+        docker_tool.run(
+            image="t2stor/node_exporter:v2.3",
+            privileged=True,
+            name="t2stor_node_exporter",
+            volumes=[("/etc/t2stor", "/etc/t2stor"),
+                     ("/", "/host", "ro,rslave")]
+        )
+
+    def node_exporter_uninstall(self):
+        pass
+
+    def node_exporter_restart(self):
+        pass
 
     def ceph_mon_install(self):
-        # install package
-        # write ceph.conf
-        # start service
-        pass
+        logger.debug("install ceph mon")
+        ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
+        agent = self.get_agent()
+        agent.ceph_conf_write(self.ctxt, ceph_conf_content)
+
+        # TODO: key
+        logger.debug("mon install on node")
+        ceph_auth = objects.CephConfig.get_by_key(
+            self.ctxt, 'global', 'auth_cluster_required')
+        agent.ceph_mon_create(self.ctxt, ceph_auth=ceph_auth)
 
     def ceph_mon_uninstall(self):
         # update ceph.conf
@@ -147,23 +254,24 @@ class NodeTask(object):
         """Ceph ISCSI gateway uninstall"""
         pass
 
-    def t2stor_agent_install(self, ip_address, password):
-        ssh_client = Executor()
-        ssh_client.connect(hostname=ip_address, password=password)
+    def t2stor_agent_install(self):
+        ssh = self.get_ssh_executor()
         # create config
-        file_tool = FileTool(ssh_client)
+        file_tool = FileTool(ssh)
         file_tool.mkdir("/etc/t2stor")
-        file_tool.write("/etc/t2stor/agent.conf", get_agent_conf(ip_address))
-        file_tool.write("/etc/yum.repos.d/yum.repo", yum_repo)
+        file_tool.write("/etc/t2stor/agent.conf",
+                        self.get_agent_conf())
+        file_tool.write("/etc/yum.repos.d/yum.repo",
+                        self.get_yum_repo())
         # install docker
-        package_tool = PackageTool(ssh_client)
+        package_tool = PackageTool(ssh)
         package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
         # start docker
-        service_tool = ServiceTool(ssh_client)
+        service_tool = ServiceTool(ssh)
         service_tool.start('docker')
         # load image
-        docker_tool = DockerTool(ssh_client)
-        docker_tool.image_load("/opt/t2stor/repo/files/t2stor.tar")
+        docker_tool = DockerTool(ssh)
+        docker_tool.image_load("/opt/t2stor/repo/images/t2stor-base-v2.3.tar")
         # run container
         docker_tool.run(
             image="t2stor/t2stor:v2.3",

@@ -25,3 +25,12 @@ cluster_configs = {
     'debug_rgw': {'type': 'int', 'default': 5},
     'osd_pool_default_type': {'type': 'string', 'default': 'replicated'},
 }
+
+default_cluster_configs = {
+    'mon_allow_pool_delete': 'true',
+    'backend_type': 'kernel',
+    'auth_cluster_required': 'none',
+    'auth_service_required': 'none',
+    'auth_client_required': 'none',
+    'osd_crush_update_on_start': 'false',
+}

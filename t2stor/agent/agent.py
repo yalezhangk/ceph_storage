@@ -21,8 +21,9 @@ from t2stor.tools.disk import DiskTool as DiskTool
 from t2stor.tools.docker import Docker as DockerTool
 from t2stor.tools.file import File as FileTool
 from t2stor.tools.log_file import LogFile as LogFileTool
+from t2stor.tools.package import Package as PackageTool
 from t2stor.tools.pysmart import Device as DevideTool
-from t2stor.tools.service import Service
+from t2stor.tools.service import Service as ServiceTool
 from t2stor.tools.storcli import StorCli as StorCliTool
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -164,6 +165,32 @@ class AgentHandler(object):
             disk_tool.data_clear(osd.journal_partition.name)
         return osd
 
+    def ceph_mon_create(self, context, ceph_auth='none'):
+        client = self._get_ssh_client()
+        # install package
+        package_tool = PackageTool(client)
+        package_tool.install(["ceph-mon", "ceph-mgr"])
+        # create mon dir
+        file_tool = FileTool(client)
+        file_tool.mkdir("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
+        file_tool.chown("/var/lib/ceph/mon", user='ceph', group='ceph')
+        # create mgr dir
+        file_tool.mkdir("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
+        file_tool.chown("/var/lib/ceph/mgr", user='ceph', group='ceph')
+
+        ceph_tool = CephTool(client)
+        ceph_tool.mon_install(self.node.hostname,
+                              self.node.cluster_id,
+                              ceph_auth=ceph_auth)
+
+        # enable and start ceph-mon
+        service_tool = ServiceTool(client)
+        service_tool.enable("ceph-mon@{}".format(self.node.hostname))
+        service_tool.start("ceph-mon@{}".format(self.node.hostname))
+        service_tool.enable("ceph-mgr@{}".format(self.node.hostname))
+        service_tool.start("ceph-mgr@{}".format(self.node.hostname))
+        return True
+
     def package_install(self, context, packages):
         logger.debug("Install Package")
         return True
@@ -177,7 +204,7 @@ class AgentHandler(object):
 
     def service_restart(self, context, name):
         logger.debug("Service restart: %s", name)
-        tool = Service(self.executor)
+        tool = ServiceTool(self.executor)
         tool.restart(name)
         return True
 
@@ -200,7 +227,7 @@ class AgentHandler(object):
         if not ssh_client:
             return False
         docker_tool = DockerTool(ssh_client)
-        service_tool = Service(ssh_client)
+        service_tool = ServiceTool(ssh_client)
         services = []
 
         for role, sers in six.iteritems(service_map):
