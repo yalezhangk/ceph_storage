@@ -22,8 +22,8 @@ class BaseClientManager:
     """Client Manager
 
     cluster_id: Which cluster to connect.
-    async_support: True, return value of rpc call.
-                   False, return Future of rpc call.
+    async_support: False, return value of rpc call.
+                   True, return Future of rpc call.
     """
     cluster_id = None
     channel = None
