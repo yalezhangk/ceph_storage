@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 class EchoWebSocket(WebSocketHandler):
     clients = {}
 
+    def check_origin(self, origin):
+        return CONF.check_origin
+
     def open(self):
         logger.debug("WebSocket opened")
         self.clients['user_id'] = self
