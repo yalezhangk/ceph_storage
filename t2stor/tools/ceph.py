@@ -21,11 +21,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_POOL = 'rbd'
 
 
-# TODO: The commands module has been removed in Python 3.
-def commands(x):
-    return x
-
-
 class Ceph(ToolBase):
     """Deprecated Ceph Tool
 
@@ -119,73 +114,6 @@ def get_json_output(json_databuf):
     logger.debug('get_json_output, outbuf: {}'.format(outbuf))
     outdata = json.loads(outbuf)
     return outdata
-
-
-class CrushmapTool(object):
-    def __init__(self):
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type_, value, traceback):
-        pass
-
-    def rule_remove(self, rule_name='replicated_rule'):
-        """
-        ceph osd crush rule rm <rule_name>
-        """
-        command_str = 'ceph osd crush rule rm %(rule_name)s' \
-            % {'rule_name': rule_name}
-        ret, errmsg = commands.getstatusoutput(command_str)
-        if ret:
-            logger.error("rule_remove failed: {}".format(errmsg))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        return True
-
-    def rule_add(self, file_in, file_out=None, rule_name='replicated_rule',
-                 root_name='default', choose_type='host', device_class=None):
-        """
-        crushtool -i <file_in> --create-replicated-rule rule-test root-test \
-            rack --device-class hdd -o file_out
-        crushtool -i <file_in> --create-replicated-rule rule-test root-test \
-            rack --device-class ssd -o file_out
-        crushtool -i <file_in> --create-replicated-rule rule-test root-test \
-            rack -o file_out
-        """
-        if file_in is None:
-            return False
-        if file_out is None:
-            file_out = file_in + '.add_rule'
-
-        class_type_arg = ''
-        # device_class is ssd or hdd
-        if device_class is not None:
-            class_type_arg = '--device-class {}'.format(device_class)
-        command_str = 'crushtool -i %(file_in)s --create-replicated-rule \
-            %(rule_name)s %(root_name)s %(choose_type)s %(class_type_arg)s -o %(file_out)s' \
-            % {'file_in': file_in, 'rule_name': rule_name,
-               'root_name': root_name, 'choose_type': choose_type,
-               'class_type_arg': class_type_arg, 'file_out': file_out}
-        ret, errmsg = commands.getstatusoutput(command_str)
-        if ret:
-            logger.error("rule_add failed: {}".format(errmsg))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        return True
-
-    def set_crushmap(self, file_in=None):
-        if file_in is None:
-            return False
-        command_str = 'ceph osd setcrushmap -i %(file_in)s' \
-            % {'file_in': file_in}
-        ret, errmsg = commands.getstatusoutput(command_str)
-        if ret:
-            logger.error("set_crushmap failed: {}".format(errmsg))
-            raise CephException(
-                message="set crushmap error {}".format(errmsg))
-        return True
 
 
 class RBDProxy(object):
@@ -432,15 +360,7 @@ class RADOSClient(object):
         pass
 
     def pool_set_replica_size(self, pool_name=DEFAULT_POOL, rep_size=None):
-        if rep_size is None:
-            rep_size = int(self.client.conf_get('osd_pool_default_size'))
-        command_str = 'ceph osd pool set %(pool_name)s size %(rep_size)s' \
-            % {'pool_name': pool_name, 'rep_size': rep_size}
-        ret, errmsg = commands.getstatusoutput(command_str)
-        if ret:
-            logger.error("set replica size error: {}".format(errmsg))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
+        return self.set_pool_info(pool_name, "size", rep_size)
 
     def pool_create(self, pool_name=None, pool_type=None, rule_name=None,
                     ec_profile=None, pg_num=None, pgp_num=None, rep_size=0):
@@ -467,31 +387,30 @@ class RADOSClient(object):
 
         FIXME Only support create replicated pool now
         """
-        if pg_num is None:
-            pg_num = int(self.client.conf_get('osd_pool_default_pg_num'))
-            pgp_num = int(self.client.conf_get('osd_pool_default_pgp_num'))
-        else:
-            if pg_num != pgp_num:
-                pgp_num = pg_num
-        command_str = 'ceph osd pool create %(pool_name)s %(pg_num)s \
-            %(pgp_num)s %(pool_type)s %(rule_name)s 0 0 %(rep_size)s' \
-            % {'pool_name': pool_name, 'pg_num': pg_num, 'pgp_num': pgp_num,
-               'pool_type': pool_type, 'rule_name': rule_name,
-               'rep_size': rep_size}
-        ret, errmsg = commands.getstatusoutput(command_str)
-        if ret:
-            logger.error(errmsg)
-            return False
-        return True
+        cmd = {
+            "rule": "0",
+            "pool_type": pool_type,
+            "prefix": "osd pool create",
+            "pg_num": pg_num,
+            "erasure_code_profile": rule_name,
+            "pgp_num": pgp_num,
+            "expected_num_objects": 0,
+            "format": "json",
+            "pool": pool_name,
+        }
+        if rep_size:
+            cmd["size"] = rep_size
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
 
-    def config_set(self, service, key, value):
-        command_str = 'ceph tell %(service)s config set %(key)s %(value)s' \
-                      % {'service': service, 'key': key, 'value': value}
-        ret, errmsg = commands.getstatusoutput(command_str)
-        if ret:
-            logger.error(errmsg)
-            return False
-        return True
+    def config_set(self, osd_id, key, value):
+        cmd = {
+            "prefix": "config set",
+            "key": key,
+            "value": value
+        }
+        command_str = json.dumps(cmd)
+        self._send_osd_command(osd_id, command_str)
 
     def conf_get(self, key):
         return self.client.conf_get(key)
@@ -776,47 +695,29 @@ class RADOSClient(object):
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
 
-    def decode_crushmap(self, filename=None):
-        if filename is None:
-            return False
-        crushmap_outfile = filename + '.txt'
-        ret, errmsg = commands.getstatusoutput(
-            'crushtool -d {} -o {}'.format(filename, crushmap_outfile))
-        if ret:
-            logger.debug(errmsg)
-            return False
-        return True
-
-    def get_crushmap(self, filename=None):
-        """
-        {"prefix": "osd getcrushmap"}
-        {"prefix": "osd setcrushmap"} XXX parameter???
-        """
-        if filename is None:
-            return False
-        ret, crushmap_outbuf, __ = self.client.mon_command(
-            '{"prefix":"osd getcrushmap", "format":"json"}', '')
-        if ret:
-            return False
-        with open(filename, 'wb') as f:
-            f.write(crushmap_outbuf)
-        return True
-
-    def _send_mon_command(self, command_str, get_result=True):
-        ret, outbuf, __ = self.client.mon_command(command_str, '')
+    def _send_mon_command(self, command_str):
+        ret, outbuf, _ign = self.client.mon_command(command_str, '')
         if ret:
             raise CephException(
                 message="execute command failed: {}".format(command_str))
-        if get_result:
-            return get_json_output(outbuf)
-        else:
-            return None
+        return get_json_output(outbuf)
+
+    def _send_osd_command(self, osd_id, command_str):
+        ret, outbuf, _ign = self.client.osd_command(osd_id, command_str, '')
+        if ret:
+            raise CephException(
+                message="execute command failed: {}".format(command_str))
+        return get_json_output(outbuf)
 
     def get_device_class(self):
         """
         {"prefix": "osd crush class ls", "format": "json"}
         """
-        command_str = '{"prefix":"osd crush class ls", "format":"json"}'
+        cmd = {
+            "prefix": "osd crush class ls",
+            "format": "json",
+        }
+        command_str = json.dumps(cmd)
         device_class_data = self._send_mon_command(command_str)
         return device_class_data
 
@@ -825,11 +726,13 @@ class RADOSClient(object):
         pass
 
     def get_pool_info(self, pool_name, keyword):
-        command_str = '{"var": "%(keyword)s", "prefix": "osd pool get", '
-        '"pool": "%(pool)s", "format":"json"}' % {
-                'keyword': keyword,
-                'pool': pool_name
-            }
+        cmd = {
+            "var": keyword,
+            "prefix": "osd pool get",
+            "pool": pool_name,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
         pool_info = self._send_mon_command(command_str)
         return pool_info
 
@@ -854,10 +757,37 @@ class RADOSClient(object):
         return osds
 
     def set_pool_info(self, pool_name, keyword, value):
-        command_str = '{"var": "%(keyword)s", "prefix": "osd pool set", "pool": \
-            "%(pool)s", "val":"%(value)s"}' % {
-                'keyword': keyword,
-                'pool': pool_name,
-                "value": value
-            }
-        self._send_mon_command(command_str, False)
+        cmd = {
+            "var": keyword,
+            "prefix": "osd pool set",
+            "pool": pool_name,
+            "format": "json",
+            "val": value
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
+    def rule_remove(self, rule_name):
+        """
+        ceph osd crush rule rm <rule_name>
+        """
+        cmd = {
+            "prefix": "osd crush rule rm",
+            "format": "json",
+            "name": rule_name
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
+    def rule_add(self, rule_name='replicated_rule', root_name='default',
+                 choose_type='host', device_class=None):
+        cmd = {
+            "root": root_name,
+            "prefix": "osd crush rule create-replicated",
+            "type": choose_type,
+            "name": rule_name,
+        }
+        if device_class:
+            cmd["class"] = device_class
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
