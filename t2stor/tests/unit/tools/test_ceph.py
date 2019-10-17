@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import json
 import mock
 
 from t2stor.tools.ceph import Ceph
+from t2stor.tools.ceph import RADOSClient
 from t2stor.tools.base import Executor
 from t2stor import test
 
@@ -168,33 +169,49 @@ get_osds_re = """
 
 
 class TestServiceTool(test.TestCase):
-
     @mock.patch.object(Executor, 'run_command')
-    def test_get_mons(self, run_command):
-        run_command.return_value = (0, get_mons_re, "")
+    def test_get_networks(self, run_command):
+        run_command.return_value = (0, "172.159.3.0/16", "")
         tool = Ceph(Executor())
-        re = tool.get_mons()
+        re = tool.get_networks()
+        self.assertEqual(("172.159.3.0/16", "172.159.3.0/16"), re)
+        run_command.assert_has_calls([
+            mock.call("ceph-conf --lookup cluster_network", timeout=1),
+            mock.call("ceph-conf --lookup public_network", timeout=1)
+        ])
+
+
+class TestRadosClient(test.TestCase):
+
+    @mock.patch('t2stor.tools.ceph.rados')
+    def test_get_mon_hosts(self, rados):
+        rados.Rados = mock.MagicMock()
+        rados.Rados().mon_command.return_value = (0, get_mons_re, "")
+        tool = RADOSClient("config")
+        re = tool.get_mon_hosts()
         self.assertEqual(['172.160.6.71'], re)
-        run_command.assert_called_once_with(
-            "ceph mon dump --format json-pretty", timeout=1
-        )
+        cmd = {"prefix": "mon dump", "format": "json"}
+        rados.Rados().mon_command.assert_called_once_with(
+            json.dumps(cmd), '')
 
-    @mock.patch.object(Executor, 'run_command')
-    def test_get_mgrs(self, run_command):
-        run_command.return_value = (0, get_mgrs_re, "")
-        tool = Ceph(Executor())
-        re = tool.get_mgrs()
+    @mock.patch('t2stor.tools.ceph.rados')
+    def test_get_osd_hosts(self, rados):
+        rados.Rados = mock.MagicMock()
+        rados.Rados().mon_command.return_value = (0, get_osds_re, "")
+        tool = RADOSClient("config")
+        re = tool.get_osd_hosts()
+        self.assertEqual(sorted(['172.160.6.69', '172.160.6.70']), sorted(re))
+        cmd = {"prefix": "osd dump", "format": "json"}
+        rados.Rados().mon_command.assert_called_once_with(
+            json.dumps(cmd), '')
+
+    @mock.patch('t2stor.tools.ceph.rados')
+    def test_get_mgr_hosts(self, rados):
+        rados.Rados = mock.MagicMock()
+        rados.Rados().mon_command.return_value = (0, get_mgrs_re, "")
+        tool = RADOSClient("config")
+        re = tool.get_mgr_hosts()
         self.assertEqual(['172.160.6.71'], re)
-        run_command.assert_called_once_with(
-            "ceph mgr dump --format json-pretty", timeout=1
-        )
-
-    @mock.patch.object(Executor, 'run_command')
-    def test_get_osds(self, run_command):
-        run_command.return_value = (0, get_osds_re, "")
-        tool = Ceph(Executor())
-        re = tool.get_osds()
-        self.assertEqual(sorted(['172.160.6.70', '172.160.6.69']), sorted(re))
-        run_command.assert_called_once_with(
-            "ceph osd dump --format json-pretty", timeout=1
-        )
+        cmd = {"prefix": "mgr dump", "format": "json"}
+        rados.Rados().mon_command.assert_called_once_with(
+            json.dumps(cmd), '')
