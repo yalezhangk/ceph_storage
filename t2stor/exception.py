@@ -152,3 +152,19 @@ class CephException(StorException):
 
 class Invalid(StorException):
     message = _("%(msg)s")
+
+
+class VolumeAccessPathNotFound(NotFound):
+    message = _("VolumeAccessPath %(access_path_id)s could not be found.")
+
+
+class VolumeAPGatewayNotFound(NotFound):
+    message = _("VolumeAPGateway %(ap_gateway_id)s could not be found.")
+
+
+class VolumeClientNotFound(NotFound):
+    message = _("VolumeClient %(volume_client_id)s could not be found.")
+
+
+class VolumeClientGroupNotFound(NotFound):
+    message = _("VolumeClientGroup %(client_group_id)s could not be found.")

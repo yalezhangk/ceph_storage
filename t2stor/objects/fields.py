@@ -62,3 +62,16 @@ class NodeStatus(BaseStorEnum):
 
 class NodeStatusField(BaseEnumField):
     AUTO_TYPE = NodeStatus()
+
+
+class VolumeAccessPathStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVE = 'active'
+    DELETING = 'deleting'
+    ERROR = 'error'
+
+    ALL = (CREATING, ACTIVE, DELETING, ERROR)
+
+
+class VolumeAccessPathStatusField(BaseEnumField):
+    AUTO_TYPE = VolumeAccessPathStatus()

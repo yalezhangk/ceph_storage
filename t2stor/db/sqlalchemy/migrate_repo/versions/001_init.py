@@ -33,19 +33,47 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    volumes = Table(
+    volume = Table(
         "volumes", meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
-        Column('user_id', String(255)),
-        Column('project_id', String(255)),
         Column('size', Integer),
+        Column('used', Integer),
+        Column('snapshot_num', Integer),
         Column('status', String(255)),
         Column('display_name', String(255)),
         Column('display_description', String(255)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        Column('access_path_id', Integer,
+               ForeignKey('volume_access_paths.id')),
+        Column('volume_client_group_id', Integer,
+               ForeignKey('volume_client_groups.id')),
+        Column('pool_id', Integer,
+               ForeignKey('pools.id')),
+        Column('snapshot_id', Integer,
+               ForeignKey('snap')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    volume_snapshot = Table(
+        "volume_snapshots", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('uuid', String(36)),
+        Column('display_name', String(255)),
+        Column('status', String(255)),
+        Column('is_protect', Boolean),
+        Column('size', Integer),
+        Column('used', Integer),
+        Column('volume_id', Integer,
+               ForeignKey('volumes.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
@@ -145,7 +173,79 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    return [clusters, volumes, rpc_services, datacenter, rack, node, sysconf]
+    volume_access_path = Table(
+        "volume_access_paths", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('iqn', String(80)),
+        Column('name', String(32)),
+        Column('status', String(32)),
+        Column('type', String(32)),
+        Column('chap_enable', Boolean),
+        Column('chap_username', String(32)),
+        Column('chap_password', String(32)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    volume_ap_gateway = Table(
+        "volume_ap_gateways", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('iqn', String(80)),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('volume_access_path_id', Integer,
+               ForeignKey('volume_access_paths.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    volume_client_group = Table(
+        "volume_client_groups", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('name', String(32)),
+        Column('type', String(32)),
+        Column('chap_enable', Boolean),
+        Column('chap_username', String(32)),
+        Column('chap_password', String(32)),
+        Column('volume_access_path_id', Integer,
+               ForeignKey('volume_access_paths.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    volume_client = Table(
+        "volume_clients", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('client_type', String(32)),
+        Column('iqn', String(80)),
+        Column('volume_client_group_id', Integer,
+               ForeignKey('volume_client_groups.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    return [clusters, volume, volume_snapshot, rpc_services, datacenter,
+            rack, node, sysconf, volume_access_path, volume_ap_gateway,
+            volume_client_group, volume_client]
 
 
 def upgrade(migrate_engine):

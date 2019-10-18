@@ -69,7 +69,7 @@ class Rack(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
-    datacenter_id = Column(String(36), ForeignKey('datacenters.id'))
+    datacenter_id = Column(Integer, ForeignKey('datacenters.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -123,7 +123,7 @@ class Disk(BASE, StorBase):
     sys_disk = Column(Boolean, index=True)
     role = Column(String(32), default='data', index=True)
     partition_num = Column(Integer)
-    node_id = Column(String(36), ForeignKey('nodes.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -138,8 +138,8 @@ class DiskPartition(BASE, StorBase):
     type = Column(String(32))
     sys_partition = Column(Boolean, index=True)
     role = Column(String(32), default='cache', index=True)
-    node_id = Column(String(36), ForeignKey('nodes.id'))
-    disk_id = Column(String(36), ForeignKey('disks.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    disk_id = Column(Integer, ForeignKey('disks.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -154,7 +154,7 @@ class Network(BASE, StorBase):
     mac_address = Column(String(32))
     type = Column(String(32))
     speed = Column(Integer)
-    node_id = Column(String(36), ForeignKey('nodes.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -163,7 +163,7 @@ class Service(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), index=True)
-    node_id = Column(String(36), ForeignKey('nodes.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
     status = Column(String(32))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
@@ -183,11 +183,11 @@ class Osd(BASE, StorBase):
     maintain = Column(Boolean)
     fsid = Column(String(36))
     mem_read_cache = Column(BigInteger)  # bytes
-    node_id = Column(String(36), ForeignKey('nodes.id'))
-    disk_id = Column(String(36), ForeignKey('disks.id'))
-    cache_partition_id = Column(String(36), ForeignKey('disk_partitions.id'))
-    db_partition_id = Column(String(36), ForeignKey('disk_partitions.id'))
-    pool_id = Column(String(36), ForeignKey('pools.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    disk_id = Column(Integer, ForeignKey('disks.id'))
+    cache_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
+    db_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
+    pool_id = Column(Integer, ForeignKey('pools.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -219,10 +219,19 @@ class Volume(BASE, StorBase):
     __tablename__ = "volumes"
 
     id = Column(Integer, primary_key=True)
-    size = Column(Integer)
+    size = Column(BigInteger)
+    used = Column(BigInteger)
+    snapshot_num = Column(Integer)
     status = Column(String(255))  # TODO(vish): enum?
     display_name = Column(String(255))
     display_description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    volume_access_path_id = Column(Integer,
+                                   ForeignKey('volume_access_paths.id'))
+    volume_client_group_id = Column(Integer,
+                                    ForeignKey('volume_client_groups.id'))
+    pool_id = Column(Integer, ForeignKey('pools.id'))
+    snapshot_id = Column(Integer, ForeignKey('volume_snapshots.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -232,11 +241,11 @@ class VolumeSnapshot(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36))
     display_name = Column(String(255))
-    display_description = Column(String(255))
+    is_protect = Column(Boolean, default=False)
     status = Column(String(32))
     size = Column(BigInteger)
     used = Column(BigInteger)
-    volume_id = Column(String(36), ForeignKey('volumes.id'))
+    volume_id = Column(Integer, ForeignKey('volumes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -249,4 +258,54 @@ class SysConfig(BASE, StorBase):
     value = Column(String(255))
     value_type = Column(String(36))
     display_description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class VolumeAccessPath(BASE, StorBase):
+    __tablename__ = "volume_access_paths"
+
+    id = Column(Integer, primary_key=True)
+    iqn = Column(String(80))
+    name = Column(String(32))
+    status = Column(String(32))
+    type = Column(String(32))
+    chap_enable = Column(Boolean, default=False)  # 服务端对客户端的认证
+    chap_username = Column(String(32))
+    chap_password = Column(String(32))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class VolumeAPGateway(BASE, StorBase):
+    __tablename__ = "volume_ap_gateways"
+
+    id = Column(Integer, primary_key=True)
+    iqn = Column(String(80))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    volume_access_path_id = Column(Integer,
+                                   ForeignKey('volume_access_paths.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class VolumeClient(BASE, StorBase):
+    __tablename__ = "volume_clients"
+
+    id = Column(Integer, primary_key=True)
+    client_type = Column(String(32))
+    iqn = Column(String(80))
+    volume_client_group_id = Column(Integer,
+                                    ForeignKey('volume_client_groups.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class VolumeClientGroup(BASE, StorBase):
+    __tablename__ = "volume_client_groups"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32))
+    type = Column(String(32))
+    chap_enable = Column(Boolean, default=False)  # 客户端对服务端的认证
+    chap_username = Column(String(32))
+    chap_password = Column(String(32))
+    volume_access_path_id = Column(Integer,
+                                   ForeignKey('volume_access_paths.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
