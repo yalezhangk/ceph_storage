@@ -18,3 +18,4 @@ def register_all():
     __import__('t2stor.objects.volume_ap_gateway')
     __import__('t2stor.objects.volume_client')
     __import__('t2stor.objects.volume_client_group')
+    __import__('t2stor.objects.pool')

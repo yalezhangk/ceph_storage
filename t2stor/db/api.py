@@ -188,6 +188,32 @@ def node_update(context, node_id, values):
 ###################
 
 
+def pool_create(context, values):
+    return IMPL.pool_create(context, values)
+
+
+def pool_destroy(context, pool_id):
+    return IMPL.pool_destroy(context, pool_id)
+
+
+def pool_get(context, pool_id):
+    return IMPL.pool_get(context, pool_id)
+
+
+def pool_get_all(context, filters, marker, limit,
+                 offset, sort_keys, sort_dirs):
+    return IMPL.pool_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def pool_update(context, pool_id, values):
+    return IMPL.pool_update(context, pool_id, values)
+
+
+###################
+
+
 def datacenter_create(context, values):
     return IMPL.datacenter_create(context, values)
 

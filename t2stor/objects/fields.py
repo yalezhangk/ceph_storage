@@ -75,3 +75,18 @@ class VolumeAccessPathStatus(BaseStorEnum):
 
 class VolumeAccessPathStatusField(BaseEnumField):
     AUTO_TYPE = VolumeAccessPathStatus()
+
+
+class PoolStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVE = 'active'
+    DELETING = 'deleting'
+    ERROR = 'error'
+    INACTIVE = 'inactive'
+    DELETED = 'deleted'
+
+    ALL = (CREATING, ACTIVE, DELETING, ERROR, INACTIVE, DELETED)
+
+
+class PoolStatusField(BaseEnumField):
+    AUTO_TYPE = PoolStatus()

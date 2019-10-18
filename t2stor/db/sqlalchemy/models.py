@@ -1,9 +1,12 @@
 from oslo_config import cfg
 from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float
+from sqlalchemy import BigInteger, Boolean, Column, DateTime
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Table
+from sqlalchemy.orm import relationship
+
 
 CONF = cfg.CONF
 BASE = declarative_base()
@@ -79,23 +82,25 @@ class Node(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     hostname = Column(String(255))
     ip_address = Column(String(32))
-    gateway_ip_address = Column(String(32))
+    object_gateway_ip_address = Column(String(32))
+    block_gateway_ip_address = Column(String(32))
+    file_gateway_ip_address = Column(String(32))
     storage_cluster_ip_address = Column(String(32))
     storage_public_ip_address = Column(String(32))
     password = Column(String(32))
     status = Column(String(255))
-    role_base = Column(Boolean, default=False)
     role_admin = Column(Boolean, default=False)
     role_monitor = Column(Boolean, default=False)
     role_storage = Column(Boolean, default=False)
     role_block_gateway = Column(Boolean, default=False)
     role_object_gateway = Column(Boolean, default=False)
+    role_file_gateway = Column(Boolean, default=False)
     vendor = Column(String(255))
     model = Column(String(255))
     cpu_num = Column(Integer)
     cpu_model = Column(String(255))
     cpu_core_num = Column(Integer)
-    mem_num = Column(BigInteger)
+    mem_size = Column(BigInteger)
     sys_type = Column(String(255))
     sys_version = Column(String(255))
     rack_id = Column(String(36), ForeignKey('racks.id'))
@@ -131,12 +136,10 @@ class DiskPartition(BASE, StorBase):
     __tablename__ = "disk_partitions"
 
     id = Column(Integer, primary_key=True)
-    partition_id = Column(Integer)
     name = Column(String(32))
     size = Column(BigInteger)  # bytes
     status = Column(String(32))
     type = Column(String(32))
-    sys_partition = Column(Boolean, index=True)
     role = Column(String(32), default='cache', index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
@@ -168,6 +171,16 @@ class Service(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
+osd_pools = Table(
+    'osd_pools',
+    BASE.metadata,
+    Column('id', Integer, primary_key=True, nullable=False),
+    Column('osd_id', Integer, ForeignKey("osds.id")),
+    Column('pool_id', Integer, ForeignKey("pools.id")),
+    Column('cluster_id', String(36), ForeignKey('clusters.id'))
+)
+
+
 class Osd(BASE, StorBase):
     __tablename__ = "osds"
 
@@ -175,18 +188,17 @@ class Osd(BASE, StorBase):
     name = Column(String(32), index=True)
     size = Column(BigInteger)  # bytes
     used = Column(BigInteger)  # bytes
-    db_size = Column(BigInteger)  # bytes
-    cache_size = Column(BigInteger)  # bytes
     status = Column(String(32), index=True)
     type = Column(String(32), index=True)
     role = Column(String(32), index=True)
-    maintain = Column(Boolean)
     fsid = Column(String(36))
     mem_read_cache = Column(BigInteger)  # bytes
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
     cache_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     db_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
+    wal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
+    journal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     pool_id = Column(Integer, ForeignKey('pools.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
@@ -195,8 +207,9 @@ class Pool(BASE, StorBase):
     __tablename__ = "pools"
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String(36))
-    name = Column(String(32), index=True)
+    display_name = Column(String(32), index=True)
+    pool_id = Column(Integer)
+    pool_name = Column(String(64))
     type = Column(String(32))  # ec or replica pool
     data_chunk_num = Column(Integer)  # 数据块数量(ec pool)
     coding_chunk_num = Column(Integer)  # 校验块数量(ec pool)
@@ -208,11 +221,9 @@ class Pool(BASE, StorBase):
     osd_num = Column(Integer)
     speed_type = Column(String(32))
     failure_domain_type = Column(String(32), default='host', index=True)
-    crush_rule = Column(String(1024))
-    start_time = Column(DateTime)
-    end_time = Column(DateTime)
-    threshold = Column(Float)
+    crush_rule = Column(String(64))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    osds = relationship('osds', secondary=osd_pools, backref='nodes')
 
 
 class Volume(BASE, StorBase):

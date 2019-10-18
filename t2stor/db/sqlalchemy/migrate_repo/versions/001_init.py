@@ -130,23 +130,25 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True, nullable=False),
         Column('hostname', String(255)),
         Column('ip_address', String(32)),
-        Column('gateway_ip_address', String(32)),
+        Column('object_gateway_ip_address', String(32)),
+        Column('block_gateway_ip_address', String(32)),
+        Column('file_gateway_ip_address', String(32)),
         Column('storage_cluster_ip_address', String(32)),
         Column('storage_public_ip_address', String(32)),
         Column('password', String(32)),
         Column('status', String(255)),
-        Column('role_base', Boolean),
         Column('role_admin', Boolean),
         Column('role_monitor', Boolean),
         Column('role_storage', Boolean),
         Column('role_block_gateway', Boolean),
         Column('role_object_gateway', Boolean),
+        Column('role_file_gateway', Boolean),
         Column('vendor', String(255)),
         Column('model', String(255)),
         Column('cpu_num', String(255)),
         Column('cpu_model', String(255)),
         Column('cpu_core_num', String(255)),
-        Column('mem_num', BigInteger),
+        Column('mem_size', BigInteger),
         Column('sys_type', String(255)),
         Column('sys_version', String(255)),
         Column('rack_id', Integer, ForeignKey('racks.id')),
@@ -243,9 +245,78 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
+    osd_pools = Table(
+        'osd_pools',
+        meta,
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('osd_id', Integer, ForeignKey("osds.id")),
+        Column('pool_id', Integer, ForeignKey("pools.id")),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    pools = Table(
+        'pools',
+        meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean, nullable=False),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('display_name', String(32), nullable=True),
+        Column('pool_id', Integer, nullable=True),
+        Column('pool_name', String(64), nullable=True),
+        Column('type', String(32), nullable=True),
+        Column('role', String(32), nullable=True),
+        Column('status', String(32), nullable=True),
+        Column('data_chunk_num', Integer, nullable=True),
+        Column('coding_chunk_num', Integer, nullable=True),
+        Column('size', BigInteger, nullable=True),
+        Column('used', BigInteger, nullable=True),
+        Column('osd_num', Integer, nullable=True),
+        Column('speed_type', String(32), nullable=True),
+        Column('replicate_size', Integer, nullable=True),
+        Column('failure_domain_type', String(32), nullable=False),
+        Column('crush_rule', String(64), nullable=True),
+        Column('cluster_id', ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    osds = Table(
+        'osds',
+        meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean, nullable=False),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('name', String(32), nullable=True),
+        Column('size', BigInteger, nullable=True),
+        Column('used', BigInteger, nullable=True),
+        Column('status', String(32), nullable=True),
+        Column('type', String(32), nullable=True),
+        Column('role', String(32), nullable=True),
+        Column('fsid', String(36), nullable=True),
+        Column('mem_read_cache', BigInteger, nullable=True),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('disk_id', Integer, ForeignKey('disks.id')),
+        Column('cache_partition_id', Integer,
+               ForeignKey('disk_partitions.id')),
+        Column('db_partition_id', Integer, ForeignKey('disk_partitions.id')),
+        Column('wal_partition_id', Integer, ForeignKey('disk_partitions.id')),
+        Column('journal_partition_id', Integer,
+               ForeignKey('disk_partitions.id')),
+        Column('pool_id', Integer, ForeignKey('pools.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
     return [clusters, volume, volume_snapshot, rpc_services, datacenter,
             rack, node, sysconf, volume_access_path, volume_ap_gateway,
-            volume_client_group, volume_client]
+            volume_client_group, volume_client, pools, osds, osd_pools]
 
 
 def upgrade(migrate_engine):
