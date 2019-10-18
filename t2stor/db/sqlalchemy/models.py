@@ -233,7 +233,7 @@ class Pool(BASE, StorBase):
     failure_domain_type = Column(String(32), default='host', index=True)
     crush_rule = Column(String(64))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    osds = relationship('osds', secondary=osd_pools, backref='nodes')
+    osds = relationship('Osd', secondary=osd_pools, backref='nodes')
 
 
 class Volume(BASE, StorBase):
@@ -247,7 +247,6 @@ class Volume(BASE, StorBase):
     status = Column(String(255))  # TODO(vish): enum?
     display_name = Column(String(255))
     display_description = Column(String(255))
-    cluster_id = Column(String(36), ForeignKey('clusters.id'))
     volume_access_path_id = Column(Integer,
                                    ForeignKey('volume_access_paths.id'))
     volume_client_group_id = Column(Integer,

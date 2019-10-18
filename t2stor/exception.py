@@ -152,6 +152,7 @@ class CephException(StorException):
 
 class Invalid(StorException):
     message = _("%(msg)s")
+    code = 400
 
 
 class VolumeAccessPathNotFound(NotFound):
@@ -168,3 +169,11 @@ class VolumeClientNotFound(NotFound):
 
 class VolumeClientGroupNotFound(NotFound):
     message = _("VolumeClientGroup %(client_group_id)s could not be found.")
+
+
+class LicenseNotFound(NotFound):
+    message = _("License %(license_id)s could not be found.")
+
+
+class InvalidInput(Invalid):
+    message = _("Invalid input received: %(reason)s")

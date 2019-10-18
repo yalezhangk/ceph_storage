@@ -456,6 +456,21 @@ def volume_client_group_update(context, client_group_id, values):
 ###############
 
 
+def license_create(context, values):
+    return IMPL.license_create(context, values)
+
+
+def license_update(context, license_id, values):
+    return IMPL.license_update(context, license_id, values)
+
+
+def license_get_latest_valid(context, *args, **kwargs):
+    return IMPL.license_get_latest_valid(context, *args, **kwargs)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 
