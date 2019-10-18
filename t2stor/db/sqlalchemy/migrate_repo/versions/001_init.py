@@ -157,23 +157,6 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    sysconf = Table(
-        "sysconfs", meta,
-        Column('created_at', DateTime),
-        Column('updated_at', DateTime),
-        Column('deleted_at', DateTime),
-        Column('deleted', Boolean),
-        Column('id', Integer, primary_key=True, nullable=False),
-        Column('service_id', String(36)),
-        Column('key', String(255)),
-        Column('value', String(255)),
-        Column('value_type', String(36)),
-        Column('display_description', String(255)),
-        Column('cluster_id', String(36), ForeignKey('clusters.id')),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8'
-    )
-
     volume_access_path = Table(
         "volume_access_paths", meta,
         Column('created_at', DateTime),
@@ -360,10 +343,187 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
+    sysconf = Table(
+        "sys_configs", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('key', String(255)),
+        Column('value', String(255)),
+        Column('value_type', String(36)),
+        Column('display_description', String(255)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    cephconfig = Table(
+        "ceph_configs", meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('key', String(255)),
+        Column('value', String(255)),
+        Column('value_type', String(36)),
+        Column('display_description', String(255)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    license_files = Table(
+        'license_files', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('content', String(2048)),
+        Column('status', String(32)),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    ceph_logs = Table(
+        'ceph_logs', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True, nullable=False),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('log_type', String(32)),
+        Column('log_name', String(64)),
+        Column('log_size', Integer),
+        Column('log_ctime', DateTime),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    alert_group_relate_rule = Table(
+        'alert_group_relate_rule', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('alert_groups_id', Integer, ForeignKey("alert_groups.id")),
+        Column('alert_rules_id', Integer, ForeignKey("alert_rules.id")),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    alert_group_relate_email = Table(
+        'alert_group_relate_email', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('alert_groups_id', Integer, ForeignKey("alert_groups.id")),
+        Column('email_groups_id', Integer, ForeignKey("email_groups.id")),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    alert_groups = Table(
+        'alert_groups', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(64)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    alert_rules = Table(
+        'alert_rules', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('resource_type', String(32)),
+        Column('type', String(64)),
+        Column('trigger_value', String(64)),
+        Column('level', String(64)),
+        Column('trigger_period', String(64)),
+        Column('enabled', Boolean, default=False),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    email_groups = Table(
+        'email_groups', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(64)),
+        Column('emails', String(1024)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    alert_logs = Table(
+        'alert_logs', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('readed', Boolean, default=False),
+        Column('resource_type', String(32)),
+        Column('level', String(32)),
+        Column('alert_value', String(128)),
+        Column('resource_id', String(32)),
+        Column('resource_name', String(64)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    action_logs = Table(
+        'action_logs', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('begin_time', DateTime),
+        Column('finish_time', DateTime),
+        Column('client_ip', String(64)),
+        Column('user_id', String(32)),
+        Column('action', String(32)),
+        Column('resource_id', String(32)),
+        Column('resource_name', String(64)),
+        Column('resource_type', String(32)),
+        Column('status', String(32), default='under way'),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
     return [clusters, pools, volume_access_path, volume_client_group,
             volume, volume_snapshot, rpc_services, datacenter,
-            rack, node, disks, disk_partitions, sysconf, volume_ap_gateway,
-            volume_client, osds, osd_pools]
+            rack, node, disks, disk_partitions,
+            volume_ap_gateway, volume_client, osds, osd_pools, sysconf,
+            cephconfig, license_files, ceph_logs,
+            alert_rules, email_groups, alert_groups, alert_group_relate_rule,
+            alert_group_relate_email,
+            alert_logs, action_logs]
 
 
 def upgrade(migrate_engine):
