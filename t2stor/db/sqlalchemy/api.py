@@ -1708,6 +1708,20 @@ def volume_client_groups_update(context, values_list):
 ###############################
 
 
+@require_context
+def license_create(context, values):
+    license_ref = models.LicenseFile()
+    license_ref.update(values)
+    session = get_session()
+    with session.begin():
+        license_ref.save(session)
+
+    return license_ref
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 

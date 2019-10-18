@@ -259,18 +259,6 @@ class VolumeSnapshot(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
-class SysConfig(BASE, StorBase):
-    __tablename__ = "sys_configs"
-
-    id = Column(Integer, primary_key=True)
-    service_id = Column(String(36))
-    key = Column(String(255))
-    value = Column(String(255))
-    value_type = Column(String(36))
-    display_description = Column(String(255))
-    cluster_id = Column(String(36), ForeignKey('clusters.id'))
-
-
 class VolumeAccessPath(BASE, StorBase):
     __tablename__ = "volume_access_paths"
 
@@ -318,4 +306,145 @@ class VolumeClientGroup(BASE, StorBase):
     chap_password = Column(String(32))
     volume_access_path_id = Column(Integer,
                                    ForeignKey('volume_access_paths.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class SysConfig(BASE, StorBase):
+    __tablename__ = "sys_configs"
+
+    id = Column(Integer, primary_key=True)
+    key = Column(String(255))
+    value = Column(String(255))
+    value_type = Column(String(36))
+    display_description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class CephConfig(BASE, StorBase):
+    __tablename__ = "ceph_configs"
+
+    id = Column(Integer, primary_key=True)
+    key = Column(String(255))
+    value = Column(String(255))
+    value_type = Column(String(36))
+    display_description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class LicenseFile(BASE, StorBase):
+    """License_file db, save binary license file"""
+    __tablename__ = 'license_files'
+
+    id = Column(Integer, primary_key=True)
+    content = Column(String(2048))
+    status = Column(String(32))
+
+
+class CephLog(BASE, StorBase):
+    """Mon/Osd log file metadata info"""
+    __tablename__ = 'ceph_logs'
+
+    id = Column(Integer, primary_key=True)
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    log_type = Column(String(32))
+    log_name = Column(String(64))
+    log_size = Column(Integer)
+    log_ctime = Column(DateTime)  # 状态修改时间change time
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+# 告警通知与告警规则多对多关系
+alert_group_relate_rule = Table(
+    'alert_group_relate_rule', BASE.metadata,
+    Column('created_at', DateTime),
+    Column('updated_at', DateTime),
+    Column('deleted_at', DateTime),
+    Column('deleted', Boolean),
+    Column('id', Integer, primary_key=True),
+    Column('alert_groups_id', Integer, ForeignKey("alert_groups.id")),
+    Column('alert_rules_id', Integer, ForeignKey("alert_rules.id")),
+    Column('cluster_id', String(36), ForeignKey('clusters.id'))
+)
+
+
+# 告警通知与邮件组多对多关系
+alert_group_relate_email = Table(
+    'alert_group_relate_email', BASE.metadata,
+    Column('created_at', DateTime),
+    Column('updated_at', DateTime),
+    Column('deleted_at', DateTime),
+    Column('deleted', Boolean),
+    Column('id', Integer, primary_key=True),
+    Column('alert_groups_id', Integer, ForeignKey("alert_groups.id")),
+    Column('email_groups_id', Integer, ForeignKey("email_groups.id")),
+    Column('cluster_id', String(36), ForeignKey('clusters.id'))
+)
+
+
+class AlertGroup(BASE, StorBase):
+    """Alert group 告警通知组, 组合:哪些规则需要通知哪些邮件组"""
+    __tablename__ = 'alert_groups'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64))
+    alert_rules = relationship('AlertRule', secondary=alert_group_relate_rule,
+                               backref='alert_groups')
+    email_groups = relationship('EmailGroup',
+                                secondary=alert_group_relate_email,
+                                backref='alert_groups')
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class AlertRule(BASE, StorBase):
+    """ Alert rule 告警规则"""
+    __tablename__ = 'alert_rules'
+
+    id = Column(Integer, primary_key=True)
+    resource_type = Column(String(32))
+    type = Column(String(64))  # 告警类型
+    trigger_value = Column(String(64))  # 触发值 eg:>80%
+    level = Column(String(64))  # 告警级别
+    trigger_period = Column(String(64))  # 告警周期(分钟)
+    enabled = Column(Boolean, default=False)  # 是否启用
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class EmailGroup(BASE, StorBase):
+    """Email group 邮件组"""
+    __tablename__ = 'email_groups'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64))
+    emails = Column(String(1024))  # 收件地址组
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class AlertLog(BASE, StorBase):
+    """告警记录表"""
+    __tablename__ = 'alert_logs'
+
+    id = Column(Integer, primary_key=True)
+    readed = Column(Boolean, default=False)
+    resource_type = Column(String(32))
+    level = Column(String(32))
+    alert_value = Column(String(128))
+    resource_id = Column(String(32))
+    resource_name = Column(String(64))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class ActionLog(BASE, StorBase):
+    """操作记录表"""
+    __tablename__ = 'action_logs'
+
+    id = Column(Integer, primary_key=True)
+    begin_time = Column(DateTime)
+    finish_time = Column(DateTime)
+    client_ip = Column(String(64))
+    user_id = Column(String(32))
+    action = Column(String(32))
+    resource_id = Column(String(32))
+    resource_name = Column(String(64))
+    resource_type = Column(String(32))
+    status = Column(String(32), default='under way')  # success/under way/fail
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
