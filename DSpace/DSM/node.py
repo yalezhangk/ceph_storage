@@ -27,6 +27,35 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
+    def _node_delete(self, ctxt, node):
+        node_id = node.id
+        try:
+            if node.role_monitor:
+                self._mon_uninstall(ctxt, node)
+            if node.role_storage:
+                self._storage_uninstall(ctxt, node)
+            if node.role_block_gateway:
+                self._bgw_uninstall(ctxt, node)
+            if node.role_object_gateway:
+                self._rgw_uninstall(ctxt, node)
+            node_task = NodeTask(ctxt, node)
+            node_task.chrony_uninstall()
+            node_task.node_exporter_uninstall()
+            node_task.dspace_agent_uninstall()
+            node.destroy()
+            msg = _("Node removed!")
+        except Exception as e:
+            logger.error(e)
+            node.status = s_fields.NodeStatus.ERROR
+            node.save()
+            msg = _("Node remove error!")
+
+        node = objects.Node.get_by_id(ctxt, node_id)
+        wb_client = WebSocketClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client()
+        wb_client.send_message(ctxt, node, "DELETED", msg)
+
     def node_update_rack(self, ctxt, node_id, rack_id):
         node = objects.Node.get_by_id(ctxt, node_id)
         node.rack_id = rack_id
@@ -35,7 +64,9 @@ class NodeHandler(AdminBaseHandler):
 
     def node_delete(self, ctxt, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
-        node.destroy()
+        node.status = s_fields.NodeStatus.DELETING
+        node.save()
+        self.executor.submit(self._node_delete, ctxt, node)
         return node
 
     def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
@@ -111,13 +142,41 @@ class NodeHandler(AdminBaseHandler):
         return node
 
     def _mon_uninstall(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_monitor = False
+        node.save()
+
+        mon_nodes = objects.NodeList.get_all(
+            ctxt, filters={"cluster_id": ctxt.cluster_id,
+                           "role_monitor": True}
+        )
+        task = NodeTask(ctxt, node)
+        if len(mon_nodes):
+            # update ceph config
+            mon_host = ",".join(
+                [n.storage_public_ip_address for n in mon_nodes]
+            )
+            mon_initial_members = ",".join([n.hostname for n in mon_nodes])
+            self._set_ceph_conf(ctxt, key="mon_host", value=mon_host)
+            self._set_ceph_conf(ctxt,
+                                key="mon_initial_members",
+                                value=mon_initial_members)
+            task.ceph_mon_uninstall(last_mon=False)
+        else:
+            task.ceph_mon_uninstall(last_mon=True)
+        return node
 
     def _storage_install(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_storage = True
+        node.save()
+        return node
 
     def _storage_uninstall(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_storage = False
+        node.save()
+        return node
 
     def _mds_install(self, ctxt, node):
         pass
@@ -126,16 +185,28 @@ class NodeHandler(AdminBaseHandler):
         pass
 
     def _rgw_install(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_object_gateway = True
+        node.save()
+        return node
 
     def _rgw_uninstall(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_object_gateway = False
+        node.save()
+        return node
 
     def _bgw_install(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_block_gateway = True
+        node.save()
+        return node
 
     def _bgw_uninstall(self, ctxt, node):
-        pass
+        node.status = s_fields.NodeStatus.DEPLOYING
+        node.role_block_gateway = False
+        node.save()
+        return node
 
     def _node_roles_set(self, ctxt, node, data):
 
@@ -192,6 +263,20 @@ class NodeHandler(AdminBaseHandler):
             node_task.dspace_agent_install()
             node_task.chrony_install()
             node_task.node_exporter_install()
+
+            roles = data.get('roles', "").split(',')
+            role_monitor = "monitor" in roles
+            role_storage = "storage" in roles
+            role_block_gateway = "blockgw" in roles
+            role_object_gateway = "objectgw" in roles
+            if role_monitor:
+                self._mon_install(ctxt, node)
+            if role_storage:
+                self._storage_install(ctxt, node)
+            if role_block_gateway:
+                self._bgw_install(ctxt, node)
+            if role_object_gateway:
+                self._rgw_install(ctxt, node)
             status = s_fields.NodeStatus.ACTIVE
             logger.info('create node success, node ip: {}'.format(
                         node.ip_address))
@@ -204,13 +289,6 @@ class NodeHandler(AdminBaseHandler):
         node.status = status
         node.save()
 
-        roles = data.get('roles', "").split(',')
-        role_monitor = "monitor" in roles
-        role_storage = "storage" in roles
-        if role_monitor:
-            self._mon_install(ctxt, node)
-        if role_storage:
-            self._storage_install(ctxt, node)
         # send ws message
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=node.cluster_id
