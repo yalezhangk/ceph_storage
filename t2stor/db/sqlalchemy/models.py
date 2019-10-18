@@ -125,7 +125,6 @@ class Disk(BASE, StorBase):
     has_patrol = Column(Boolean, default=False)
     patrol_data = Column(String(2048))
     residual_life = Column(Integer)  # 剩余寿命
-    sys_disk = Column(Boolean, index=True)
     role = Column(String(32), default='data', index=True)
     partition_num = Column(Integer)
     node_id = Column(Integer, ForeignKey('nodes.id'))
