@@ -10,8 +10,8 @@ from t2stor.objects import base
 
 
 @base.StorObjectRegistry.register
-class VolumeAPGateway(base.StorPersistentObject, base.StorObject,
-                      base.StorObjectDictCompat, base.StorComparableObject):
+class VolumeGateway(base.StorPersistentObject, base.StorObject,
+                    base.StorObjectDictCompat, base.StorComparableObject):
 
     fields = {
         'id': fields.IntegerField(),
@@ -27,41 +27,41 @@ class VolumeAPGateway(base.StorPersistentObject, base.StorObject,
                                               reason='already created')
         updates = self.stor_obj_get_changes()
 
-        db_volume_ap_gateway = db.volume_ap_gateway_create(
+        db_volume_gateway = db.volume_gateway_create(
             self._context, updates)
-        self._from_db_object(self._context, self, db_volume_ap_gateway)
+        self._from_db_object(self._context, self, db_volume_gateway)
 
     def save(self):
         updates = self.stor_obj_get_changes()
         if updates:
-            db.volume_ap_gateway_update(self._context, self.id, updates)
+            db.volume_gateway_update(self._context, self.id, updates)
 
         self.obj_reset_changes()
 
     def destroy(self):
-        updated_values = db.volume_ap_gateway_destroy(self._context, self.id)
+        updated_values = db.volume_gateway_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
 
 @base.StorObjectRegistry.register
-class VolumeAPGatewayList(base.ObjectListBase, base.StorObject):
+class VolumeGatewayList(base.ObjectListBase, base.StorObject):
 
     fields = {
-        'objects': fields.ListOfObjectsField('VolumeAPGateway'),
+        'objects': fields.ListOfObjectsField('VolumeGateway'),
     }
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        volume_ap_gateways = db.volume_ap_gateway_get_all(
+        volume_gateways = db.volume_gateway_get_all(
             context, marker=marker, limit=limit,
             sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters,
             offset=offset)
-        expected_attrs = VolumeAPGateway._get_expected_attrs(context)
+        expected_attrs = VolumeGateway._get_expected_attrs(context)
         return base.obj_make_list(
             context, cls(context),
-            objects.VolumeAPGateway,
-            volume_ap_gateways,
+            objects.VolumeGateway,
+            volume_gateways,
             expected_attrs=expected_attrs)

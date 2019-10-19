@@ -336,47 +336,47 @@ def volume_access_paths_update(context, values_list):
 
 ###############
 
-def volume_ap_gateway_create(context, values):
+def volume_gateway_create(context, values):
     """Create a volume from the values dictionary."""
-    return IMPL.volume_ap_gateway_create(context, values)
+    return IMPL.volume_gateway_create(context, values)
 
 
-def volume_ap_gateway_destroy(context, ap_gateway_id):
+def volume_gateway_destroy(context, gateway_id):
     """Destroy the volume or raise if it does not exist."""
-    return IMPL.volume_ap_gateway_destroy(context, ap_gateway_id)
+    return IMPL.volume_gateway_destroy(context, gateway_id)
 
 
-def volume_ap_gateway_get(context, ap_gateway_id):
+def volume_gateway_get(context, gateway_id):
     """Get a volume or raise if it does not exist."""
-    return IMPL.volume_ap_gateway_get(context, ap_gateway_id)
+    return IMPL.volume_gateway_get(context, gateway_id)
 
 
-def volume_ap_gateway_get_all(context, marker=None, limit=None,
-                              sort_keys=None, sort_dirs=None,
-                              filters=None, offset=None):
+def volume_gateway_get_all(context, marker=None, limit=None,
+                           sort_keys=None, sort_dirs=None,
+                           filters=None, offset=None):
     """Get all volumes."""
-    return IMPL.volume_ap_gateway_get_all(
+    return IMPL.volume_gateway_get_all(
         context, marker=marker, limit=limit,
         sort_keys=sort_keys,
         sort_dirs=sort_dirs, filters=filters,
         offset=offset)
 
 
-def volume_ap_gateway_update(context, ap_gateway_id, values):
+def volume_gateway_update(context, gateway_id, values):
     """Set the given properties on a volume and update it.
 
     Raises NotFound if volume does not exist.
 
     """
-    return IMPL.volume_ap_gateway_update(context, ap_gateway_id, values)
+    return IMPL.volume_gateway_update(context, gateway_id, values)
 
 
-def volume_ap_gateways_update(context, values_list):
+def volume_gateways_update(context, values_list):
     """Set the given properties on a list of volumes and update them.
 
     Raises NotFound if a volume does not exist.
     """
-    return IMPL.volume_ap_gateways_update(context, values_list)
+    return IMPL.volume_gateways_update(context, values_list)
 
 ###############
 

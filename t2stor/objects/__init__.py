@@ -15,7 +15,7 @@ def register_all():
     __import__('t2stor.objects.osd')
     __import__('t2stor.objects.sysconfig')
     __import__('t2stor.objects.volume_access_path')
-    __import__('t2stor.objects.volume_ap_gateway')
+    __import__('t2stor.objects.volume_gateway')
     __import__('t2stor.objects.volume_client')
     __import__('t2stor.objects.volume_client_group')
     __import__('t2stor.objects.pool')

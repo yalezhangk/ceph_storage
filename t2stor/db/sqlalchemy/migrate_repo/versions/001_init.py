@@ -1,7 +1,7 @@
 import datetime
 
 from oslo_config import cfg
-from sqlalchemy import Boolean, Column, DateTime, Index, Integer
+from sqlalchemy import Boolean, Column, DateTime, Integer
 from sqlalchemy import ForeignKey, BigInteger
 from sqlalchemy import MetaData, String, Table
 
@@ -25,10 +25,8 @@ def define_tables(meta):
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', String(36), primary_key=True, nullable=False),
-        Column('table_id', String(36)),
         Column('display_name', String(255)),
         Column('display_description', String(255)),
-        Index('table_id_idx', 'table_id', unique=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -40,6 +38,7 @@ def define_tables(meta):
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
+        Column('volume_name', String(64)),
         Column('size', Integer),
         Column('used', Integer),
         Column('snapshot_num', Integer),
@@ -70,7 +69,6 @@ def define_tables(meta):
         Column('status', String(255)),
         Column('is_protect', Boolean),
         Column('size', Integer),
-        Column('used', Integer),
         Column('volume_id', Integer,
                ForeignKey('volumes.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
@@ -157,6 +155,22 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
+    volume_access_path_gateway = Table(
+        'volume_access_path_gateways', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('volume_access_path_id', Integer,
+               ForeignKey("volume_access_paths.id")),
+        Column('volume_gateway_id', Integer,
+               ForeignKey("volume_gateways.id")),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
     volume_access_path = Table(
         "volume_access_paths", meta,
         Column('created_at', DateTime),
@@ -176,17 +190,14 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    volume_ap_gateway = Table(
-        "volume_ap_gateways", meta,
+    volume_gateway = Table(
+        "volume_gateways", meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
-        Column('iqn', String(80)),
         Column('node_id', Integer, ForeignKey('nodes.id')),
-        Column('volume_access_path_id', Integer,
-               ForeignKey('volume_access_paths.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
@@ -282,6 +293,7 @@ def define_tables(meta):
         Column('role', String(32), nullable=True),
         Column('fsid', String(36), nullable=True),
         Column('mem_read_cache', BigInteger, nullable=True),
+        Column('vhost_id', Integer, ForeignKey('vhosts.id')),
         Column('node_id', Integer, ForeignKey('nodes.id')),
         Column('disk_id', Integer, ForeignKey('disks.id')),
         Column('cache_partition_id', Integer,
@@ -359,7 +371,7 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    cephconfig = Table(
+    ceph_config = Table(
         "ceph_configs", meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
@@ -367,8 +379,8 @@ def define_tables(meta):
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('key', String(255)),
+        Column('group', String(255)),
         Column('value', String(255)),
-        Column('value_type', String(36)),
         Column('display_description', String(255)),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
@@ -388,18 +400,18 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    ceph_logs = Table(
-        'ceph_logs', meta,
+    log_files = Table(
+        'log_files', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('node_id', Integer, ForeignKey('nodes.id')),
-        Column('log_type', String(32)),
-        Column('log_name', String(64)),
-        Column('log_size', Integer),
-        Column('log_ctime', DateTime),
+        Column('service_type', String(32)),
+        Column('directory', String(255)),
+        Column('filename', String(64)),
+        Column('filesize', Integer),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
@@ -488,7 +500,7 @@ def define_tables(meta):
         Column('readed', Boolean, default=False),
         Column('resource_type', String(32)),
         Column('level', String(32)),
-        Column('alert_value', String(128)),
+        Column('alert_value', String(1024)),
         Column('resource_id', String(32)),
         Column('resource_name', String(64)),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
@@ -516,11 +528,29 @@ def define_tables(meta):
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
+
+    vhost = Table(
+        'vhosts', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(255)),
+        Column('rack_id', Integer, ForeignKey('racks.id')),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
     return [clusters, pools, volume_access_path, volume_client_group,
             volume, volume_snapshot, rpc_services, datacenter,
-            rack, node, disks, disk_partitions,
-            volume_ap_gateway, volume_client, osds, osd_pools, sysconf,
-            cephconfig, license_files, ceph_logs,
+            rack, node, vhost, disks, disk_partitions,
+            volume_gateway,
+            volume_access_path_gateway,
+            volume_client, osds, osd_pools, sysconf,
+            ceph_config, license_files, log_files,
             alert_rules, email_groups, alert_groups, alert_group_relate_rule,
             alert_group_relate_email,
             alert_logs, action_logs]

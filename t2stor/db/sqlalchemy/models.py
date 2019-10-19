@@ -42,7 +42,6 @@ class Cluster(BASE, StorBase):
     __tablename__ = 'clusters'
 
     id = Column(String(36), primary_key=True)
-    table_id = Column(String(36), index=True)
 
     display_name = Column(String(255))
     display_description = Column(String(255))
@@ -73,6 +72,16 @@ class Rack(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     datacenter_id = Column(Integer, ForeignKey('datacenters.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class VHost(BASE, StorBase):
+    __tablename__ = "vhosts"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    rack_id = Column(Integer, ForeignKey('rack.id'))
+    node_id = Column(Integer, ForeignKey('node.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -194,12 +203,14 @@ class Osd(BASE, StorBase):
     mem_read_cache = Column(BigInteger)  # bytes
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
+    vhost_id = Column(Integer, ForeignKey('vhosts.id'))
     cache_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     db_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     wal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     journal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     pool_id = Column(Integer, ForeignKey('pools.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    pools = relationship('Pool', secondary=osd_pools, backref='osds')
 
 
 class Pool(BASE, StorBase):
@@ -229,6 +240,7 @@ class Volume(BASE, StorBase):
     __tablename__ = "volumes"
 
     id = Column(Integer, primary_key=True)
+    volume_name = Column(String(64))
     size = Column(BigInteger)
     used = Column(BigInteger)
     snapshot_num = Column(Integer)
@@ -254,9 +266,23 @@ class VolumeSnapshot(BASE, StorBase):
     is_protect = Column(Boolean, default=False)
     status = Column(String(32))
     size = Column(BigInteger)
-    used = Column(BigInteger)
     volume_id = Column(Integer, ForeignKey('volumes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+volume_access_paths_gateway = Table(
+    'volume_access_paths_gateway', BASE.metadata,
+    Column('created_at', DateTime),
+    Column('updated_at', DateTime),
+    Column('deleted_at', DateTime),
+    Column('deleted', Boolean),
+    Column('id', Integer, primary_key=True),
+    Column('volume_access_path_id', Integer,
+           ForeignKey("volume_access_paths.id")),
+    Column('volume_gateway_id', Integer,
+           ForeignKey("volume_gateways.id")),
+    Column('cluster_id', String(36), ForeignKey('clusters.id'))
+)
 
 
 class VolumeAccessPath(BASE, StorBase):
@@ -266,22 +292,27 @@ class VolumeAccessPath(BASE, StorBase):
     iqn = Column(String(80))
     name = Column(String(32))
     status = Column(String(32))
-    type = Column(String(32))
+    type = Column(String(32))  # FC of ISCSI
     chap_enable = Column(Boolean, default=False)  # 服务端对客户端的认证
     chap_username = Column(String(32))
     chap_password = Column(String(32))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    volume_gateways = relationship(
+        'VolumeGateway',
+        secondary=volume_access_paths_gateway,
+        backref='volume_access_paths')
 
 
-class VolumeAPGateway(BASE, StorBase):
-    __tablename__ = "volume_ap_gateways"
+class VolumeGateway(BASE, StorBase):
+    __tablename__ = "volume_gateways"
 
     id = Column(Integer, primary_key=True)
-    iqn = Column(String(80))
     node_id = Column(Integer, ForeignKey('nodes.id'))
-    volume_access_path_id = Column(Integer,
-                                   ForeignKey('volume_access_paths.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    volume_access_paths = relationship(
+        'VolumeAccessPath',
+        secondary=volume_access_paths_gateway,
+        backref='volume_gateways')
 
 
 class VolumeClient(BASE, StorBase):
@@ -324,9 +355,9 @@ class CephConfig(BASE, StorBase):
     __tablename__ = "ceph_configs"
 
     id = Column(Integer, primary_key=True)
+    group = Column(String(255))
     key = Column(String(255))
     value = Column(String(255))
-    value_type = Column(String(36))
     display_description = Column(String(255))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
@@ -340,16 +371,16 @@ class LicenseFile(BASE, StorBase):
     status = Column(String(32))
 
 
-class CephLog(BASE, StorBase):
+class LogFile(BASE, StorBase):
     """Mon/Osd log file metadata info"""
-    __tablename__ = 'ceph_logs'
+    __tablename__ = 'log_files'
 
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
-    log_type = Column(String(32))
-    log_name = Column(String(64))
-    log_size = Column(Integer)
-    log_ctime = Column(DateTime)  # 状态修改时间change time
+    service_type = Column(String(32))
+    directory = Column(String(255))
+    filename = Column(String(64))
+    filesize = Column(Integer)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -427,7 +458,7 @@ class AlertLog(BASE, StorBase):
     readed = Column(Boolean, default=False)
     resource_type = Column(String(32))
     level = Column(String(32))
-    alert_value = Column(String(128))
+    alert_value = Column(String(1024))
     resource_id = Column(String(32))
     resource_name = Column(String(64))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
