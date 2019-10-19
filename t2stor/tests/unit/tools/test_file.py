@@ -9,7 +9,7 @@ from t2stor.tools.base import Executor
 from t2stor import test
 
 
-class TestServiceTool(test.TestCase):
+class TestFileTool(test.TestCase):
 
     @mock.patch.object(Executor, 'write')
     def test_file_write(self, run_command):
