@@ -19,3 +19,4 @@ def register_all():
     __import__('t2stor.objects.volume_client')
     __import__('t2stor.objects.volume_client_group')
     __import__('t2stor.objects.pool')
+    __import__('t2stor.objects.license')

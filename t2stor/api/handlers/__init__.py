@@ -5,6 +5,7 @@ from t2stor.api.handlers.volumes import VolumeListHandler
 from t2stor.api.handlers.clusters import ClusterHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
+from t2stor.api.handlers.licenses import LicenseHandler
 
 
 def get_routers():
@@ -14,4 +15,5 @@ def get_routers():
         (r"/rpc_services", RpcServiceListHandler),
         (r"/volumes", VolumeListHandler),
         (r"/volumes/([0-9]*)", VolumeHandler),
+        (r"/licenses/", LicenseHandler),
     ]

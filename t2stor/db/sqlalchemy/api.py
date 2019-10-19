@@ -1709,6 +1709,55 @@ def volume_client_groups_update(context, values_list):
 
 
 @require_context
+def _license_get_query(context, session=None):
+    return model_query(context, models.LicenseFile, session=session)
+
+
+@require_context
+def _license_get(context, license_id, session=None):
+    result = _license_get_query(context, session=session)
+    result = result.filter_by(id=license_id).first()
+
+    if not result:
+        raise exception.LicenseNotFound(license_id=license_id)
+
+    return result
+
+
+def _process_license_filters(query, filters):
+    filters = filters.copy()
+    for key in filters.keys():
+        try:
+            column_attr = getattr(models.LicenseFile, key)
+            prop = getattr(column_attr, 'property')
+            if isinstance(prop, RelationshipProperty):
+                LOG.debug(("'%s' filter key is not valid, "
+                           "it maps to a relationship."), key)
+                return None
+        except AttributeError:
+            LOG.debug("'%s' filter key is not valid.", key)
+            return None
+
+    # Holds the simple exact matches
+    filter_dict = {}
+
+    # Iterate over all filters, special case the filter if necessary
+    for key, value in filters.items():
+        if isinstance(value, (list, tuple, set, frozenset)):
+            # Looking for values in a list; apply to query directly
+            column_attr = getattr(models.LicenseFile, key)
+            query = query.filter(column_attr.in_(value))
+        else:
+            # OK, simple exact match; save for later
+            filter_dict[key] = value
+
+    # Apply simple exact matches
+    if filter_dict:
+        query = query.filter_by(**filter_dict)
+    return query
+
+
+@require_context
 def license_create(context, values):
     license_ref = models.LicenseFile()
     license_ref.update(values)
@@ -1717,6 +1766,32 @@ def license_create(context, values):
         license_ref.save(session)
 
     return license_ref
+
+
+@handle_db_data_error
+@require_context
+def license_update(context, license_id, values):
+    session = get_session()
+    with session.begin():
+        query = _license_get_query(context, session)
+        result = query.filter_by(id=license_id).update(values)
+        if not result:
+            raise exception.LicenseNotFound(license_id=license_id)
+
+
+@require_context
+def license_get_latest_valid(context, marker=None, limit=None, sort_keys=None,
+                             sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.LicenseFile,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
 
 
 ###############################
@@ -1762,6 +1837,8 @@ PAGINATION_HELPERS = {
     models.VolumeGateway: (_volume_gateway_get_query),
     models.VolumeClient: (_volume_client_get_query),
     models.VolumeClientGroup: (_volume_client_group_get_query),
+    models.LicenseFile: (_license_get_query, _process_license_filters,
+                         _license_get),
 }
 
 
