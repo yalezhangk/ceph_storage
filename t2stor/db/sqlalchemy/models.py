@@ -4,7 +4,7 @@ from oslo_utils import timeutils
 from sqlalchemy import BigInteger, Boolean, Column, DateTime
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Table
+from sqlalchemy import Table, Text
 from sqlalchemy.orm import relationship
 
 
@@ -476,5 +476,6 @@ class ActionLog(BASE, StorBase):
     resource_id = Column(String(32))
     resource_name = Column(String(64))
     resource_type = Column(String(32))
+    resource_data = Column(Text())
     status = Column(String(32), default='under way')  # success/under way/fail
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
