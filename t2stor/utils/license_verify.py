@@ -49,14 +49,26 @@ class LicenseVerify(object):
     @property
     def fact_cluster_size(self):
         # TODO:get fact_cluster_size,by ceph cmd or other
-        pass
-        return None
+        return 0
 
     @property
     def fact_node_num(self):
         # TODO: get fact_node_num from db
-        pass
-        return None
+        return 0
+
+    @property
+    def not_before(self):
+        if not self.licenses_data:
+            return None
+        data = self.licenses_data.not_before.strftime('%Y-%m-%dT%H:%M:%S')
+        return data
+
+    @property
+    def not_after(self):
+        if not self.licenses_data:
+            return None
+        data = self.licenses_data.not_after.strftime('%Y-%m-%dT%H:%M:%S')
+        return data
 
     def check_licenses_expiry(self):
         """
@@ -88,6 +100,13 @@ class LicenseVerify(object):
     def check_size(self):
         total_size = self.license_cluster_size
         if int(total_size) < int(self.fact_cluster_size):
+            return False
+        return True
+
+    def is_available(self):
+        # 验证licese是否失效
+        if False in [self.check_licenses_expiry(), self.check_node_number(),
+                     self.check_size()]:
             return False
         return True
 
