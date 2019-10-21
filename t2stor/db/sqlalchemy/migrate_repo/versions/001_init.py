@@ -3,7 +3,7 @@ import datetime
 from oslo_config import cfg
 from sqlalchemy import Boolean, Column, DateTime, Integer
 from sqlalchemy import ForeignKey, BigInteger
-from sqlalchemy import MetaData, String, Table
+from sqlalchemy import MetaData, String, Table, Text
 
 
 # Get default values via config.  The defaults will either
@@ -523,6 +523,7 @@ def define_tables(meta):
         Column('resource_id', String(32)),
         Column('resource_name', String(64)),
         Column('resource_type', String(32)),
+        Column('resource_data', Text()),
         Column('status', String(32), default='under way'),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
