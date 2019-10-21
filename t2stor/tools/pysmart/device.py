@@ -25,14 +25,14 @@ Methods are provided for initiating self tests and querying their results.
 
 # Python built-ins
 from __future__ import print_function
+
 import warnings
 
 # pySMART module imports
 from .attribute import Attribute
 from .test_entry import Test_Entry
-
-from .utils import pd_to_sd
 from .utils import OS
+from .utils import pd_to_sd
 from .utils import smartctl_type
 
 

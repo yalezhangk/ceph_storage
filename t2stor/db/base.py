@@ -1,7 +1,6 @@
+import six
 from oslo_config import cfg
 from oslo_utils import importutils
-import six
-
 
 db_driver_opt = cfg.StrOpt('db_driver',
                            default='stor.db',

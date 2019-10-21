@@ -9,6 +9,8 @@ import re
 import sys
 import uuid
 
+import six
+import sqlalchemy
 from oslo_config import cfg
 from oslo_db import api as oslo_db_api
 from oslo_db import exception as db_exc
@@ -16,18 +18,18 @@ from oslo_db import options
 from oslo_db.sqlalchemy import enginefacade
 from oslo_log import log as logging
 from oslo_utils import timeutils
-import six
-import sqlalchemy
-from sqlalchemy import or_, and_, case
-from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy import and_
+from sqlalchemy import case
+from sqlalchemy import or_
 from sqlalchemy import sql
-from sqlalchemy.sql.expression import literal_column
+from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import literal_column
 
-from t2stor.common import sqlalchemyutils
 from t2stor import db
-from t2stor.db.sqlalchemy import models
 from t2stor import exception
+from t2stor.common import sqlalchemyutils
+from t2stor.db.sqlalchemy import models
 from t2stor.i18n import _
 
 CONF = cfg.CONF

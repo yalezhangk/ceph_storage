@@ -5,7 +5,6 @@ from oslo_db import options as db_options
 from t2stor.common import constants
 from t2stor.i18n import _
 
-
 CONF = cfg.CONF
 db_options.set_defaults(CONF)
 

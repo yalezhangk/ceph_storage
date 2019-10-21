@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+
 import mock
 
+from t2stor import test
+from t2stor.tools.base import Executor
 from t2stor.tools.ceph import Ceph
 from t2stor.tools.ceph import RADOSClient
-from t2stor.tools.base import Executor
-from t2stor import test
 
 get_mons_re = """
 {

@@ -1,16 +1,15 @@
-from concurrent import futures
 import queue
 import time
+from concurrent import futures
 
 from oslo_log import log as logging
 
-from t2stor.service import ServiceBase
-from t2stor.admin.genconf import ceph_conf
 from t2stor import objects
+from t2stor.admin.genconf import ceph_conf
+from t2stor.service import ServiceBase
+from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
 from t2stor.tools.ceph import Ceph as CephTool
-from t2stor.taskflows.node import NodeTask
-
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)

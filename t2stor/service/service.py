@@ -1,21 +1,20 @@
-from concurrent import futures
-import time
+import json
 import logging
 import threading
-import json
+import time
+from concurrent import futures
 
 import etcd3
 import grpc
 from oslo_config import cfg
 
-from t2stor.service import stor_pb2
-from t2stor.service import stor_pb2_grpc
 from t2stor import exception
 from t2stor import objects
 from t2stor.common.config import CONF
 from t2stor.objects import base as objects_base
+from t2stor.service import stor_pb2
+from t2stor.service import stor_pb2_grpc
 from t2stor.service.serializer import RequestContextSerializer
-
 
 logger = logging.getLogger(__name__)
 

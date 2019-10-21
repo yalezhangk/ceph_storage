@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from t2stor.tools.base import ToolBase
-from t2stor.exception import RunCommandError
 from t2stor.exception import ProgrammingError
+from t2stor.exception import RunCommandError
+from t2stor.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
 

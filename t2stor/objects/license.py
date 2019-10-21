@@ -1,9 +1,9 @@
 from oslo_versionedobjects import fields
 
-from t2stor.objects import base
-from t2stor import exception
 from t2stor import db
+from t2stor import exception
 from t2stor import objects
+from t2stor.objects import base
 
 
 @base.StorObjectRegistry.register

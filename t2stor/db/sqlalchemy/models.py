@@ -1,12 +1,17 @@
 from oslo_config import cfg
 from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
-from sqlalchemy import BigInteger, Boolean, Column, DateTime
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import BigInteger
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Table, Text
 from sqlalchemy.orm import relationship
-
 
 CONF = cfg.CONF
 BASE = declarative_base()
@@ -210,7 +215,7 @@ class Osd(BASE, StorBase):
     journal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     pool_id = Column(Integer, ForeignKey('pools.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    pools = relationship('Pool', secondary=osd_pools, backref='osds')
+    pools = relationship('Pool', secondary=osd_pools, back_populates='osds')
 
 
 class Pool(BASE, StorBase):
@@ -233,7 +238,7 @@ class Pool(BASE, StorBase):
     failure_domain_type = Column(String(32), default='host', index=True)
     crush_rule = Column(String(64))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    osds = relationship('Osd', secondary=osd_pools, backref='nodes')
+    osds = relationship('Osd', secondary=osd_pools, back_populates='pools')
 
 
 class Volume(BASE, StorBase):
@@ -299,7 +304,7 @@ class VolumeAccessPath(BASE, StorBase):
     volume_gateways = relationship(
         'VolumeGateway',
         secondary=volume_access_paths_gateway,
-        backref='volume_access_paths')
+        back_populates='volume_access_paths')
 
 
 class VolumeGateway(BASE, StorBase):
@@ -311,7 +316,7 @@ class VolumeGateway(BASE, StorBase):
     volume_access_paths = relationship(
         'VolumeAccessPath',
         secondary=volume_access_paths_gateway,
-        backref='volume_gateways')
+        back_populates='volume_gateways')
 
 
 class VolumeClient(BASE, StorBase):
@@ -418,10 +423,10 @@ class AlertGroup(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(64))
     alert_rules = relationship('AlertRule', secondary=alert_group_relate_rule,
-                               backref='alert_groups')
+                               back_populates='alert_groups')
     email_groups = relationship('EmailGroup',
                                 secondary=alert_group_relate_email,
-                                backref='alert_groups')
+                                back_populates='alert_groups')
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
@@ -437,6 +442,9 @@ class AlertRule(BASE, StorBase):
     trigger_period = Column(String(64))  # 告警周期(分钟)
     enabled = Column(Boolean, default=False)  # 是否启用
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    alert_groups = relationship(
+        'AlertGroup', secondary=alert_group_relate_rule,
+        back_populates='alert_rules')
 
 
 class EmailGroup(BASE, StorBase):
@@ -447,6 +455,9 @@ class EmailGroup(BASE, StorBase):
     name = Column(String(64))
     emails = Column(String(1024))  # 收件地址组
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    alert_groups = relationship('AlertGroup',
+                                secondary=alert_group_relate_email,
+                                back_populates='email_groups')
 
 
 class AlertLog(BASE, StorBase):

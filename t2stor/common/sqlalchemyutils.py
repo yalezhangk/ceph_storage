@@ -19,16 +19,15 @@
 """Implementation of paginate query."""
 import datetime
 
-from oslo_log import log as logging
-from six.moves import range
 import sqlalchemy
 import sqlalchemy.sql as sa_sql
+from oslo_log import log as logging
+from six.moves import range
 from sqlalchemy.sql import type_api
 
-from t2stor.db import api
 from t2stor import exception
+from t2stor.db import api
 from t2stor.i18n import _
-
 
 LOG = logging.getLogger(__name__)
 

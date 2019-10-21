@@ -11,4 +11,4 @@ etcd3
 paramiko
 tooz
 truepy
-license
+licepy

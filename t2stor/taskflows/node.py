@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from t2stor.admin.genconf import get_agent_conf
+from t2stor.admin.genconf import yum_repo
 from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
-from t2stor.tools.package import Package as PackageTool
-from t2stor.tools.service import Service as ServiceTool
 from t2stor.tools.docker import Docker as DockerTool
 from t2stor.tools.file import File as FileTool
-from t2stor.admin.genconf import yum_repo
-from t2stor.admin.genconf import get_agent_conf
+from t2stor.tools.package import Package as PackageTool
+from t2stor.tools.service import Service as ServiceTool
 
 
 class NodeTask(object):

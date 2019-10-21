@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-import six
 
+import six
 from oslo_versionedobjects import exception as obj_exc
 
 from t2stor.i18n import _
-
 
 logger = logging.getLogger(__name__)
 

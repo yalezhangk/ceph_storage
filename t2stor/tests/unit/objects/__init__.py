@@ -6,8 +6,8 @@ from oslo_utils import timeutils
 
 from t2stor import context
 from t2stor import exception
-from t2stor.objects import base as obj_base
 from t2stor import test
+from t2stor.objects import base as obj_base
 
 
 class BaseObjectsTestCase(test.TestCase):

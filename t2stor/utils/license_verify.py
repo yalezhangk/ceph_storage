@@ -1,11 +1,10 @@
+import base64
 import datetime
 import json
 import logging
-import base64
-
-from truepy import License
 from tempfile import TemporaryFile
 
+from truepy import License
 
 LOG = logging.getLogger(__name__)
 CA_FILE_PATH = '/etc/t2stor/license/certificate.pem'

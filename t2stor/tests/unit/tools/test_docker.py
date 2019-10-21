@@ -4,9 +4,9 @@
 
 import mock
 
-from t2stor.tools.docker import Docker
-from t2stor.tools.base import Executor
 from t2stor import test
+from t2stor.tools.base import Executor
+from t2stor.tools.docker import Docker
 
 
 class TestServiceTool(test.TestCase):

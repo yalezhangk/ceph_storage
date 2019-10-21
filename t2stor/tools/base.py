@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import subprocess
+
 import paramiko
 import six
 
 from t2stor.exception import RunCommandArgsError
-
 
 logger = logging.getLogger(__name__)
 

@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import six
 
+import six
 from tornado import gen
 from tornado.escape import json_decode
 from tornado.escape import json_encode
 
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
-
 
 logger = logging.getLogger(__name__)
 

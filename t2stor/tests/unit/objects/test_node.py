@@ -3,16 +3,15 @@
 
 
 import copy
-import mock
-from oslo_utils import timeutils
-import pytz
 
+import mock
+import pytz
 from netaddr import IPAddress
+from oslo_utils import timeutils
 
 from t2stor import exception
 from t2stor import objects
 from t2stor.tests.unit import objects as test_objects
-
 
 fake_node = {
     'id': 1,

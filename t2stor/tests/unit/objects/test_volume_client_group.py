@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import mock
-from oslo_utils import timeutils
 import pytz
+from oslo_utils import timeutils
 
 # from t2stor import exception
 from t2stor import objects
 from t2stor.tests.unit import objects as test_objects
-
 
 fake_volume_client_group = {
     'id': 1,

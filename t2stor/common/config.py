@@ -1,10 +1,9 @@
 import socket
 
+from oslo_cache import core as cache
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import netutils
-from oslo_cache import core as cache
-
 
 CONF = cfg.CONF
 logging.register_options(CONF)

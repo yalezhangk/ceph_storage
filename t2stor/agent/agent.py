@@ -3,12 +3,11 @@ import time
 
 from oslo_log import log as logging
 
-from t2stor.service import ServiceBase
 from t2stor import version
+from t2stor.common.config import CONF
+from t2stor.service import ServiceBase
 from t2stor.tools.base import Executor
 from t2stor.tools.service import Service
-from t2stor.common.config import CONF
-
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)

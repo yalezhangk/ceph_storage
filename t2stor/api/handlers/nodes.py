@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 import json
+import logging
+
 from tornado import gen
 
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
-
 
 logger = logging.getLogger(__name__)
 

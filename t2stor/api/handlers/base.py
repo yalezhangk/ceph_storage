@@ -5,9 +5,9 @@ import traceback
 
 from tornado.web import RequestHandler
 
-from t2stor.context import RequestContext
 from t2stor import exception
 from t2stor.admin.client import AdminClientManager
+from t2stor.context import RequestContext
 
 
 class BaseAPIHandler(RequestHandler):

@@ -3,30 +3,30 @@
 
 from __future__ import print_function
 
-try:
-    import collections.abc as collections
-except ImportError:
-    import collections
-
 import logging as python_logging
-import prettytable
 import sys
 import time
 
+import prettytable
 from oslo_config import cfg
 from oslo_db import exception as db_exc
 from oslo_db.sqlalchemy import migration
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
-# Need to register global_opts
-from t2stor.common import config  # noqa
 from t2stor import context
 from t2stor import db
+from t2stor import objects
+# Need to register global_opts
+from t2stor.common import config  # noqa
 from t2stor.db import migration as db_migration
 from t2stor.db.sqlalchemy import api as db_api
 from t2stor.i18n import _
-from t2stor import objects
+
+try:
+    import collections.abc as collections
+except ImportError:
+    import collections
 
 
 CONF = cfg.CONF

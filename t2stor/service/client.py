@@ -1,19 +1,19 @@
 from __future__ import print_function
-import logging
+
 import json
+import logging
 
-import grpc
 import etcd3
-from tornado.ioloop import IOLoop
+import grpc
 from tornado.gen import Future
+from tornado.ioloop import IOLoop
 
+from t2stor import exception
 from t2stor import objects
+from t2stor.objects import base as objects_base
 from t2stor.service import stor_pb2
 from t2stor.service import stor_pb2_grpc
-from t2stor.objects import base as objects_base
 from t2stor.service.serializer import RequestContextSerializer
-from t2stor import exception
-
 
 logger = logging.getLogger(__name__)
 

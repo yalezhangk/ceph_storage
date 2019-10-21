@@ -15,10 +15,9 @@
 
 import os
 
-from t2stor.db.sqlalchemy import migrate_repo
-
 from migrate.versioning.shell import main
 
+from t2stor.db.sqlalchemy import migrate_repo
 
 if __name__ == '__main__':
     main(debug='False',

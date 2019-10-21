@@ -2,3 +2,4 @@ stestr
 mock
 sphinx
 flake8
+isort

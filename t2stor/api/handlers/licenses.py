@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
 import base64
+import json
 
-from t2stor.api.handlers.base import BaseAPIHandler
 from t2stor import objects
-from t2stor.utils.license_verify import LicenseVerify
+from t2stor.api.handlers.base import BaseAPIHandler
 from t2stor.exception import InvalidInput
 from t2stor.i18n import _
-
+from t2stor.utils.license_verify import LicenseVerify
 
 FILE_LEN = 2048
 

@@ -5,9 +5,9 @@ import logging
 
 from oslo_utils import encodeutils
 
-from t2stor.tools.base import ToolBase
-from t2stor.exception import RunCommandError
 from t2stor.exception import CephException
+from t2stor.exception import RunCommandError
+from t2stor.tools.base import ToolBase
 
 try:
     import rados

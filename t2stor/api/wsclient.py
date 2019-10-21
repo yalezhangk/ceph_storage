@@ -1,10 +1,11 @@
 from __future__ import print_function
+
 import logging
 
 from t2stor import objects
+from t2stor.context import RequestContext
 from t2stor.service import BaseClient
 from t2stor.service import BaseClientManager
-from t2stor.context import RequestContext
 
 
 class WebSocketClient(BaseClient):

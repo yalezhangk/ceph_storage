@@ -21,8 +21,9 @@ by the other submodules of the `pySMART` package.
 import ctypes
 import os
 import platform
-from subprocess import Popen, PIPE
 import warnings
+from subprocess import PIPE
+from subprocess import Popen
 
 # Configuration definitions
 _min_smartctl_ver = {

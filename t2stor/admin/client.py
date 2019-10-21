@@ -1,14 +1,15 @@
 from __future__ import print_function
+
 import sys
 
 from oslo_log import log as logging
 
 from t2stor import objects
+from t2stor import version
 from t2stor.common.config import CONF
+from t2stor.context import RequestContext
 from t2stor.service import BaseClient
 from t2stor.service import BaseClientManager
-from t2stor.context import RequestContext
-from t2stor import version
 
 
 class AdminClient(BaseClient):

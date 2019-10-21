@@ -4,9 +4,9 @@
 
 import mock
 
-from t2stor.tools.disk import DiskTool
-from t2stor.tools.base import Executor
 from t2stor import test
+from t2stor.tools.base import Executor
+from t2stor.tools.disk import DiskTool
 
 
 class TestDiskTool(test.TestCase):

@@ -1,10 +1,16 @@
 import datetime
 
 from oslo_config import cfg
-from sqlalchemy import Boolean, Column, DateTime, Integer
-from sqlalchemy import ForeignKey, BigInteger
-from sqlalchemy import MetaData, String, Table, Text
-
+from sqlalchemy import BigInteger
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import Text
 
 # Get default values via config.  The defaults will either
 # come from the default values set in the quota option

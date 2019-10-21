@@ -2,13 +2,12 @@ import json
 
 import tornado.ioloop
 import tornado.web
-from tornado.websocket import WebSocketHandler
 from oslo_log import log as logging
+from tornado.websocket import WebSocketHandler
 
-from t2stor.common.config import CONF
 from t2stor.api.handlers import get_routers
+from t2stor.common.config import CONF
 from t2stor.service import ServiceBase
-
 
 logger = logging.getLogger(__name__)
 

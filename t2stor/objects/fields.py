@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from oslo_versionedobjects import fields
 
-
 BaseEnumField = fields.BaseEnumField
 Enum = fields.Enum
 Field = fields.Field

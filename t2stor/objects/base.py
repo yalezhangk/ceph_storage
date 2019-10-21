@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
 import datetime
+import logging
 
 from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
 from t2stor import db
 from t2stor import objects
-
 
 logger = logging.getLogger(__name__)
 obj_make_list = base.obj_make_list

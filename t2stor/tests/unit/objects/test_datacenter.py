@@ -3,13 +3,12 @@
 
 
 import mock
-from oslo_utils import timeutils
 import pytz
+from oslo_utils import timeutils
 
 from t2stor import exception
 from t2stor import objects
 from t2stor.tests.unit import objects as test_objects
-
 
 fake_datacenter = {
     'id': 1,
