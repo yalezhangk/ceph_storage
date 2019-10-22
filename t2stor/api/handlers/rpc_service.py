@@ -19,16 +19,8 @@ class RpcServiceListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         rpc_service = objects.RPCServiceList.get_all(ctxt)
-        self.write(json_encode({
-            "RPCServices": [
-                {
-                    "id": r.id,
-                    "hostname": r.hostname,
-                    "endpoint": json_decode(r.endpoint),
-                    "service_name": r.service_name,
-                    "cluster_id": r.cluster_id,
-                } for r in rpc_service
-            ]
+        self.write(objects.json_encode({
+            "rpc_services": rpc_service
         }))
 
     @gen.coroutine
@@ -42,14 +34,8 @@ class RpcServiceListHandler(ClusterAPIHandler):
             endpoint=json_encode(data.get('endpoint'))
         )
         r.create()
-        self.write(json_encode({
-            "rpc_service": {
-                "id": r.id,
-                "hostname": r.hostname,
-                "endpoint": json_decode(r.endpoint),
-                "service_name": r.service_name,
-                "cluster_id": r.cluster_id,
-            }
+        self.write(objects.json_encode({
+            "rpc_service": r
         }))
 
 
@@ -58,14 +44,8 @@ class RpcServiceHandler(ClusterAPIHandler):
     def get(self, rpc_service_id):
         ctxt = self.get_context()
         r = objects.RPCServiceList.get_by_id(ctxt, rpc_service_id)
-        self.write(json_encode({
-            "rpc_service": {
-                "id": r.id,
-                "hostname": r.hostname,
-                "endpoint": json_decode(r.endpoint),
-                "service_name": r.service_name,
-                "cluster_id": r.cluster_id,
-            }
+        self.write(objects.json_encode({
+            "rpc_service": r
         }))
 
     @gen.coroutine
@@ -81,14 +61,8 @@ class RpcServiceHandler(ClusterAPIHandler):
                 setattr(r, k, json_encode(v))
 
         r.save()
-        self.write(json_encode({
-            "rpc_service": {
-                "id": r.id,
-                "hostname": r.hostname,
-                "endpoint": json_decode(r.endpoint),
-                "service_name": r.service_name,
-                "cluster_id": r.cluster_id,
-            }
+        self.write(objects.json_encode({
+            "rpc_service": r
         }))
 
     @gen.coroutine
@@ -96,12 +70,6 @@ class RpcServiceHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         r = objects.RPCServiceList.get_by_id(ctxt, rpc_service_id)
         r.delete()
-        self.write(json_encode({
-            "rpc_service": {
-                "id": r.id,
-                "hostname": r.hostname,
-                "endpoint": json_decode(r.endpoint),
-                "service_name": r.service_name,
-                "cluster_id": r.cluster_id,
-            }
+        self.write(objects.json_encode({
+            "rpc_service": r
         }))

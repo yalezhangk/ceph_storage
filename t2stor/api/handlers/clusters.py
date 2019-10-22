@@ -18,13 +18,8 @@ class ClusterHandler(BaseAPIHandler):
     def get(self):
         ctxt = self.get_context()
         clusters = objects.ClusterList.get_all(ctxt)
-        self.write(json.dumps({
-            "clusters": [
-                {
-                    "id": c.id,
-                    "name": c.name
-                } for c in clusters
-            ]
+        self.write(objects.json_encode({
+            "clusters": clusters
         }))
 
     def post(self):
@@ -33,11 +28,8 @@ class ClusterHandler(BaseAPIHandler):
         cluster_data = data.get("cluster")
         cluster = objects.Cluster(ctxt, display_name=cluster_data.get('name'))
         cluster.create()
-        self.write(json.dumps({
-            "cluster": {
-                "id": cluster.id,
-                "name": cluster.name
-            }
+        self.write(objects.json_encode({
+            "cluster": cluster
         }))
 
 
