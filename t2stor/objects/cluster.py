@@ -15,7 +15,6 @@ class Cluster(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.UUIDField(),
-        'table_id': fields.StringField(nullable=True),
 
         'display_name': fields.StringField(nullable=True),
         'display_description': fields.StringField(nullable=True),
