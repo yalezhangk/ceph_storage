@@ -662,20 +662,9 @@ def clusters_update(context, values_list):
 
 
 @require_context
-def cluster_check_table_id(context, table_id):
-    clusters = cluster_get_all(context, filters={"table_id": table_id})
-    if clusters:
-        return True
-    return False
-
-
-@require_context
 def cluster_get_new_uuid(context):
     while True:
         uid = str(uuid.uuid4())
-        table_id = uid[0:8]
-        if cluster_check_table_id(context, table_id):
-            continue
         return uid
 
 
@@ -687,12 +676,8 @@ def cluster_create(context, values):
     if not values.get('id'):
         uid = cluster_get_new_uuid(context)
         values['id'] = uid
-        values['table_id'] = uid[0:8]
     else:
         uid = values.get('id')
-        values['table_id'] = uid[0:8]
-        if cluster_check_table_id(context, values['table_id']):
-            raise exception.ClusterExists(cluster_id=uid)
 
     cluster_ref = models.Cluster()
     cluster_ref.update(values)
