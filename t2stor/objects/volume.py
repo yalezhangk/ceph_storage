@@ -16,12 +16,18 @@ class Volume(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-
-        'status': s_fields.VolumeStatusField(nullable=True),
+        'volume_name': fields.StringField(nullable=True),
         'size': fields.IntegerField(nullable=True),
-
+        'used': fields.IntegerField(nullable=True),
+        'is_link_clone': fields.BooleanField(),
+        'snapshot_num': fields.IntegerField(nullable=True),
+        'status': s_fields.VolumeStatusField(nullable=True),
         'display_name': fields.StringField(nullable=True),
         'display_description': fields.StringField(nullable=True),
+        'volume_access_path_id': fields.IntegerField(nullable=True),
+        'volume_client_group_id': fields.IntegerField(nullable=True),
+        'pool_id': fields.IntegerField(nullable=True),
+        'snapshot_id': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(),
     }
 
