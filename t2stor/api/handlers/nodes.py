@@ -5,6 +5,7 @@ import json
 import logging
 
 from tornado import gen
+from tornado.escape import json_decode
 
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
@@ -26,7 +27,8 @@ class NodeHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
         ctxt = self.get_context()
-        data = self.get_argument('data')
+        data = json_decode(self.request.body)
+        data = data.get('node')
         client = self.get_admin_client(ctxt)
         ip_address = data.get('ip_address')
         password = data.get('password')
