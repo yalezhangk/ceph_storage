@@ -3,7 +3,7 @@ stages:
 
 image: t2stor/python:dev
 
-prepare:
+test:
   stage: test
   script:
     - tox .
