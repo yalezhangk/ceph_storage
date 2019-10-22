@@ -1,0 +1,11 @@
+stages:
+  - test
+
+image: t2stor/python:dev
+
+prepare:
+  stage: test
+  script:
+    - tox .
+  tags:
+    - t2stor
