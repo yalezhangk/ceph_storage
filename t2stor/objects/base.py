@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
 import logging
 
+import six
 from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
@@ -129,3 +131,20 @@ class ObjectListBase(base.ObjectListBase):
 
 class StorObjectSerializer(base.VersionedObjectSerializer):
     OBJ_BASE_CLASS = StorObject
+
+
+class JsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, StorPersistentObject):
+            _obj = {}
+            for k in six.iterkeys(obj.fields):
+                v = getattr(obj, k)
+                if isinstance(v, datetime.datetime):
+                    v = datetime.datetime.isoformat(v)
+                _obj[k] = v
+            return _obj
+
+        if isinstance(obj, ObjectListBase):
+            return list(obj)
+
+        return super(JsonEncoder, self).default(obj)
