@@ -31,6 +31,15 @@ class BaseAPIHandler(RequestHandler):
     def get_context(self):
         return RequestContext(user_id="xxx", project_id="stor", is_admin=False)
 
+    def get_paginated_args(self):
+        return {
+            "marker": self.get_query_argument('marker', default=None),
+            "limit": self.get_query_argument('limit', default=None),
+            "sort_keys": self.get_query_argument('sort_keys', default=None),
+            "sort_dirs": self.get_query_argument('sort_dirs', default=None),
+            "offset": self.get_query_argument('offset', default=None)
+        }
+
     def get_current_user(self):
         token_id = self.request.headers.get('token-id')
         if not token_id:

@@ -89,3 +89,25 @@ class PoolStatus(BaseStorEnum):
 
 class PoolStatusField(BaseEnumField):
     AUTO_TYPE = PoolStatus()
+
+
+class NetworkStatus(BaseStorEnum):
+    UP = 'up'
+    DOWN = 'down'
+
+    ALL = (UP, DOWN)
+
+
+class NetworkStatusField(BaseEnumField):
+    AUTO_TYPE = NetworkStatus()
+
+
+class NetworkType(BaseStorEnum):
+    FIBER = 'fiber'
+    COPPER = 'copper'
+
+    ALL = (FIBER, COPPER)
+
+
+class NetworkTypeField(BaseEnumField):
+    AUTO_TYPE = NetworkType()

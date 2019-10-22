@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 
+import netaddr
 import six
 from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
@@ -141,6 +142,8 @@ class JsonEncoder(json.JSONEncoder):
                 v = getattr(obj, k)
                 if isinstance(v, datetime.datetime):
                     v = datetime.datetime.isoformat(v)
+                if isinstance(v, netaddr.IPAddress):
+                    v = str(v)
                 _obj[k] = v
             return _obj
 

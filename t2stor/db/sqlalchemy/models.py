@@ -169,7 +169,7 @@ class Network(BASE, StorBase):
     netmask = Column(String(32))
     mac_address = Column(String(32))
     type = Column(String(32))
-    speed = Column(Integer)
+    speed = Column(String(32))
     node_id = Column(Integer, ForeignKey('nodes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 

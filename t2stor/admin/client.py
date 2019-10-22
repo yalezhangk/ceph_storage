@@ -65,6 +65,18 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
+    def node_get(self, ctxt, node_id):
+        response = self.call(ctxt, "node_get", node_id=node_id)
+        return response
+
+    def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "network_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
