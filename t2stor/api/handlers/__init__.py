@@ -7,6 +7,7 @@ from t2stor.api.handlers.clusters import ClusterHandler
 from t2stor.api.handlers.datacenters import DataCenterHandler
 from t2stor.api.handlers.datacenters import DataCenterListHandler
 from t2stor.api.handlers.datacenters import DataCenterRacksHandler
+from t2stor.api.handlers.disks import DiskListHandler
 from t2stor.api.handlers.licenses import DownloadlicenseHandler
 from t2stor.api.handlers.licenses import LicenseHandler
 from t2stor.api.handlers.networks import NetworkListHandler
@@ -34,4 +35,6 @@ def get_routers():
         (r"/datacenters/", DataCenterListHandler),
         (r"/datacenters/([0-9]*)/", DataCenterHandler),
         (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
+        (r"/licenses/download_file/", DownloadlicenseHandler),
+        (r"/disks/", DiskListHandler)
     ]

@@ -204,6 +204,13 @@ class AdminHandler(object):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
+    def disk_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                     sort_dirs=None, filters=None, offset=None):
+        disks = objects.DiskList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        return disks
+
 
 class AdminService(ServiceBase):
     service_name = "admin"

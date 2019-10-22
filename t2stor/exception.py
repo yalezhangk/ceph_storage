@@ -121,6 +121,10 @@ class NetworkNotFound(NotFound):
     message = _("Network %(net_id)s could not be found.")
 
 
+class DiskNotFound(NotFound):
+    message = _("Osd %(disk_id)s could not be found.")
+
+
 class ClusterIDNotFound(NotFound):
     code = 400
     message = _("Cluster ID could not be found.")

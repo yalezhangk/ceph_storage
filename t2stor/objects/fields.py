@@ -122,3 +122,38 @@ class SysConfigType(BaseStorEnum):
 
 class SysConfigTypeField(BaseEnumField):
     AUTO_TYPE = SysConfigType()
+
+
+class DiskStatus(BaseStorEnum):
+    AVAILABLE = 'available'
+    INUSE = 'inuse'
+
+    ALL = (AVAILABLE, INUSE)
+
+
+class DiskStatusField(BaseEnumField):
+    AUTO_TYPE = DiskStatus()
+
+
+class DiskType(BaseStorEnum):
+    SSD = 'ssd'
+    HDD = 'hdd'
+    NVME = 'nvme'
+
+    ALL = (SSD, HDD, NVME)
+
+
+class DiskTypeField(BaseEnumField):
+    AUTO_TYPE = DiskType()
+
+
+class DiskRole(BaseStorEnum):
+    SYSTEM = 'system'
+    DATA = 'data'
+    ACCELERATE = 'accelerate'
+
+    ALL = (SYSTEM, DATA, ACCELERATE)
+
+
+class DiskRoleField(BaseEnumField):
+    AUTO_TYPE = DiskRole()
