@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
 import logging
 
 from tornado import gen
 from tornado.escape import json_decode
-from tornado.escape import json_encode
 
+from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
@@ -19,13 +18,8 @@ class VolumeListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         volumes = yield client.volume_get_all(ctxt)
-        self.write(json.dumps({
-            "volumes": [
-                {
-                    "id": vol.id,
-                    "name": vol.name
-                } for vol in volumes
-            ]
+        self.write(objects.json_encode({
+            "volumes": volumes
         }))
 
     @gen.coroutine
@@ -35,12 +29,8 @@ class VolumeListHandler(ClusterAPIHandler):
         data = data.get("volume")
         client = self.get_admin_client(ctxt)
         v = yield client.volume_create(ctxt, data)
-        self.write(json_encode({
-            "volume": {
-                "id": v.id,
-                "display_name": v.display_name,
-                "size": v.size,
-            }
+        self.write(objects.json_encode({
+            "volume": v
         }))
 
 
@@ -50,7 +40,4 @@ class VolumeHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         volume = yield client.volume_get(ctxt, volume_id)
-        self.write(json.dumps({"volume": {
-            "id": volume.id,
-            "name": volume.name
-        }}))
+        self.write(objects.json_encode({"volume": volume}))
