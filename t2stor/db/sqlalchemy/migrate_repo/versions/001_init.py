@@ -53,7 +53,7 @@ def define_tables(meta):
         Column('display_name', String(255)),
         Column('display_description', String(255)),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
-        Column('access_path_id', Integer,
+        Column('volume_access_path_id', Integer,
                ForeignKey('volume_access_paths.id')),
         Column('volume_client_group_id', Integer,
                ForeignKey('volume_client_groups.id')),
