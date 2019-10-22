@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
+
+from t2stor.objects.base import JsonEncoder
 
 
 def register_all():
@@ -20,3 +23,7 @@ def register_all():
     __import__('t2stor.objects.volume_client_group')
     __import__('t2stor.objects.pool')
     __import__('t2stor.objects.license')
+
+
+def json_encode(obj):
+    return json.dumps(obj, cls=JsonEncoder)
