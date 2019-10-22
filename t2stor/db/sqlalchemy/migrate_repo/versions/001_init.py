@@ -47,6 +47,7 @@ def define_tables(meta):
         Column('volume_name', String(64)),
         Column('size', Integer),
         Column('used', Integer),
+        Column('is_link_clone', Boolean, default=False),
         Column('snapshot_num', Integer),
         Column('status', String(255)),
         Column('display_name', String(255)),

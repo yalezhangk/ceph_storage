@@ -248,6 +248,7 @@ class Volume(BASE, StorBase):
     volume_name = Column(String(64))
     size = Column(BigInteger)
     used = Column(BigInteger)
+    is_link_clone = Column(Boolean, default=False)  # 默认独立克隆
     snapshot_num = Column(Integer)
     status = Column(String(255))  # TODO(vish): enum?
     display_name = Column(String(255))
