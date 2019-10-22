@@ -7,9 +7,9 @@ from t2stor import objects
 from t2stor.api.handlers.base import BaseAPIHandler
 from t2stor.exception import InvalidInput
 from t2stor.i18n import _
+from t2stor.utils.license_verify import CA_FILE_PATH
+from t2stor.utils.license_verify import PRIVATE_FILE
 from t2stor.utils.license_verify import LicenseVerify
-from t2stor.utils.license_verify import CA_FILE_PATH, PRIVATE_FILE
-
 
 FILE_LEN = 2048
 
