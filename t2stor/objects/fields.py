@@ -111,3 +111,14 @@ class NetworkType(BaseStorEnum):
 
 class NetworkTypeField(BaseEnumField):
     AUTO_TYPE = NetworkType()
+
+
+class SysConfigType(BaseStorEnum):
+    STRING = 'string'
+    NUMBER = 'number'
+    BOOL = 'bool'
+    ALL = (STRING, NUMBER, BOOL)
+
+
+class SysConfigTypeField(BaseEnumField):
+    AUTO_TYPE = SysConfigType()

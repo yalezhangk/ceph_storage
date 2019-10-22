@@ -13,7 +13,8 @@ from t2stor.tests.unit import objects as test_objects
 fake_rack = {
     'id': 1,
     'name': "devel",
-    'datacenter_id': 1
+    'datacenter_id': 1,
+    'cluster_id': "8466c699-42c4-4abb-bae2-19b3ef0d8b90"
 }
 
 

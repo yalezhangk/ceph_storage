@@ -855,9 +855,9 @@ def _datacenter_get(context, datacenter_id, session=None):
 
 @require_context
 def datacenter_create(context, values):
+    session = get_session()
     datacenter_ref = models.Datacenter()
     datacenter_ref.update(values)
-    session = get_session()
     with session.begin():
         datacenter_ref.save(session)
 
@@ -928,9 +928,9 @@ def _rack_get(context, rack_id, session=None):
 
 @require_context
 def rack_create(context, values):
+    session = get_session()
     rack_ref = models.Rack()
     rack_ref.update(values)
-    session = get_session()
     with session.begin():
         rack_ref.save(session)
 
@@ -1059,7 +1059,11 @@ def osd_update(context, osd_id, values):
 
 
 def _sys_config_get_query(context, session=None):
-    return model_query(context, models.SysConfig, session=session)
+    # TODO  filter_by cluster id
+    return model_query(
+        context,
+        models.SysConfig,
+        session=session).filter_by(cluster_id=context.cluster_id)
 
 
 def _sys_config_get(context, sys_config_id, session=None):
@@ -1072,8 +1076,20 @@ def _sys_config_get(context, sys_config_id, session=None):
     return result
 
 
+def sys_config_get_by_key(context, key, session=None):
+    result = _sys_config_get_query(context, session).filter_by(key=key).first()
+
+    if not result:
+        return None
+
+    return result
+
+
 @require_context
 def sys_config_create(context, values):
+    # TODO
+    # get cluster id from context
+    values['cluster_id'] = context.cluster_id
     sys_config_ref = models.SysConfig()
     sys_config_ref.update(values)
     session = get_session()
@@ -1968,6 +1984,12 @@ PAGINATION_HELPERS = {
     models.Network: (_network_get_query,
                      process_filters(models.Network),
                      _network_get),
+    models.SysConfig: (_sys_config_get_query,
+                       process_filters(models.SysConfig),
+                       _sys_config_get),
+    models.Datacenter: (_datacenter_get_query,
+                        process_filters(models.Datacenter),
+                        _datacenter_get)
 }
 
 

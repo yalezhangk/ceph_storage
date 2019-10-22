@@ -16,6 +16,7 @@ class Datacenter(base.StorPersistentObject, base.StorObject,
     fields = {
         'id': fields.IntegerField(),
         'name': fields.StringField(nullable=True),
+        'cluster_id': fields.UUIDField()
     }
 
     def create(self):

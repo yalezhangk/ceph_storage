@@ -77,6 +77,44 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def sysconf_get_all(self, ctxt):
+        response = self.call(ctxt, "sysconf_get_all")
+        return response
+
+    def update_chrony(self, ctxt, chrony_server):
+        response = self.call(ctxt, "update_chrony",
+                             chrony_server=chrony_server)
+        return response
+
+    def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
+                       cluster_cidr, gateway_cidr):
+        response = self.call(
+            ctxt, "update_sysinfo", cluster_name=cluster_name,
+            admin_cidr=admin_cidr, public_cidr=public_cidr,
+            cluster_cidr=cluster_cidr, gateway_cidr=gateway_cidr)
+        return response
+
+    def datacenter_create(self, ctxt):
+        response = self.call(ctxt, "datacenter_create")
+        return response
+
+    def datacenter_get_all(self, ctxt):
+        response = self.call(ctxt, "datacenter_get_all")
+        return response
+
+    def datacenter_update(self, ctxt, datacenter_id, datacenter_name):
+        response = self.call(ctxt, "datacenter_update",
+                             id=datacenter_id, name=datacenter_name)
+        return response
+
+    def rack_create(self, ctxt, datacenter_id):
+        response = self.call(ctxt, "rack_create", datacenter_id=datacenter_id)
+        return response
+
+    def rack_get_all(self, ctxt):
+        response = self.call(ctxt, "rack_get_all")
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

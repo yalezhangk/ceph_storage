@@ -1,5 +1,6 @@
 import queue
 import time
+import uuid
 from concurrent import futures
 
 import six
@@ -7,6 +8,7 @@ from oslo_log import log as logging
 
 from t2stor import objects
 from t2stor.admin.genconf import ceph_conf
+from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
 from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
@@ -111,6 +113,96 @@ class AdminHandler(object):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
         return networks
+
+    def sysconf_get_all(self, ctxt):
+        result = {}
+        sysconfs = objects.SysConfigList.get_all(
+            ctxt, filters={"cluster_id": ctxt.cluster_id})
+        keys = ['cluster_name', 'admin_cidr', 'public_cidr', 'cluster_cidr',
+                'gateway_cidr', 'chrony_server']
+        for sysconf in sysconfs:
+            if sysconf.key in keys:
+                result[sysconf.key] = sysconf.value
+        return result
+
+    def update_chrony(self, ctxt, chrony_server):
+        sysconf = objects.SysConfig(
+            ctxt, key="chrony_server", value=chrony_server,
+            value_type=s_fields.SysConfigType.STRING)
+        sysconf.create()
+
+    def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
+                       cluster_cidr, gateway_cidr):
+        # TODO check a object exists
+        sysconf = None
+        if cluster_name:
+            sysconf = objects.SysConfig(
+                ctxt, key="cluster_name", value=cluster_name,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if admin_cidr:
+            sysconf = objects.SysConfig(
+                ctxt, key="admin_cidr", value=admin_cidr,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if public_cidr:
+            sysconf = objects.SysConfig(
+                ctxt, key="public_cidr", value=public_cidr,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if cluster_cidr:
+            sysconf = objects.SysConfig(
+                ctxt, key="cluster_cidr", value=cluster_cidr,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if gateway_cidr:
+            sysconf = objects.SysConfig(
+                ctxt, key="gateway_cidr", value=gateway_cidr,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+
+    def rack_create(self, ctxt, datacenter_id):
+        uid = str(uuid.uuid4())
+        rack_name = "rack-{}".format(uid[0:8])
+        rack = objects.Rack(
+            ctxt, cluster_id=ctxt.cluster_id,
+            datacenter_id=datacenter_id,
+            namea=rack_name
+        )
+        rack.create()
+
+    def datacenter_create(self, ctxt):
+        uid = str(uuid.uuid4())
+        datacenter_name = "datacenter-{}".format(uid[0:8])
+        datacenter = objects.Datacenter(
+            ctxt, cluster_id=ctxt.cluster_id,
+            name=datacenter_name
+        )
+        datacenter.create()
+
+    def datacenter_get_all(self, ctxt, marker=None, limit=None,
+                           sort_keys=None, sort_dirs=None, filters=None,
+                           offset=None):
+        filters = filters or {}
+        filters['cluster_id'] = ctxt.cluster_id
+        return objects.DatacenterList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+    def datacenter_update(self, ctxt, id, name):
+        datacenter = objects.Datacenter.get_by_id(ctxt, id)
+        datacenter.name = name
+        datacenter.save()
+        return datacenter
+
+    def rack_get_all(self, ctxt, marker=None, limit=None,
+                     sort_keys=None, sort_dirs=None, filters=None,
+                     offset=None):
+        filters = filters or {}
+        filters['cluster_id'] = ctxt.cluster_id
+        return objects.RackList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
 
 
 class AdminService(ServiceBase):

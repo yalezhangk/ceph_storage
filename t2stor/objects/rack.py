@@ -17,6 +17,7 @@ class Rack(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'name': fields.StringField(nullable=True),
         'datacenter_id': fields.IntegerField(),
+        'cluster_id': fields.StringField()
     }
 
     def create(self):

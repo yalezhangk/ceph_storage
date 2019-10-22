@@ -12,11 +12,11 @@ from t2stor.tests.unit import objects as test_objects
 
 fake_sys_config = {
     'id': 1,
-    'service_id': "devel",
     'key': "key",
     'value': "value",
-    'value_type': "value_type",
+    'value_type': "string",
     'display_description': "display_description",
+    'cluster_id': "8466c699-42c4-4abb-bae2-19b3ef0d8b90",
 }
 
 
@@ -32,7 +32,7 @@ class TestSysConfig(test_objects.BaseObjectsTestCase):
 
     @mock.patch('t2stor.db.sqlalchemy.api.model_query')
     def test_get_by_id_no_existing_id(self, model_query):
-        model_query().filter_by().first.return_value = None
+        model_query().filter_by().filter_by().first.return_value = None
         self.assertRaises(exception.SysConfigNotFound,
                           objects.SysConfig.get_by_id,
                           self.context, 123)
