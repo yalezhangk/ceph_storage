@@ -19,6 +19,7 @@ class BaseAPIHandler(RequestHandler):
                         "x-requested-with, Content-Type, token-id")
         self.set_header('Access-Control-Allow-Methods',
                         'POST, GET, OPTIONS, PUT, DELETE')
+        self.set_header("Content-Type", "application/json")
 
     def options(self, *args, **kwargs):
         self.set_status(204)
