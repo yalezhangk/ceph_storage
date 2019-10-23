@@ -8,6 +8,7 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from t2stor import objects
+from t2stor.api.handlers.alert_rule_data_init import init_alert_rule
 from t2stor.api.handlers.base import BaseAPIHandler
 from t2stor.api.handlers.base import ClusterAPIHandler
 
@@ -28,6 +29,8 @@ class ClusterHandler(BaseAPIHandler):
         cluster_data = data.get("cluster")
         cluster = objects.Cluster(ctxt, display_name=cluster_data.get('name'))
         cluster.create()
+        # init alert_rule
+        init_alert_rule(ctxt, cluster.id)
         self.write(objects.json_encode({
             "cluster": cluster
         }))

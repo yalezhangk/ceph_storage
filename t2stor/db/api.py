@@ -470,6 +470,21 @@ def license_get_latest_valid(context, *args, **kwargs):
 ###############
 
 
+def alert_rule_update(context, alert_rule_id, values):
+    return IMPL.alert_rule_update(context, alert_rule_id, values)
+
+
+def alert_rule_get_all(context, *args, **kwargs):
+    return IMPL.alert_rule_get_all(context, *args, **kwargs)
+
+
+def alert_rule_create(context, values):
+    return IMPL.alert_rule_create(context, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

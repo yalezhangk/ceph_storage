@@ -46,6 +46,25 @@ class AdminClient(BaseClient):
                              ip_address=ip_address, password=password)
         return response
 
+    def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                           sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "alert_rule_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def alert_rule_get(self, ctxt, alert_rule_id):
+        response = self.call(ctxt, "alert_rule_get",
+                             alert_rule_id=alert_rule_id)
+        return response
+
+    def alert_rule_update(self, ctxt, alert_rule_id, data):
+        response = self.call(ctxt, "alert_rule_update",
+                             alert_rule_id=alert_rule_id,
+                             data=data)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
