@@ -11,6 +11,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import Text
+from sqlalchemy import dialects
 
 # Get default values via config.  The defaults will either
 # come from the default values set in the quota option
@@ -20,6 +21,11 @@ CONF = cfg.CONF
 
 CLASS_NAME = 'default'
 CREATED_AT = datetime.datetime.now()  # noqa
+
+
+def InetSmall():
+    return String(length=39).with_variant(
+        dialects.postgresql.INET(), 'postgresql')
 
 
 def define_tables(meta):
@@ -134,11 +140,11 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True, nullable=False),
         Column('hostname', String(255)),
         Column('ip_address', String(32)),
-        Column('object_gateway_ip_address', String(32)),
-        Column('block_gateway_ip_address', String(32)),
-        Column('file_gateway_ip_address', String(32)),
-        Column('storage_cluster_ip_address', String(32)),
-        Column('storage_public_ip_address', String(32)),
+        Column('object_gateway_ip_address', InetSmall()),
+        Column('block_gateway_ip_address', InetSmall()),
+        Column('file_gateway_ip_address', InetSmall()),
+        Column('storage_cluster_ip_address', InetSmall()),
+        Column('storage_public_ip_address', InetSmall()),
         Column('password', String(32)),
         Column('status', String(255)),
         Column('role_admin', Boolean),
@@ -569,6 +575,8 @@ def define_tables(meta):
         Column('speed', String(32)),
         Column('node_id', Integer, ForeignKey('nodes.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
     )
 
     return [clusters, pools, volume_access_path, volume_client_group,

@@ -114,6 +114,17 @@ class AdminHandler(object):
             sort_dirs=sort_dirs, filters=filters, offset=offset)
         return nodes
 
+    def node_create(self, ctxt, data):
+        node = objects.Node(
+            ctxt, ip_address=data.get('ip_address'),
+            password=data.get('password'),
+            gateway_ip_address=data.get('gateway_ip_address'),
+            storage_cluster_ip_address=data.get('storage_cluster_ip_address'),
+            storage_public_ip_address=data.get('storage_public_ip_address'),
+            status='creating')
+        node.create()
+        return node
+
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
         networks = objects.NetworkList.get_all(

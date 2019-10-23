@@ -13,6 +13,8 @@ from sqlalchemy import Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
+from t2stor.db.sqlalchemy import types
+
 CONF = cfg.CONF
 BASE = declarative_base()
 
@@ -96,11 +98,11 @@ class Node(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     hostname = Column(String(255))
     ip_address = Column(String(32))
-    object_gateway_ip_address = Column(String(32))
-    block_gateway_ip_address = Column(String(32))
-    file_gateway_ip_address = Column(String(32))
-    storage_cluster_ip_address = Column(String(32))
-    storage_public_ip_address = Column(String(32))
+    object_gateway_ip_address = Column(types.IPAddress())
+    block_gateway_ip_address = Column(types.IPAddress())
+    file_gateway_ip_address = Column(types.IPAddress())
+    storage_cluster_ip_address = Column(types.IPAddress())
+    storage_public_ip_address = Column(types.IPAddress())
     password = Column(String(32))
     status = Column(String(255))
     role_admin = Column(Boolean, default=False)

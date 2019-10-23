@@ -784,6 +784,7 @@ def _node_get(context, node_id, session=None):
 def node_create(context, values):
     node_ref = models.Node()
     node_ref.update(values)
+    node_ref.cluster_id = context.cluster_id
     session = get_session()
     with session.begin():
         node_ref.save(session)

@@ -43,6 +43,8 @@ class StorObject(base.VersionedObject):
                 # Remove timezone information and adjust the time according to
                 # the timezone information's offset.
                 changes[k] = v.replace(tzinfo=None) - v.utcoffset()
+            elif isinstance(v, netaddr.IPAddress):
+                changes[k] = str(v)
 
         # Return modified dict
         return changes
