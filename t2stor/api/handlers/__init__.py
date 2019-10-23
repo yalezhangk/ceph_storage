@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from t2stor.api.handlers.alert_group import AlertGroupHandler
+from t2stor.api.handlers.alert_group import AlertGroupListHandler
 from t2stor.api.handlers.alert_rule import AlertRuleHandler
 from t2stor.api.handlers.alert_rule import AlertRuleListHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
@@ -8,6 +10,8 @@ from t2stor.api.handlers.datacenters import DataCenterHandler
 from t2stor.api.handlers.datacenters import DataCenterListHandler
 from t2stor.api.handlers.datacenters import DataCenterRacksHandler
 from t2stor.api.handlers.disks import DiskListHandler
+from t2stor.api.handlers.email_group import EmailGroupHandler
+from t2stor.api.handlers.email_group import EmailGroupListHandler
 from t2stor.api.handlers.licenses import DownloadlicenseHandler
 from t2stor.api.handlers.licenses import LicenseHandler
 from t2stor.api.handlers.networks import NetworkListHandler
@@ -37,4 +41,8 @@ def get_routers():
         (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
         (r"/licenses/download_file/", DownloadlicenseHandler),
         (r"/disks/", DiskListHandler)
+        (r"/email_group/", EmailGroupListHandler),
+        (r"/email_group/([0-9]*)/", EmailGroupHandler),
+        (r"/alert_group/", AlertGroupListHandler),
+        (r"/alert_group/([0-9]*)/", AlertGroupHandler),
     ]

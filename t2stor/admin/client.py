@@ -123,6 +123,72 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    ###################
+
+    def email_group_get_all(self, ctxt, marker=None, limit=None,
+                            sort_keys=None, sort_dirs=None, filters=None,
+                            offset=None):
+        response = self.call(
+            ctxt, "email_group_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def email_group_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "email_group_create", data=data)
+        return response
+
+    def email_group_get(self, ctxt, email_group_id):
+        response = self.call(ctxt, "email_group_get",
+                             email_group_id=email_group_id)
+        return response
+
+    def email_group_update(self, ctxt, email_group_id, data):
+        response = self.call(ctxt, "email_group_update",
+                             email_group_id=email_group_id,
+                             data=data)
+        return response
+
+    def email_group_delete(self, ctxt, email_group_id):
+        response = self.call(ctxt, "email_group_delete",
+                             email_group_id=email_group_id)
+        return response
+
+    ###################
+
+    def alert_group_get_all(self, ctxt, marker=None, limit=None,
+                            sort_keys=None, sort_dirs=None, filters=None,
+                            offset=None):
+        response = self.call(
+            ctxt, "alert_group_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def alert_group_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "alert_group_create", data=data)
+        return response
+
+    def alert_group_get(self, ctxt, alert_group_id):
+        response = self.call(ctxt, "alert_group_get",
+                             alert_group_id=alert_group_id)
+        return response
+
+    def alert_group_update(self, ctxt, alert_group_id, data):
+        response = self.call(ctxt, "alert_group_update",
+                             alert_group_id=alert_group_id,
+                             data=data)
+        return response
+
+    def alert_group_delete(self, ctxt, alert_group_id):
+        response = self.call(ctxt, "alert_group_delete",
+                             alert_group_id=alert_group_id)
+        return response
+
+    ###################
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

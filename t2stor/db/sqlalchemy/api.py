@@ -2011,6 +2011,154 @@ def disk_update(context, disk_id, values):
 ###############################
 
 
+@require_context
+def _alert_group_get_query(context, session=None):
+    return model_query(context, models.AlertGroup, session=session)
+
+
+def _alert_group_get(context, alert_group_id, session=None):
+    result = _alert_group_get_query(context, session=session)
+    result = result.filter_by(id=alert_group_id).first()
+
+    if not result:
+        raise exception.AlertGroupNotFound(alert_group_id=alert_group_id)
+
+    return result
+
+
+@require_context
+def alert_group_get(context, alert_group_id):
+    return _alert_group_get(context, alert_group_id)
+
+
+@require_context
+def alert_group_create(context, values):
+    alert_group_ref = models.AlertGroup()
+    alert_group_ref.update(values)
+    session = get_session()
+    with session.begin():
+        alert_group_ref.save(session)
+
+    return alert_group_ref
+
+
+@handle_db_data_error
+@require_context
+def alert_group_update(context, alert_group_id, values):
+    session = get_session()
+    with session.begin():
+        query = _alert_group_get_query(context, session)
+        result = query.filter_by(id=alert_group_id).update(values)
+        if not result:
+            raise exception.AlertGroupNotFound(alert_group_id=alert_group_id)
+
+
+@require_context
+def alert_group_get_all(context, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.AlertGroup,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+def alert_group_destroy(context, alert_group_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.AlertGroup, session=session).\
+            filter_by(id=alert_group_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+###############################
+
+
+@require_context
+def _email_group_get_query(context, session=None):
+    return model_query(context, models.EmailGroup, session=session)
+
+
+def _email_group_get(context, email_group_id, session=None):
+    result = _email_group_get_query(context, session=session)
+    result = result.filter_by(id=email_group_id).first()
+
+    if not result:
+        raise exception.EmailGroupNotFound(email_group_id=email_group_id)
+
+    return result
+
+
+@require_context
+def email_group_get(context, email_group_id):
+    return _email_group_get(context, email_group_id)
+
+
+@require_context
+def email_group_create(context, values):
+    email_group_ref = models.EmailGroup()
+    email_group_ref.update(values)
+    session = get_session()
+    with session.begin():
+        email_group_ref.save(session)
+
+    return email_group_ref
+
+
+@handle_db_data_error
+@require_context
+def email_group_update(context, email_group_id, values):
+    session = get_session()
+    with session.begin():
+        query = _email_group_get_query(context, session)
+        result = query.filter_by(id=email_group_id).update(values)
+        if not result:
+            raise exception.EmailGroupNotFound(email_group_id=email_group_id)
+
+
+@require_context
+def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.EmailGroup,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+def email_group_destroy(context, email_group_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.EmailGroup, session=session).\
+            filter_by(id=email_group_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
@@ -2066,7 +2214,13 @@ PAGINATION_HELPERS = {
                         process_filters(models.Datacenter),
                         _datacenter_get),
     models.Disk: (_disk_get_query, process_filters(models.Disk),
-                  _disk_get)
+                  _disk_get),
+    models.EmailGroup: (_email_group_get_query,
+                        process_filters(models.EmailGroup),
+                        _email_group_get),
+    models.AlertGroup: (_alert_group_get_query,
+                        process_filters(models.AlertGroup),
+                        _alert_group_get),
 }
 
 

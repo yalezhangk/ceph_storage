@@ -540,6 +540,44 @@ def disk_update(context, disk_id, values):
 ###################
 
 
+def email_group_create(context, values):
+    return IMPL.email_group_create(context, values)
+
+
+def email_group_update(context, alert_rule_id, values):
+    return IMPL.email_group_update(context, alert_rule_id, values)
+
+
+def email_group_get_all(context, *args, **kwargs):
+    return IMPL.email_group_get_all(context, *args, **kwargs)
+
+
+def email_group_destroy(context, email_group_id):
+    return IMPL.email_group_destroy(context, email_group_id)
+
+
+###############
+
+
+def alert_group_create(context, values):
+    return IMPL.alert_group_create(context, values)
+
+
+def alert_group_update(context, alert_rule_id, values):
+    return IMPL.alert_group_update(context, alert_rule_id, values)
+
+
+def alert_group_get_all(context, *args, **kwargs):
+    return IMPL.alert_group_get_all(context, *args, **kwargs)
+
+
+def alert_group_destroy(context, email_group_id):
+    return IMPL.alert_group_destroy(context, email_group_id)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 
