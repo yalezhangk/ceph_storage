@@ -2251,6 +2251,7 @@ PAGINATION_HELPERS = {
     models.Datacenter: (_datacenter_get_query,
                         process_filters(models.Datacenter),
                         _datacenter_get),
+    models.Rack: (_rack_get_query, process_filters(models.Rack), _rack_get),
     models.Disk: (_disk_get_query, process_filters(models.Disk),
                   _disk_get),
     models.EmailGroup: (_email_group_get_query,
