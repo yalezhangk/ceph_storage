@@ -16,7 +16,13 @@ logger = logging.getLogger(__name__)
 class NodeListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
-        self.write(json.dumps({}))
+        ctxt = self.get_context()
+        page_args = self.get_paginated_args()
+        client = self.get_admin_client(ctxt)
+        nodes = yield client.node_get_all(ctxt, **page_args)
+        self.write(objects.json_encode({
+            "nodes": nodes
+        }))
 
 
 class NodeHandler(ClusterAPIHandler):

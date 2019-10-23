@@ -17,6 +17,7 @@ from t2stor.api.handlers.licenses import DownloadlicenseHandler
 from t2stor.api.handlers.licenses import LicenseHandler
 from t2stor.api.handlers.networks import NetworkListHandler
 from t2stor.api.handlers.nodes import NodeHandler
+from t2stor.api.handlers.nodes import NodeListHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
 from t2stor.api.handlers.sysinfos import SysInfoHandler
 from t2stor.api.handlers.volumes import VolumeHandler
@@ -42,6 +43,7 @@ def get_routers():
         (r"/licenses/download_file/", DownloadlicenseHandler),
         (r"/licenses/download_file/", DownloadlicenseHandler),
         (r"/networks/", NetworkListHandler),
+        (r"/nodes/", NodeListHandler),
         (r"/nodes/([0-9]*)/", NodeHandler),
         (r"/rpc_services/", RpcServiceListHandler),
         (r"/sysinfos/", SysInfoHandler),
