@@ -9,6 +9,7 @@ from t2stor.api.handlers.clusters import ClusterHandler
 from t2stor.api.handlers.datacenters import DataCenterHandler
 from t2stor.api.handlers.datacenters import DataCenterListHandler
 from t2stor.api.handlers.datacenters import DataCenterRacksHandler
+from t2stor.api.handlers.disks import DiskHandler
 from t2stor.api.handlers.disks import DiskListHandler
 from t2stor.api.handlers.email_group import EmailGroupHandler
 from t2stor.api.handlers.email_group import EmailGroupListHandler
@@ -24,25 +25,26 @@ from t2stor.api.handlers.volumes import VolumeListHandler
 
 def get_routers():
     return [
-        (r"/clusters/", ClusterHandler),
-        (r"/cluster_detect/", ClusterDetectHandler),
-        (r"/rpc_services/", RpcServiceListHandler),
-        (r"/volumes/", VolumeListHandler),
-        (r"/volumes/([0-9]*)/", VolumeHandler),
-        (r"/licenses/", LicenseHandler),
-        (r"/licenses/download_file/", DownloadlicenseHandler),
+        (r"/alert_group/", AlertGroupListHandler),
+        (r"/alert_group/([0-9]*)/", AlertGroupHandler),
         (r"/alert_rule/", AlertRuleListHandler),
         (r"/alert_rule/([0-9]*)/", AlertRuleHandler),
-        (r"/networks/", NetworkListHandler),
-        (r"/nodes/([0-9]*)/", NodeHandler),
-        (r"/sysinfos/", SysInfoHandler),
+        (r"/clusters/", ClusterHandler),
+        (r"/cluster_detect/", ClusterDetectHandler),
         (r"/datacenters/", DataCenterListHandler),
         (r"/datacenters/([0-9]*)/", DataCenterHandler),
         (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
-        (r"/licenses/download_file/", DownloadlicenseHandler),
-        (r"/disks/", DiskListHandler)
+        (r"/disks/", DiskListHandler),
+        (r"/disks/([0-9]*)/", DiskHandler),
         (r"/email_group/", EmailGroupListHandler),
         (r"/email_group/([0-9]*)/", EmailGroupHandler),
-        (r"/alert_group/", AlertGroupListHandler),
-        (r"/alert_group/([0-9]*)/", AlertGroupHandler),
+        (r"/licenses/", LicenseHandler),
+        (r"/licenses/download_file/", DownloadlicenseHandler),
+        (r"/licenses/download_file/", DownloadlicenseHandler),
+        (r"/networks/", NetworkListHandler),
+        (r"/nodes/([0-9]*)/", NodeHandler),
+        (r"/rpc_services/", RpcServiceListHandler),
+        (r"/sysinfos/", SysInfoHandler),
+        (r"/volumes/", VolumeListHandler),
+        (r"/volumes/([0-9]*)/", VolumeHandler),
     ]

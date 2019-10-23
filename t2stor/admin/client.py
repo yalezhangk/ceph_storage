@@ -189,6 +189,11 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def disk_update(self, ctxt, disk_id, disk_type):
+        response = self.call(
+            ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
