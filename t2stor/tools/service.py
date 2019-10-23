@@ -53,3 +53,13 @@ class Service(ToolBase):
             return True
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
+
+    def status(self, name):
+        logger.debug("Check service status: {}".format(name))
+        cmd = ["systemctl", "status", name, "|", "grep", "Active", "|",
+               "awk", "'{{print $2}}'"]
+        rc, stdout, stderr = self.run_command(cmd)
+        status = stdout.strip().decode('utf-8')
+        if status != "active":
+            status = "inactive"
+        return status

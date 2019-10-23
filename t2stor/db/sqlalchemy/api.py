@@ -2332,6 +2332,80 @@ def log_file_destroy(context, log_file_id):
 ###############################
 
 
+def _service_get_query(context, session=None):
+    return model_query(
+        context, models.Service, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _service_get(context, service_id, session=None):
+    result = _service_get_query(context, session)
+    result = result.filter_by(id=service_id).first()
+
+    if not result:
+        raise exception.ServiceNotFound(service_id=service_id)
+
+    return result
+
+
+@require_context
+def service_create(context, values):
+    service_ref = models.Service()
+    service_ref.update(values)
+    session = get_session()
+    with session.begin():
+        service_ref.save(session)
+    return service_ref
+
+
+@require_context
+def service_destroy(context, service_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Service, session=session).\
+            filter_by(id=service_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def service_get(context, service_id):
+    return _service_get(context, service_id)
+
+
+@require_context
+def service_get_all(context, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Service, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def service_update(context, service_id, values):
+    session = get_session()
+    with session.begin():
+        query = _service_get_query(context, session)
+        result = query.filter_by(id=service_id).update(values)
+        if not result:
+            raise exception.ServiceNotFound(service_id=service_id)
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
@@ -2441,7 +2515,10 @@ PAGINATION_HELPERS = {
                       _alert_log_get),
     models.LogFile: (_log_file_get_query,
                      process_filters(models.LogFile),
-                     _log_file_get)
+                     _log_file_get),
+    models.Service: (_service_get_query,
+                     process_filters(models.Service),
+                     _service_get),
 }
 
 

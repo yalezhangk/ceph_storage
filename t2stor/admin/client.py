@@ -176,6 +176,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def disk_update(self, ctxt, disk_id, disk_type):
+        response = self.call(
+            ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)
+        return response
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,
@@ -242,9 +247,16 @@ class AdminClient(BaseClient):
 
     ###################
 
-    def disk_update(self, ctxt, disk_id, disk_type):
+    def services_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                         sort_dirs=None, filters=None, offset=None):
         response = self.call(
-            ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)
+            ctxt, "services_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def service_update(self, ctxt, services):
+        response = self.call(ctxt, "service_update", services=services)
         return response
 
     ##################

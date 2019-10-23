@@ -157,3 +157,14 @@ class DiskRole(BaseStorEnum):
 
 class DiskRoleField(BaseEnumField):
     AUTO_TYPE = DiskRole()
+
+
+class ServiceStatus(BaseStorEnum):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (ACTIVE, INACTIVE)
+
+
+class ServiceStatusField(BaseEnumField):
+    AUTO_TYPE = ServiceStatus()
