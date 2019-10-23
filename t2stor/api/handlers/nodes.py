@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
 import logging
 
 from tornado import gen
@@ -24,6 +23,18 @@ class NodeListHandler(ClusterAPIHandler):
             "nodes": nodes
         }))
 
+    @gen.coroutine
+    def post(self):
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        data = data.get('node')
+        client = self.get_admin_client(ctxt)
+        node = yield client.node_create(ctxt, data)
+
+        self.write(objects.json_encode({
+            "node": node
+        }))
+
 
 class NodeHandler(ClusterAPIHandler):
     @gen.coroutine
@@ -34,27 +45,3 @@ class NodeHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "node": node
         }))
-
-    @gen.coroutine
-    def post(self):
-        ctxt = self.get_context()
-        data = json_decode(self.request.body)
-        data = data.get('node')
-        client = self.get_admin_client(ctxt)
-        ip_address = data.get('ip_address')
-        password = data.get('password')
-
-        node = objects.Node(
-            ctxt, ip_address=ip_address, password=password,
-            gateway_ip_address=data.get('gateway_ip_address'),
-            storage_cluster_ip_address=data.get('storage_cluster_ip_address'),
-            storage_public_ip_address=data.get('storage_public_ip_address'),
-            status='deploying')
-
-        yield client.cluster_install_agent(
-            ctxt, ip_address=ip_address,
-            password=password)
-
-        self.write(json.dumps(
-            {"id": node.id}
-        ))

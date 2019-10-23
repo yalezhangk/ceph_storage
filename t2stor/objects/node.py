@@ -41,7 +41,7 @@ class Node(base.StorPersistentObject, base.StorObject,
         'sys_version': fields.StringField(nullable=True),
         'rack_id': fields.IntegerField(nullable=True),
         'time_diff': fields.IntegerField(nullable=True),
-        'cluster_id': fields.StringField(nullable=True),
+        'cluster_id': fields.UUIDField(),
     }
 
     def create(self):
