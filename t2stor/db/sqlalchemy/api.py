@@ -765,7 +765,9 @@ def rpc_service_update(context, rpc_service_id, values):
 
 
 def _node_get_query(context, session=None):
-    return model_query(context, models.Node, session=session)
+    return model_query(
+        context, models.Node, session=session
+    ).filter_by(cluster_id=context.cluster_id)
 
 
 def _node_get(context, node_id, session=None):
@@ -1780,6 +1782,80 @@ def license_get_latest_valid(context, marker=None, limit=None, sort_keys=None,
             return []
         return query.all()
 
+###############################
+
+
+def _network_get_query(context, session=None):
+    return model_query(
+        context, models.Network, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _network_get(context, net_id, session=None):
+    result = _network_get_query(context, session)
+    result = result.filter_by(id=net_id).first()
+
+    if not result:
+        raise exception.NetworkNotFound(net_id=net_id)
+
+    return result
+
+
+@require_context
+def network_create(context, values):
+    net_ref = models.Network()
+    net_ref.update(values)
+    session = get_session()
+    with session.begin():
+        net_ref.save(session)
+    return net_ref
+
+
+@require_context
+def network_destroy(context, net_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Network, session=session).\
+            filter_by(id=net_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def network_get(context, net_id):
+    return _network_get(context, net_id)
+
+
+@require_context
+def network_get_all(context, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Network, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def network_update(context, net_id, values):
+    session = get_session()
+    with session.begin():
+        query = _network_get_query(context, session)
+        result = query.filter_by(id=net_id).update(values)
+        if not result:
+            raise exception.NetworkNotFound(net_id=net_id)
+
 
 ###############################
 
@@ -1889,6 +1965,9 @@ PAGINATION_HELPERS = {
     models.AlertRule: (_alert_rule_get_query,
                        process_filters(models.AlertRule),
                        _alert_rule_get),
+    models.Network: (_network_get_query,
+                     process_filters(models.Network),
+                     _network_get),
 }
 
 

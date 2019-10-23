@@ -466,6 +466,31 @@ def license_update(context, license_id, values):
 def license_get_latest_valid(context, *args, **kwargs):
     return IMPL.license_get_latest_valid(context, *args, **kwargs)
 
+###############
+
+
+def network_create(context, values):
+    return IMPL.network_create(context, values)
+
+
+def network_destroy(context, net_id):
+    return IMPL.network_destroy(context, net_id)
+
+
+def network_get(context, net_id):
+    return IMPL.network_get(context, net_id)
+
+
+def network_get_all(context, filters, marker, limit,
+                    offset, sort_keys, sort_dirs):
+    return IMPL.network_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def network_update(context, net_id, values):
+    return IMPL.network_update(context, net_id, values)
+
 
 ###############
 

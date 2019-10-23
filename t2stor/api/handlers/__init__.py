@@ -6,6 +6,8 @@ from t2stor.api.handlers.clusters import ClusterDetectHandler
 from t2stor.api.handlers.clusters import ClusterHandler
 from t2stor.api.handlers.licenses import DownloadlicenseHandler
 from t2stor.api.handlers.licenses import LicenseHandler
+from t2stor.api.handlers.networks import NetworkListHandler
+from t2stor.api.handlers.nodes import NodeHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
 from t2stor.api.handlers.volumes import VolumeHandler
 from t2stor.api.handlers.volumes import VolumeListHandler
@@ -22,4 +24,6 @@ def get_routers():
         (r"/licenses/download_file/", DownloadlicenseHandler),
         (r"/alert_rule/", AlertRuleListHandler),
         (r"/alert_rule/([0-9]*)/", AlertRuleHandler),
+        (r"/networks/", NetworkListHandler),
+        (r"/nodes/([0-9]*)/", NodeHandler),
     ]

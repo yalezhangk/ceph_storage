@@ -21,8 +21,13 @@ class NodeListHandler(ClusterAPIHandler):
 
 class NodeHandler(ClusterAPIHandler):
     @gen.coroutine
-    def get(self):
-        self.write(json.dumps({}))
+    def get(self, node_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        node = yield client.node_get(ctxt, node_id)
+        self.write(objects.json_encode({
+            "node": node
+        }))
 
     @gen.coroutine
     def post(self):

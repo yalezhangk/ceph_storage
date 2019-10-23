@@ -552,6 +552,24 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
+    networks = Table(
+        'networks', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(32)),
+        Column('status', String(32)),
+        Column('ip_address', String(32)),
+        Column('netmask', String(32)),
+        Column('mac_address', String(32)),
+        Column('type', String(32)),
+        Column('speed', String(32)),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+    )
+
     return [clusters, pools, volume_access_path, volume_client_group,
             volume, volume_snapshot, rpc_services, datacenter,
             rack, node, vhost, disks, disk_partitions,
@@ -561,7 +579,7 @@ def define_tables(meta):
             ceph_config, license_files, log_files,
             alert_rules, email_groups, alert_groups, alert_group_relate_rule,
             alert_group_relate_email,
-            alert_logs, action_logs]
+            alert_logs, action_logs, networks]
 
 
 def upgrade(migrate_engine):

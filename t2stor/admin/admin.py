@@ -101,6 +101,17 @@ class AdminHandler(object):
         rule.save()
         return rule
 
+    def node_get(self, ctxt, node_id):
+        node_info = objects.Node.get_by_id(ctxt, node_id)
+        return node_info
+
+    def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        networks = objects.NetworkList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        return networks
+
 
 class AdminService(ServiceBase):
     service_name = "admin"
