@@ -7,6 +7,7 @@ from t2stor import db
 from t2stor import exception
 from t2stor import objects
 from t2stor.objects import base
+from t2stor.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -15,11 +16,11 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'service_id': fields.StringField(),
         'key': fields.StringField(),
         'value': fields.StringField(),
-        'value_type': fields.StringField(),
+        'value_type': s_fields.SysConfigTypeField(),
         'display_description': fields.StringField(nullable=True),
+        'cluster_id': fields.StringField()
     }
 
     def create(self):
@@ -42,6 +43,9 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
         updated_values = db.sys_config_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
+
+    def get_by_key(self, key):
+        return db.sys_config_get_by_key(key)
 
 
 @base.StorObjectRegistry.register

@@ -37,6 +37,12 @@ class NodeTask(object):
         package_tool = PackageTool(ssh)
         package_tool.uninstall(["chrony"])
 
+    def chrony_update(self):
+        pass
+        # TODO 更新时间同步服务器配置
+        # file_tool = FileTool(ssh)
+        # file_tool.write("/etc/chrony.conf", get_agent_conf(None))
+
     def chrony_restart(self):
         ssh = self.get_ssh_executor()
         service_tool = ServiceTool(ssh)

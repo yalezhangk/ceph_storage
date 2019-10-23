@@ -4,11 +4,15 @@ from t2stor.api.handlers.alert_rule import AlertRuleHandler
 from t2stor.api.handlers.alert_rule import AlertRuleListHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
 from t2stor.api.handlers.clusters import ClusterHandler
+from t2stor.api.handlers.datacenters import DataCenterHandler
+from t2stor.api.handlers.datacenters import DataCenterListHandler
+from t2stor.api.handlers.datacenters import DataCenterRacksHandler
 from t2stor.api.handlers.licenses import DownloadlicenseHandler
 from t2stor.api.handlers.licenses import LicenseHandler
 from t2stor.api.handlers.networks import NetworkListHandler
 from t2stor.api.handlers.nodes import NodeHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
+from t2stor.api.handlers.sysinfos import SysInfoHandler
 from t2stor.api.handlers.volumes import VolumeHandler
 from t2stor.api.handlers.volumes import VolumeListHandler
 
@@ -26,4 +30,8 @@ def get_routers():
         (r"/alert_rule/([0-9]*)/", AlertRuleHandler),
         (r"/networks/", NetworkListHandler),
         (r"/nodes/([0-9]*)/", NodeHandler),
+        (r"/sysinfos/", SysInfoHandler),
+        (r"/datacenters/", DataCenterListHandler),
+        (r"/datacenters/([0-9]*)/", DataCenterHandler),
+        (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
     ]
