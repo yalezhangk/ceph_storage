@@ -1936,6 +1936,81 @@ def alert_rule_get_all(context, marker=None, limit=None, sort_keys=None,
 ###############################
 
 
+def _disk_get_query(context, session=None):
+    return model_query(
+        context, models.Disk, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _disk_get(context, disk_id, session=None):
+    result = _disk_get_query(context, session)
+    result = result.filter_by(id=disk_id).first()
+
+    if not result:
+        raise exception.DiskNotFound(disk_id=disk_id)
+
+    return result
+
+
+@require_context
+def disk_create(context, values):
+    disk_ref = models.Disk()
+    disk_ref.update(values)
+    session = get_session()
+    with session.begin():
+        disk_ref.save(session)
+
+    return disk_ref
+
+
+def disk_destroy(context, disk_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.disk, session=session).\
+            filter_by(id=disk_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def disk_get(context, disk_id):
+    return _disk_get(context, disk_id)
+
+
+@require_context
+def disk_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Disk, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def disk_update(context, disk_id, values):
+    session = get_session()
+    with session.begin():
+        query = _disk_get_query(context, session)
+        result = query.filter_by(id=disk_id).update(values)
+        if not result:
+            raise exception.DiskNotFound(disk_id=disk_id)
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
@@ -1989,7 +2064,9 @@ PAGINATION_HELPERS = {
                        _sys_config_get),
     models.Datacenter: (_datacenter_get_query,
                         process_filters(models.Datacenter),
-                        _datacenter_get)
+                        _datacenter_get),
+    models.Disk: (_disk_get_query, process_filters(models.Disk),
+                  _disk_get)
 }
 
 

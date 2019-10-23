@@ -514,6 +514,32 @@ def alert_rule_create(context, values):
 ###############
 
 
+def disk_create(context, values):
+    return IMPL.disk_create(context, values)
+
+
+def disk_destroy(context, disk_id):
+    return IMPL.disk_destroy(context, disk_id)
+
+
+def disk_get(context, disk_id):
+    return IMPL.disk_get(context, disk_id)
+
+
+def disk_get_all(context, filters, marker, limit,
+                 offset, sort_keys, sort_dirs):
+    return IMPL.disk_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def disk_update(context, disk_id, values):
+    return IMPL.disk_update(context, disk_id, values)
+
+
+###################
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

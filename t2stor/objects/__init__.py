@@ -25,6 +25,7 @@ def register_all():
     __import__('t2stor.objects.license')
     __import__('t2stor.objects.alert_rule')
     __import__('t2stor.objects.network')
+    __import__('t2stor.objects.disk')
 
 
 def json_encode(obj):
