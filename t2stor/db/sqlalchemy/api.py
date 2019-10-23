@@ -1784,6 +1784,66 @@ def license_get_latest_valid(context, marker=None, limit=None, sort_keys=None,
 ###############################
 
 
+@require_context
+def _alert_rule_get_query(context, session=None):
+    return model_query(context, models.AlertRule, session=session)
+
+
+def _alert_rule_get(context, alert_rule_id, session=None):
+    result = _alert_rule_get_query(context, session=session)
+    result = result.filter_by(id=alert_rule_id).first()
+
+    if not result:
+        raise exception.AlertRuleNotFound(alert_rule_id=alert_rule_id)
+
+    return result
+
+
+@require_context
+def alert_rule_get(context, volume_id):
+    return _alert_rule_get(context, volume_id)
+
+
+@require_context
+def alert_rule_create(context, values):
+    alert_rule_ref = models.AlertRule()
+    alert_rule_ref.update(values)
+    session = get_session()
+    with session.begin():
+        alert_rule_ref.save(session)
+
+    return alert_rule_ref
+
+
+@handle_db_data_error
+@require_context
+def alert_rule_update(context, alert_rule_id, values):
+    session = get_session()
+    with session.begin():
+        query = _alert_rule_get_query(context, session)
+        result = query.filter_by(id=alert_rule_id).update(values)
+        if not result:
+            raise exception.AlertRuleNotFound(alert_rule_id=alert_rule_id)
+
+
+@require_context
+def alert_rule_get_all(context, marker=None, limit=None, sort_keys=None,
+                       sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.AlertRule,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
@@ -1826,6 +1886,9 @@ PAGINATION_HELPERS = {
     models.VolumeClientGroup: (_volume_client_group_get_query),
     models.LicenseFile: (_license_get_query, _process_license_filters,
                          _license_get),
+    models.AlertRule: (_alert_rule_get_query,
+                       process_filters(models.AlertRule),
+                       _alert_rule_get),
 }
 
 

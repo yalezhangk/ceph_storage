@@ -23,6 +23,7 @@ def register_all():
     __import__('t2stor.objects.volume_client_group')
     __import__('t2stor.objects.pool')
     __import__('t2stor.objects.license')
+    __import__('t2stor.objects.alert_rule')
 
 
 def json_encode(obj):
