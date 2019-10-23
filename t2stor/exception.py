@@ -188,3 +188,11 @@ class InvalidInput(Invalid):
 
 class AlertRuleNotFound(NotFound):
     message = _("AlertRule %(alert_rule_id)s could not be found.")
+
+
+class EmailGroupNotFound(NotFound):
+    message = _("EmailGroup %(email_group_id)s could not be found.")
+
+
+class AlertGroupNotFound(NotFound):
+    message = _("AlertGroup %(alert_group_id)s could not be found.")

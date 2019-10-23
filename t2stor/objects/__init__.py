@@ -26,6 +26,8 @@ def register_all():
     __import__('t2stor.objects.alert_rule')
     __import__('t2stor.objects.network')
     __import__('t2stor.objects.disk')
+    __import__('t2stor.objects.email_group')
+    __import__('t2stor.objects.alert_group')
 
 
 def json_encode(obj):
