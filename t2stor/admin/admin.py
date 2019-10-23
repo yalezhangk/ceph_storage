@@ -107,6 +107,13 @@ class AdminHandler(object):
         node_info = objects.Node.get_by_id(ctxt, node_id)
         return node_info
 
+    def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                     sort_dirs=None, filters=None, offset=None):
+        nodes = objects.NodeList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        return nodes
+
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
         networks = objects.NetworkList.get_all(

@@ -51,12 +51,12 @@ class VolumeStatusField(BaseEnumField):
 
 class NodeStatus(BaseStorEnum):
     CREATING = 'creating'
-    ACTIVATE = 'activate'
+    ACTIVE = 'active'
     DELETING = 'deleting'
     ERROR = 'error'
     DEPLOYING = 'deploying'
 
-    ALL = (CREATING, ACTIVATE, DELETING, ERROR, DEPLOYING)
+    ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING)
 
 
 class NodeStatusField(BaseEnumField):
