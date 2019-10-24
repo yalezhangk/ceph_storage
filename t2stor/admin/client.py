@@ -248,6 +248,7 @@ class AdminClient(BaseClient):
         return response
 
     ##################
+
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
         response = self.call(
@@ -259,6 +260,72 @@ class AdminClient(BaseClient):
     def pool_get(self, ctxt, pool_id):
         response = self.call(ctxt, "pool_get", pool_id=pool_id)
         return response
+
+    ##################
+
+    def alert_log_get_all(self, ctxt, marker=None, limit=None,
+                          sort_keys=None, sort_dirs=None, filters=None,
+                          offset=None):
+        response = self.call(
+            ctxt, "alert_log_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def alert_log_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "alert_log_create", data=data)
+        return response
+
+    def alert_log_get(self, ctxt, alert_log_id):
+        response = self.call(ctxt, "alert_log_get",
+                             alert_log_id=alert_log_id)
+        return response
+
+    def alert_log_update(self, ctxt, alert_log_id, data):
+        response = self.call(ctxt, "alert_log_update",
+                             alert_log_id=alert_log_id,
+                             data=data)
+        return response
+
+    def alert_log_delete(self, ctxt, alert_log_id):
+        response = self.call(ctxt, "alert_log_delete",
+                             alert_log_id=alert_log_id)
+        return response
+
+    ###################
+
+    def log_file_get_all(self, ctxt, marker=None, limit=None,
+                         sort_keys=None, sort_dirs=None, filters=None,
+                         offset=None):
+        response = self.call(
+            ctxt, "log_file_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def log_file_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "log_file_create", data=data)
+        return response
+
+    def log_file_get(self, ctxt, log_file_id):
+        response = self.call(ctxt, "log_file_get",
+                             log_file_id=log_file_id)
+        return response
+
+    def log_file_update(self, ctxt, log_file_id, data):
+        response = self.call(ctxt, "log_file_update",
+                             log_file_id=log_file_id,
+                             data=data)
+        return response
+
+    def log_file_delete(self, ctxt, log_file_id):
+        response = self.call(ctxt, "log_file_delete",
+                             log_file_id=log_file_id)
+        return response
+
+    ###################
 
 
 class AdminClientManager(BaseClientManager):

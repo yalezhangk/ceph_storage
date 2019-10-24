@@ -578,6 +578,44 @@ def alert_group_destroy(context, email_group_id):
 ###############
 
 
+def alert_log_create(context, values):
+    return IMPL.alert_log_create(context, values)
+
+
+def alert_log_update(context, alert_log_id, values):
+    return IMPL.alert_log_update(context, alert_log_id, values)
+
+
+def alert_log_get_all(context, *args, **kwargs):
+    return IMPL.alert_log_get_all(context, *args, **kwargs)
+
+
+def alert_log_destroy(context, alert_log_id):
+    return IMPL.alert_log_destroy(context, alert_log_id)
+
+
+###############
+
+
+def log_file_create(context, values):
+    return IMPL.log_file_create(context, values)
+
+
+def log_file_update(context, log_file_id, values):
+    return IMPL.log_file_update(context, log_file_id, values)
+
+
+def log_file_get_all(context, *args, **kwargs):
+    return IMPL.log_file_get_all(context, *args, **kwargs)
+
+
+def log_file_destroy(context, log_file_id):
+    return IMPL.log_file_destroy(context, log_file_id)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

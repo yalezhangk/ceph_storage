@@ -516,6 +516,7 @@ def define_tables(meta):
         Column('alert_value', String(1024)),
         Column('resource_id', String(32)),
         Column('resource_name', String(64)),
+        Column('alert_role_id', Integer, ForeignKey('alert_rules.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
