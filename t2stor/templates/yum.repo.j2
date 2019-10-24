@@ -1,0 +1,17 @@
+[base]
+name=Base packages and requirements
+baseurl={{ repo_baseurl }}/base
+enabled=1
+gpgcheck=0
+
+[ceph]
+name=Ceph packages
+baseurl={{ repo_baseurl }}/ceph-rpms
+enabled=1
+gpgcheck=0
+
+[tools]
+name=Some useful tools
+baseurl={{ repo_baseurl }}/tools
+enabled=1
+gpgcheck=0

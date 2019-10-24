@@ -6,6 +6,7 @@ from oslo_versionedobjects import fields
 from t2stor import db
 from t2stor import exception
 from t2stor import objects
+from t2stor.i18n import _
 from t2stor.objects import base
 from t2stor.objects import fields as s_fields
 
@@ -64,3 +65,17 @@ class SysConfigList(base.ObjectListBase, base.StorObject):
         expected_attrs = SysConfig._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.SysConfig,
                                   sys_configs, expected_attrs=expected_attrs)
+
+
+def sys_config_get(ctxt, key, default=None):
+    obj = SysConfig.get_by_key(key)
+    if not obj:
+        return default
+    if obj.value_type == s_fields.SysConfigType.STRING:
+        return obj.value
+    elif obj.value_type == s_fields.SysConfigType.NUMBER:
+        return int(obj.value)
+    elif obj.value_type == s_fields.SysConfigType.BOOL:
+        return bool(obj.value)
+    else:
+        raise exception.Invalid(msg=_("Invalid config type"))
