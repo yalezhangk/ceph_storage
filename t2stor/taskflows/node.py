@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from t2stor import objects
 from t2stor.admin.genconf import get_agent_conf
 from t2stor.admin.genconf import yum_repo
 from t2stor.tools.base import Executor
@@ -8,17 +9,25 @@ from t2stor.tools.docker import Docker as DockerTool
 from t2stor.tools.file import File as FileTool
 from t2stor.tools.package import Package as PackageTool
 from t2stor.tools.service import Service as ServiceTool
+from t2stor.utils import template
 
 
 class NodeTask(object):
+    ctxt = None
     node = None
 
-    def __init__(self, node):
+    def __init__(self, ctxt, node):
         self.node = node
 
     def get_ssh_executor(self):
         return SSHExecutor(hostname=self.node.ip_address,
                            password=self.node.password)
+
+    def get_yum_repo():
+        repo_url = objects.sysconfig.sys_config_get("repo_url")
+        tpl = template.get('yum.repo.j2')
+        repo = tpl.render(repo_baseurl=repo_url)
+        return repo
 
     def chrony_install(self):
         ssh = self.get_ssh_executor()
