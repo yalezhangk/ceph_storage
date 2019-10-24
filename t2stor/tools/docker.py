@@ -96,3 +96,15 @@ class Docker(ToolBase):
             return True
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
+
+    def status(self, name):
+        logger.debug("Docker status: {}".format(name))
+        cmd = ["docker", "inspect", "-f", "{{.State.Running}}", name]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        if stdout.strip().decode('utf-8') == "true":
+            return "active"
+        else:
+            return "inactive"

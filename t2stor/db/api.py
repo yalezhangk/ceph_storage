@@ -616,6 +616,32 @@ def log_file_destroy(context, log_file_id):
 ###############
 
 
+def service_create(context, values):
+    return IMPL.service_create(context, values)
+
+
+def service_destroy(context, service_id):
+    return IMPL.service_destroy(context, service_id)
+
+
+def service_get(context, service_id):
+    return IMPL.service_get(context, service_id)
+
+
+def service_get_all(context, filters, marker, limit,
+                    offset, sort_keys, sort_dirs):
+    return IMPL.service_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def service_update(context, service_id, values):
+    return IMPL.service_update(context, service_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 
