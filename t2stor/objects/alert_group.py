@@ -13,6 +13,8 @@ class AlertGroup(base.StorPersistentObject, base.StorObject,
     fields = {
         'id': fields.IntegerField(),
         'name': fields.StringField(),
+        'alert_rule_ids': fields.ListOfIntegersField(nullable=True),
+        'email_group_ids': fields.ListOfIntegersField(nullable=True),
         'cluster_id': fields.StringField(),
     }
 

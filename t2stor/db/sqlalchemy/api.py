@@ -2035,11 +2035,18 @@ def alert_group_get(context, alert_group_id):
 @require_context
 def alert_group_create(context, values):
     alert_group_ref = models.AlertGroup()
+    alert_rule_ids = values.pop('alert_rule_ids')
+    db_rules = [alert_rule_get(context, rule_id) for rule_id in alert_rule_ids]
+    email_group_ids = values.pop('email_group_ids')
+    db_emails = [email_group_get(context, email_id)
+                 for email_id in email_group_ids]
+    # add relations:alert_rules,email_groups
+    alert_group_ref.alert_rules = db_rules
+    alert_group_ref.email_groups = db_emails
     alert_group_ref.update(values)
     session = get_session()
     with session.begin():
         alert_group_ref.save(session)
-
     return alert_group_ref
 
 
@@ -2049,9 +2056,19 @@ def alert_group_update(context, alert_group_id, values):
     session = get_session()
     with session.begin():
         query = _alert_group_get_query(context, session)
-        result = query.filter_by(id=alert_group_id).update(values)
+        result = query.filter_by(id=alert_group_id).first()
         if not result:
             raise exception.AlertGroupNotFound(alert_group_id=alert_group_id)
+        alert_rule_ids = values.pop('alert_rule_ids')
+        db_rules = [_alert_rule_get(context, rule_id, session) for rule_id in
+                    alert_rule_ids]
+        # update relations:alert_rules,email_groups
+        result.alert_rules = db_rules
+        email_group_ids = values.pop('email_group_ids')
+        db_emails = [_email_group_get(context, email_id, session)
+                     for email_id in email_group_ids]
+        result.email_groups = db_emails
+        result.update(values)
 
 
 @require_context
@@ -2075,10 +2092,14 @@ def alert_group_destroy(context, alert_group_id):
     with session.begin():
         updated_values = {'deleted': True,
                           'deleted_at': now,
-                          'updated_at': literal_column('updated_at')}
-        model_query(context, models.AlertGroup, session=session).\
-            filter_by(id=alert_group_id).\
-            update(updated_values)
+                          'updated_at': literal_column('updated_at')
+                          }
+        db_obj = model_query(context, models.AlertGroup, session=session).\
+            filter_by(id=alert_group_id).first()
+        # del relations
+        db_obj.alert_rules.clear()
+        db_obj.email_groups.clear()
+        db_obj.update(updated_values)
     del updated_values['updated_at']
     return updated_values
 
@@ -2150,8 +2171,159 @@ def email_group_destroy(context, email_group_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.EmailGroup, session=session).\
-            filter_by(id=email_group_id).\
+        db_obj = model_query(context, models.EmailGroup, session=session).\
+            filter_by(id=email_group_id).first()
+        if db_obj.alert_groups:
+            raise exception.EmailGroupDeleteError()
+        else:
+            db_obj.update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+###############################
+
+
+@require_context
+def _alert_log_get_query(context, session=None):
+    return model_query(context, models.AlertLog, session=session)
+
+
+def _alert_log_get(context, alert_log_id, session=None):
+    result = _alert_log_get_query(context, session=session)
+    result = result.filter_by(id=alert_log_id).first()
+
+    if not result:
+        raise exception.AlertLogNotFound(alert_log_id=alert_log_id)
+
+    return result
+
+
+@require_context
+def alert_log_get(context, alert_log_id):
+    return _alert_log_get(context, alert_log_id)
+
+
+@require_context
+def alert_log_create(context, values):
+    alert_log_ref = models.AlertLog()
+    alert_log_ref.update(values)
+    session = get_session()
+    with session.begin():
+        alert_log_ref.save(session)
+
+    return alert_log_ref
+
+
+@handle_db_data_error
+@require_context
+def alert_log_update(context, alert_log_id, values):
+    session = get_session()
+    with session.begin():
+        query = _alert_log_get_query(context, session)
+        result = query.filter_by(id=alert_log_id).update(values)
+        if not result:
+            raise exception.AlertLogNotFound(alert_log_id=alert_log_id)
+
+
+@require_context
+def alert_log_get_all(context, marker=None, limit=None, sort_keys=None,
+                      sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.AlertLog,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+def alert_log_destroy(context, alert_log_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.AlertLog, session=session).\
+            filter_by(id=alert_log_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+###############################
+
+
+@require_context
+def _log_file_get_query(context, session=None):
+    return model_query(context, models.LogFile, session=session)
+
+
+def _log_file_get(context, log_file_id, session=None):
+    result = _log_file_get_query(context, session=session)
+    result = result.filter_by(id=log_file_id).first()
+
+    if not result:
+        raise exception.LogFileNotFound(log_file_id=log_file_id)
+
+    return result
+
+
+@require_context
+def log_file_get(context, log_file_id):
+    return _log_file_get(context, log_file_id)
+
+
+@require_context
+def log_file_create(context, values):
+    log_file_ref = models.LogFile()
+    log_file_ref.update(values)
+    session = get_session()
+    with session.begin():
+        log_file_ref.save(session)
+
+    return log_file_ref
+
+
+@handle_db_data_error
+@require_context
+def log_file_update(context, log_file_id, values):
+    session = get_session()
+    with session.begin():
+        query = _log_file_get_query(context, session)
+        result = query.filter_by(id=log_file_id).update(values)
+        if not result:
+            raise exception.LogFileNotFound(log_file_id=log_file_id)
+
+
+@require_context
+def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
+                     sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.LogFile,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+def log_file_destroy(context, log_file_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.LogFile, session=session).\
+            filter_by(id=log_file_id).\
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2188,6 +2360,7 @@ def process_filters(model):
                 query = query.filter_by(**filters)
         return query
     return _process_filters
+
 
 ########################
 
@@ -2263,6 +2436,12 @@ PAGINATION_HELPERS = {
     models.Pool: (_pool_get_query,
                   process_filters(models.Datacenter),
                   _pool_get),
+    models.AlertLog: (_alert_log_get_query,
+                      process_filters(models.AlertLog),
+                      _alert_log_get),
+    models.LogFile: (_log_file_get_query,
+                     process_filters(models.LogFile),
+                     _log_file_get)
 }
 
 

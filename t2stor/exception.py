@@ -196,3 +196,16 @@ class EmailGroupNotFound(NotFound):
 
 class AlertGroupNotFound(NotFound):
     message = _("AlertGroup %(alert_group_id)s could not be found.")
+
+
+class EmailGroupDeleteError(StorException):
+    message = _("can not delete email_group used by alert_group")
+    code = 400
+
+
+class AlertLogNotFound(NotFound):
+    message = _("AlertLog %(alert_log_id)s could not be found.")
+
+
+class LogFileNotFound(NotFound):
+    message = _("LogFile %(log_file_id)s could not be found.")

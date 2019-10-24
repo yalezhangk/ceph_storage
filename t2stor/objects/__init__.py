@@ -28,6 +28,8 @@ def register_all():
     __import__('t2stor.objects.disk')
     __import__('t2stor.objects.email_group')
     __import__('t2stor.objects.alert_group')
+    __import__('t2stor.objects.alert_log')
+    __import__('t2stor.objects.log_file')
 
 
 def json_encode(obj):
