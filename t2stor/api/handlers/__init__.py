@@ -27,6 +27,7 @@ from t2stor.api.handlers.pools import PoolListHandler
 from t2stor.api.handlers.racks import RackHandler
 from t2stor.api.handlers.racks import RackListHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
+from t2stor.api.handlers.service import ServiceListHandler
 from t2stor.api.handlers.sysinfos import SysInfoHandler
 from t2stor.api.handlers.volumes import VolumeHandler
 from t2stor.api.handlers.volumes import VolumeListHandler
@@ -61,6 +62,7 @@ def get_routers():
         (r"/racks/", RackListHandler),
         (r"/racks/([0-9]*)/", RackHandler),
         (r"/rpc_services/", RpcServiceListHandler),
+        (r"/services/", ServiceListHandler),
         (r"/sysinfos/", SysInfoHandler),
         (r"/volumes/", VolumeListHandler),
         (r"/volumes/([0-9]*)/", VolumeHandler),
