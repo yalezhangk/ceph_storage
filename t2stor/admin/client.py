@@ -106,8 +106,20 @@ class AdminClient(BaseClient):
             cluster_cidr=cluster_cidr, gateway_cidr=gateway_cidr)
         return response
 
+    ###################
+
     def datacenter_create(self, ctxt):
         response = self.call(ctxt, "datacenter_create")
+        return response
+
+    def datacenter_get(self, ctxt, datacenter_id):
+        response = self.call(ctxt, "datacenter_get",
+                             datacenter_id=datacenter_id)
+        return response
+
+    def datacenter_delete(self, ctxt, datacenter_id):
+        response = self.call(ctxt, "datacenter_delete",
+                             datacenter_id=datacenter_id)
         return response
 
     def datacenter_get_all(self, ctxt):
@@ -119,13 +131,42 @@ class AdminClient(BaseClient):
                              id=datacenter_id, name=datacenter_name)
         return response
 
+    def datacenter_racks(self, ctxt, datacenter_id):
+        response = self.call(ctxt, "datacenter_racks",
+                             datacenter_id=datacenter_id)
+        return response
+
+    ###################
+
     def rack_create(self, ctxt, datacenter_id):
         response = self.call(ctxt, "rack_create", datacenter_id=datacenter_id)
+        return response
+
+    def rack_get(self, ctxt, rack_id):
+        response = self.call(ctxt, "rack_get",
+                             rack_id=rack_id)
+        return response
+
+    def rack_delete(self, ctxt, rack_id):
+        response = self.call(ctxt, "rack_delete",
+                             rack_id=rack_id)
         return response
 
     def rack_get_all(self, ctxt):
         response = self.call(ctxt, "rack_get_all")
         return response
+
+    def rack_update_name(self, ctxt, rack_id, rack_name):
+        response = self.call(ctxt, "rack_update_name",
+                             id=rack_id, name=rack_name)
+        return response
+
+    def rack_update_toplogy(self, ctxt, rack_id, datacenter_id):
+        response = self.call(ctxt, "rack_update_toplogy",
+                             id=rack_id, datacenter_id=datacenter_id)
+        return response
+
+    ###################
 
     def disk_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):

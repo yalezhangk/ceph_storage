@@ -30,8 +30,6 @@ class DataCenterListHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
         """创建数据中心
-
-        {}
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -45,10 +43,16 @@ class DataCenterListHandler(ClusterAPIHandler):
 
 
 class DataCenterHandler(ClusterAPIHandler):
-    # TODO 获取数据中心详情
     @gen.coroutine
     def get(self, datacenter_id):
-        pass
+        """获取数据中心详情
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        datacenter = yield client.datacenter_get(ctxt, datacenter_id)
+        self.write(objects.json_encode({
+            "datacenter": datacenter
+        }))
 
     @gen.coroutine
     def put(self, datacenter_id):
@@ -56,7 +60,6 @@ class DataCenterHandler(ClusterAPIHandler):
 
         {"datacenter": {"name":"datacenter-name"}}
         """
-        # 获取前段传递的所属数据中心的名称
         data = json_decode(self.request.body).get('datacenter')
         datacenter_name = data.get('name')
         if not datacenter_name:
@@ -72,19 +75,25 @@ class DataCenterHandler(ClusterAPIHandler):
             "datacenter": datacenter
         }))
 
-    # TODO 删除数据中心
     @gen.coroutine
     def delete(self, datacenter_id):
-        pass
+        """删除数据中心
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        datacenter = yield client.datacenter_delete(ctxt, datacenter_id)
+        self.write(objects.json_encode({
+            "datacenter": datacenter
+        }))
 
 
 class DataCenterRacksHandler(ClusterAPIHandler):
     # TODO 获取数据中心下的机架
     @gen.coroutine
     def get(self, datacenter_id):
-        pass
-
-    # TODO 在数据中心下创建机架
-    @gen.coroutine
-    def post(self, datacenter_id):
-        pass
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        racks = yield client.datacenter_racks(ctxt, datacenter_id)
+        self.write(objects.json_encode({
+            "racks": racks
+        }))
