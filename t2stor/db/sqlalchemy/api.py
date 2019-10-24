@@ -2189,6 +2189,42 @@ def process_filters(model):
         return query
     return _process_filters
 
+########################
+
+
+def _pool_get_query(context, session=None):
+    return model_query(context, models.Pool, session=session)
+
+
+def _pool_get(context, pool_id, session=None):
+    result = _pool_get_query(context, session)
+    result = result.filter_by(id=pool_id).first()
+
+    if not result:
+        raise exception.PoolNotFound(osd_id=pool_id)
+
+    return result
+
+
+@require_context
+def pool_get(context, pool_id):
+    return _pool_get(context, pool_id)
+
+
+@require_context
+def pool_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Pool, marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
 
 PAGINATION_HELPERS = {
     models.Volume: (_volume_get_query, _process_volume_filters, _volume_get),
@@ -2223,6 +2259,9 @@ PAGINATION_HELPERS = {
     models.AlertGroup: (_alert_group_get_query,
                         process_filters(models.AlertGroup),
                         _alert_group_get),
+    models.Pool: (_pool_get_query,
+                  process_filters(models.Datacenter),
+                  _pool_get),
 }
 
 

@@ -206,6 +206,15 @@ class AdminClient(BaseClient):
             ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)
         return response
 
+    ##################
+    def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                     sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "pool_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
