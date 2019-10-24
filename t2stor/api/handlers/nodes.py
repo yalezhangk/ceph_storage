@@ -45,3 +45,23 @@ class NodeHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "node": node
         }))
+
+    @gen.coroutine
+    def put(self, node_id):
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        client = self.get_admin_client(ctxt)
+        node = data.get("node")
+        node = yield client.node_update(ctxt, node_id, node)
+        self.write(objects.json_encode({
+            "node": node
+        }))
+
+    @gen.coroutine
+    def delete(self, node_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        node = yield client.node_delete(ctxt, node_id)
+        self.write(objects.json_encode({
+            "node": node
+        }))
