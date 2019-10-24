@@ -73,6 +73,14 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "node_create", data=data)
         return response
 
+    def node_update(self, ctxt, node_id, data):
+        response = self.call(ctxt, "node_update", node_id=node_id, data=data)
+        return response
+
+    def node_delete(self, ctxt, node_id):
+        response = self.call(ctxt, "node_delete", node_id=node_id)
+        return response
+
     def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
         response = self.call(

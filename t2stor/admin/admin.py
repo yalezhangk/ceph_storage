@@ -108,6 +108,18 @@ class AdminHandler(object):
         node_info = objects.Node.get_by_id(ctxt, node_id)
         return node_info
 
+    def node_update(self, ctxt, node_id, data):
+        node = objects.Node.get_by_id(ctxt, node_id)
+        for k, v in six.iteritems(data):
+            setattr(node, k, v)
+        node.save()
+        return node
+
+    def node_delete(self, ctxt, node_id):
+        node = objects.Node.get_by_id(ctxt, node_id)
+        node.destroy()
+        return node
+
     def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
         nodes = objects.NodeList.get_all(
