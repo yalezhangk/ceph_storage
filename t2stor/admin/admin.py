@@ -309,6 +309,9 @@ class AdminHandler(object):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
+    def pool_get(self, ctxt, pool_id):
+        return objects.Pool.get_by_id(ctxt, pool_id)
+
 
 class AdminService(ServiceBase):
     service_name = "admin"

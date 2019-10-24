@@ -215,6 +215,10 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def pool_get(self, ctxt, pool_id):
+        response = self.call(ctxt, "pool_get", pool_id=pool_id)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
