@@ -7,8 +7,10 @@ from concurrent import futures
 import six
 from oslo_log import log as logging
 
+from t2stor import exception
 from t2stor import objects
 from t2stor.admin.genconf import ceph_conf
+from t2stor.i18n import _
 from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
 from t2stor.taskflows.node import NodeTask
@@ -294,6 +296,19 @@ class AdminHandler(object):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         disk.type = disk_type
         disk.save()
+        return disk
+
+    def disk_light(self, ctxt, disk_id, led):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        if disk.support_led:
+            if disk.led == led:
+                raise exception.InvalidInput(
+                    reason=_("disk: repeating actions, led is {}".format(led)))
+            # TODO: Sending to agent to change led status
+            disk.led = 'on' if disk.led == "off" else "off"
+            disk.save()
+        else:
+            raise exception.LedNotSupport(disk_id=disk_id)
         return disk
 
     ###################

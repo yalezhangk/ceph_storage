@@ -213,3 +213,8 @@ class AlertLogNotFound(NotFound):
 
 class LogFileNotFound(NotFound):
     message = _("LogFile %(log_file_id)s could not be found.")
+
+
+class LedNotSupport(StorException):
+    code = 400
+    message = _("Disk %(disk_id)s do not support led light")
