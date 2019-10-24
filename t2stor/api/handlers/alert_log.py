@@ -22,9 +22,8 @@ class AlertLogListHandler(ClusterAPIHandler):
             labels = alert.get('labels')
             alert_value = alert['annotations']['description']
             alert_name = labels['alertname']
-            rule = client.alert_rule_get_all(ctxt,
-                                             filters={'type': alert_name})\
-                .first()
+            rule = client.alert_rule_get_all(
+                ctxt, filters={'type': alert_name}).first()
             if not rule:
                 continue
             if not rule.enabled:
