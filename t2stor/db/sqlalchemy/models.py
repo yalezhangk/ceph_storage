@@ -215,7 +215,6 @@ class Osd(BASE, StorBase):
     db_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     wal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     journal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
-    pool_id = Column(Integer, ForeignKey('pools.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     pools = relationship('Pool', secondary=osd_pools, back_populates='osds')
 

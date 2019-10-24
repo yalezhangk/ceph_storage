@@ -316,7 +316,6 @@ def define_tables(meta):
                ForeignKey('disk_partitions.id')),
         Column('journal_partition_id', Integer,
                ForeignKey('disk_partitions.id')),
-        Column('pool_id', Integer, ForeignKey('pools.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
