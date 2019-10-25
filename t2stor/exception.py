@@ -238,7 +238,6 @@ class VolumeSnapshotNotFound(NotFound):
 
 ###############################
 
-
 class VolumeActionNotFound(NotFound):
     message = _("Volume Action %(action)s must in"
                 "'extend,shrink,rollback,unlink'")
@@ -246,3 +245,7 @@ class VolumeActionNotFound(NotFound):
 
 class DiskActionNotFound(NotFound):
     message = _("Disk Action %(action)s do not support")
+
+
+class CrushRuleNotFound(NotFound):
+    message = _("CrushRule %(crush_rule_id)s could not be found.")

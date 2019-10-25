@@ -717,6 +717,32 @@ def ceph_config_update(context, ceph_config_id, values):
 ###############
 
 
+def crush_rule_create(context, values):
+    return IMPL.crush_rule_create(context, values)
+
+
+def crush_rule_destroy(context, crush_rule_id):
+    return IMPL.crush_rule_destroy(context, crush_rule_id)
+
+
+def crush_rule_get(context, crush_rule_id):
+    return IMPL.crush_rule_get(context, crush_rule_id)
+
+
+def crush_rule_get_all(context, filters, marker, limit,
+                       offset, sort_keys, sort_dirs):
+    return IMPL.crush_rule_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def crush_rule_update(context, crush_rule_id, values):
+    return IMPL.crush_rule_update(context, crush_rule_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 
