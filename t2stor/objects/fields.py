@@ -209,7 +209,7 @@ class VolumeSnapshotStatus(BaseStorEnum):
     DELETING = 'deleting'
     ERROR = 'error'
     DELETED = 'deleted'
-    ALL = (CREATING, ACTIVE, DELETING, ERROR)
+    ALL = (CREATING, ACTIVE, DELETING, ERROR, DELETED)
 
 
 class VolumeSnapshotStatusField(BaseEnumField):

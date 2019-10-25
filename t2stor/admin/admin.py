@@ -50,15 +50,12 @@ class AdminHandler(object):
         return objects.Volume.get_by_id(ctxt, volume_id)
 
     def volume_create(self, ctxt, data):
-        v = objects.Volume(
-            ctxt, cluster_id=ctxt.cluster_id,
-            display_name=data.get('display_name'),
-            size=data.get('size'),
-            status='creating',
-            display_description=data.get('display_description'),
-            pool_id=data.get('pool_id'),
-            volume_name='V'  # TODO ceph volume name
-        )
+        data.update({
+            'cluster_id': ctxt.cluster_id,
+            'status': 'creating',
+            'volume_name': 'V',  # TODO ceph volume name
+        })
+        v = objects.Volume(ctxt, **data)
         v.create()
         # TODO create volume
         return v
@@ -564,7 +561,11 @@ class AdminHandler(object):
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
     def volume_snapshot_create(self, ctxt, data):
-        data.update({'cluster_id': ctxt.cluster_id})
+        data.update({
+            'cluster_id': ctxt.cluster_id,
+            'uuid': 'S',  # TODO ceph_create snapshot
+            'status': 'creating'
+        })
         alert_log = objects.VolumeSnapshot(ctxt, **data)
         alert_log.create()
         # TODO create snapshot
@@ -584,6 +585,15 @@ class AdminHandler(object):
         volume_snapshot = self.volume_snapshot_get(ctxt, volume_snapshot_id)
         volume_snapshot.destroy()
         return volume_snapshot
+
+    def volume_create_from_snapshot(self, ctxt, volume_snapshot_id, data):
+        volume_snapshot = objects.VolumeSnapshot.get_by_id(
+            ctxt, volume_snapshot_id)
+        size = objects.Volume.get_by_id(ctxt, volume_snapshot.volume_id).size
+        data.update({'size': size, 'snapshot_id': volume_snapshot_id})
+        new_volume = self.volume_create(ctxt, data)
+        # TODO ceph_clone
+        return new_volume
 
     ###################
 

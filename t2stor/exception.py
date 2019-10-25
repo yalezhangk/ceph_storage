@@ -249,3 +249,7 @@ class DiskActionNotFound(NotFound):
 
 class CrushRuleNotFound(NotFound):
     message = _("CrushRule %(crush_rule_id)s could not be found.")
+
+
+class VolumeSnapshotActionNotFound(NotFound):
+    message = _("VolumeSnapshot Action %(action)s must in 'clone'")

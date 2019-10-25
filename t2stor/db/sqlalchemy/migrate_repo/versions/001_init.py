@@ -80,7 +80,7 @@ def define_tables(meta):
         Column('uuid', String(36)),
         Column('display_name', String(255)),
         Column('status', String(64)),
-        Column('is_protect', Boolean),
+        Column('is_protect', Boolean, default=True),
         Column('display_description', String(255)),
         Column('volume_id', Integer,
                ForeignKey('volumes.id')),
