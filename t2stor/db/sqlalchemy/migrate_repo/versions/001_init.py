@@ -284,7 +284,7 @@ def define_tables(meta):
         Column('speed_type', String(32), nullable=True),
         Column('replicate_size', Integer, nullable=True),
         Column('failure_domain_type', String(32), nullable=False),
-        Column('crush_rule', String(64), nullable=True),
+        Column('crush_rule_id', Integer, ForeignKey('crush_rules.id')),
         Column('cluster_id', ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
@@ -306,7 +306,7 @@ def define_tables(meta):
         Column('role', String(32), nullable=True),
         Column('fsid', String(36), nullable=True),
         Column('mem_read_cache', BigInteger, nullable=True),
-        Column('vhost_id', Integer, ForeignKey('vhosts.id')),
+        Column('crush_rule_id', Integer, ForeignKey('crush_rules.id')),
         Column('node_id', Integer, ForeignKey('nodes.id')),
         Column('disk_id', Integer, ForeignKey('disks.id')),
         Column('cache_partition_id', Integer,
@@ -544,21 +544,6 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    vhost = Table(
-        'vhosts', meta,
-        Column('created_at', DateTime),
-        Column('updated_at', DateTime),
-        Column('deleted_at', DateTime),
-        Column('deleted', Boolean),
-        Column('id', Integer, primary_key=True),
-        Column('name', String(255)),
-        Column('rack_id', Integer, ForeignKey('racks.id')),
-        Column('node_id', Integer, ForeignKey('nodes.id')),
-        Column('cluster_id', String(36), ForeignKey('clusters.id')),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8'
-    )
-
     networks = Table(
         'networks', meta,
         Column('created_at', DateTime),
@@ -592,14 +577,30 @@ def define_tables(meta):
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
     )
 
+    crush_rules = Table(
+        'crush_rules', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('rule_name', String(32)),
+        Column('rule_id', Integer),
+        Column('type', String(32)),
+        Column('content', Text()),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
     return [clusters, pools, volume_access_path, volume_client_group,
             volume, volume_snapshot, rpc_services, datacenter,
-            rack, node, vhost, disks, disk_partitions, volume_gateway,
+            rack, node, disks, disk_partitions, volume_gateway,
             volume_access_path_gateway, volume_client, osds, osd_pools,
             sysconf, ceph_config, license_files, log_files,
             alert_rules, email_groups, alert_groups, alert_group_relate_rule,
             alert_group_relate_email, alert_logs, action_logs, networks,
-            services]
+            services, crush_rules]
 
 
 def upgrade(migrate_engine):

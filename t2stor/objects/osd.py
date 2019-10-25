@@ -29,7 +29,8 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'db_partition_id': fields.IntegerField(),
         'wal_partition_id': fields.IntegerField(),
         'journal_partition_id': fields.IntegerField(),
-        'cluster_id': fields.StringField(nullable=True),
+        'crush_rule_id': fields.IntegerField(),
+        'cluster_id': fields.UUIDField(nullable=True),
     }
 
     def create(self):

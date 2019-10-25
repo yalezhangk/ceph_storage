@@ -82,16 +82,6 @@ class Rack(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
-class VHost(BASE, StorBase):
-    __tablename__ = "vhosts"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    rack_id = Column(Integer, ForeignKey('rack.id'))
-    node_id = Column(Integer, ForeignKey('node.id'))
-    cluster_id = Column(String(36), ForeignKey('clusters.id'))
-
-
 class Node(BASE, StorBase):
     __tablename__ = "nodes"
 
@@ -210,11 +200,11 @@ class Osd(BASE, StorBase):
     mem_read_cache = Column(BigInteger)  # bytes
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
-    vhost_id = Column(Integer, ForeignKey('vhosts.id'))
     cache_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     db_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     wal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     journal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
+    crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     pools = relationship('Pool', secondary=osd_pools, back_populates='osds')
 
@@ -237,7 +227,7 @@ class Pool(BASE, StorBase):
     osd_num = Column(Integer)
     speed_type = Column(String(32))
     failure_domain_type = Column(String(32), default='host', index=True)
-    crush_rule = Column(String(64))
+    crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     osds = relationship('Osd', secondary=osd_pools, back_populates='pools')
 
@@ -492,4 +482,15 @@ class ActionLog(BASE, StorBase):
     resource_type = Column(String(32))
     resource_data = Column(Text())
     status = Column(String(32), default='under way')  # success/under way/fail
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class CrushRule(BASE, StorBase):
+    __tablename__ = 'crush_rules'
+
+    id = Column(Integer, primary_key=True)
+    rule_name = Column(String(32))
+    rule_id = Column(Integer)
+    type = Column(String(32))
+    content = Column(Text())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
