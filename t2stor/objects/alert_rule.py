@@ -18,7 +18,7 @@ class AlertRule(base.StorPersistentObject, base.StorObject,
         'level': fields.StringField(),
         'trigger_period': fields.StringField(),
         'enabled': fields.BooleanField(),
-        'cluster_id': fields.StringField(),
+        'cluster_id': fields.UUIDField(),
     }
 
     def create(self):

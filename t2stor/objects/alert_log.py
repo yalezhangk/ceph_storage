@@ -19,7 +19,7 @@ class AlertLog(base.StorPersistentObject, base.StorObject,
         'resource_id': fields.StringField(),
         'resource_name': fields.StringField(),
         'alert_role_id': fields.IntegerField(),
-        'cluster_id': fields.StringField(),
+        'cluster_id': fields.UUIDField(),
     }
 
     def create(self):

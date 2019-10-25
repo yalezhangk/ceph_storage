@@ -2405,6 +2405,82 @@ def log_file_destroy(context, log_file_id):
 ###############################
 
 
+@require_context
+def _volume_snapshot_get_query(context, session=None):
+    return model_query(context, models.VolumeSnapshot, session=session)
+
+
+def _volume_snapshot_get(context, volume_snapshot_id, session=None):
+    result = _volume_snapshot_get_query(context, session=session)
+    result = result.filter_by(id=volume_snapshot_id).first()
+
+    if not result:
+        raise exception.VolumeSnapshotNotFound(
+            volume_snapshot_id=volume_snapshot_id)
+
+    return result
+
+
+@require_context
+def volume_snapshot_get(context, volume_snapshot_id):
+    return _volume_snapshot_get(context, volume_snapshot_id)
+
+
+@require_context
+def volume_snapshot_create(context, values):
+    volume_snapshot_ref = models.VolumeSnapshot()
+    volume_snapshot_ref.update(values)
+    session = get_session()
+    with session.begin():
+        volume_snapshot_ref.save(session)
+
+    return volume_snapshot_ref
+
+
+@handle_db_data_error
+@require_context
+def volume_snapshot_update(context, volume_snapshot_id, values):
+    session = get_session()
+    with session.begin():
+        query = _volume_snapshot_get_query(context, session)
+        result = query.filter_by(id=volume_snapshot_id).update(values)
+        if not result:
+            raise exception.VolumeSnapshotNotFound(
+                volume_snapshot_id=volume_snapshot_id)
+
+
+@require_context
+def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
+                            sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.VolumeSnapshot,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+def volume_snapshot_destroy(context, volume_snapshot_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.VolumeSnapshot, session=session).\
+            filter_by(id=volume_snapshot_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+###############################
+
+
 def _service_get_query(context, session=None):
     return model_query(
         context, models.Service, session=session
@@ -2558,6 +2634,9 @@ PAGINATION_HELPERS = {
     models.Service: (_service_get_query,
                      process_filters(models.Service),
                      _service_get),
+    models.VolumeSnapshot: (_volume_snapshot_get_query,
+                            process_filters(models.VolumeSnapshot),
+                            _volume_snapshot_get),
 }
 
 

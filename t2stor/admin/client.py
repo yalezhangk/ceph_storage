@@ -351,6 +351,38 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,
+                                sort_keys=None, sort_dirs=None, filters=None,
+                                offset=None):
+        response = self.call(
+            ctxt, "volume_snapshot_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def volume_snapshot_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "volume_snapshot_create", data=data)
+        return response
+
+    def volume_snapshot_get(self, ctxt, volume_snapshot_id):
+        response = self.call(ctxt, "volume_snapshot_get",
+                             volume_snapshot_id=volume_snapshot_id)
+        return response
+
+    def volume_snapshot_update(self, ctxt, volume_snapshot_id, data):
+        response = self.call(ctxt, "volume_snapshot_update",
+                             volume_snapshot_id=volume_snapshot_id,
+                             data=data)
+        return response
+
+    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
+        response = self.call(ctxt, "volume_snapshot_delete",
+                             volume_snapshot_id=volume_snapshot_id)
+        return response
+
+    ###################
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

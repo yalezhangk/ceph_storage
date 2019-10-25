@@ -241,7 +241,7 @@ class Volume(BASE, StorBase):
     used = Column(BigInteger)
     is_link_clone = Column(Boolean, default=False)  # 默认独立克隆
     snapshot_num = Column(Integer)
-    status = Column(String(255))  # TODO(vish): enum?
+    status = Column(String(64))  # TODO(vish): enum?
     display_name = Column(String(255))
     display_description = Column(String(255))
     volume_access_path_id = Column(Integer,
@@ -259,9 +259,9 @@ class VolumeSnapshot(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36))
     display_name = Column(String(255))
-    is_protect = Column(Boolean, default=False)
+    is_protect = Column(Boolean)
     status = Column(String(32))
-    size = Column(BigInteger)
+    display_description = Column(String(255))
     volume_id = Column(Integer, ForeignKey('volumes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 

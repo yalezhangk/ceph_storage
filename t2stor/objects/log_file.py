@@ -17,7 +17,7 @@ class LogFile(base.StorPersistentObject, base.StorObject,
         'directory': fields.StringField(),
         'filename': fields.StringField(),
         'filesize': fields.IntegerField(),
-        'cluster_id': fields.StringField(),
+        'cluster_id': fields.UUIDField(),
     }
 
     def create(self):
