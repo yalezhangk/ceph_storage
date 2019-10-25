@@ -312,6 +312,14 @@ class AdminHandler(object):
             raise exception.LedNotSupport(disk_id=disk_id)
         return disk
 
+    def disk_cache(self, ctxt, disk_id, values):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        # TODO : Sending request to agent to make partitions
+        disk.partition_num = values['partition_num']
+        disk.role = values['role']
+        disk.save()
+        return disk
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,

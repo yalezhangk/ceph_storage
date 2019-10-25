@@ -21,17 +21,13 @@ class DiskListHandler(ClusterAPIHandler):
         page_args = self.get_paginated_args()
 
         filters = {}
-        node_id = self.get_query_argument('node', default=None)
-        if node_id:
-            filters.update({
-                'node_id': node_id
-            })
-
-        role = self.get_query_argument('role', default=None)
-        if role:
-            filters.update({
-                'role': role
-            })
+        supported_filters = ['node', 'role', 'status']
+        for f in supported_filters:
+            value = self.get_query_argument(f, default=None)
+            if filter:
+                filters.update({
+                    f: value
+                })
 
         client = self.get_admin_client(ctxt)
         disks = yield client.disk_get_all(ctxt, filters=filters, **page_args)
@@ -65,18 +61,44 @@ class DiskHandler(ClusterAPIHandler):
         }))
 
 
-class DiskLightHandler(ClusterAPIHandler):
+class DiskActionHandler(ClusterAPIHandler):
+    def _disk_light(self, ctxt, client, disk_id, values):
+        return client.disk_light(ctxt, disk_id=disk_id, led=values['led'])
+
+    def _disk_cache(self, ctxt, client, disk_id, values):
+        required_args = ['partition_num', 'role']
+        for arg in required_args:
+            if values.get(arg) is None:
+                raise exception.InvalidInput(
+                    reason=_("disk: missing required arguments!"))
+
+        return client.disk_cache(ctxt, disk_id=disk_id, values=values)
+
+    def _disk_cache_create(self, ctxt, client, disk_id, values):
+        return self._disk_cache(ctxt, client=client, disk_id=disk_id,
+                                values=values)
+
+    def _disk_cache_remove(self, ctxt, client, disk_id, values):
+        return self._disk_cache(ctxt, client=client, disk_id=disk_id,
+                                values=values)
+
     @gen.coroutine
-    def put(self, disk_id):
+    def post(self, disk_id):
         ctxt = self.get_context()
-        disk = json_decode(self.request.body).get('disk')
-        led = disk.get('led')
-        if not led:
-            raise exception.InvalidInput(reason=_("disk: led status is none"))
+        body = json_decode(self.request.body)
+        action = body.get('action')
+        if not action:
+            raise exception.InvalidInput(reason=_("disk: action is none"))
+        disk = body.get('disk')
 
         client = self.get_admin_client(ctxt)
-        disk = yield client.disk_light(ctxt, disk_id=disk_id, led=led)
+        action_map = {
+            "light": self._disk_light,
+            "cache_create": self._disk_cache_create,
+            "cache_remove": self._disk_cache_remove,
+        }
+        disk = yield action_map[action](ctxt, client, disk_id, disk)
 
         self.write(objects.json_encode({
-            "disk": disk
+            'disk': disk
         }))

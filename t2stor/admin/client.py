@@ -193,6 +193,11 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "disk_light", disk_id=disk_id, led=led)
         return response
 
+    def disk_cache(self, ctxt, disk_id, values):
+        response = self.call(ctxt, "disk_cache", disk_id=disk_id,
+                             values=values)
+        return response
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,
