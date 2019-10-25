@@ -242,3 +242,7 @@ class VolumeSnapshotNotFound(NotFound):
 class VolumeActionNotFound(NotFound):
     message = _("Volume Action %(action)s must in"
                 "'extend,shrink,rollback,unlink'")
+
+
+class DiskActionNotFound(NotFound):
+    message = _("Disk Action %(action)s do not support")
