@@ -102,7 +102,10 @@ class DiskActionHandler(ClusterAPIHandler):
             "cache_create": self._disk_cache_create,
             "cache_remove": self._disk_cache_remove,
         }
-        disk = yield action_map[action](ctxt, client, disk_id, disk)
+        fun_action = action_map.get(action)
+        if fun_action is None:
+            raise exception.DiskActionNotFound(action=action)
+        disk = yield fun_action(ctxt, client, disk_id, disk)
 
         self.write(objects.json_encode({
             'disk': disk
