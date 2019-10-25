@@ -66,7 +66,7 @@ class AgentHandler(object):
 
     def __init__(self):
         self.executors = futures.ThreadPoolExecutor(max_workers=10)
-        self.executors.submit(self._cron())
+        self.executors.submit(self._cron)
 
     def _cron(self):
         logger.debug("Start crontab")
@@ -160,32 +160,27 @@ class AgentHandler(object):
     def disk_smart_get(self, ctxt, name):
         fake_data = [
             {
-                "ATTRIBUTE_NAME": "Raw_Read_Error_Rate",
-                "VALUE": "078",
-                "WORST": "064",
-                "THRESH": "044",
-                "TYPE": "Pre-fail",
-                "UPDATED": "Always",
-                "RAW_VALUE": "67028116"
+                "raw": "0",
+                "updated": "Always",
+                "num": "5",
+                "worst": "100",
+                "name": "Reallocated_Sector_Ct",
+                "when_failed": "-",
+                "thresh": "000",
+                "type": "Old_age",
+                "value": "100"
             },
             {
-                "ATTRIBUTE_NAME": "Spin_Up_Time",
-                "VALUE": "092",
-                "WORST": "092",
-                "THRESH": "000",
-                "TYPE": "Pre-fail",
-                "UPDATED": "Always",
-                "RAW_VALUE": "0"
-            },
-            {
-                "ATTRIBUTE_NAME": "Start_Stop_Count",
-                "VALUE": "100",
-                "WORST": "100",
-                "THRESH": "020",
-                "TYPE": "Old_age",
-                "UPDATED": "Always",
-                "RAW_VALUE": "97"
-            },
+                "raw": "9828",
+                "updated": "Always",
+                "num": "9",
+                "worst": "100",
+                "name": "Power_On_Hours",
+                "when_failed": "-",
+                "thresh": "000",
+                "type": "Old_age",
+                "value": "100"
+            }
         ]
         return fake_data
 
