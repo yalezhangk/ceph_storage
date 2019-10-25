@@ -2091,6 +2091,81 @@ def disk_update(context, disk_id, values):
 ###############################
 
 
+def _disk_partition_get_query(context, session=None):
+    return model_query(
+        context, models.DiskPartition, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _disk_partition_get(context, disk_part_id, session=None):
+    result = _disk_get_query(context, session)
+    result = result.filter_by(id=disk_part_id).first()
+
+    if not result:
+        raise exception.DiskPartitionNotFound(disk_part_id=disk_part_id)
+
+    return result
+
+
+@require_context
+def disk_partition_create(context, values):
+    disk_part_ref = models.DiskPartition()
+    disk_part_ref.update(values)
+    session = get_session()
+    with session.begin():
+        disk_part_ref.save(session)
+
+    return disk_part_ref
+
+
+def disk_partition_destroy(context, disk_part_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.DiskPartition, session=session).\
+            filter_by(id=disk_part_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def disk_partition_get(context, disk_part_id):
+    return _disk_partition_get(context, disk_part_id)
+
+
+@require_context
+def disk_partition_get_all(context, marker=None, limit=None, sort_keys=None,
+                           sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.DiskPartition, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def disk_partition_update(context, disk_part_id, values):
+    session = get_session()
+    with session.begin():
+        query = _disk_partition_get_query(context, session)
+        result = query.filter_by(id=disk_part_id).update(values)
+        if not result:
+            raise exception.DiskPartitionNotFound(disk_part_id=disk_part_id)
+
+
+###############################
+
+
 @require_context
 def _alert_group_get_query(context, session=None):
     return model_query(context, models.AlertGroup, session=session)
@@ -2698,6 +2773,9 @@ PAGINATION_HELPERS = {
     models.Rack: (_rack_get_query, process_filters(models.Rack), _rack_get),
     models.Disk: (_disk_get_query, process_filters(models.Disk),
                   _disk_get),
+    models.DiskPartition: (_disk_partition_get_query,
+                           process_filters(models.DiskPartition),
+                           _disk_partition_get),
     models.EmailGroup: (_email_group_get_query,
                         process_filters(models.EmailGroup),
                         _email_group_get),

@@ -544,6 +544,32 @@ def disk_update(context, disk_id, values):
 ###################
 
 
+def disk_partition_create(context, values):
+    return IMPL.disk_partition_create(context, values)
+
+
+def disk_partition_destroy(context, disk_part_id):
+    return IMPL.disk_partition_destroy(context, disk_part_id)
+
+
+def disk_partition_get(context, disk_part_id):
+    return IMPL.disk_partition_get(context, disk_part_id)
+
+
+def disk_partition_get_all(context, filters, marker, limit,
+                           offset, sort_keys, sort_dirs):
+    return IMPL.disk_partition_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def disk_partition_update(context, disk_part_id, values):
+    return IMPL.disk_partition_update(context, disk_part_id, values)
+
+
+###################
+
+
 def email_group_create(context, values):
     return IMPL.email_group_create(context, values)
 
