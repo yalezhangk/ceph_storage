@@ -6,6 +6,7 @@ import logging
 from tornado import gen
 from tornado.escape import json_decode
 
+from t2stor import exception
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
 
@@ -41,3 +42,62 @@ class VolumeHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         volume = yield client.volume_get(ctxt, volume_id)
         self.write(objects.json_encode({"volume": volume}))
+
+    @gen.coroutine
+    def put(self, volume_id):
+        # 编辑:改名
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        volume_data = data.get('volume')
+        client = self.get_admin_client(ctxt)
+        volume = yield client.volume_update(
+            ctxt, volume_id, volume_data)
+        self.write(objects.json_encode({
+            "volume": volume
+        }))
+
+    @gen.coroutine
+    def delete(self, volume_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        volume = yield client.volume_delete(ctxt, volume_id)
+        self.write(objects.json_encode({
+            "volume": volume
+        }))
+
+
+class VolumeActionHandler(ClusterAPIHandler):
+
+    def _extend(self, client, ctxt, volume_id, volume_data):
+        return client.volume_extend(ctxt, volume_id, volume_data)
+
+    def _shrink(self, client, ctxt, volume_id, volume_data):
+        return client.volume_shrink(ctxt, volume_id, volume_data)
+
+    def _rollback(self, client, ctxt, volume_id, volume_data):
+        return client.volume_rollback(ctxt, volume_id, volume_data)
+
+    def _unlink(self, client, ctxt, volume_id, volume_data):
+        return client.volume_shrink(ctxt, volume_id, volume_data)
+
+    @gen.coroutine
+    def put(self, volume_id):
+        # action:扩容、缩容、回滚、断开关系链
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        volume_data = data.get('volume')
+        action = data.get('action')
+        client = self.get_admin_client(ctxt)
+        map_action = {
+            'extend': self._extend,
+            'shrink': self._shrink,
+            'rollback': self._rollback,
+            'unlink': self._unlink,
+        }
+        fun_action = map_action.get(action)
+        if fun_action is None:
+            raise exception.VolumeActionNotFound(action=action)
+        result = yield fun_action(client, ctxt, volume_id, volume_data)
+        self.write(objects.json_encode({
+            "volume": result
+        }))

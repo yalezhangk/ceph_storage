@@ -36,6 +36,7 @@ from t2stor.api.handlers.service import ServiceListHandler
 from t2stor.api.handlers.sysinfos import SysInfoHandler
 from t2stor.api.handlers.volume_snapshot import VolumeSnapshotHandler
 from t2stor.api.handlers.volume_snapshot import VolumeSnapshotListHandler
+from t2stor.api.handlers.volumes import VolumeActionHandler
 from t2stor.api.handlers.volumes import VolumeHandler
 from t2stor.api.handlers.volumes import VolumeListHandler
 
@@ -80,4 +81,5 @@ def get_routers():
         (r"/volume_snapshots/([0-9]*)/", VolumeSnapshotHandler),
         (r"/volumes/", VolumeListHandler),
         (r"/volumes/([0-9]*)/", VolumeHandler),
+        (r"/volumes/([0-9]*)/action/", VolumeActionHandler),
     ]

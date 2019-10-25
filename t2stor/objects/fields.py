@@ -36,13 +36,14 @@ class VolumeStatus(BaseStorEnum):
     UPLOADING = 'uploading'
     RETYPING = 'retyping'
     EXTENDING = 'extending'
+    DELETED = 'deleted'
 
     ALL = (CREATING, AVAILABLE, DELETING, ERROR, ERROR_DELETING,
            ERROR_MANAGING, MANAGING, ATTACHING, IN_USE, DETACHING,
            MAINTENANCE, RESTORING_BACKUP, ERROR_RESTORING,
            RESERVED, AWAITING_TRANSFER, BACKING_UP,
            ERROR_BACKING_UP, ERROR_EXTENDING, DOWNLOADING,
-           UPLOADING, RETYPING, EXTENDING)
+           UPLOADING, RETYPING, EXTENDING, DELETED)
 
 
 class VolumeStatusField(BaseEnumField):
@@ -179,3 +180,16 @@ class ServiceStatus(BaseStorEnum):
 
 class ServiceStatusField(BaseEnumField):
     AUTO_TYPE = ServiceStatus()
+
+
+class VolumeSnapshotStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVE = 'active'
+    DELETING = 'deleting'
+    ERROR = 'error'
+    DELETED = 'deleted'
+    ALL = (CREATING, ACTIVE, DELETING, ERROR)
+
+
+class VolumeSnapshotStatusField(BaseEnumField):
+    AUTO_TYPE = VolumeSnapshotStatus()

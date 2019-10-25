@@ -7,6 +7,7 @@ from t2stor import db
 from t2stor import exception
 from t2stor import objects
 from t2stor.objects import base
+from t2stor.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -15,12 +16,12 @@ class VolumeSnapshot(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'uuid': fields.StringField(nullable=True),
+        'uuid': fields.StringField(),
         'display_name': fields.StringField(),
         'is_protect': fields.BooleanField(),
-        'status': fields.IntegerField(nullable=True),
+        'status': s_fields.VolumeStatusField(),
         'display_description': fields.StringField(nullable=True),
-        'volume_id': fields.IntegerField(nullable=True),
+        'volume_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
     }
 

@@ -230,3 +230,11 @@ class LedNotSupport(StorException):
 
 class VolumeSnapshotNotFound(NotFound):
     message = _("VolumeSnapshot %(volume_snapshot_id)s could not be found.")
+
+
+###############################
+
+
+class VolumeActionNotFound(NotFound):
+    message = _("Volume Action %(action)s must in"
+                "'extend,shrink,rollback,unlink'")
