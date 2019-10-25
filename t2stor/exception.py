@@ -117,12 +117,16 @@ class OsdNotFound(NotFound):
     message = _("Osd %(osd_id)s could not be found.")
 
 
+class PoolNotFound(NotFound):
+    message = _("Pool %(pool_id)s could not be found.")
+
+
 class NetworkNotFound(NotFound):
     message = _("Network %(net_id)s could not be found.")
 
 
 class DiskNotFound(NotFound):
-    message = _("Osd %(disk_id)s could not be found.")
+    message = _("Disk %(disk_id)s could not be found.")
 
 
 class ServiceNotFound(NotFound):
