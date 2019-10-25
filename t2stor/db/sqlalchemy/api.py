@@ -2552,6 +2552,82 @@ def service_update(context, service_id, values):
         if not result:
             raise exception.ServiceNotFound(service_id=service_id)
 
+
+###############################
+
+
+def _ceph_config_get_query(context, session=None):
+    return model_query(
+        context, models.CephConfig, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _ceph_config_get(context, ceph_config_id, session=None):
+    result = _ceph_config_get_query(context, session)
+    result = result.filter_by(id=ceph_config_id).first()
+
+    if not result:
+        raise exception.CephConfigNotFound(ceph_config_id=ceph_config_id)
+
+    return result
+
+
+@require_context
+def ceph_config_create(context, values):
+    ceph_config_ref = models.CephConfig()
+    ceph_config_ref.update(values)
+    session = get_session()
+    with session.begin():
+        ceph_config_ref.save(session)
+    return ceph_config_ref
+
+
+@require_context
+def ceph_config_destroy(context, ceph_config_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.CephConfig, session=session).\
+            filter_by(id=ceph_config_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def ceph_config_get(context, ceph_config_id):
+    return _ceph_config_get(context, ceph_config_id)
+
+
+@require_context
+def ceph_config_get_all(context, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.CephConfig, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def ceph_config_update(context, ceph_config_id, values):
+    session = get_session()
+    with session.begin():
+        query = _ceph_config_get_query(context, session)
+        result = query.filter_by(id=ceph_config_id).update(values)
+        if not result:
+            raise exception.CephConfigNotFound(ceph_config_id=ceph_config_id)
+
+
 ###############################
 
 

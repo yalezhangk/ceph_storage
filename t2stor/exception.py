@@ -202,6 +202,10 @@ class EmailGroupNotFound(NotFound):
     message = _("EmailGroup %(email_group_id)s could not be found.")
 
 
+class CephConfigNotFound(NotFound):
+    message = _("CephConfig %(ceph_config_id)s could not be found.")
+
+
 class AlertGroupNotFound(NotFound):
     message = _("AlertGroup %(alert_group_id)s could not be found.")
 
