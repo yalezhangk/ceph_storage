@@ -1,5 +1,6 @@
 from oslo_config import cfg
 from oslo_db.sqlalchemy import models
+from oslo_db.sqlalchemy.types import JsonEncodedDict
 from oslo_utils import timeutils
 from sqlalchemy import BigInteger
 from sqlalchemy import Boolean
@@ -492,5 +493,5 @@ class CrushRule(BASE, StorBase):
     rule_name = Column(String(32))
     rule_id = Column(Integer)
     type = Column(String(32))
-    content = Column(Text())
+    content = Column(JsonEncodedDict())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))

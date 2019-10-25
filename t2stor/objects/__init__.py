@@ -14,6 +14,7 @@ def register_all():
     __import__('t2stor.objects.alert_rule')
     __import__('t2stor.objects.ceph_config')
     __import__('t2stor.objects.cluster')
+    __import__('t2stor.objects.crush_rule')
     __import__('t2stor.objects.datacenter')
     __import__('t2stor.objects.disk')
     __import__('t2stor.objects.disk_partition')

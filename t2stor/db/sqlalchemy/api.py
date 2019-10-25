@@ -2711,6 +2711,79 @@ def ceph_config_update(context, ceph_config_id, values):
 
 ###############################
 
+def _crush_rule_get_query(context, session=None):
+    return model_query(
+        context, models.CrushRule, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _crush_rule_get(context, crush_rule_id, session=None):
+    result = _crush_rule_get_query(context, session)
+    result = result.filter_by(id=crush_rule_id).first()
+
+    if not result:
+        raise exception.CrushRuleNotFound(crush_rule_id=crush_rule_id)
+
+    return result
+
+
+@require_context
+def crush_rule_create(context, values):
+    crush_rule_ref = models.CrushRule()
+    crush_rule_ref.update(values)
+    session = get_session()
+    with session.begin():
+        crush_rule_ref.save(session)
+    return crush_rule_ref
+
+
+@require_context
+def crush_rule_destroy(context, crush_rule_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.CrushRule, session=session).\
+            filter_by(id=crush_rule_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def crush_rule_get(context, crush_rule_id):
+    return _crush_rule_get(context, crush_rule_id)
+
+
+@require_context
+def crush_rule_get_all(context, marker=None, limit=None, sort_keys=None,
+                       sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.CrushRule, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def crush_rule_update(context, crush_rule_id, values):
+    session = get_session()
+    with session.begin():
+        query = _crush_rule_get_query(context, session)
+        result = query.filter_by(id=crush_rule_id).update(values)
+        if not result:
+            raise exception.CrushRuleNotFound(crush_rule_id=crush_rule_id)
+
+
+###############################
 
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
@@ -2797,6 +2870,9 @@ PAGINATION_HELPERS = {
     models.VolumeSnapshot: (_volume_snapshot_get_query,
                             process_filters(models.VolumeSnapshot),
                             _volume_snapshot_get),
+    models.CrushRule: (_crush_rule_get_query,
+                       process_filters(models.CrushRule),
+                       _crush_rule_get),
 }
 
 
