@@ -285,6 +285,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "pool_get", pool_id=pool_id)
         return response
 
+    def pool_osds_get(self, ctxt, pool_id):
+        response = self.call(ctxt, "pool_osds_get", pool_id=pool_id)
+        return response
+
     ##################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,

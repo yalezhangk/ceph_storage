@@ -388,6 +388,9 @@ class AdminHandler(object):
     def pool_get(self, ctxt, pool_id):
         return objects.Pool.get_by_id(ctxt, pool_id)
 
+    def pool_osds_get(self, ctxt, pool_id):
+        return objects.OsdList.get_by_pool(ctxt, pool_id)
+
     ###################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
