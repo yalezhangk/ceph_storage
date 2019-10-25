@@ -35,3 +35,24 @@ class PoolOsdsHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         osds = yield client.pool_osds_get(ctxt, pool_id)
         self.write(objects.json_encode({"osds": osds}))
+
+
+class PoolHistoryMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """TODO 存储池历史监控"""
+        self.write(objects.json_encode({}))
+
+
+class PoolMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """TODO 存储池实时监控"""
+        self.write(objects.json_encode({}))
+
+
+class PoolCapacityHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """TODO 存储池容量"""
+        self.write(objects.json_encode({}))
