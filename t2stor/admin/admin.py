@@ -325,6 +325,10 @@ class AdminHandler(object):
 
     ###################
 
+    def disk_get(self, ctxt, disk_id):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        return disk
+
     def disk_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
         disks = objects.DiskList.get_all(
@@ -358,6 +362,14 @@ class AdminHandler(object):
         disk.role = values['role']
         disk.save()
         return disk
+
+    def disk_partition_get_all(self, ctxt, marker=None, limit=None,
+                               sort_keys=None, sort_dirs=None, filters=None,
+                               offset=None):
+        disks = objects.DiskPartitionList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        return disks
 
     ###################
 

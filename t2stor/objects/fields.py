@@ -160,6 +160,27 @@ class DiskRoleField(BaseEnumField):
     AUTO_TYPE = DiskRole()
 
 
+class DiskPartitionStatusField(BaseEnumField):
+    AUTO_TYPE = DiskStatus()
+
+
+class DiskPartitionTypeField(BaseEnumField):
+    AUTO_TYPE = DiskType()
+
+
+class DiskPartitionRole(BaseStorEnum):
+    CACHE = 'cache'
+    DB = 'db'
+    JOURNAL = 'journal'
+    MIX = 'mix'
+
+    ALL = (CACHE, DB, JOURNAL, MIX)
+
+
+class DiskPartitionRoleField(BaseEnumField):
+    AUTO_TYPE = DiskPartitionRole()
+
+
 class DiskLedStatus(BaseStorEnum):
     ON = 'on'
     OFF = 'off'

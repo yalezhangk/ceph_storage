@@ -39,8 +39,13 @@ class DiskListHandler(ClusterAPIHandler):
 
 class DiskHandler(ClusterAPIHandler):
     @gen.coroutine
-    def get(self):
-        pass
+    def get(self, disk_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        disk = yield client.disk_get(ctxt, disk_id)
+        self.write(objects.json_encode({
+            "disk": disk
+        }))
 
     @gen.coroutine
     def put(self, disk_id):

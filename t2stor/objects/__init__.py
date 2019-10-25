@@ -16,6 +16,7 @@ def register_all():
     __import__('t2stor.objects.cluster')
     __import__('t2stor.objects.datacenter')
     __import__('t2stor.objects.disk')
+    __import__('t2stor.objects.disk_partition')
     __import__('t2stor.objects.email_group')
     __import__('t2stor.objects.license')
     __import__('t2stor.objects.log_file')

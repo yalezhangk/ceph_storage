@@ -217,6 +217,10 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def disk_get(self, ctxt, disk_id):
+        response = self.call(ctxt, "disk_get", disk_id=disk_id)
+        return response
+
     def disk_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
         response = self.call(
@@ -237,6 +241,15 @@ class AdminClient(BaseClient):
     def disk_cache(self, ctxt, disk_id, values):
         response = self.call(ctxt, "disk_cache", disk_id=disk_id,
                              values=values)
+        return response
+
+    def disk_partition_get_all(self, ctxt, marker=None, limit=None,
+                               sort_keys=None, sort_dirs=None, filters=None,
+                               offset=None):
+        response = self.call(ctxt, "disk_partition_get_all", marker=marker,
+                             limit=limit, sort_keys=sort_keys,
+                             sort_dirs=sort_dirs, filters=filters,
+                             offset=offset)
         return response
 
     ###################
