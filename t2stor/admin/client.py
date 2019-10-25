@@ -448,6 +448,12 @@ class AdminClient(BaseClient):
                              volume_snapshot_id=volume_snapshot_id)
         return response
 
+    def volume_create_from_snapshot(self, ctxt, volume_snapshot_id, data):
+        response = self.call(ctxt, "volume_create_from_snapshot",
+                             volume_snapshot_id=volume_snapshot_id,
+                             data=data)
+        return response
+
     ###################
 
 
