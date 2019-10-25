@@ -35,6 +35,8 @@ class AdminHandler(object):
                      "{}".format(ceph_host))
         return ceph_conf
 
+    ###################
+
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
         filters = filters or {}
@@ -50,11 +52,48 @@ class AdminHandler(object):
         v = objects.Volume(
             ctxt, cluster_id=ctxt.cluster_id,
             display_name=data.get('display_name'),
-            size=data.get('size')
+            size=data.get('size'),
+            status='creating',
+            display_description=data.get('display_description'),
+            pool_id=data.get('pool_id'),
+            volume_name='V'  # TODO ceph volume name
         )
         v.create()
         # TODO create volume
         return v
+
+    def volume_update(self, ctxt, volume_id, data):
+        volume = self.volume_get(ctxt, volume_id)
+        for k, v in six.iteritems(data):
+            setattr(volume, k, v)
+        volume.save()
+        return volume
+
+    def volume_delete(self, ctxt, volume_id):
+        volume = self.volume_get(ctxt, volume_id)
+        volume.destroy()
+        # TODO delete ceph volume
+        return volume
+
+    def volume_extend(self, ctxt, volume_id, data):
+        volume = self.volume_update(ctxt, volume_id, data)
+        # TODO ceph volume_extend
+        return volume
+
+    def volume_shrink(self, ctxt, volume_id, data):
+        volume = self.volume_update(ctxt, volume_id, data)
+        # TODO ceph volume_shrink
+        return volume
+
+    def volume_rollback(self, ctxt, volume_id, data):
+        pass
+        # TODO ceph volume_rollback
+
+    def volume_unlink(self, ctxt, volume_id, data):
+        pass
+        # TODO ceph volume_unlink
+
+    ###################
 
     def cluster_import(self, ctxt):
         """Cluster import"""

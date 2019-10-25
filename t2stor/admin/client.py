@@ -18,6 +18,8 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, method="get_ceph_conf", ceph_host=ceph_host)
         return response
 
+    ###################
+
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
         response = self.call(
@@ -31,20 +33,59 @@ class AdminClient(BaseClient):
             ctxt, "volume_create", data=data)
         return response
 
+    def volume_get(self, ctxt, volume_id):
+        response = self.call(ctxt, "volume_get", volume_id=volume_id)
+        return response
+
+    def volume_update(self, ctxt, volume_id, data):
+        response = self.call(ctxt, "volume_update",
+                             volume_id=volume_id,
+                             data=data)
+        return response
+
+    def volume_delete(self, ctxt, volume_id):
+        response = self.call(ctxt, "volume_delete",
+                             volume_id=volume_id)
+        return response
+
+    def volume_extend(self, ctxt, volume_id, data):
+        response = self.call(ctxt, "volume_extend",
+                             volume_id=volume_id,
+                             data=data)
+        return response
+
+    def volume_shrink(self, ctxt, volume_id, data):
+        response = self.call(ctxt, "volume_shrink",
+                             volume_id=volume_id,
+                             data=data)
+        return response
+
+    def volume_rollback(self, ctxt, volume_id, data):
+        response = self.call(ctxt, "volume_rollback",
+                             volume_id=volume_id,
+                             data=data)
+        return response
+
+    def volume_unlink(self, ctxt, volume_id, data):
+        response = self.call(ctxt, "volume_unlink",
+                             volume_id=volume_id,
+                             data=data)
+        return response
+
+    ###################
+
     def cluster_get_info(self, ctxt, ip_address, password=None):
         response = self.call(
             ctxt, "cluster_get_info", ip_address=ip_address,
             password=password)
         return response
 
-    def volume_get(self, ctxt, volume_id):
-        response = self.call(ctxt, "volume_get", volume_id=volume_id)
-        return response
-
     def cluster_install_agent(self, ctxt, ip_address, password=None):
         response = self.call(ctxt, "cluster_install_agent",
                              ip_address=ip_address, password=password)
         return response
+
+    ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                            sort_dirs=None, filters=None, offset=None):
