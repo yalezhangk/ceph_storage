@@ -71,3 +71,8 @@ class OsdList(base.ObjectListBase, base.StorObject):
         expected_attrs = Osd._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.Osd,
                                   osds, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_by_pool(cls, context, pool_id):
+        db_osds = db.osd_get_by_pool(context, pool_id)
+        return base.obj_make_list(context, cls(context), objects.Osd, db_osds)

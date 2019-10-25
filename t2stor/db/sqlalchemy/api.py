@@ -1129,6 +1129,13 @@ def pool_update(context, pool_id, values):
             raise exception.PoolNotFound(pool_id=pool_id)
 
 
+@require_context
+def osd_get_by_pool(context, pool_id):
+    session = get_session()
+    with session.begin():
+        pool = _pool_get(context, pool_id, session)  # model object
+        return pool.osds
+
 ###############################
 
 

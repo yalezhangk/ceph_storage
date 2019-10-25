@@ -292,6 +292,10 @@ def osd_update(context, osd_id, values):
     return IMPL.osd_update(context, osd_id, values)
 
 
+def osd_get_by_pool(context, pool_id):
+    return IMPL.osd_get_by_pool(context, pool_id)
+
+
 ###################
 
 def volume_access_path_create(context, values):
@@ -697,6 +701,7 @@ def get_by_id(context, model, id, *args, **kwargs):
 
 class Condition(object):
     """Class for normal condition values for conditional_update."""
+
     def __init__(self, value, field=None):
         self.value = value
         # Field is optional and can be passed when getting the filter
@@ -725,6 +730,7 @@ class Not(Condition):
     So for example when values are (1, 2) it will evaluate to True when we have
     value 3 or NULL, instead of only with 3 like SQL does.
     """
+
     def __init__(self, value, field=None, auto_none=True):
         super(Not, self).__init__(value, field)
         self.auto_none = auto_none
@@ -741,6 +747,7 @@ class Not(Condition):
 
 class Case(object):
     """Class for conditional value selection for conditional_update."""
+
     def __init__(self, whens, value=None, else_=None):
         self.whens = whens
         self.value = value
