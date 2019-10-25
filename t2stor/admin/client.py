@@ -243,6 +243,10 @@ class AdminClient(BaseClient):
                              values=values)
         return response
 
+    def disk_smart_get(self, ctxt, disk_id):
+        response = self.call(ctxt, "disk_smart_get", disk_id=disk_id)
+        return response
+
     def disk_partition_get_all(self, ctxt, marker=None, limit=None,
                                sort_keys=None, sort_dirs=None, filters=None,
                                offset=None):
