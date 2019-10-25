@@ -29,7 +29,7 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'db_partition_id': fields.IntegerField(),
         'wal_partition_id': fields.IntegerField(),
         'journal_partition_id': fields.IntegerField(),
-        'cluster_id': fields.StringField(),
+        'cluster_id': fields.StringField(nullable=True),
     }
 
     def create(self):

@@ -1059,6 +1059,79 @@ def osd_update(context, osd_id, values):
 ###############################
 
 
+def _pool_get_query(context, session=None):
+    return model_query(context, models.Pool, session=session)
+
+
+def _pool_get(context, pool_id, session=None):
+    result = _pool_get_query(context, session)
+    result = result.filter_by(id=pool_id).first()
+
+    if not result:
+        raise exception.PoolNotFound(pool_id=pool_id)
+
+    return result
+
+
+@require_context
+def pool_create(context, values):
+    pool_ref = models.Pool()
+    pool_ref.update(values)
+    session = get_session()
+    with session.begin():
+        pool_ref.save(session)
+
+    return pool_ref
+
+
+def pool_destroy(context, pool_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Pool, session=session).\
+            filter_by(id=pool_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def pool_get(context, pool_id):
+    return _pool_get(context, pool_id)
+
+
+@require_context
+def pool_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Pool, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def pool_update(context, pool_id, values):
+    session = get_session()
+    with session.begin():
+        query = _pool_get_query(context, session)
+        result = query.filter_by(id=pool_id).update(values)
+        if not result:
+            raise exception.PoolNotFound(pool_id=pool_id)
+
+
+###############################
+
+
 def _sys_config_get_query(context, session=None):
     # TODO  filter_by cluster id
     return model_query(
@@ -2437,40 +2510,6 @@ def process_filters(model):
 
 
 ########################
-
-
-def _pool_get_query(context, session=None):
-    return model_query(context, models.Pool, session=session)
-
-
-def _pool_get(context, pool_id, session=None):
-    result = _pool_get_query(context, session)
-    result = result.filter_by(id=pool_id).first()
-
-    if not result:
-        raise exception.PoolNotFound(osd_id=pool_id)
-
-    return result
-
-
-@require_context
-def pool_get(context, pool_id):
-    return _pool_get(context, pool_id)
-
-
-@require_context
-def pool_get_all(context, marker=None, limit=None, sort_keys=None,
-                 sort_dirs=None, filters=None, offset=None):
-    session = get_session()
-    with session.begin():
-        # Generate the query
-        query = _generate_paginate_query(
-            context, session, models.Pool, marker, limit,
-            sort_keys, sort_dirs, filters, offset)
-        # No clusters would match, return empty list
-        if query is None:
-            return []
-        return query.all()
 
 
 PAGINATION_HELPERS = {
