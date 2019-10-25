@@ -616,6 +616,25 @@ def log_file_destroy(context, log_file_id):
 ###############
 
 
+def volume_snapshot_create(context, values):
+    return IMPL.volume_snapshot_create(context, values)
+
+
+def volume_snapshot_update(context, volume_snapshot_id, values):
+    return IMPL.volume_snapshot_update(context, volume_snapshot_id, values)
+
+
+def volume_snapshot_get_all(context, *args, **kwargs):
+    return IMPL.volume_snapshot_get_all(context, *args, **kwargs)
+
+
+def volume_snapshot_destroy(context, volume_snapshot_id):
+    return IMPL.volume_snapshot_destroy(context, volume_snapshot_id)
+
+
+###############
+
+
 def service_create(context, values):
     return IMPL.service_create(context, values)
 

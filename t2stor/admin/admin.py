@@ -53,6 +53,7 @@ class AdminHandler(object):
             size=data.get('size')
         )
         v.create()
+        # TODO create volume
         return v
 
     def cluster_import(self, ctxt):
@@ -482,6 +483,39 @@ class AdminHandler(object):
                 service.status = s.get('status')
                 service.save()
         return True
+
+    def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,
+                                sort_keys=None, sort_dirs=None, filters=None,
+                                offset=None):
+        filters = filters or {}
+        filters['cluster_id'] = ctxt.cluster_id
+        return objects.VolumeSnapshotList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+    def volume_snapshot_create(self, ctxt, data):
+        data.update({'cluster_id': ctxt.cluster_id})
+        alert_log = objects.VolumeSnapshot(ctxt, **data)
+        alert_log.create()
+        # TODO create snapshot
+        return alert_log
+
+    def volume_snapshot_get(self, ctxt, volume_snapshot_id):
+        return objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+
+    def volume_snapshot_update(self, ctxt, volume_snapshot_id, data):
+        volume_snapshot = self.volume_snapshot_get(ctxt, volume_snapshot_id)
+        for k, v in six.iteritems(data):
+            setattr(volume_snapshot, k, v)
+        volume_snapshot.save()
+        return volume_snapshot
+
+    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
+        volume_snapshot = self.volume_snapshot_get(ctxt, volume_snapshot_id)
+        volume_snapshot.destroy()
+        return volume_snapshot
+
+    ###################
 
 
 class AdminService(ServiceBase):

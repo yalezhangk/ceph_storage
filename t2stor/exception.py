@@ -222,3 +222,7 @@ class LogFileNotFound(NotFound):
 class LedNotSupport(StorException):
     code = 400
     message = _("Disk %(disk_id)s do not support led light")
+
+
+class VolumeSnapshotNotFound(NotFound):
+    message = _("VolumeSnapshot %(volume_snapshot_id)s could not be found.")

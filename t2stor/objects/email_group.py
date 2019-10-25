@@ -14,7 +14,7 @@ class EmailGroup(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'name': fields.StringField(),
         'emails': fields.StringField(),
-        'cluster_id': fields.StringField(),
+        'cluster_id': fields.UUIDField(),
     }
 
     def create(self):
