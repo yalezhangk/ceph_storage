@@ -15,6 +15,7 @@ from t2stor.api.handlers.disk_partitions import DiskPartitionListHandler
 from t2stor.api.handlers.disks import DiskActionHandler
 from t2stor.api.handlers.disks import DiskHandler
 from t2stor.api.handlers.disks import DiskListHandler
+from t2stor.api.handlers.disks import DiskSmartHandler
 from t2stor.api.handlers.email_group import EmailGroupHandler
 from t2stor.api.handlers.email_group import EmailGroupListHandler
 from t2stor.api.handlers.licenses import DownloadlicenseHandler
@@ -58,6 +59,7 @@ def get_routers():
         (r"/disks/", DiskListHandler),
         (r"/disks/([0-9]*)/", DiskHandler),
         (r"/disks/([0-9]*)/action/", DiskActionHandler),
+        (r"/disks/([0-9]*)/smart/", DiskSmartHandler),
         (r"/disk_partitions/", DiskPartitionListHandler),
         (r"/email_groups/", EmailGroupListHandler),
         (r"/email_groups/([0-9]*)/", EmailGroupHandler),

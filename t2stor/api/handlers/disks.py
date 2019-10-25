@@ -110,3 +110,14 @@ class DiskActionHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             'disk': disk
         }))
+
+
+class DiskSmartHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, disk_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        smart = yield client.disk_smart_get(ctxt, disk_id)
+        self.write(objects.json_encode({
+            "disk_smart": smart
+        }))

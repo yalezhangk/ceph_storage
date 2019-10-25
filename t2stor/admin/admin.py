@@ -10,6 +10,7 @@ from oslo_log import log as logging
 from t2stor import exception
 from t2stor import objects
 from t2stor.admin.genconf import ceph_conf
+from t2stor.agent.client import AgentClientManager
 from t2stor.i18n import _
 from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
@@ -362,6 +363,13 @@ class AdminHandler(object):
         disk.role = values['role']
         disk.save()
         return disk
+
+    def disk_smart_get(self, ctxt, disk_id):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        client = AgentClientManager(
+            ctxt, cluster_id=disk.cluster_id).get_client()
+        smart = client.disk_smart_get(ctxt, name=disk.name)
+        return smart
 
     def disk_partition_get_all(self, ctxt, marker=None, limit=None,
                                sort_keys=None, sort_dirs=None, filters=None,
