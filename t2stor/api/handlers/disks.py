@@ -6,9 +6,9 @@ import logging
 from tornado import gen
 from tornado.escape import json_decode
 
+from t2stor import exception
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
-from t2stor.exception import InvalidInput
 from t2stor.i18n import _
 
 logger = logging.getLogger(__name__)
@@ -52,13 +52,30 @@ class DiskHandler(ClusterAPIHandler):
         disk = json_decode(self.request.body).get('disk')
         disk_type = disk.get('type')
         if not disk_type:
-            raise InvalidInput(reason=_("disk: disk type is none"))
+            raise exception.InvalidInput(reason=_("disk: disk type is none"))
 
         client = self.get_admin_client(ctxt)
         disk = yield client.disk_update(ctxt, disk_id, disk_type)
         logger.debug("Disk: id: {}, name: {}, cluster_id: {}".format(
             disk.id, disk.name, disk.cluster_id
         ))
+
+        self.write(objects.json_encode({
+            "disk": disk
+        }))
+
+
+class DiskLightHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, disk_id):
+        ctxt = self.get_context()
+        disk = json_decode(self.request.body).get('disk')
+        led = disk.get('led')
+        if not led:
+            raise exception.InvalidInput(reason=_("disk: led status is none"))
+
+        client = self.get_admin_client(ctxt)
+        disk = yield client.disk_light(ctxt, disk_id=disk_id, led=led)
 
         self.write(objects.json_encode({
             "disk": disk

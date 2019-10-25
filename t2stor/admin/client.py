@@ -189,6 +189,10 @@ class AdminClient(BaseClient):
             ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)
         return response
 
+    def disk_light(self, ctxt, disk_id, led):
+        response = self.call(ctxt, "disk_light", disk_id=disk_id, led=led)
+        return response
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,

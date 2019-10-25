@@ -12,6 +12,7 @@ from t2stor.api.handlers.datacenters import DataCenterHandler
 from t2stor.api.handlers.datacenters import DataCenterListHandler
 from t2stor.api.handlers.datacenters import DataCenterRacksHandler
 from t2stor.api.handlers.disks import DiskHandler
+from t2stor.api.handlers.disks import DiskLightHandler
 from t2stor.api.handlers.disks import DiskListHandler
 from t2stor.api.handlers.email_group import EmailGroupHandler
 from t2stor.api.handlers.email_group import EmailGroupListHandler
@@ -48,6 +49,7 @@ def get_routers():
         (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
         (r"/disks/", DiskListHandler),
         (r"/disks/([0-9]*)/", DiskHandler),
+        (r"/disks/([0-9]*)/light/", DiskLightHandler),
         (r"/email_groups/", EmailGroupListHandler),
         (r"/email_groups/([0-9]*)/", EmailGroupHandler),
         (r"/log_files/", LogFileListHandler),
