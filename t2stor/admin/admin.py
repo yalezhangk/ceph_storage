@@ -597,6 +597,34 @@ class AdminHandler(object):
 
     ###################
 
+    def ceph_config_get_all(
+            self, ctxt, marker=None, limit=None, sort_keys=None,
+            sort_dirs=None, filters=None, offset=None):
+        ceph_conf = objects.CephConfigList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        return ceph_conf
+
+    def ceph_config_set(self, ctxt, values):
+        filters = {
+            "group": values['group'],
+            "key": values['key']
+        }
+        cephconf = objects.CephConfigList.get_all(ctxt, filters=filters)
+        if not cephconf:
+            cephconf = objects.CephConfig(
+                ctxt, group=values.get('group'), key=values.get('key'),
+                value=values.get('value'),
+                display_description=values.get('display_description'),
+                cluster_id=ctxt.cluster_id
+            )
+            cephconf.create()
+        else:
+            cephconf = cephconf[0]
+            cephconf.value = values.get('value')
+            cephconf.save()
+        return cephconf
+
 
 class AdminService(ServiceBase):
     service_name = "admin"

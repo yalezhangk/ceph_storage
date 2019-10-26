@@ -456,6 +456,19 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def ceph_config_get_all(
+            self, ctxt, marker=None, limit=None, sort_keys=None,
+            sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "ceph_config_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def ceph_config_set(self, ctxt, values):
+        response = self.call(ctxt, "ceph_config_set", values=values)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

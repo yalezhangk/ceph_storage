@@ -2873,6 +2873,9 @@ PAGINATION_HELPERS = {
     models.CrushRule: (_crush_rule_get_query,
                        process_filters(models.CrushRule),
                        _crush_rule_get),
+    models.CephConfig: (_ceph_config_get_query,
+                        process_filters(models.CephConfig),
+                        _ceph_config_get),
 }
 
 
