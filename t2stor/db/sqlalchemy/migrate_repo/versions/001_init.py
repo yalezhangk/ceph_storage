@@ -595,8 +595,8 @@ def define_tables(meta):
     )
 
     return [clusters, crush_rules, pools, volume_access_path,
-            volume_client_group, volume, volume_snapshot, rpc_services,
-            datacenter, rack, node, disks, disk_partitions, volume_gateway,
+            volume_client_group, volume, volume_snapshot, datacenter,
+            rack, node, rpc_services, disks, disk_partitions, volume_gateway,
             volume_access_path_gateway, volume_client, osds, osd_pools,
             sysconf, ceph_config, license_files, log_files, alert_rules,
             email_groups, alert_groups, alert_group_relate_rule,
