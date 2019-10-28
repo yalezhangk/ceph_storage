@@ -457,6 +457,16 @@ class AdminHandler(object):
 
     ###################
 
+    def volume_client_group_get_all(self, ctxt, marker=None, limit=None,
+                                    sort_keys=None, sort_dirs=None,
+                                    filters=None, offset=None):
+        filters = filters or {}
+        return objects.VolumeClientGroupList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+    ###################
+
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
                           sort_keys=None, sort_dirs=None, filters=None,
                           offset=None):

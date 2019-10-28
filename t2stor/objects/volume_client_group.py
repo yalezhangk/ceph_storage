@@ -19,7 +19,7 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
         'chap_enable': fields.BooleanField(),
         'chap_username': fields.StringField(nullable=True),
         'chap_password': fields.StringField(nullable=True),
-        'access_path_id': fields.IntegerField(),
+        'volume_access_path_id': fields.IntegerField(),
         'cluster_id': fields.StringField(nullable=True),
     }
 
