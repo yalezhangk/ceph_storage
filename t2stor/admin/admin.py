@@ -465,6 +465,22 @@ class AdminHandler(object):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
+    def volume_client_group_create(self, ctxt, data):
+        data.update({
+            'cluster_id': ctxt.cluster_id,
+        })
+        v = objects.VolumeClientGroup(ctxt, **data)
+        v.create()
+        return v
+
+    def volume_client_create(self, ctxt, data):
+        data.update({
+            'cluster_id': ctxt.cluster_id,
+        })
+        v = objects.VolumeClient(ctxt, **data)
+        v.create()
+        return v
+
     ###################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,

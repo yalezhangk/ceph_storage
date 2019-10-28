@@ -363,6 +363,16 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def volume_client_group_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "volume_client_group_create", data=data)
+        return response
+
+    def volume_client_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "volume_client_create", data=data)
+        return response
+
     ##################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
