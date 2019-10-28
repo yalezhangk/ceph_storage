@@ -53,6 +53,5 @@ class AlertGroupList(base.ObjectListBase, base.StorObject):
         alert_groups = db.alert_group_get_all(context, marker, limit,
                                               sort_keys, sort_dirs, filters,
                                               offset)
-        expected_attrs = AlertGroup._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.AlertGroup,
-                                  alert_groups, expected_attrs=expected_attrs)
+                                  alert_groups)

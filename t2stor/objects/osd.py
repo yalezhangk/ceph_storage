@@ -68,9 +68,8 @@ class OsdList(base.ObjectListBase, base.StorObject):
         osds = db.osd_get_all(
             context, filters, marker, limit, offset,
             sort_keys, sort_dirs)
-        expected_attrs = Osd._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.Osd,
-                                  osds, expected_attrs=expected_attrs)
+                                  osds)
 
     @classmethod
     def get_by_pool(cls, context, pool_id):

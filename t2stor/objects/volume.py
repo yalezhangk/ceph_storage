@@ -79,6 +79,5 @@ class VolumeList(base.ObjectListBase, base.StorObject):
     @classmethod
     def get_all_by_pool(cls, context, pool):
         volumes = db.volume_get_all_by_volume(context, pool)
-        expected_attrs = Volume._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.Volume,
-                                  volumes, expected_attrs=expected_attrs)
+                                  volumes)

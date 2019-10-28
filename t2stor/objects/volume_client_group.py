@@ -61,9 +61,7 @@ class VolumeClientGroupList(base.ObjectListBase, base.StorObject):
             sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters,
             offset=offset)
-        expected_attrs = VolumeClientGroup._get_expected_attrs(context)
         return base.obj_make_list(
             context, cls(context),
             objects.VolumeClientGroup,
-            volume_client_groups,
-            expected_attrs=expected_attrs)
+            volume_client_groups)

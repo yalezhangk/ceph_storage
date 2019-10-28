@@ -63,6 +63,5 @@ class ClusterList(base.ObjectListBase, base.StorObject):
                 offset=None, sort_keys=None, sort_dirs=None):
         clusters = db.cluster_get_all(context, filters, marker, limit, offset,
                                       sort_keys, sort_dirs)
-        expected_attrs = Cluster._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.Cluster,
-                                  clusters, expected_attrs=expected_attrs)
+                                  clusters)

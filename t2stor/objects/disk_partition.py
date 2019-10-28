@@ -60,7 +60,6 @@ class DiskPartitionList(base.ObjectListBase, base.StorObject):
                 offset=None, sort_keys=None, sort_dirs=None):
         disk_partitions = db.disk_partition_get_all(
             context, filters, marker, limit, offset, sort_keys, sort_dirs)
-        expected_attrs = DiskPartition._get_expected_attrs(context)
         return base.obj_make_list(
             context, cls(context), objects.DiskPartition,
-            disk_partitions, expected_attrs=expected_attrs)
+            disk_partitions)

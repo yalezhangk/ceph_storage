@@ -11,7 +11,9 @@ from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
 from t2stor import db
+from t2stor import exception
 from t2stor import objects
+from t2stor.i18n import _
 
 logger = logging.getLogger(__name__)
 obj_make_list = base.obj_make_list
@@ -75,17 +77,10 @@ class StorPersistentObject(object):
             raise NotImplementedError(msg)
 
         orm_obj = db.get_by_id(context, cls.obj_name(), id, *args, **kwargs)
-        # We pass parameters because fields to expect may depend on them
-        expected_attrs = cls._get_expected_attrs(context, *args, **kwargs)
-        kargs = {}
-        if expected_attrs:
-            kargs = {'expected_attrs': expected_attrs}
-        return cls._from_db_object(context, cls(context), orm_obj, **kargs)
+        return cls._from_db_object(context, cls(context), orm_obj)
 
     @classmethod
-    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
-        if expected_attrs is None:
-            expected_attrs = []
+    def _from_db_object(cls, context, obj, db_obj):
         for name, field in obj.fields.items():
             if name in cls.OPTIONAL_FIELDS:
                 continue
@@ -97,6 +92,13 @@ class StorPersistentObject(object):
         obj._context = context
         obj.obj_reset_changes()
         return obj
+
+    def obj_load_attr(self, attrname):
+        if attrname not in self.OPTIONAL_FIELDS:
+            raise exception.ObjectActionError(
+                action='obj_load_attr',
+                reason=_('attribute %s not lazy-loadable') % attrname)
+        self._obj_disks = None
 
     def refresh(self):
         # To refresh we need to have a model and for the model to have an id

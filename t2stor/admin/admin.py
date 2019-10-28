@@ -165,7 +165,8 @@ class AdminHandler(object):
                      sort_dirs=None, filters=None, offset=None):
         nodes = objects.NodeList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=['disks'])
         return nodes
 
     def node_create(self, ctxt, data):
@@ -364,7 +365,8 @@ class AdminHandler(object):
                      sort_dirs=None, filters=None, offset=None):
         disks = objects.DiskList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=['node'])
         return disks
 
     def disk_update(self, ctxt, disk_id, disk_type):
