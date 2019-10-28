@@ -99,9 +99,10 @@ Having recently migrated my development from Batch to Python for Linux
 portabiity, I thought a simple wrapper for smartctl would save time in the
 development of future automated test tools.
 """
-import utils
 
 from .attribute import Attribute
 from .device import Device
+
+__all__ = ["Attribute", "Device"]
 
 __version__ = '0.3'
