@@ -3,7 +3,6 @@ from __future__ import print_function
 import json
 import logging
 
-import etcd3
 import grpc
 from tornado.gen import Future
 from tornado.ioloop import IOLoop
@@ -40,21 +39,6 @@ class BaseClientManager:
             "127.0.0.1", self.cluster_id, self.service_name
         ))
 
-    def _get_endpoints_etcd(self):
-        etcd = etcd3.client(host='127.0.0.1', port=2379)
-        values = etcd.get_prefix(
-            '/t2stor/service/{}/{}'.format(self.cluster_id, self.service_name))
-        endpoints = {}
-        if not values:
-            raise Exception("Service {} not found".format(self.service_name))
-        for value, meta in values:
-            endpoint = json.loads(value)
-            hostname = meta.key.split(b"/")[-1].decode("utf-8")
-            logger.info("Service {} found in host {}".format(
-                self.service_name, hostname))
-            endpoints[hostname] = endpoint
-        return endpoints
-
     def _get_endpoints_db(self):
         logger.debug("endpints search: cluster_id(%s), service_name(%s)",
                      self.cluster_id, self.service_name)
@@ -67,7 +51,7 @@ class BaseClientManager:
         )
         if not services:
             return {}
-        endpoints = {v.hostname: json.loads(v.endpoint) for v in services}
+        endpoints = {v.node_id: json.loads(v.endpoint) for v in services}
         logger.debug("endpints: %s", endpoints)
         return endpoints
 
@@ -76,26 +60,26 @@ class BaseClientManager:
             self.endpoints = self._get_endpoints_db()
         return self.endpoints
 
-    def get_endpoint(self, hostname=None):
+    def get_endpoint(self, node_id=None):
         endpoints = self.get_endpoints()
-        if not hostname:
-            for hostname, endpoint in endpoints.items():
+        if not node_id:
+            for node_id, endpoint in endpoints.items():
                 return endpoint
-        if hostname not in endpoints:
+        if node_id not in endpoints:
             raise exception.EndpointNotFound(
-                service_name=self.service_name, hostname=hostname)
-        return self.endpoints[hostname]
+                service_name=self.service_name, node_id=node_id)
+        return self.endpoints[node_id]
 
-    def get_stub(self, hostname=None):
-        endpoint = self.get_endpoint(hostname)
+    def get_stub(self, node_id=None):
+        endpoint = self.get_endpoint(node_id)
         url = "{}:{}".format(endpoint['ip'], endpoint['port'])
         logger.debug("Try connect: %s", url)
         channel = grpc.insecure_channel(url)
         stub = stor_pb2_grpc.RPCServerStub(channel)
         return stub
 
-    def get_client(self, hostname=None):
-        return self.client_cls(self.get_stub(hostname=hostname),
+    def get_client(self, node_id=None):
+        return self.client_cls(self.get_stub(node_id=node_id),
                                async_support=self.async_support)
 
     def get_clients(self, hosts=None):

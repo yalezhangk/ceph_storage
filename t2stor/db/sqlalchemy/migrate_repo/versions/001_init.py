@@ -100,6 +100,7 @@ def define_tables(meta):
         Column('hostname', String(36)),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         Column('endpoint', String(255)),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )

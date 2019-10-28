@@ -16,6 +16,7 @@ from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
 from t2stor.tools.docker import Docker as DockerTool
 from t2stor.tools.service import Service
+from t2stor.tools.storcli import StorCli as StorCliTool
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)
@@ -183,6 +184,20 @@ class AgentHandler(object):
             }
         ]
         return fake_data
+
+    def disk_light(self, ctxt, led, node, name):
+        logger.debug("Disk Light: %s", name)
+        try:
+            ssh_client = SSHExecutor(hostname=node.hostname,
+                                     password=node.password)
+        except exception.StorException as e:
+            logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
+            return
+        disk_name = '/dev/' + name
+        storcli = StorCliTool(ssh=ssh_client, disk_name=disk_name)
+
+        action = 'start' if led == 'on' else 'stop'
+        return storcli.disk_light(action)
 
 
 class AgentService(ServiceBase):

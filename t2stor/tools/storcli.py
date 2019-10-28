@@ -19,14 +19,14 @@ class StorCli:
         return outdata
 
     def get_device_id(self):
-        _stdin, _stdout, _stderr = self.ssh.exec_command('lsscsi')
-        for line in _stdout.readlines():
+        _stdin, _stdout, _stderr = self.ssh.run_command('lsscsi')
+        for line in _stdout.decode('utf-8').split('\n'):
             if self.disk_name in line:
                 fields = line.split(':', 5)
                 return fields[2]
 
     def get_eid_slt(self):
-        _stdin, _stdout, _stderr = self.ssh.exec_command(
+        _stdin, _stdout, _stderr = self.ssh.run_command(
             '{} /cALL show all J'.format(self.cli_path))
         device_id = self.get_device_id()
 
@@ -38,7 +38,7 @@ class StorCli:
         252:3     7 JBOD  -  446.625 GB SATA SSD N   N  512B
                            INTEL SSDSC2KB480G7 U  -
         """
-        out_data = self._get_json_output(_stdout.read())
+        out_data = self._get_json_output(_stdout)
         for controller in out_data.get('Controllers'):
             if controller.get("Command Status").get("Status") != "Success":
                 return None
@@ -54,10 +54,10 @@ class StorCli:
         if not es:
             return False
         _success = False
-        _stdin, _stdout, _stderr = self.ssh.exec_command(
+        _stdin, _stdout, _stderr = self.ssh.run_command(
             '{} /c0/e{}/s{} {} locate'.format(
                 self.cli_path, es[0], es[1], cmd))
-        for line in _stdout.readlines():
+        for line in _stdout.decode('utf-8').split('\n'):
             if "Status = Success" in line:
                 _success = True
         return _success
@@ -72,9 +72,9 @@ class StorCli:
         es = self.get_eid_slt()
         if not es:
             return patrol_data
-        _stdin, _stdout, _stderr = self.ssh.exec_command(
+        _stdin, _stdout, _stderr = self.ssh.run_command(
             '{} /c0/e{}/s{} show all J'.format(self.cli_path, es[0], es[1]))
-        out_data = self._get_json_output(_stdout.read())
+        out_data = self._get_json_output(_stdout)
         detail = "Drive /c0/e{}/s{} - Detailed Information".format(
             es[0], es[1])
         state = "Drive /c0/e{}/s{} State".format(es[0], es[1])
