@@ -253,3 +253,11 @@ class CrushRuleNotFound(NotFound):
 
 class VolumeSnapshotActionNotFound(NotFound):
     message = _("VolumeSnapshot Action %(action)s must in 'clone'")
+
+
+class PoolExists(StorException):
+    message = _("a pool named %(pool)s is exists")
+
+
+class PoolNameNotFound(StorException):
+    message = _("a pool named %(pool)s not found")

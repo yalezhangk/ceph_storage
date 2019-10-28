@@ -14,6 +14,7 @@ from t2stor.agent.client import AgentClientManager
 from t2stor.i18n import _
 from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
+from t2stor.taskflows.ceph import CephTask
 from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
 from t2stor.tools.ceph import Ceph as CephTool
@@ -693,6 +694,23 @@ class AdminHandler(object):
             cephconf.value = values.get('value')
             cephconf.save()
         return cephconf
+
+    def ceph_cluster_info(self, ctxt):
+        try:
+            ceph_client = CephTask(ctxt)
+            cluster_info = ceph_client.cluster_info()
+        except Exception as e:
+            logger.error(e)
+            return {}
+        fsid = cluster_info.get('fsid')
+        total_cluster_byte = cluster_info.get('cluster_data', {}).get(
+            'stats', {}).get('total_bytes')
+        pool_list = cluster_info.get('cluster_data', {}).get('pools')
+        return {
+            'fsid': fsid,
+            'total_cluster_byte': total_cluster_byte,
+            'pool_list': pool_list
+        }
 
 
 class AdminService(ServiceBase):

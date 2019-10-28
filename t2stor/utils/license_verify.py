@@ -6,6 +6,9 @@ from tempfile import TemporaryFile
 
 from truepy import License
 
+from t2stor import objects
+from t2stor.admin.client import AdminClientManager
+
 LOG = logging.getLogger(__name__)
 CA_FILE_PATH = '/etc/t2stor/license/certificate.pem'
 PRIVATE_FILE = '/etc/t2stor/license/private-key.pem'
@@ -13,22 +16,37 @@ LICENSE_PASSWORD = 'nPgyLwljRy#1OdYd'
 
 
 class LicenseVerify(object):
-    def __init__(self, content=None):
+    _licenses_data = None
+
+    def __init__(self, content=None, ctxt=None):
         self._licenses_data = None
+        self._extra_data = None
         self.content = content
+        self.ctxt = ctxt
+
+    def get_admin_client(self, cluster_id):
+        client = AdminClientManager(
+            self.ctxt,
+            cluster_id=cluster_id,
+            async_support=False
+        ).get_client()
+        return client
 
     @property
     def licenses_node_number(self):
-        if not self.licenses_data:
+        if not self._licenses_data:
             return 0
-        extra = json.loads(self.licenses_data.extra)
-        licenses_node = extra.get('node', 0)
+        licenses_node = self._extra_data.get('node', 0)
         return int(licenses_node)
 
     @property
     def licenses_data(self):
+        if self._licenses_data:
+            return self._licenses_data
         try:
             data = self.load_licenses()
+            self._licenses_data = data
+            self._extra_data = json.loads(data.extra)
         except Exception:
             LOG.error('load license data error')
             data = None
@@ -36,25 +54,39 @@ class LicenseVerify(object):
 
     @property
     def license_cluster_size(self):
-        if not self.licenses_data:
+        if not self._licenses_data:
             return 0
-        extra = json.loads(self.licenses_data.extra)
-        size = extra.get('other_extra')
+        size = self._extra_data.get('other_extra')
         if size:
             size = size.split(':')[1]
         else:
             size = 0
         return size
 
-    @property
-    def fact_cluster_size(self):
-        # TODO:get fact_cluster_size,by ceph cmd or other
-        return 0
+    def max_cluster_size(self):
+        cluters = objects.ClusterList.get_all(self.ctxt)
+        max_size = 0
+        for cluster in cluters:
+            client = self.get_admin_client(cluster.id)
+            cluster_info = client.ceph_cluster_info(self.ctxt)
+            size = int(cluster_info.get('total_cluster_byte', 0))
+            if size > max_size:
+                max_size = size
+            else:
+                continue
+        return max_size
 
-    @property
-    def fact_node_num(self):
-        # TODO: get fact_node_num from db
-        return 0
+    def max_node_num(self):
+        cluters = objects.ClusterList.get_all(self.ctxt)
+        max_num = 0
+        for cluster in cluters:
+            nodes = objects.NodeList.get_all(
+                self.ctxt, filters={"cluster_id": cluster.id})
+            if len(nodes) > max_num:
+                max_num = len(nodes)
+            else:
+                continue
+        return max_num
 
     @property
     def not_before(self):
@@ -91,7 +123,7 @@ class LicenseVerify(object):
         """
         LOG.debug("开始检查licenses授权节点数")
         licenses_node = self.licenses_node_number
-        if licenses_node < self.fact_node_num:
+        if licenses_node < self.max_node_num():
             LOG.error('node节点数量超标')
         else:
             return True
@@ -99,7 +131,7 @@ class LicenseVerify(object):
 
     def check_size(self):
         total_size = self.license_cluster_size
-        if int(total_size) < int(self.fact_cluster_size):
+        if int(total_size) < int(self.max_cluster_size()):
             return False
         return True
 
@@ -123,5 +155,4 @@ class LicenseVerify(object):
         # License.InvalidSignatureException if,the signature is incorrect
         lic.verify(certificate)
         lice_file.close()
-        self._licenses_data = lic.data
         return lic.data

@@ -3,8 +3,11 @@
 import base64
 import json
 
+from tornado import gen
+
 from t2stor import objects
 from t2stor.api.handlers.base import BaseAPIHandler
+from t2stor.api.handlers.base import ClusterAPIHandler
 from t2stor.exception import InvalidInput
 from t2stor.i18n import _
 from t2stor.utils.license_verify import CA_FILE_PATH
@@ -14,16 +17,21 @@ from t2stor.utils.license_verify import LicenseVerify
 FILE_LEN = 2048
 
 
-class LicenseHandler(BaseAPIHandler):
+class LicenseHandler(ClusterAPIHandler):
 
+    @gen.coroutine
     def get(self):
         # unauthorized:未授权，authorized:已授权， lapsed:已失效
         ctxt = self.get_context()
         licenses = objects.LicenseList.get_latest_valid(ctxt)
+        admin = self.get_admin_client(ctxt)
+        cluster_info = yield admin.ceph_cluster_info(ctxt)
+        size = int(cluster_info.get('total_cluster_byte', 0))
+        nodes = yield admin.node_get_all(ctxt)
         result = {'license': []}
         if licenses:
             for per_license in licenses:
-                v = LicenseVerify(per_license.content)
+                v = LicenseVerify(per_license.content, ctxt)
                 if not v.licenses_data:
                     result['license'].append({'status': 'unauthorized'})
                 else:
@@ -34,9 +42,9 @@ class LicenseHandler(BaseAPIHandler):
                         'not_before': v.not_before,
                         'not_after': v.not_after,
                         'product': 'T2STOR',
-                        'fact_size': v.fact_cluster_size,
+                        'fact_size': size,
                         'size': v.license_cluster_size,
-                        'fact_node_num': v.fact_node_num,
+                        'fact_node_num': len(nodes),
                         'node_num': v.licenses_node_number
                     }
                     result['license'].append(up_data)
@@ -53,11 +61,12 @@ class LicenseHandler(BaseAPIHandler):
         if len(content) > FILE_LEN:
             raise InvalidInput(reason=_("File too large"))
         license = objects.License(ctxt, content=content, status='valid')
+        # TODO license_verify
         # license_verify校验
-        v = LicenseVerify(license.content)
+        v = LicenseVerify(license.content, ctxt)
         if not v.licenses_data:
             license.status = 'invalid'
-            raise InvalidInput(reason=_('the license.key is not invalid'))
+            raise InvalidInput(reason=_('the license.key is invalid'))
         else:
             result['license']['result'] = True
         license.create()
