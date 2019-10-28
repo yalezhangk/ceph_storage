@@ -576,6 +576,8 @@ def define_tables(meta):
         Column('status', String(32)),
         Column('node_id', Integer, ForeignKey('nodes.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
     )
 
     crush_rules = Table(
