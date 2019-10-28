@@ -27,6 +27,8 @@ from t2stor.api.handlers.log_file import LogFileListHandler
 from t2stor.api.handlers.networks import NetworkListHandler
 from t2stor.api.handlers.nodes import NodeHandler
 from t2stor.api.handlers.nodes import NodeListHandler
+from t2stor.api.handlers.osds import OsdHandler
+from t2stor.api.handlers.osds import OsdListHandler
 from t2stor.api.handlers.pools import PoolCapacityHandler
 from t2stor.api.handlers.pools import PoolHandler
 from t2stor.api.handlers.pools import PoolHistoryMetricsHandler
@@ -76,6 +78,8 @@ def get_routers():
         (r"/networks/", NetworkListHandler),
         (r"/nodes/", NodeListHandler),
         (r"/nodes/([0-9]*)/", NodeHandler),
+        (r"/osds/", OsdListHandler),
+        (r"/osds/([0-9]*)/", OsdHandler),
         (r"/pools/", PoolListHandler),
         (r"/pools/([0-9]*)/", PoolHandler),
         (r"/pools/([0-9]*)/capacity/", PoolCapacityHandler),
