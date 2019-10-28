@@ -133,10 +133,10 @@ class Device(object):
         # If no interface type was provided, scan for the device
         elif self.interface is None:
             _grep = 'find' if OS == 'Windows' else 'grep'
-            _stdin, _stdout, _stderr = self.ssh.exec_command(
+            _stdin, _stdout, _stderr = self.ssh.run_command(
                 'smartctl --scan-open | {0} "{1}"'.format(
                     _grep, self.name))
-            _stdout = _stdout.read()
+            _stdout = _stdout.decode('utf-8')
             if _stdout != '':
                 self.interface = _stdout.split(' ')[2]
                 # Disambiguate the generic interface to a specific type
@@ -197,27 +197,24 @@ class Device(object):
             else:
                 test = 'sata'
             # Look for a SATA PHY to detect SAT and SATA
-            _stdin, _stdout, _stderr = self.ssh.exec_command(
+            _stdin, _stdout, _stderr = self.ssh.run_command(
                 'smartctl -d {0} -l sataphy /dev/{1}'.format(
                     smartctl_type[test], self.name))
-            _stdout, _stderr = _stdout.read(), _stderr.read()
-            if 'GP Log 0x11' in _stdout.split('\n')[3]:
+            if 'GP Log 0x11' in _stdout.decode('utf-8').split('\n')[3]:
                 self.interface = test
         # If device type is still SCSI (not changed to SAT above), then
         # check for a SAS PHY
         if self.interface == 'scsi':
-            _stdin, _stdout, _stderr = self.ssh.exec_command(
+            _stdin, _stdout, _stderr = self.ssh.run_command(
                 'smartctl -d scsi -l sasphy /dev/{0}'.format(self.name))
-            _stdout, _stderr = _stdout.read(), _stderr.read()
-            if 'SAS SSP' in _stdout.split('\n')[4]:
+            if 'SAS SSP' in _stdout.decode('utf-8').split('\n')[4]:
                 self.interface = 'sas'
             # Some older SAS devices do not support the SAS PHY log command.
             # For these, see if smartmontools reports a transport protocol.
             else:
-                _stdin, _stdout, _stderr = self.ssh.exec_command(
+                _stdin, _stdout, _stderr = self.ssh.run_command(
                     'smartctl -d scsi -a /dev/{0}'.format(self.name))
-                _stdout, _stderr = _stdout.read(), _stderr.read()
-                for line in _stdout.split('\n'):
+                for line in _stdout.decode('utf-8').split('\n'):
                     if 'Transport protocol' in line and 'SAS' in line:
                         self.interface = 'sas'
 
@@ -399,13 +396,12 @@ class Device(object):
                     smartctl_type[self.interface] == 'scsi'):
                 return (2, "Cannot perform 'conveyance' test on SAS/SCSI "
                         "devices.", None)
-            _stdin, _stdout, _stderr = self.ssh.exec_command(
+            _stdin, _stdout, _stderr = self.ssh.run_command(
                 'smartctl -d {0} -t {1} /dev/{2}'.format(
                     smartctl_type[self.interface], test_type, self.name))
-            _stdout, _stderr = _stdout.read(), _stderr.read()
             _success = False
             _running = False
-            for line in _stdout.split('\n'):
+            for line in _stdout.decode('utf-8').split('\n'):
                 if 'has begun' in line:
                     _success = True
                     self._test_running = True
@@ -433,15 +429,14 @@ class Device(object):
         Can be called at any time to refresh the `pySMART.device.Device`
         object's data content.
         """
-        _stdin, _stdout, _stderr = self.ssh.exec_command(
+        _stdin, _stdout, _stderr = self.ssh.run_command(
             'smartctl -d {0} -a /dev/{1}'.format(
                 smartctl_type[self.interface], self.name))
-        _stdout, _stderr = _stdout.read(), _stderr.read()
         parse_self_tests = False
         parse_ascq = False
         message = ''
         self.tests = []
-        for line in _stdout.split('\n'):
+        for line in _stdout.decode('utf-8').split('\n'):
             if line.strip() == '':  # Blank line stops sub-captures
                 if parse_self_tests:
                     parse_self_tests = False
@@ -616,11 +611,10 @@ class Device(object):
             # If not obtained above, make a direct attempt to extract power on
             # hours from the background scan results log.
             if self.diags['Power_On_Hours'] == '-':
-                _stdin, _stdout, _stderr = self.ssh.exec_command(
+                _stdin, _stdout, _stderr = self.ssh.run_command(
                     'smartctl -d scsi -l background /dev/{1}'.format(
                         smartctl_type[self.interface], self.name))
-                _stdout, _stderr = _stdout.read(), _stderr.read()
-                for line in _stdout.split('\n'):
+                for line in _stdout.decode('utf-8').split('\n'):
                     if 'power on time' in line:
                         self.diags['Power_On_Hours'] = line.split(
                             ':')[1].split(' ')[1]

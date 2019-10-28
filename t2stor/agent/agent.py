@@ -15,6 +15,7 @@ from t2stor.service import ServiceBase
 from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
 from t2stor.tools.docker import Docker as DockerTool
+from t2stor.tools.pysmart import Device as DevideTool
 from t2stor.tools.service import Service
 from t2stor.tools.storcli import StorCli as StorCliTool
 
@@ -111,6 +112,15 @@ class AgentHandler(object):
         tool.restart(name)
         return True
 
+    def _get_ssh_client(self, node):
+        try:
+            ssh_client = SSHExecutor(hostname=node.hostname,
+                                     password=node.password)
+        except exception.StorException as e:
+            logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
+            return None
+        return ssh_client
+
     def service_check(self):
         logger.debug("Get services status")
         context = RequestContext(user_id="xxx", project_id="stor",
@@ -120,14 +130,9 @@ class AgentHandler(object):
         ).get_client()
 
         node = client.node_get(context, node_id=CONF.node_id)
-
-        try:
-            ssh_client = SSHExecutor(hostname=node.hostname,
-                                     password=node.password)
-        except exception.StorException as e:
-            logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
-            return
-
+        ssh_client = self._get_ssh_client(node)
+        if not ssh_client:
+            return False
         docker_tool = DockerTool(ssh_client)
         service_tool = Service(ssh_client)
         services = []
@@ -158,44 +163,49 @@ class AgentHandler(object):
         logger.debug('Update service status success!')
         return True
 
-    def disk_smart_get(self, ctxt, name):
-        fake_data = [
-            {
-                "raw": "0",
-                "updated": "Always",
-                "num": "5",
-                "worst": "100",
-                "name": "Reallocated_Sector_Ct",
-                "when_failed": "-",
-                "thresh": "000",
-                "type": "Old_age",
-                "value": "100"
-            },
-            {
-                "raw": "9828",
-                "updated": "Always",
-                "num": "9",
-                "worst": "100",
-                "name": "Power_On_Hours",
-                "when_failed": "-",
-                "thresh": "000",
-                "type": "Old_age",
-                "value": "100"
-            }
-        ]
-        return fake_data
+    def disk_smart_get(self, ctxt, node, name):
+        ssh_client = self._get_ssh_client(node)
+        if not ssh_client:
+            return []
+
+        disk_name = '/dev/' + name
+        device_tool = DevideTool(name=disk_name, ssh=ssh_client)
+        smart = device_tool.all_attributes()
+        if not smart:
+            return [
+                {
+                    "raw": "0",
+                    "updated": "Always",
+                    "num": "5",
+                    "worst": "100",
+                    "name": "Reallocated_Sector_Ct",
+                    "when_failed": "-",
+                    "thresh": "000",
+                    "type": "Old_age",
+                    "value": "100"
+                },
+                {
+                    "raw": "9828",
+                    "updated": "Always",
+                    "num": "9",
+                    "worst": "100",
+                    "name": "Power_On_Hours",
+                    "when_failed": "-",
+                    "thresh": "000",
+                    "type": "Old_age",
+                    "value": "100"
+                }
+            ]
+        return smart
 
     def disk_light(self, ctxt, led, node, name):
         logger.debug("Disk Light: %s", name)
-        try:
-            ssh_client = SSHExecutor(hostname=node.hostname,
-                                     password=node.password)
-        except exception.StorException as e:
-            logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
-            return
+        ssh_client = self._get_ssh_client(node)
+        if not ssh_client:
+            return False
+
         disk_name = '/dev/' + name
         storcli = StorCliTool(ssh=ssh_client, disk_name=disk_name)
-
         action = 'start' if led == 'on' else 'stop'
         return storcli.disk_light(action)
 
