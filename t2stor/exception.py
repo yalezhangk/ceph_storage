@@ -144,12 +144,6 @@ class ClusterIDNotFound(NotFound):
 
 class EndpointNotFound(NotFound):
     code = 400
-    message = _("Endpoint for %(service_name)s:%(hostname)s "
-                "could not be found.")
-
-
-class EndpointByNodeIdNotFound(NotFound):
-    code = 400
     message = _("Endpoint for %(service_name)s:%(node_id)s "
                 "could not be found.")
 
