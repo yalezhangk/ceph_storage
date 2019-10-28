@@ -9,6 +9,7 @@ from t2stor.api.handlers.alert_rule import AlertRuleListHandler
 from t2stor.api.handlers.ceph_config import CephConfigListHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
 from t2stor.api.handlers.clusters import ClusterHandler
+from t2stor.api.handlers.clusters import SmtpHandler
 from t2stor.api.handlers.datacenters import DataCenterHandler
 from t2stor.api.handlers.datacenters import DataCenterListHandler
 from t2stor.api.handlers.datacenters import DataCenterRacksHandler
@@ -83,6 +84,7 @@ def get_routers():
         (r"/racks/([0-9]*)/", RackHandler),
         (r"/rpc_services/", RpcServiceListHandler),
         (r"/services/", ServiceListHandler),
+        (r"/sysconfs/smtp/", SmtpHandler),
         (r"/sysinfos/", SysInfoHandler),
         (r"/volume_snapshots/", VolumeSnapshotListHandler),
         (r"/volume_snapshots/([0-9]*)/", VolumeSnapshotHandler),

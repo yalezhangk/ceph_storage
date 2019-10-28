@@ -48,3 +48,22 @@ class ClusterDetectHandler(ClusterAPIHandler):
         self.write(json.dumps(
             {"cluster_info": cluster_info}
         ))
+
+
+class SmtpHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        smtp_conf = yield client.smtp_get(ctxt)
+        self.write(json.dumps({
+            "smtp_conf": {
+                "enabled": smtp_conf['enabled'],
+                "smtp_user": smtp_conf['smtp_user'],
+                "smtp_password": smtp_conf['smtp_password'],
+                "smtp_host": smtp_conf['smtp_host'],
+                "smtp_port": smtp_conf['smtp_port'],
+                "enable_ssl": smtp_conf['enable_ssl'],
+                "enable_tls": smtp_conf['enable_tls'],
+            }
+        }))

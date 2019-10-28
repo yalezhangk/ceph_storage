@@ -597,6 +597,17 @@ class AdminHandler(object):
 
     ###################
 
+    def smtp_get(self, ctxt):
+        result = {}
+        sysconfs = objects.SysConfigList.get_all(
+            ctxt, filters={"cluster_id": ctxt.cluster_id})
+        keys = ['enabled', 'smtp_user', 'smtp_password', 'smtp_host',
+                'smtp_port', 'enable_ssl', 'enable_tls']
+        for sysconf in sysconfs:
+            if sysconf.key in keys:
+                result[sysconf.key] = sysconf.value
+        return result
+
     def ceph_config_get_all(
             self, ctxt, marker=None, limit=None, sort_keys=None,
             sort_dirs=None, filters=None, offset=None):

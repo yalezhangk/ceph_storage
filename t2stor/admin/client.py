@@ -456,6 +456,10 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def smtp_get(self, ctxt):
+        response = self.call(ctxt, "smtp_get")
+        return response
+
     def ceph_config_get_all(
             self, ctxt, marker=None, limit=None, sort_keys=None,
             sort_dirs=None, filters=None, offset=None):
