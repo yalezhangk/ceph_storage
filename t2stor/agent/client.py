@@ -33,8 +33,8 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "service_restart", name=name)
         return response
 
-    def disk_smart_get(self, ctxt, name):
-        response = self.call(ctxt, "disk_smart_get", name=name)
+    def disk_smart_get(self, ctxt, node, name):
+        response = self.call(ctxt, "disk_smart_get", node=node, name=name)
         return response
 
     def disk_light(self, ctxt, led, node, name):

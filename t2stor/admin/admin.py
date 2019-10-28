@@ -403,7 +403,8 @@ class AdminHandler(object):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         client = AgentClientManager(
             ctxt, cluster_id=disk.cluster_id).get_client()
-        smart = client.disk_smart_get(ctxt, name=disk.name)
+        node = objects.Node.get_by_id(ctxt, disk.node_id)
+        smart = client.disk_smart_get(ctxt, node=node, name=disk.name)
         return smart
 
     def disk_partition_get_all(self, ctxt, marker=None, limit=None,
