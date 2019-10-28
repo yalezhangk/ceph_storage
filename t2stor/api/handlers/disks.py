@@ -24,7 +24,7 @@ class DiskListHandler(ClusterAPIHandler):
         supported_filters = ['node', 'role', 'status']
         for f in supported_filters:
             value = self.get_query_argument(f, default=None)
-            if filter:
+            if value:
                 filters.update({
                     f: value
                 })
