@@ -63,7 +63,7 @@ def service():
     routers = get_routers()
     routers += [(r"/ws", EchoWebSocket)]
     application = tornado.web.Application(routers, debug=CONF.debug)
-    application.listen(CONF.api_port)
+    application.listen(CONF.api_port, CONF.my_ip)
     ioloop = tornado.ioloop.IOLoop.current()
     websocket = WebSocketService(ioloop)
     websocket.start()
