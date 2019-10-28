@@ -68,13 +68,13 @@ class SmtpHandler(ClusterAPIHandler):
         smtp_conf = yield client.smtp_get(ctxt)
         self.write(json.dumps({
             "smtp_conf": {
-                "enabled": smtp_conf['enabled'],
+                "smtp_enabled": smtp_conf['smtp_enabled'],
                 "smtp_user": smtp_conf['smtp_user'],
                 "smtp_password": smtp_conf['smtp_password'],
                 "smtp_host": smtp_conf['smtp_host'],
                 "smtp_port": smtp_conf['smtp_port'],
-                "enable_ssl": smtp_conf['enable_ssl'],
-                "enable_tls": smtp_conf['enable_tls'],
+                "smtp_enable_ssl": smtp_conf['smtp_enable_ssl'],
+                "smtp_enable_tls": smtp_conf['smtp_enable_tls'],
             }
         }))
 
@@ -85,15 +85,15 @@ class SmtpHandler(ClusterAPIHandler):
         logger.error(data)
         if not data:
             raise InvalidInput(reason=_("smtp: post data is none"))
-        enabled = data.get('enabled')
+        smtp_enabled = data.get('smtp_enabled')
         smtp_user = data.get('smtp_user')
         smtp_password = data.get('smtp_password')
         smtp_host = data.get('smtp_host')
         smtp_port = data.get('smtp_port')
-        enable_ssl = data.get('enable_ssl')
-        enable_tls = data.get('enable_tls')
+        smtp_enable_ssl = data.get('smtp_enable_ssl')
+        smtp_enable_tls = data.get('smtp_enable_tls')
         client = self.get_admin_client(ctxt)
         yield client.update_smtp(
-            ctxt, enabled, smtp_user, smtp_password,
-            smtp_host, smtp_port, enable_ssl, enable_tls)
+            ctxt, smtp_enabled, smtp_user, smtp_password,
+            smtp_host, smtp_port, smtp_enable_ssl, smtp_enable_tls)
         self.write(json.dumps({'a': 'a'}))
