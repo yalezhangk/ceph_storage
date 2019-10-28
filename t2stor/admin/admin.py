@@ -377,10 +377,16 @@ class AdminHandler(object):
         if disk.support_led:
             if disk.led == led:
                 raise exception.InvalidInput(
-                    reason=_("disk: repeating actions, led is {}".format(led)))
-            # TODO: Sending to agent to change led status
-            disk.led = 'on' if disk.led == "off" else "off"
-            disk.save()
+                    reason=_("disk: repeated actions, led is {}".format(led)))
+            node = objects.Node.get_by_id(ctxt, disk.node_id)
+            client = AgentClientManager(
+                ctxt, cluster_id=disk.cluster_id
+            ).get_client(node_id=disk.node_id)
+            _success = client.disk_light(ctxt, led=led, node=node,
+                                         name=disk.name)
+            if _success:
+                disk.led = led
+                disk.save()
         else:
             raise exception.LedNotSupport(disk_id=disk_id)
         return disk

@@ -19,6 +19,7 @@ class RPCService(base.StorPersistentObject, base.StorObject,
         'hostname': fields.StringField(nullable=True),
         'cluster_id': fields.StringField(nullable=True),
         'endpoint': fields.StringField(nullable=True),
+        'node_id': fields.IntegerField(nullable=True),
     }
 
     def create(self):

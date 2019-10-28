@@ -37,6 +37,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "disk_smart_get", name=name)
         return response
 
+    def disk_light(self, ctxt, led, node, name):
+        response = self.call(ctxt, "disk_light", led=led, node=node, name=name)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"

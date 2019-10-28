@@ -64,6 +64,7 @@ class RPCService(BASE, StorBase):
     hostname = Column(String(36))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     endpoint = Column(String(255))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
 
 
 class Datacenter(BASE, StorBase):
