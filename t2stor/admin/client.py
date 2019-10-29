@@ -381,6 +381,34 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "pool_osds_get", pool_id=pool_id)
         return response
 
+    def pool_create(self, ctxt, data):
+        response = self.call(ctxt, "pool_create", data=data)
+        return response
+
+    def pool_delete(self, ctxt, pool_id):
+        response = self.call(ctxt, "pool_delete", pool_id=pool_id)
+        return response
+
+    def pool_update_display_name(self, ctxt, pool_id, pool_name):
+        response = self.call(ctxt, "pool_update_display_name",
+                             id=pool_id, name=pool_name)
+        return response
+
+    def pool_increase_disk(self, ctxt, pool_id, data):
+        response = self.call(ctxt, "pool_increase_disk",
+                             id=pool_id, data=data)
+        return response
+
+    def pool_decrease_disk(self, ctxt, pool_id, data):
+        response = self.call(ctxt, "pool_decrease_disk",
+                             id=pool_id, data=data)
+        return response
+
+    def pool_update_policy(self, ctxt, pool_id, data):
+        response = self.call(ctxt, "pool_update_policy",
+                             id=pool_id, data=data)
+        return response
+
     ##################
 
     def volume_access_path_get_all(self, ctxt, marker=None, limit=None,

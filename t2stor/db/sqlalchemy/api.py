@@ -1171,7 +1171,8 @@ def osd_get_by_pool(context, pool_id):
     session = get_session()
     with session.begin():
         pool = _pool_get(context, pool_id, session)  # model object
-        return pool.osds
+        crush = pool._crush_rule
+        return crush._osds
 
 ###############################
 
@@ -2814,14 +2815,25 @@ def crush_rule_destroy(context, crush_rule_id):
     return updated_values
 
 
+def _crush_rule_load_attr(crush_rule, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'osds' in expected_attrs:
+        crush_rule.osds = [osd for osd in crush_rule._osds]
+
+
 @require_context
 def crush_rule_get(context, crush_rule_id, expected_attrs=None):
-    return _crush_rule_get(context, crush_rule_id)
+    session = get_session()
+    with session.begin():
+        crush_rule = _crush_rule_get(context, crush_rule_id, session)
+        _crush_rule_load_attr(crush_rule, expected_attrs)
+    return crush_rule
 
 
 @require_context
 def crush_rule_get_all(context, marker=None, limit=None, sort_keys=None,
-                       sort_dirs=None, filters=None, offset=None):
+                       sort_dirs=None, filters=None, offset=None,
+                       expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2832,7 +2844,10 @@ def crush_rule_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        return query.all()
+        crush_rules = query.all()
+        for crush_rule in crush_rules:
+            _crush_rule_load_attr(crush_rule, expected_attrs)
+        return crush_rules
 
 
 @require_context

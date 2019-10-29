@@ -31,11 +31,14 @@ from t2stor.api.handlers.nodes import NodeListHandler
 from t2stor.api.handlers.osds import OsdHandler
 from t2stor.api.handlers.osds import OsdListHandler
 from t2stor.api.handlers.pools import PoolCapacityHandler
+from t2stor.api.handlers.pools import PoolDecreaseDiskHandler
 from t2stor.api.handlers.pools import PoolHandler
 from t2stor.api.handlers.pools import PoolHistoryMetricsHandler
+from t2stor.api.handlers.pools import PoolIncreaseDiskHandler
 from t2stor.api.handlers.pools import PoolListHandler
 from t2stor.api.handlers.pools import PoolMetricsHandler
 from t2stor.api.handlers.pools import PoolOsdsHandler
+from t2stor.api.handlers.pools import PoolPolicyHandler
 from t2stor.api.handlers.racks import RackHandler
 from t2stor.api.handlers.racks import RackListHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
@@ -91,9 +94,12 @@ def get_routers():
         (r"/pools/", PoolListHandler),
         (r"/pools/([0-9]*)/", PoolHandler),
         (r"/pools/([0-9]*)/capacity/", PoolCapacityHandler),
+        (r"/pools/([0-9]*)/decrease_disk/", PoolDecreaseDiskHandler),
+        (r"/pools/([0-9]*)/increase_disk/", PoolIncreaseDiskHandler),
         (r"/pools/([0-9]*)/histroy_metrics/", PoolHistoryMetricsHandler),
         (r"/pools/([0-9]*)/metrics/", PoolMetricsHandler),
         (r"/pools/([0-9]*)/osds/", PoolOsdsHandler),
+        (r"/pools/([0-9]*)/update_security_policy/", PoolPolicyHandler),
         (r"/racks/", RackListHandler),
         (r"/racks/([0-9]*)/", RackHandler),
         (r"/rpc_services/", RpcServiceListHandler),

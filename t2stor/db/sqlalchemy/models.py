@@ -182,16 +182,6 @@ class Service(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
-osd_pools = Table(
-    'osd_pools',
-    BASE.metadata,
-    Column('id', Integer, primary_key=True, nullable=False),
-    Column('osd_id', Integer, ForeignKey("osds.id")),
-    Column('pool_id', Integer, ForeignKey("pools.id")),
-    Column('cluster_id', String(36), ForeignKey('clusters.id'))
-)
-
-
 class Osd(BASE, StorBase):
     __tablename__ = "osds"
 
@@ -212,7 +202,6 @@ class Osd(BASE, StorBase):
     journal_partition_id = Column(Integer, ForeignKey('disk_partitions.id'))
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    pools = relationship('Pool', secondary=osd_pools, back_populates='osds')
     _disk = relationship("Disk", backref=backref("_osd", uselist=False))
     _db_partition = relationship("DiskPartition",
                                  foreign_keys=[db_partition_id],
@@ -250,7 +239,6 @@ class Pool(BASE, StorBase):
     failure_domain_type = Column(String(32), default='host', index=True)
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    osds = relationship('Osd', secondary=osd_pools, back_populates='pools')
 
 
 class Volume(BASE, StorBase):
@@ -515,3 +503,5 @@ class CrushRule(BASE, StorBase):
     type = Column(String(32))
     content = Column(JsonEncodedDict())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _osds = relationship("Osd", backref="_crush_rule")
+    _pools = relationship("Pool", backref="_crush_rule")
