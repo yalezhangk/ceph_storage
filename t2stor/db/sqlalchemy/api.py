@@ -366,7 +366,7 @@ def _volume_get(context, volume_id, session=None):
 
 
 @require_context
-def volume_get(context, volume_id):
+def volume_get(context, volume_id, expected_attrs=None):
     return _volume_get(context, volume_id)
 
 
@@ -603,7 +603,7 @@ def _cluster_get(context, cluster_id, session=None, joined_load=True):
 
 
 @require_context
-def cluster_get(context, cluster_id):
+def cluster_get(context, cluster_id, expected_attrs=None):
     return _cluster_get(context, cluster_id)
 
 
@@ -1126,7 +1126,7 @@ def pool_destroy(context, pool_id):
 
 
 @require_context
-def pool_get(context, pool_id):
+def pool_get(context, pool_id, expected_attrs=None):
     return _pool_get(context, pool_id)
 
 
@@ -1320,7 +1320,7 @@ def _volume_access_path_get(context, access_path_id, session=None,
 
 
 @require_context
-def volume_access_path_get(context, access_path_id):
+def volume_access_path_get(context, access_path_id, expected_attrs=None):
     return _volume_access_path_get(context, access_path_id)
 
 
@@ -1460,7 +1460,7 @@ def _volume_gateway_get(context, ap_gateway_id, session=None,
 
 
 @require_context
-def volume_gateway_get(context, ap_gateway_id):
+def volume_gateway_get(context, ap_gateway_id, expected_attrs=None):
     return _volume_gateway_get(context, ap_gateway_id)
 
 
@@ -1602,7 +1602,7 @@ def _volume_client_get(context, volume_client_id, session=None,
 
 
 @require_context
-def volume_client_get(context, volume_client_id):
+def volume_client_get(context, volume_client_id, expected_attrs=None):
     return _volume_client_get(context, volume_client_id)
 
 
@@ -1745,7 +1745,7 @@ def _volume_client_group_get(context, client_group_id, session=None,
 
 
 @require_context
-def volume_client_group_get(context, client_group_id):
+def volume_client_group_get(context, client_group_id, expected_attrs=None):
     return _volume_client_group_get(context, client_group_id)
 
 
@@ -1951,7 +1951,7 @@ def network_destroy(context, net_id):
 
 
 @require_context
-def network_get(context, net_id):
+def network_get(context, net_id, expected_attrs=None):
     return _network_get(context, net_id)
 
 
@@ -2006,7 +2006,7 @@ def _alert_rule_get(context, alert_rule_id, session=None):
 
 
 @require_context
-def alert_rule_get(context, volume_id):
+def alert_rule_get(context, volume_id, expected_attrs=None):
     return _alert_rule_get(context, volume_id)
 
 
@@ -2092,7 +2092,7 @@ def disk_destroy(context, disk_id):
 
 
 @require_context
-def disk_get(context, disk_id):
+def disk_get(context, disk_id, expected_attrs=None):
     return _disk_get(context, disk_id)
 
 
@@ -2174,7 +2174,7 @@ def disk_partition_destroy(context, disk_part_id):
 
 
 @require_context
-def disk_partition_get(context, disk_part_id):
+def disk_partition_get(context, disk_part_id, expected_attrs=None):
     return _disk_partition_get(context, disk_part_id)
 
 
@@ -2223,7 +2223,7 @@ def _alert_group_get(context, alert_group_id, session=None):
 
 
 @require_context
-def alert_group_get(context, alert_group_id):
+def alert_group_get(context, alert_group_id, expected_attrs=None):
     return _alert_group_get(context, alert_group_id)
 
 
@@ -2318,7 +2318,7 @@ def _email_group_get(context, email_group_id, session=None):
 
 
 @require_context
-def email_group_get(context, email_group_id):
+def email_group_get(context, email_group_id, expected_attrs=None):
     return _email_group_get(context, email_group_id)
 
 
@@ -2395,7 +2395,7 @@ def _alert_log_get(context, alert_log_id, session=None):
 
 
 @require_context
-def alert_log_get(context, alert_log_id):
+def alert_log_get(context, alert_log_id, expected_attrs=None):
     return _alert_log_get(context, alert_log_id)
 
 
@@ -2469,7 +2469,7 @@ def _log_file_get(context, log_file_id, session=None):
 
 
 @require_context
-def log_file_get(context, log_file_id):
+def log_file_get(context, log_file_id, expected_attrs=None):
     return _log_file_get(context, log_file_id)
 
 
@@ -2544,7 +2544,7 @@ def _volume_snapshot_get(context, volume_snapshot_id, session=None):
 
 
 @require_context
-def volume_snapshot_get(context, volume_snapshot_id):
+def volume_snapshot_get(context, volume_snapshot_id, expected_attrs=None):
     return _volume_snapshot_get(context, volume_snapshot_id)
 
 
@@ -2645,7 +2645,7 @@ def service_destroy(context, service_id):
 
 
 @require_context
-def service_get(context, service_id):
+def service_get(context, service_id, expected_attrs=None):
     return _service_get(context, service_id)
 
 
@@ -2794,7 +2794,7 @@ def crush_rule_destroy(context, crush_rule_id):
 
 
 @require_context
-def crush_rule_get(context, crush_rule_id):
+def crush_rule_get(context, crush_rule_id, expected_attrs=None):
     return _crush_rule_get(context, crush_rule_id)
 
 
