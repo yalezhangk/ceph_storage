@@ -426,12 +426,79 @@ class AdminHandler(object):
             raise exception.LedNotSupport(disk_id=disk_id)
         return disk
 
-    def disk_cache(self, ctxt, disk_id, values):
+    def _disk_partitions_create(self, ctxt, node, disk, values):
+        client = AgentClientManager(
+            ctxt, cluster_id=disk.cluster_id
+        ).get_client(node_id=disk.node_id)
+        partitions = client.disk_partitions_create(ctxt, node=node, disk=disk,
+                                                   values=values)
+        if partitions:
+            partitions_old = objects.DiskPartitionList.get_all(
+                ctxt, filters={'disk_id': disk.id})
+            if partitions_old:
+                for part in partitions_old:
+                    part.destroy()
+
+            if values['partition_role'] == s_fields.DiskPartitionRole.MIX:
+                disk.partition_num = values['partition_num'] * 2
+            else:
+                disk.partition_num = values['partition_num']
+            disk.role = values['role']
+            for part in partitions:
+                partition = objects.DiskPartition(
+                    ctxt, name=part.get('name'), size=part.get('size'),
+                    status="available", type=disk.type,
+                    role=part.get('role'), node_id=disk.node_id,
+                    disk_id=disk.id, cluster_id=disk.cluster_id,
+                )
+                partition.create()
+            disk.save()
+            msg = _("create disk partitions success")
+        else:
+            msg = _("create disk partitions failed")
+
+        # send ws message
+        wb_client = WebSocketClientManager(
+            ctxt, cluster_id=disk.cluster_id
+        ).get_client()
+        wb_client.send_message(ctxt, disk, "CREATED", msg)
+
+    def disk_partitions_create(self, ctxt, disk_id, values):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
-        # TODO : Sending request to agent to make partitions
-        disk.partition_num = values['partition_num']
-        disk.role = values['role']
-        disk.save()
+        node = objects.Node.get_by_id(ctxt, disk.node_id)
+        self.executor.submit(
+            self._disk_partitions_create(ctxt, node, disk, values))
+        return disk
+
+    def _disk_partitions_remove(self, ctxt, node, disk, values):
+        client = AgentClientManager(
+            ctxt, cluster_id=disk.cluster_id
+        ).get_client(node_id=disk.node_id)
+        _success = client.disk_partitions_remove(ctxt, node=node,
+                                                 name=disk.name,)
+        if _success:
+            partitions_old = objects.DiskPartitionList.get_all(
+                ctxt, filters={'disk_id': disk.id})
+            if partitions_old:
+                for part in partitions_old:
+                    part.destroy()
+            disk.partition_num = 0
+            disk.role = values['role']
+            disk.status = "available"
+            msg = _("remove disk partitions success")
+        else:
+            msg = _("remove disk partitions failed")
+        # send ws message
+        wb_client = WebSocketClientManager(
+            ctxt, cluster_id=disk.cluster_id
+        ).get_client()
+        wb_client.send_message(ctxt, disk, "REMOVED", msg)
+
+    def disk_partitions_remove(self, ctxt, disk_id, values):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        node = objects.Node.get_by_id(ctxt, disk.node_id)
+        self.executor.submit(
+            self._disk_partitions_remove(ctxt, node, disk, values))
         return disk
 
     def disk_smart_get(self, ctxt, disk_id):

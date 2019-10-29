@@ -70,22 +70,26 @@ class DiskActionHandler(ClusterAPIHandler):
     def _disk_light(self, ctxt, client, disk_id, values):
         return client.disk_light(ctxt, disk_id=disk_id, led=values['led'])
 
-    def _disk_cache(self, ctxt, client, disk_id, values):
-        required_args = ['partition_num', 'role']
+    def _disk_partitions_create(self, ctxt, client, disk_id, values):
+        required_args = ['partition_num', 'role', 'partition_role']
         for arg in required_args:
             if values.get(arg) is None:
                 raise exception.InvalidInput(
                     reason=_("disk: missing required arguments!"))
+        if values['partition_num'] <= 0:
+            raise exception.InvalidInput(
+                reason=_("disk: partition_num must be greater than zero!"))
+        return client.disk_partitions_create(ctxt, disk_id=disk_id,
+                                             values=values)
 
-        return client.disk_cache(ctxt, disk_id=disk_id, values=values)
-
-    def _disk_cache_create(self, ctxt, client, disk_id, values):
-        return self._disk_cache(ctxt, client=client, disk_id=disk_id,
-                                values=values)
-
-    def _disk_cache_remove(self, ctxt, client, disk_id, values):
-        return self._disk_cache(ctxt, client=client, disk_id=disk_id,
-                                values=values)
+    def _disk_partitions_remove(self, ctxt, client, disk_id, values):
+        required_args = ['role']
+        for arg in required_args:
+            if values.get(arg) is None:
+                raise exception.InvalidInput(
+                    reason=_("disk: missing required arguments!"))
+        return client.disk_partitions_remove(ctxt, disk_id=disk_id,
+                                             values=values)
 
     @gen.coroutine
     def post(self, disk_id):
@@ -99,8 +103,8 @@ class DiskActionHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         action_map = {
             "light": self._disk_light,
-            "cache_create": self._disk_cache_create,
-            "cache_remove": self._disk_cache_remove,
+            "partition_create": self._disk_partitions_create,
+            "partition_remove": self._disk_partitions_remove,
         }
         fun_action = action_map.get(action)
         if fun_action is None:
