@@ -26,10 +26,12 @@ class TestOsd(test_objects.BaseObjectsTestCase):
                                     fake_osd['id'])
         self._compare(self, fake_osd, osd)
         osd_get.assert_called_once_with(
-            self.context, "Osd", fake_osd['id'])
+            self.context, "Osd", fake_osd['id'], None)
 
+    @mock.patch('t2stor.db.sqlalchemy.api.get_session')
     @mock.patch('t2stor.db.sqlalchemy.api.model_query')
-    def test_get_by_id_no_existing_id(self, model_query):
+    def test_get_by_id_no_existing_id(self, model_query, get_session):
+        get_session().return_value = mock.MagicMock()
         model_query().filter_by().first.return_value = None
         self.assertRaises(exception.OsdNotFound,
                           objects.Osd.get_by_id,

@@ -26,7 +26,7 @@ class TestRack(test_objects.BaseObjectsTestCase):
                                       fake_rack['id'])
         self._compare(self, fake_rack, rack)
         rack_get.assert_called_once_with(
-            self.context, "Rack", fake_rack['id'])
+            self.context, "Rack", fake_rack['id'], None)
 
     @mock.patch('t2stor.db.sqlalchemy.api.model_query')
     def test_get_by_id_no_existing_id(self, model_query):

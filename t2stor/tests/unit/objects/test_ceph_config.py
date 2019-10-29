@@ -27,7 +27,7 @@ class TestCephConfig(test_objects.BaseObjectsTestCase):
                                                    fake_ceph_config['id'])
         self._compare(self, fake_ceph_config, ceph_config)
         ceph_config_get.assert_called_once_with(
-            self.context, "CephConfig", fake_ceph_config['id'])
+            self.context, "CephConfig", fake_ceph_config['id'], None)
 
     @mock.patch('t2stor.db.sqlalchemy.api.model_query')
     def test_get_by_id_no_existing_id(self, model_query):

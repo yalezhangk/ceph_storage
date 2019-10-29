@@ -279,15 +279,18 @@ def osd_destroy(context, osd_id):
     return IMPL.osd_destroy(context, osd_id)
 
 
-def osd_get(context, osd_id):
-    return IMPL.osd_get(context, osd_id)
+def osd_get(context, osd_id, expected_attrs=None):
+    return IMPL.osd_get(context, osd_id,
+                        expected_attrs=expected_attrs)
 
 
 def osd_get_all(context, filters, marker, limit,
-                offset, sort_keys, sort_dirs):
+                offset, sort_keys, sort_dirs,
+                expected_attrs=None):
     return IMPL.osd_get_all(
         context, marker=marker, limit=limit, sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters, offset=offset)
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
 
 
 def osd_update(context, osd_id, values):

@@ -76,7 +76,8 @@ class StorPersistentObject(object):
                    cls.obj_name())
             raise NotImplementedError(msg)
 
-        orm_obj = db.get_by_id(context, cls.obj_name(), id, *args, **kwargs)
+        orm_obj = db.get_by_id(context, cls.obj_name(), id,
+                               expected_attrs, *args, **kwargs)
         return cls._from_db_object(context, cls(context), orm_obj,
                                    expected_attrs)
 
