@@ -11,6 +11,7 @@ from t2stor import exception
 from t2stor import objects
 from t2stor.admin.genconf import ceph_conf
 from t2stor.agent.client import AgentClientManager
+from t2stor.api.wsclient import WebSocketClientManager
 from t2stor.i18n import _
 from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
@@ -51,15 +52,39 @@ class AdminHandler(object):
         return objects.Volume.get_by_id(ctxt, volume_id)
 
     def volume_create(self, ctxt, data):
+        uid = str(uuid.uuid4())
+        volume_name = "volume-{}".format(uid)
         data.update({
             'cluster_id': ctxt.cluster_id,
-            'status': 'creating',
-            'volume_name': 'V',  # TODO ceph volume name
+            'status': s_fields.VolumeStatus.CREATING,
+            'volume_name': volume_name,
         })
-        v = objects.Volume(ctxt, **data)
-        v.create()
-        # TODO create volume
-        return v
+        volume = objects.Volume(ctxt, **data)
+        volume.create()
+        # put into thread pool
+        self.executor.submit(self._volume_create(ctxt, volume))
+        return volume
+
+    def _volume_create(self, ctxt, volume):
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        volume_name = volume.volume_name
+        size = volume.size
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.rbd_create(pool.pool_name, volume_name, size)
+            status = s_fields.VolumeStatus.ACTIVE
+            logger.info('volume_create success,volume_name={}'.format(
+                volume_name))
+        except exception.StorException as e:
+            logger.error('volume_create error,volume_name={},reason:{}'.format(
+                volume, str(e)))
+            status = s_fields.VolumeStatus.ERROR
+        volume.status = status
+        volume.save()
+        # send ws message
+        wb_client = WebSocketClientManager(
+            cluster_id=volume.cluster_id).get_client()
+        wb_client.send_message(ctxt, volume)
 
     def volume_update(self, ctxt, volume_id, data):
         volume = self.volume_get(ctxt, volume_id)
