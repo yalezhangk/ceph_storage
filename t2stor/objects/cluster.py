@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
+
 from oslo_versionedobjects import fields
 
 from t2stor import db
 from t2stor import exception
 from t2stor import objects
 from t2stor.objects import base
+
+logger = logging.getLogger(__name__)
 
 
 @base.StorObjectRegistry.register
