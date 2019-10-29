@@ -40,6 +40,8 @@ from t2stor.api.handlers.rpc_service import RpcServiceListHandler
 from t2stor.api.handlers.service import ServiceListHandler
 from t2stor.api.handlers.sysinfos import SmtpHandler
 from t2stor.api.handlers.sysinfos import SysInfoHandler
+from t2stor.api.handlers.volume_client_groups import VolumeClientByGroup
+from t2stor.api.handlers.volume_client_groups import VolumeClientGroupHandler
 from t2stor.api.handlers.volume_client_groups import \
     VolumeClientGroupListHandler
 from t2stor.api.handlers.volume_snapshot import VolumeSnapshotActionHandler
@@ -94,6 +96,8 @@ def get_routers():
         (r"/sysconfs/smtp/", SmtpHandler),
         (r"/sysinfos/", SysInfoHandler),
         (r"/volume_client_groups/", VolumeClientGroupListHandler),
+        (r"/volume_client_groups/([0-9]*)/", VolumeClientGroupHandler),
+        (r"/volume_client_groups/([0-9]*)/clients", VolumeClientByGroup),
         (r"/volume_snapshots/", VolumeSnapshotListHandler),
         (r"/volume_snapshots/([0-9]*)/", VolumeSnapshotHandler),
         (r"/volume_snapshots/([0-9]*)/action/", VolumeSnapshotActionHandler),

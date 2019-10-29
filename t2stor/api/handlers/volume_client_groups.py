@@ -35,3 +35,33 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "volume_client_group": volume_client_group
         }))
+
+
+class VolumeClientGroupHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, group_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        volume_client_group = yield client.volume_client_group_get(
+            ctxt, group_id)
+        self.write(objects.json_encode(
+            {"volume_client_group": volume_client_group}))
+
+    @gen.coroutine
+    def delete(self, group_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        volume_client_group = yield client.volume_client_group_delete(
+            ctxt, group_id)
+        self.write(objects.json_encode(
+            {"volume_client_group": volume_client_group}))
+
+
+class VolumeClientByGroup(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, group_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        volume_clients = yield client.volume_client_get_by_group(
+            ctxt, group_id)
+        self.write(objects.json_encode({"volume_clients": volume_clients}))
