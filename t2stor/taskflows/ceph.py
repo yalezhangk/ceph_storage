@@ -24,9 +24,9 @@ class CephTask(object):
         self.ctxt = ctxt
         if ctxt:
             self.conf_dir = '/etc/ceph/{}/'.format(
-                ctxt.get('cluster_id'))
+                ctxt.cluster_id)
             self.conf_file = '/etc/ceph/{}/ceph.conf'.format(
-                ctxt.get('cluster_id'))
+                ctxt.cluster_id)
             self._generate_config_file()
 
     def ceph_config(self):
