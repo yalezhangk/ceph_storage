@@ -9,6 +9,7 @@ import six
 
 from t2stor import exception as exc
 from t2stor import objects
+from t2stor.tools.base import Executor
 from t2stor.tools.ceph import RADOSClient
 from t2stor.tools.ceph import RBDProxy
 
@@ -32,7 +33,7 @@ class CephTask(object):
         return content
 
     def rados_args(self):
-        obj = objects.CephConfig.get_by_key("default", "mon_host")
+        obj = objects.CephConfig.get_by_key(self.ctxt, "global", "mon_host")
         return {'mon_host': obj.value}
 
     def _generate_config_file(self):
@@ -40,7 +41,7 @@ class CephTask(object):
         logger.info("will generate ceph conf file: {}".format(
             ceph_config_str))
         if not os.path.exists(self.conf_dir):
-            os.mkdir(self.conf_dir, mode=0o0755)
+            os.makedirs(self.conf_dir, mode=0o0755)
         with open(self.conf_file, 'w') as f:
             f.write(ceph_config_str)
 
@@ -476,11 +477,22 @@ class CephTask(object):
                 rbd_client.rbd_create(rbd_name, rbd_size)
 
     def rbd_remove(self, pool_name, rbd_name):
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_remove(rbd_name)
+
+    def rbd_delete(self, pool_name, rbd_name):
+        try:
+            self.rbd_remove(pool_name, rbd_name)
+        except exc.CephException:
+            shell_client = Executor()
+            cmd = ['rbd rm {}/{} -c {}'.format(
+                pool_name, rbd_name, self.conf_file)]
+            rc, out, err = shell_client.run_command(cmd, timeout=0)
+            if rc:
+                raise exc.CephException(message=out)
 
     def rbd_rename(self, pool_name, old_rbd_name, new_rbd_name):
         with RADOSClient(self.rados_args()) as rados_client:

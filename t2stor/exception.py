@@ -265,3 +265,8 @@ class PoolExists(StorException):
 
 class PoolNameNotFound(StorException):
     message = _("a pool named %(pool)s not found")
+
+
+class VolumeStatusNotAllowAction(StorException):
+    code = 400
+    message = _('volume status must in [active, error]')

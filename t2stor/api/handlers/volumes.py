@@ -9,6 +9,8 @@ from tornado.escape import json_decode
 from t2stor import exception
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
+from t2stor.i18n import _
+from t2stor.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +71,33 @@ class VolumeHandler(ClusterAPIHandler):
 class VolumeActionHandler(ClusterAPIHandler):
 
     def _extend(self, client, ctxt, volume_id, volume_data):
+        # todo check_size, can not over pool_size
         return client.volume_extend(ctxt, volume_id, volume_data)
 
     def _shrink(self, client, ctxt, volume_id, volume_data):
+        # todo check_size, can not over pool_size
         return client.volume_shrink(ctxt, volume_id, volume_data)
 
     def _rollback(self, client, ctxt, volume_id, volume_data):
+        snap_id = volume_data.get('volume_snapshot_id')
+        snap = objects.VolumeSnapshot.get_by_id(snap_id)
+        if not snap:
+            raise exception.VolumeSnapshotNotFound(volume_snapshot_id=snap_id)
+        if snap.volume_id != volume_id:
+            raise exception.InvalidInput(_(
+                'The volume_id {} has not the snap_id {}').format(
+                volume_id, snap_id))
+        # todo other verify
+        volume_data.update({'snap_name': snap.uuid})
         return client.volume_rollback(ctxt, volume_id, volume_data)
 
     def _unlink(self, client, ctxt, volume_id, volume_data):
-        return client.volume_shrink(ctxt, volume_id, volume_data)
+        volume = objects.Volume.get_by_id(volume_id)
+        if not volume.snapshot_id:
+            raise exception.Invalid(
+                msg=_('the volume_name {} has not relate_snap').format(
+                    volume.volume_name))
+        return client.volume_unlink(ctxt, volume_id, volume_data)
 
     @gen.coroutine
     def put(self, volume_id):
@@ -87,6 +106,12 @@ class VolumeActionHandler(ClusterAPIHandler):
         data = json_decode(self.request.body)
         volume_data = data.get('volume')
         action = data.get('action')
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
+                                 s_fields.VolumeStatus.ERROR]:
+            raise exception.VolumeStatusNotAllowAction()
         client = self.get_admin_client(ctxt)
         map_action = {
             'extend': self._extend,

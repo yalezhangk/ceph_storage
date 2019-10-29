@@ -62,7 +62,7 @@ class AdminHandler(object):
         volume = objects.Volume(ctxt, **data)
         volume.create()
         # put into thread pool
-        self.executor.submit(self._volume_create(ctxt, volume))
+        self.executor.submit(self._volume_create, ctxt, volume)
         return volume
 
     def _volume_create(self, ctxt, volume):
@@ -97,27 +97,143 @@ class AdminHandler(object):
 
     def volume_delete(self, ctxt, volume_id):
         volume = self.volume_get(ctxt, volume_id)
-        volume.destroy()
-        # TODO delete ceph volume
+        volume.status = s_fields.VolumeStatus.DELETING
+        volume.save()
+        self.executor.submit(self._volume_delete, ctxt, volume)
         return volume
+
+    def _volume_delete(self, ctxt, volume):
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        volume_name = volume.volume_name
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.rbd_delete(pool.pool_name, volume_name)
+            logger.info('volume_delete success,volume_name={}'.format(
+                volume_name))
+            msg = _("delete volume success")
+            volume.destroy()
+        except exception.StorException as e:
+            status = s_fields.VolumeStatus.ERROR
+            logger.error('volume_delete error,volume_name={},reason:{}'.format(
+                volume_name, str(e)))
+            msg = _("delete volume error")
+            volume.status = status
+            volume.save()
+        # send ws message
+        wb_client = WebSocketClientManager(
+            context=ctxt,
+            cluster_id=volume.cluster_id).get_client()
+        wb_client.send_message(ctxt, volume, 'DELETED', msg)
 
     def volume_extend(self, ctxt, volume_id, data):
-        volume = self.volume_update(ctxt, volume_id, data)
-        # TODO ceph volume_extend
+        # 扩容
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        extra_data = {'old_size': volume.size}
+        for k, v in six.iteritems(data):
+            setattr(volume, k, v)
+        volume.save()
+        self.executor.submit(self._volume_resize, ctxt, volume, extra_data)
         return volume
 
+    def _volume_resize(self, ctxt, volume, extra_data):
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        volume_name = volume.volume_name
+        size = volume.size
+        old_size = extra_data.get('old_size')
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.rbd_resize(pool.pool_name, volume_name, size)
+            status = s_fields.VolumeStatus.ACTIVE
+            logger.info('volume_resize success,volume_name={}, size={}'
+                        .format(volume_name, size))
+            now_size = size
+            msg = _("volume resize success")
+        except exception.StorException as e:
+            status = s_fields.VolumeStatus.ERROR
+            logger.error('volume_resize error,volume_name={},reason:{}'
+                         .format(volume_name, str(e)))
+            now_size = old_size
+            msg = _("volume resize error")
+        volume.status = status
+        volume.size = now_size
+        volume.save()
+        # send ws message
+        wb_client = WebSocketClientManager(
+            context=ctxt,
+            cluster_id=volume.cluster_id).get_client()
+        wb_client.send_message(ctxt, volume, 'VOLUME_RESIZE', msg)
+
     def volume_shrink(self, ctxt, volume_id, data):
-        volume = self.volume_update(ctxt, volume_id, data)
-        # TODO ceph volume_shrink
+        # 缩容
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        extra_data = {'old_size': volume.size}
+        for k, v in six.iteritems(data):
+            setattr(volume, k, v)
+        volume.save()
+        self.executor.submit(self._volume_resize, ctxt, volume, extra_data)
         return volume
 
     def volume_rollback(self, ctxt, volume_id, data):
-        pass
-        # TODO ceph volume_rollback
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        extra_data = {'snap_name': data.get('snap_name')}
+        self.executor.submit(self._volume_rollback, ctxt, volume, extra_data)
+        return volume
+
+    def _volume_rollback(self, ctxt, volume, extra_data):
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        volume_name = volume.volume_name
+        snap_name = extra_data.get('snap_name')
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.rbd_rollback_to_snap(pool.pool_name, volume_name,
+                                             snap_name)
+            status = s_fields.VolumeStatus.ACTIVE
+            logger.info('vulume_rollback success,{}@{}'.format(
+                volume_name, snap_name))
+            msg = _("volume rollback success")
+        except exception.StorException as e:
+            status = s_fields.VolumeStatus.ERROR
+            logger.error('volume_rollback error,{}@{},reason:{}'.format(
+                volume_name, snap_name, str(e)))
+            msg = _("volume rollback error")
+        volume.status = status
+        volume.save()
+        # send ws message
+        wb_client = WebSocketClientManager(
+            context=ctxt,
+            cluster_id=volume.cluster_id).get_client()
+        wb_client.send_message(ctxt, volume, 'VOLUME_ROLLBACK', msg)
 
     def volume_unlink(self, ctxt, volume_id, data):
-        pass
-        # TODO ceph volume_unlink
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        self.executor.submit(self._volume_unlink, ctxt, volume)
+        return volume
+
+    def _volume_unlink(self, ctxt, volume):
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        pool_name = pool.pool_name
+        volume_name = volume.volume_name
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.rbd_flatten(pool_name, volume_name)
+            status = s_fields.VolumeStatus.ACTIVE
+            logger.info('volume_unlink success,{}/{}'.format(
+                pool_name, volume_name))
+            msg = _("volume unlink success")
+        except exception.StorException as e:
+            status = s_fields.VolumeStatus.ERROR
+            logger.error('volume_unlink error,{}/{},reason:{}'
+                         .format(pool_name, volume_name, str(e)))
+            msg = _("volume unlink error")
+        if status == s_fields.VolumeStatus.ACTIVE:
+            volume.snapshot_id = None
+        volume.status = status
+        volume.save()
+        # send ws message
+        wb_client = WebSocketClientManager(
+            context=ctxt,
+            cluster_id=volume.cluster_id).get_client()
+        wb_client.send_message(ctxt, volume, 'VOLUME_UNLINK', msg)
 
     ###################
 
