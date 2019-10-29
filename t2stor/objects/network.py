@@ -25,7 +25,10 @@ class Network(base.StorPersistentObject, base.StorObject,
         'speed': fields.StringField(),
         'node_id': fields.IntegerField(),
         'cluster_id': fields.StringField(),
+        'node': fields.ObjectField("Node", nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('node',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -48,6 +51,16 @@ class Network(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'node' in expected_attrs:
+            node = db_obj.get('node', None)
+            obj.node = objects.Node._from_db_object(
+                context, objects.Node(context), node
+            )
+        return super(Network, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class NetworkList(base.ObjectListBase, base.StorObject):
@@ -58,8 +71,10 @@ class NetworkList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         nets = db.network_get_all(context, filters, marker, limit, offset,
-                                  sort_keys, sort_dirs)
+                                  sort_keys, sort_dirs,
+                                  expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Network,
-                                  nets)
+                                  nets, expected_attrs=expected_attrs)

@@ -42,10 +42,11 @@ class Node(base.StorPersistentObject, base.StorObject,
         'rack_id': fields.IntegerField(nullable=True),
         'time_diff': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(),
-        'disks': fields.ListOfObjectsField("Disk", nullable=True)
+        'disks': fields.ListOfObjectsField("Disk", nullable=True),
+        'networks': fields.ListOfObjectsField("Network", nullable=True)
     }
 
-    OPTIONAL_FIELDS = ('disks',)
+    OPTIONAL_FIELDS = ('disks', 'networks')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -76,6 +77,13 @@ class Node(base.StorPersistentObject, base.StorObject,
             obj.disks = [objects.Disk._from_db_object(
                 context, objects.Disk(context), disk
             ) for disk in disks]
+
+        if 'networks' in expected_attrs:
+            nets = db_obj.get('networks', [])
+            obj.networks = [objects.Network._from_db_object(
+                context, objects.Network(context), net
+            ) for net in nets]
+
         return super(Node, cls)._from_db_object(context, obj, db_obj)
 
 

@@ -24,7 +24,8 @@ class NetworkListHandler(ClusterAPIHandler):
         page_args.update({"filters": filters})
 
         client = self.get_admin_client(context)
-        networks = yield client.network_get_all(context, **page_args)
+        networks = yield client.network_get_all(
+            context, **page_args, expected_attrs=['node'])
 
         self.write(objects.json_encode({
             "networks": networks

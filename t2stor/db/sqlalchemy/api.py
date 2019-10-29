@@ -831,6 +831,9 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
         if 'disks' in expected_attrs:
             for node in nodes:
                 node.disks = [disk for disk in node._disks]
+        if 'networks' in expected_attrs:
+            for node in nodes:
+                node.networks = [net for net in node._networks]
 
         return nodes
 
@@ -1938,7 +1941,8 @@ def network_get(context, net_id):
 
 @require_context
 def network_get_all(context, marker=None, limit=None, sort_keys=None,
-                    sort_dirs=None, filters=None, offset=None):
+                    sort_dirs=None, filters=None, offset=None,
+                    expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1949,7 +1953,12 @@ def network_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        return query.all()
+        networks = query.all()
+        expected_attrs = expected_attrs or []
+        if 'node' in expected_attrs:
+            for net in networks:
+                net.node = net._node
+        return networks
 
 
 @require_context
@@ -2091,7 +2100,7 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
             for disk in disks:
                 disk.node = disk._node
 
-        return query.all()
+        return disks
 
 
 @require_context
