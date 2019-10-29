@@ -7,6 +7,7 @@ from t2stor import db
 from t2stor import exception
 from t2stor import objects
 from t2stor.objects import base
+from t2stor.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -18,9 +19,9 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'name': fields.StringField(nullable=True),
         'size': fields.IntegerField(),
         'used': fields.IntegerField(),
-        'status': fields.StringField(nullable=True),
-        'type': fields.StringField(nullable=True),
-        'role': fields.StringField(nullable=True),
+        'status': s_fields.OsdStatusField(),
+        'type': s_fields.OsdTypeField(),
+        'disk_type': s_fields.OsdDiskTypeField(),
         'fsid': fields.StringField(nullable=True),
         'mem_read_cache': fields.IntegerField(),
         'node_id': fields.IntegerField(),
@@ -31,10 +32,11 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'journal_partition_id': fields.IntegerField(),
         'crush_rule_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(nullable=True),
-        'node': fields.ObjectField("Node", nullable=True)
+        'node': fields.ObjectField("Node", nullable=True),
+        'disk': fields.ObjectField("Disk", nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('node',)
+    OPTIONAL_FIELDS = ('node', 'disk')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -64,6 +66,11 @@ class Osd(base.StorPersistentObject, base.StorObject,
             node = db_obj.get('node', None)
             obj.node = objects.Node._from_db_object(
                 context, objects.Node(context), node
+            )
+        if 'disk' in expected_attrs:
+            disk = db_obj.get('disk', None)
+            obj.disk = objects.Disk._from_db_object(
+                context, objects.Disk(context), disk
             )
         return super(Osd, cls)._from_db_object(context, obj, db_obj)
 

@@ -1015,6 +1015,8 @@ def _osd_load_attr(osd, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'node' in expected_attrs:
         osd.node = osd._node
+    if 'disk' in expected_attrs:
+        osd.disk = osd._disk
 
 
 @require_context

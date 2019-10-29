@@ -200,7 +200,7 @@ class Osd(BASE, StorBase):
     used = Column(BigInteger)  # bytes
     status = Column(String(32), index=True)
     type = Column(String(32), index=True)
-    role = Column(String(32), index=True)
+    disk_type = Column(String(32), index=True)
     fsid = Column(String(36))
     mem_read_cache = Column(BigInteger)  # bytes
     node_id = Column(Integer, ForeignKey('nodes.id'))
@@ -212,6 +212,7 @@ class Osd(BASE, StorBase):
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     pools = relationship('Pool', secondary=osd_pools, back_populates='osds')
+    _disk = relationship("Disk", backref="_osd")
 
 
 class Pool(BASE, StorBase):
