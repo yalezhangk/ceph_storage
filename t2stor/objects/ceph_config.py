@@ -43,6 +43,11 @@ class CephConfig(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def get_by_key(cls, ctxt, group, key):
+        db_obj = db.ceph_config_get_by_key(ctxt, group, key)
+        return cls._from_db_object(ctxt, cls(ctxt), db_obj)
+
 
 @base.StorObjectRegistry.register
 class CephConfigList(base.ObjectListBase, base.StorObject):

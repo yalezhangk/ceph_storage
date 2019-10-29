@@ -722,6 +722,10 @@ def ceph_config_update(context, ceph_config_id, values):
     return IMPL.ceph_config_update(context, ceph_config_id, values)
 
 
+def ceph_config_get_by_key(context, group, key):
+    return IMPL.ceph_config_get(context, group, key)
+
+
 ###############
 
 

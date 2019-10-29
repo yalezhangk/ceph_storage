@@ -29,6 +29,15 @@ class TestCephConfig(test_objects.BaseObjectsTestCase):
         ceph_config_get.assert_called_once_with(
             self.context, "CephConfig", fake_ceph_config['id'], None)
 
+    @mock.patch('t2stor.db.ceph_config_get_by_key',
+                return_value=fake_ceph_config)
+    def test_get_by_key(self, ceph_config_get):
+        ceph_config = objects.CephConfig.get_by_key(
+            self.context, "group", "key")
+        self._compare(self, fake_ceph_config, ceph_config)
+        ceph_config_get.assert_called_once_with(
+            self.context, "group", "key")
+
     @mock.patch('t2stor.db.sqlalchemy.api.model_query')
     def test_get_by_id_no_existing_id(self, model_query):
         model_query().filter_by().filter_by().first.return_value = None
