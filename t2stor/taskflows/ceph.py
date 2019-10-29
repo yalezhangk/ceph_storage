@@ -40,6 +40,10 @@ class CephTask(object):
         configer.write(buf)
         return buf.getvalue()
 
+    def rados_args(self):
+        obj = objects.CephConfig.get_by_key("default", "mon_host")
+        return {'mon_host': obj.value}
+
     def _generate_config_file(self):
         ceph_config_str = self.ceph_config()
         logger.info("will generate ceph conf file: {}".format(
@@ -68,14 +72,14 @@ class CephTask(object):
     Get osd capacity
     """
     def get_osd_df(self):
-        with RADOSClient(self.ceph_config(), timeout='2') as rados_client:
+        with RADOSClient(self.rados_args(), timeout='2') as rados_client:
             return rados_client.get_osd_df()
 
     """
     Get all osds in a pool
     """
     def get_pool_osds(self, pool_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             osds = rados_client.get_osds_by_pool(pool_name)
             return osds
 
@@ -132,7 +136,7 @@ class CephTask(object):
     def pool_create(self, pool_data):
         logger.debug("pool_data: {}".format(json.dumps(pool_data)))
         osds = []
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             # 1. Create bucket: host, rack, [datacenter], root
             # 2. Move osd to host, move host to rack...
             # 3. Get current crushmap
@@ -233,7 +237,7 @@ class CephTask(object):
             return rados_client.get_pool_stats(pool_name).get('pool_id')
 
     def config_set(self, cluster_temp_configs):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             for config in cluster_temp_configs:
                 rados_client.config_set(config['service'],
                                         config['key'],
@@ -270,7 +274,7 @@ class CephTask(object):
         root = data.get('root_name')
         rule_name = data.get('crush_rule_name')
         pool_role = data.get('pool_role')
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             rados_client.pool_delete(pool_name)
@@ -344,7 +348,7 @@ class CephTask(object):
         osds = []
         pool_name = data.get('pool_name')
         root_name = data.get('root_name')
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             default_root_name = data.get('root_name')
             fault_domain = data.get('fault_domain')
             if pool_name not in rados_client.pool_list():
@@ -418,7 +422,7 @@ class CephTask(object):
         # pool_name = data.get('pool_name')
         root = data.get('root_name')
         # rule_name = data.get('crush_rule_name')
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             # with CrushmapTool() as crushmap_tool:
             if 'osds' in data:
                 osds = data.get('osds')
@@ -439,7 +443,7 @@ class CephTask(object):
             rados_client.bucket_remove(root)
 
     def cluster_info(self):
-        with RADOSClient(self.ceph_config(), timeout='1') as rados_client:
+        with RADOSClient(self.rados_args(), timeout='1') as rados_client:
             return rados_client.get_cluster_info()
 
     # TODO will update crushmap
@@ -449,14 +453,14 @@ class CephTask(object):
         if pool_name is None:
             raise exc.CephException(
                 message='pool name must be specifed while update policy')
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             rados_client.pool_set_replica_size(pool_name=pool_name,
                                                rep_size=rep_size)
 
     def rbd_list(self, pool_name):
-        with RADOSClient(self.ceph_config(), timeout='1') as rados_client:
+        with RADOSClient(self.rados_args(), timeout='1') as rados_client:
             if pool_name not in rados_client.pool_list():
                 logger.warning("{} not found".format(pool_name))
                 return []
@@ -464,45 +468,45 @@ class CephTask(object):
                 return rbd_client.rbd_list()
 
     def rbd_size(self, pool_name, rbd_name):
-        with RADOSClient(self.ceph_config(), timeout='1') as rados_client:
+        with RADOSClient(self.rados_args(), timeout='1') as rados_client:
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 return rbd_client.rbd_size(rbd_name)
 
     def rbd_snap_create(self, pool_name, rbd_name, snap_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_snap_create(rbd_name, snap_name)
 
     def rbd_create(self, pool_name, rbd_name, rbd_size):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_create(rbd_name, rbd_size)
 
     def rbd_remove(self, pool_name, rbd_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_remove(rbd_name)
 
     def rbd_rename(self, pool_name, old_rbd_name, new_rbd_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_rename(old_rbd_name, new_rbd_name)
 
     def rbd_snap_remove(self, pool_name, rbd_name, snap_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_snap_remove(rbd_name, snap_name)
 
     def rbd_snap_rename(self, pool_name, rbd_name, old_name, new_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
@@ -510,7 +514,7 @@ class CephTask(object):
 
     def rbd_clone_volume(self, p_p_name, p_v_name, p_s_name, c_p_anme,
                          c_v_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if p_p_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=p_p_name)
             if c_p_anme not in rados_client.pool_list():
@@ -521,42 +525,42 @@ class CephTask(object):
                                          c_rbd_client.io_ctx, c_v_name)
 
     def rbd_is_protect_snap(self, pool_name, volume_name, snap_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 return rbd_client.is_protect_snap(volume_name, snap_name)
 
     def rbd_protect_snap(self, pool_name, volume_name, snap_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.protect_snap(volume_name, snap_name)
 
     def rbd_unprotect_snap(self, pool_name, volume_name, snap_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_unprotect_snap(volume_name, snap_name)
 
     def rbd_flatten(self, c_p_name, c_v_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if c_p_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=c_p_name)
             with RBDProxy(rados_client, c_p_name) as rbd_client:
                 rbd_client.rbd_image_flatten(c_v_name)
 
     def rbd_rollback_to_snap(self, pool_name, v_name, s_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_rollback_to_snap(v_name, s_name)
 
     def rbd_resize(self, pool_name, v_name, size):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
