@@ -10,8 +10,9 @@ from t2stor.service import BaseClientManager
 
 class WebSocketClient(BaseClient):
 
-    def send_message(self, ctxt, message):
-        response = self.call(ctxt, method="send_message", message=message)
+    def send_message(self, ctxt, obj, op_type, msg):
+        response = self.call(ctxt, method="send_message", obj=obj,
+                             op_type=op_type, msg=msg)
         return response
 
 

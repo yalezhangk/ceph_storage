@@ -5,6 +5,7 @@ import tornado.web
 from oslo_log import log as logging
 from tornado.websocket import WebSocketHandler
 
+from t2stor import objects
 from t2stor.api.handlers import get_routers
 from t2stor.common.config import CONF
 from t2stor.service import ServiceBase
@@ -30,16 +31,31 @@ class EchoWebSocket(WebSocketHandler):
         logger.debug("WebSocket closed")
         self.clients.pop("user_id")
 
+    @classmethod
+    def notify(cls, context, obj, op_type, msg=None):
+        client = cls.clients.get(context.user_id)
+        if not client:
+            return
+        message = {
+            'msg': msg,
+            'cluster_id': context.cluster_id,
+            'refresh': True,
+            'payload': obj,
+            'resource_type': obj.obj_name(),
+            'operation_type': op_type
+        }
+        client.write_message(objects.json_encode(message))
+
 
 class WebSocketHandler(object):
     def __init__(self, ioloop, *args, **kwargs):
         self.ioloop = ioloop
         super(WebSocketHandler, self).__init__(*args, **kwargs)
 
-    def send_message(self, ctxt, message):
+    def send_message(self, ctxt, obj, op_type, msg):
         """Send WebSocket Message"""
         self.ioloop.add_callback(
-            lambda: EchoWebSocket.clients["user"].write_message(message)
+            lambda: EchoWebSocket.notify(ctxt, obj, op_type, msg)
         )
 
 

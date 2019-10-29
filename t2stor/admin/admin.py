@@ -75,16 +75,18 @@ class AdminHandler(object):
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_create success,volume_name={}'.format(
                 volume_name))
+            msg = _("create volume success")
         except exception.StorException as e:
             logger.error('volume_create error,volume_name={},reason:{}'.format(
                 volume, str(e)))
             status = s_fields.VolumeStatus.ERROR
+            msg = _("create volume error")
         volume.status = status
         volume.save()
         # send ws message
         wb_client = WebSocketClientManager(
-            cluster_id=volume.cluster_id).get_client()
-        wb_client.send_message(ctxt, volume)
+            context=ctxt, cluster_id=volume.cluster_id).get_client()
+        wb_client.send_message(ctxt, volume, "CREATED", msg)
 
     def volume_update(self, ctxt, volume_id, data):
         volume = self.volume_get(ctxt, volume_id)
