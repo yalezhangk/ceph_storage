@@ -42,7 +42,8 @@ class NodeHandler(ClusterAPIHandler):
     def get(self, node_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        node = yield client.node_get(ctxt, node_id)
+        node = yield client.node_get(
+            ctxt, node_id, expected_attrs=['disks', 'networks'])
         self.write(objects.json_encode({
             "node": node
         }))

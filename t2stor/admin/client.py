@@ -106,8 +106,8 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
-    def node_get(self, ctxt, node_id):
-        response = self.call(ctxt, "node_get", node_id=node_id)
+    def node_get(self, ctxt, node_id, **kwargs):
+        response = self.call(ctxt, "node_get", node_id=node_id, **kwargs)
         return response
 
     def node_create(self, ctxt, data):
