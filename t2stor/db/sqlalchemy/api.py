@@ -344,29 +344,19 @@ def _process_volume_filters(query, filters):
 
 
 @require_context
-def _volume_get_query(context, session=None, project_only=False,
-                      joined_load=True):
+def _volume_get_query(context, session=None):
     """Get the query to retrieve the volume.
 
     :param context: the context used to run the method _volume_get_query
     :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.Volume, session=session,
-                       project_only=project_only)
+    return model_query(context, models.Volume, session=session)
 
 
 @require_context
-def _volume_get(context, volume_id, session=None, joined_load=True):
-    result = _volume_get_query(context, session=session, project_only=True,
-                               joined_load=joined_load)
+def _volume_get(context, volume_id, session=None):
+    result = _volume_get_query(context, session=session)
     result = result.filter_by(id=volume_id).first()
 
     if not result:
@@ -805,9 +795,21 @@ def node_destroy(context, node_id):
     return updated_values
 
 
+def _node_load_attr(node, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'disks' in expected_attrs:
+        node.disks = [disk for disk in node._disks]
+    if 'networks' in expected_attrs:
+        node.networks = [net for net in node._networks]
+
+
 @require_context
-def node_get(context, node_id):
-    return _node_get(context, node_id)
+def node_get(context, node_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        node = _node_get(context, node_id, session)
+        _node_load_attr(node, expected_attrs)
+    return node
 
 
 @require_context
@@ -826,15 +828,8 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
             return []
         nodes = query.all()
 
-        # add expected_attrs
-        expected_attrs = expected_attrs or []
-        if 'disks' in expected_attrs:
-            for node in nodes:
-                node.disks = [disk for disk in node._disks]
-        if 'networks' in expected_attrs:
-            for node in nodes:
-                node.networks = [net for net in node._networks]
-
+        for node in nodes:
+            _node_load_attr(node, expected_attrs)
         return nodes
 
 

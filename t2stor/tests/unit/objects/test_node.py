@@ -52,8 +52,10 @@ class TestNode(NodeCompareTestCase):
         node_get.assert_called_once_with(
             self.context, "Node", fake_node['id'])
 
+    @mock.patch('t2stor.db.sqlalchemy.api.get_session')
     @mock.patch('t2stor.db.sqlalchemy.api.model_query')
-    def test_get_by_id_no_existing_id(self, model_query):
+    def test_get_by_id_no_existing_id(self, model_query, get_session):
+        get_session().return_value = mock.Mock()
         model_query().filter_by().filter_by().first.return_value = None
         self.assertRaises(exception.NodeNotFound,
                           objects.Node.get_by_id,

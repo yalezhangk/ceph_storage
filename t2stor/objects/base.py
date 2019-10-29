@@ -70,17 +70,18 @@ class StorPersistentObject(object):
         return None
 
     @classmethod
-    def get_by_id(cls, context, id, *args, **kwargs):
+    def get_by_id(cls, context, id, expected_attrs=None, *args, **kwargs):
         if 'id' not in cls.fields:
             msg = ('VersionedObject %s cannot retrieve object by id.' %
                    cls.obj_name())
             raise NotImplementedError(msg)
 
         orm_obj = db.get_by_id(context, cls.obj_name(), id, *args, **kwargs)
-        return cls._from_db_object(context, cls(context), orm_obj)
+        return cls._from_db_object(context, cls(context), orm_obj,
+                                   expected_attrs)
 
     @classmethod
-    def _from_db_object(cls, context, obj, db_obj):
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         for name, field in obj.fields.items():
             if name in cls.OPTIONAL_FIELDS:
                 continue

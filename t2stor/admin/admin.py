@@ -170,8 +170,9 @@ class AdminHandler(object):
         rule.save()
         return rule
 
-    def node_get(self, ctxt, node_id):
-        node_info = objects.Node.get_by_id(ctxt, node_id)
+    def node_get(self, ctxt, node_id, expected_attrs=None):
+        node_info = objects.Node.get_by_id(
+            ctxt, node_id, expected_attrs=expected_attrs)
         return node_info
 
     def node_update(self, ctxt, node_id, data):
