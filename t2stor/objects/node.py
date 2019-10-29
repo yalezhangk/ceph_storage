@@ -43,10 +43,11 @@ class Node(base.StorPersistentObject, base.StorObject,
         'time_diff': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(),
         'disks': fields.ListOfObjectsField("Disk", nullable=True),
-        'networks': fields.ListOfObjectsField("Network", nullable=True)
+        'networks': fields.ListOfObjectsField("Network", nullable=True),
+        'osds': fields.ListOfObjectsField("Osd", nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('disks', 'networks')
+    OPTIONAL_FIELDS = ('disks', 'networks', 'osds')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -83,6 +84,12 @@ class Node(base.StorPersistentObject, base.StorObject,
             obj.networks = [objects.Network._from_db_object(
                 context, objects.Network(context), net
             ) for net in nets]
+
+        if 'osds' in expected_attrs:
+            osds = db_obj.get('osds', [])
+            obj.osds = [objects.Osd._from_db_object(
+                context, objects.Osd(context), osd
+            ) for osd in osds]
 
         return super(Node, cls)._from_db_object(context, obj, db_obj)
 

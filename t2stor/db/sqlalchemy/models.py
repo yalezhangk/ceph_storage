@@ -116,6 +116,7 @@ class Node(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     _disks = relationship("Disk", backref="_node")
     _networks = relationship("Network", backref="_node")
+    _osds = relationship("Osd", backref="_node")
 
 
 class Disk(BASE, StorBase):

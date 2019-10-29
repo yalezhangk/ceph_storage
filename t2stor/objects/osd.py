@@ -31,7 +31,10 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'journal_partition_id': fields.IntegerField(),
         'crush_rule_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(nullable=True),
+        'node': fields.ObjectField("Node", nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('node',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -54,6 +57,16 @@ class Osd(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'node' in expected_attrs:
+            node = db_obj.get('node', None)
+            obj.node = objects.Node._from_db_object(
+                context, objects.Node(context), node
+            )
+        return super(Osd, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class OsdList(base.ObjectListBase, base.StorObject):
@@ -64,12 +77,13 @@ class OsdList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         osds = db.osd_get_all(
             context, filters, marker, limit, offset,
-            sort_keys, sort_dirs)
+            sort_keys, sort_dirs, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Osd,
-                                  osds)
+                                  osds, expected_attrs=expected_attrs)
 
     @classmethod
     def get_by_pool(cls, context, pool_id):

@@ -720,7 +720,7 @@ def rpc_service_destroy(context, rpc_service_id):
 
 
 @require_context
-def rpc_service_get(context, rpc_service_id):
+def rpc_service_get(context, rpc_service_id, expected_attrs=None):
     return _rpc_service_get(context, rpc_service_id)
 
 
@@ -801,6 +801,8 @@ def _node_load_attr(node, expected_attrs=None):
         node.disks = [disk for disk in node._disks]
     if 'networks' in expected_attrs:
         node.networks = [net for net in node._networks]
+    if 'osds' in expected_attrs:
+        node.osds = [osd for osd in node._osds]
 
 
 @require_context
@@ -827,6 +829,9 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         nodes = query.all()
+
+        if not expected_attrs:
+            return nodes
 
         for node in nodes:
             _node_load_attr(node, expected_attrs)
@@ -886,7 +891,7 @@ def datacenter_destroy(context, datacenter_id):
 
 
 @require_context
-def datacenter_get(context, datacenter_id):
+def datacenter_get(context, datacenter_id, expected_attrs=None):
     return _datacenter_get(context, datacenter_id)
 
 
@@ -959,7 +964,7 @@ def rack_destroy(context, rack_id):
 
 
 @require_context
-def rack_get(context, rack_id):
+def rack_get(context, rack_id, expected_attrs=None):
     return _rack_get(context, rack_id)
 
 
@@ -1006,6 +1011,12 @@ def _osd_get(context, osd_id, session=None):
     return result
 
 
+def _osd_load_attr(osd, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'node' in expected_attrs:
+        osd.node = osd._node
+
+
 @require_context
 def osd_create(context, values):
     osd_ref = models.Osd()
@@ -1032,13 +1043,18 @@ def osd_destroy(context, osd_id):
 
 
 @require_context
-def osd_get(context, osd_id):
-    return _osd_get(context, osd_id)
+def osd_get(context, osd_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        osd = _osd_get(context, osd_id, session)
+        _osd_load_attr(osd, expected_attrs)
+        return osd
 
 
 @require_context
 def osd_get_all(context, marker=None, limit=None, sort_keys=None,
-                sort_dirs=None, filters=None, offset=None):
+                sort_dirs=None, filters=None, offset=None,
+                expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1049,7 +1065,12 @@ def osd_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        return query.all()
+        osds = query.all()
+        if not expected_attrs:
+            return osds
+        for osd in osds:
+            _osd_load_attr(osd, expected_attrs)
+        return osds
 
 
 @require_context
@@ -1201,7 +1222,7 @@ def sys_config_destroy(context, sys_config_id):
 
 
 @require_context
-def sys_config_get(context, sys_config_id):
+def sys_config_get(context, sys_config_id, expected_attrs=None):
     return _sys_config_get(context, sys_config_id)
 
 
@@ -2699,7 +2720,7 @@ def ceph_config_destroy(context, ceph_config_id):
 
 
 @require_context
-def ceph_config_get(context, ceph_config_id):
+def ceph_config_get(context, ceph_config_id, expected_attrs=None):
     return _ceph_config_get(context, ceph_config_id)
 
 

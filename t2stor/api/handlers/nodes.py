@@ -19,7 +19,7 @@ class NodeListHandler(ClusterAPIHandler):
         page_args = self.get_paginated_args()
         client = self.get_admin_client(ctxt)
         nodes = yield client.node_get_all(
-            ctxt, expected_attrs=['disks', 'networks'], **page_args)
+            ctxt, expected_attrs=['disks', 'networks', 'osds'], **page_args)
         self.write(objects.json_encode({
             "nodes": nodes
         }))
@@ -43,7 +43,7 @@ class NodeHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         node = yield client.node_get(
-            ctxt, node_id, expected_attrs=['disks', 'networks'])
+            ctxt, node_id, expected_attrs=['disks', 'networks', 'osds'])
         self.write(objects.json_encode({
             "node": node
         }))

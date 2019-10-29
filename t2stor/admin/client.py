@@ -157,8 +157,8 @@ class AdminClient(BaseClient):
         return response
 
     ###################
-    def osd_get(self, ctxt, osd_id):
-        response = self.call(ctxt, "osd_get", osd_id=osd_id)
+    def osd_get(self, ctxt, osd_id, **kwargs):
+        response = self.call(ctxt, "osd_get", osd_id=osd_id, **kwargs)
         return response
 
     def osd_create(self, ctxt, data):
@@ -174,11 +174,11 @@ class AdminClient(BaseClient):
         return response
 
     def osd_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                    sort_dirs=None, filters=None, offset=None):
+                    sort_dirs=None, filters=None, offset=None, **kwargs):
         response = self.call(
             ctxt, "osd_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, **kwargs)
         return response
 
     ###################

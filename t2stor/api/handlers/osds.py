@@ -20,7 +20,8 @@ class OsdListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
         client = self.get_admin_client(ctxt)
-        osds = yield client.osd_get_all(ctxt, **page_args)
+        osds = yield client.osd_get_all(
+            ctxt, expected_attrs=['node'], **page_args)
         self.write(objects.json_encode({
             "osds": osds
         }))
@@ -43,7 +44,8 @@ class OsdHandler(ClusterAPIHandler):
     def get(self, osd_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        osd = yield client.osd_get(ctxt, osd_id)
+        osd = yield client.osd_get(
+            ctxt, osd_id, expected_attrs=['node'])
         self.write(objects.json_encode({
             "osd": osd
         }))
