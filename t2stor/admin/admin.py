@@ -667,20 +667,23 @@ class AdminHandler(object):
         result = {}
         sysconfs = objects.SysConfigList.get_all(
             ctxt, filters={"cluster_id": ctxt.cluster_id})
-        keys = ['enabled', 'smtp_user', 'smtp_password', 'smtp_host',
-                'smtp_port', 'enable_ssl', 'enable_tls']
+        keys = ['smtp_enabled', 'smtp_user', 'smtp_password', 'smtp_host',
+                'smtp_port', 'smtp_enable_ssl', 'smtp_enable_tls']
         for sysconf in sysconfs:
             if sysconf.key in keys:
                 result[sysconf.key] = sysconf.value
         return result
 
-    def update_smtp(self, ctxt, enabled, smtp_user, smtp_password,
-                    smtp_host, smtp_port, enable_ssl, enable_tls):
+    def update_smtp(self, ctxt, smtp_enabled,
+                    smtp_user, smtp_password,
+                    smtp_host, smtp_port,
+                    smtp_enable_ssl,
+                    smtp_enable_tls):
         # TODO check a object exists
         sysconf = None
-        if enabled:
+        if smtp_enabled:
             sysconf = objects.SysConfig(
-                ctxt, key="enabled", value=enabled,
+                ctxt, key="smtp_enabled", value=smtp_enabled,
                 value_type=s_fields.SysConfigType.STRING)
             sysconf.create()
         if smtp_user:
@@ -703,14 +706,14 @@ class AdminHandler(object):
                 ctxt, key="smtp_port", value=smtp_port,
                 value_type=s_fields.SysConfigType.STRING)
             sysconf.create()
-        if enable_ssl:
+        if smtp_enable_ssl:
             sysconf = objects.SysConfig(
-                ctxt, key="enable_ssl", value=enable_ssl,
+                ctxt, key="smtp_enable_ssl", value=smtp_enable_ssl,
                 value_type=s_fields.SysConfigType.STRING)
             sysconf.create()
-        if enable_tls:
+        if smtp_enable_tls:
             sysconf = objects.SysConfig(
-                ctxt, key="enable_tls", value=enable_tls,
+                ctxt, key="smtp_enable_tls", value=smtp_enable_tls,
                 value_type=s_fields.SysConfigType.STRING)
             sysconf.create()
 
