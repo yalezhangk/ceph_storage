@@ -62,9 +62,8 @@ class SysConfigList(base.ObjectListBase, base.StorObject):
         sys_configs = db.sys_config_get_all(
             context, filters, marker, limit, offset,
             sort_keys, sort_dirs)
-        expected_attrs = SysConfig._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.SysConfig,
-                                  sys_configs, expected_attrs=expected_attrs)
+                                  sys_configs)
 
 
 def sys_config_get(ctxt, key, default=None):

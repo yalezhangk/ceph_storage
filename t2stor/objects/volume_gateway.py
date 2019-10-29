@@ -59,9 +59,7 @@ class VolumeGatewayList(base.ObjectListBase, base.StorObject):
             sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters,
             offset=offset)
-        expected_attrs = VolumeGateway._get_expected_attrs(context)
         return base.obj_make_list(
             context, cls(context),
             objects.VolumeGateway,
-            volume_gateways,
-            expected_attrs=expected_attrs)
+            volume_gateways)

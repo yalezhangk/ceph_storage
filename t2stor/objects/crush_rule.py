@@ -55,6 +55,5 @@ class CrushRuleList(base.ObjectListBase, base.StorObject):
                 offset=None, sort_keys=None, sort_dirs=None):
         crush_rules = db.crush_rule_get_all(context, filters, marker, limit,
                                             offset, sort_keys, sort_dirs)
-        expected_attrs = CrushRule._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.CrushRule,
-                                  crush_rules, expected_attrs=expected_attrs)
+                                  crush_rules)

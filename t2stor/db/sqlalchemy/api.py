@@ -812,7 +812,8 @@ def node_get(context, node_id):
 
 @require_context
 def node_get_all(context, marker=None, limit=None, sort_keys=None,
-                 sort_dirs=None, filters=None, offset=None):
+                 sort_dirs=None, filters=None, offset=None,
+                 expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -823,7 +824,15 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        return query.all()
+        nodes = query.all()
+
+        # add expected_attrs
+        expected_attrs = expected_attrs or []
+        if 'disks' in expected_attrs:
+            for node in nodes:
+                node.disks = [disk for disk in node._disks]
+
+        return nodes
 
 
 @require_context
@@ -2064,7 +2073,8 @@ def disk_get(context, disk_id):
 
 @require_context
 def disk_get_all(context, marker=None, limit=None, sort_keys=None,
-                 sort_dirs=None, filters=None, offset=None):
+                 sort_dirs=None, filters=None, offset=None,
+                 expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2075,6 +2085,12 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
+        disks = query.all()
+
+        if 'node' in expected_attrs:
+            for disk in disks:
+                disk.node = disk._node
+
         return query.all()
 
 

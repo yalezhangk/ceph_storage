@@ -50,6 +50,5 @@ class AlertRuleList(base.ObjectListBase, base.StorObject):
                 offset=None, sort_keys=None, sort_dirs=None):
         alert_rules = db.alert_rule_get_all(context, marker, limit, sort_keys,
                                             sort_dirs, filters, offset)
-        expected_attrs = AlertRule._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.AlertRule,
-                                  alert_rules, expected_attrs=expected_attrs)
+                                  alert_rules)

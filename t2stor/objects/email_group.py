@@ -52,6 +52,5 @@ class EmailGroupList(base.ObjectListBase, base.StorObject):
         email_groups = db.email_group_get_all(context, marker, limit,
                                               sort_keys, sort_dirs, filters,
                                               offset)
-        expected_attrs = EmailGroup._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.EmailGroup,
-                                  email_groups, expected_attrs=expected_attrs)
+                                  email_groups)

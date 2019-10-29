@@ -47,6 +47,5 @@ class LicenseList(base.ObjectListBase, base.StorObject):
         licenses = db.license_get_latest_valid(context, marker, limit,
                                                sort_keys, sort_dirs, filters,
                                                offset)
-        expected_attrs = License._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.License,
-                                  licenses, expected_attrs=expected_attrs)
+                                  licenses)

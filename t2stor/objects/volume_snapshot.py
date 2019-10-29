@@ -66,7 +66,5 @@ class VolumeSnapshotList(base.ObjectListBase, base.StorObject):
             sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters,
             offset=offset)
-        expected_attrs = VolumeSnapshot._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context),
-                                  objects.VolumeSnapshot, volume_snapshot,
-                                  expected_attrs=expected_attrs)
+                                  objects.VolumeSnapshot, volume_snapshot)

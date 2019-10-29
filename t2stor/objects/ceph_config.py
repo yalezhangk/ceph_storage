@@ -57,6 +57,5 @@ class CephConfigList(base.ObjectListBase, base.StorObject):
         ceph_configs = db.ceph_config_get_all(
             context, filters, marker, limit, offset,
             sort_keys, sort_dirs)
-        expected_attrs = CephConfig._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.CephConfig,
-                                  ceph_configs, expected_attrs=expected_attrs)
+                                  ceph_configs)

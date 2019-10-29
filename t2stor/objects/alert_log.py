@@ -57,6 +57,5 @@ class AlertLogList(base.ObjectListBase, base.StorObject):
         alert_logs = db.alert_log_get_all(context, marker, limit,
                                           sort_keys, sort_dirs, filters,
                                           offset)
-        expected_attrs = AlertLog._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.AlertLog,
-                                  alert_logs, expected_attrs=expected_attrs)
+                                  alert_logs)

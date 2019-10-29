@@ -178,10 +178,12 @@ def node_get(context, node_id):
 
 
 def node_get_all(context, filters, marker, limit,
-                 offset, sort_keys, sort_dirs):
+                 offset, sort_keys, sort_dirs,
+                 expected_attrs=None):
     return IMPL.node_get_all(
         context, marker=marker, limit=limit, sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters, offset=offset)
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
 
 
 def node_update(context, node_id, values):
@@ -531,10 +533,12 @@ def disk_get(context, disk_id):
 
 
 def disk_get_all(context, filters, marker, limit,
-                 offset, sort_keys, sort_dirs):
+                 offset, sort_keys, sort_dirs,
+                 expected_attrs=None):
     return IMPL.disk_get_all(
         context, marker=marker, limit=limit, sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters, offset=offset)
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
 
 
 def disk_update(context, disk_id, values):

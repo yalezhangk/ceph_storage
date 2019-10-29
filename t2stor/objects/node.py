@@ -42,7 +42,10 @@ class Node(base.StorPersistentObject, base.StorObject,
         'rack_id': fields.IntegerField(nullable=True),
         'time_diff': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(),
+        'disks': fields.ListOfObjectsField("Disk", nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('disks',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -65,6 +68,16 @@ class Node(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'disks' in expected_attrs:
+            disks = db_obj.get('disks', [])
+            obj.disks = [objects.Disk._from_db_object(
+                context, objects.Disk(context), disk
+            ) for disk in disks]
+        return super(Node, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class NodeList(base.ObjectListBase, base.StorObject):
@@ -75,9 +88,10 @@ class NodeList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         nodes = db.node_get_all(context, filters, marker, limit, offset,
-                                sort_keys, sort_dirs)
-        expected_attrs = Node._get_expected_attrs(context)
+                                sort_keys, sort_dirs,
+                                expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Node,
                                   nodes, expected_attrs=expected_attrs)

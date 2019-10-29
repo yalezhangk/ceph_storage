@@ -61,6 +61,5 @@ class NetworkList(base.ObjectListBase, base.StorObject):
                 offset=None, sort_keys=None, sort_dirs=None):
         nets = db.network_get_all(context, filters, marker, limit, offset,
                                   sort_keys, sort_dirs)
-        expected_attrs = Network._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), objects.Network,
-                                  nets, expected_attrs=expected_attrs)
+                                  nets)
