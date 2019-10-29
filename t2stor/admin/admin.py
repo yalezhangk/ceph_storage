@@ -673,6 +673,46 @@ class AdminHandler(object):
                 result[sysconf.key] = sysconf.value
         return result
 
+    def update_smtp(self, ctxt, enabled, smtp_user, smtp_password,
+                    smtp_host, smtp_port, enable_ssl, enable_tls):
+        # TODO check a object exists
+        sysconf = None
+        if enabled:
+            sysconf = objects.SysConfig(
+                ctxt, key="enabled", value=enabled,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if smtp_user:
+            sysconf = objects.SysConfig(
+                ctxt, key="smtp_user", value=smtp_user,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if smtp_password:
+            sysconf = objects.SysConfig(
+                ctxt, key="smtp_password", value=smtp_password,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if smtp_host:
+            sysconf = objects.SysConfig(
+                ctxt, key="smtp_host", value=smtp_host,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if smtp_port:
+            sysconf = objects.SysConfig(
+                ctxt, key="smtp_port", value=smtp_port,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if enable_ssl:
+            sysconf = objects.SysConfig(
+                ctxt, key="enable_ssl", value=enable_ssl,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        if enable_tls:
+            sysconf = objects.SysConfig(
+                ctxt, key="enable_tls", value=enable_tls,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+
     def ceph_config_get_all(
             self, ctxt, marker=None, limit=None, sort_keys=None,
             sort_dirs=None, filters=None, offset=None):

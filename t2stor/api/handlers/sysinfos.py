@@ -58,3 +58,42 @@ class SysInfoHandler(ClusterAPIHandler):
 
         # TODO agent设置Chrony服务器
         return True
+
+
+class SmtpHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        smtp_conf = yield client.smtp_get(ctxt)
+        self.write(json.dumps({
+            "smtp_conf": {
+                "enabled": smtp_conf['enabled'],
+                "smtp_user": smtp_conf['smtp_user'],
+                "smtp_password": smtp_conf['smtp_password'],
+                "smtp_host": smtp_conf['smtp_host'],
+                "smtp_port": smtp_conf['smtp_port'],
+                "enable_ssl": smtp_conf['enable_ssl'],
+                "enable_tls": smtp_conf['enable_tls'],
+            }
+        }))
+
+    @gen.coroutine
+    def post(self):
+        ctxt = self.get_context()
+        data = json_decode(self.request.body).get('data')
+        logger.error(data)
+        if not data:
+            raise InvalidInput(reason=_("smtp: post data is none"))
+        enabled = data.get('enabled')
+        smtp_user = data.get('smtp_user')
+        smtp_password = data.get('smtp_password')
+        smtp_host = data.get('smtp_host')
+        smtp_port = data.get('smtp_port')
+        enable_ssl = data.get('enable_ssl')
+        enable_tls = data.get('enable_tls')
+        client = self.get_admin_client(ctxt)
+        yield client.update_smtp(
+            ctxt, enabled, smtp_user, smtp_password,
+            smtp_host, smtp_port, enable_ssl, enable_tls)
+        self.write(json.dumps({'a': 'a'}))
