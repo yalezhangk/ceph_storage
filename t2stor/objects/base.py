@@ -98,7 +98,7 @@ class StorPersistentObject(object):
             raise exception.ObjectActionError(
                 action='obj_load_attr',
                 reason=_('attribute %s not lazy-loadable') % attrname)
-        self._obj_disks = None
+        setattr(self, attrname, None)
 
     def refresh(self):
         # To refresh we need to have a model and for the model to have an id
