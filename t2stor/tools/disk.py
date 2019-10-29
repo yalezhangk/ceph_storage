@@ -85,7 +85,7 @@ class DiskTool(ToolBase):
             logger.exception("Create partations error, Stdout: %s", out)
             raise ProgrammingError(
                 reason="partitions argument not end with %")
-        return False
+        return True
 
 
 if __name__ == '__main__':

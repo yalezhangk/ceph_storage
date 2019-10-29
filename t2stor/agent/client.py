@@ -41,6 +41,17 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "disk_light", led=led, node=node, name=name)
         return response
 
+    def disk_partitions_create(self, ctxt, node, disk, values):
+        response = self.call(
+            ctxt, "disk_partitions_create", node=node, disk=disk, values=values
+        )
+        return response
+
+    def disk_partitions_remove(self, ctxt, node, name):
+        response = self.call(ctxt, "disk_partitions_remove", node=node,
+                             name=name)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"
