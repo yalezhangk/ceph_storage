@@ -12,7 +12,7 @@ from t2stor.tests.unit import objects as test_objects
 
 fake_osd = {
     'id': 1,
-    'name': "devel",
+    'osd_id': "2",
     'type': "bluestore",
     'disk_type': "hdd",
     'status': "up",
@@ -45,17 +45,17 @@ class TestOsd(test_objects.BaseObjectsTestCase):
         osd = objects.Osd(context=self.context)
         osd.create()
         self.assertEqual(fake_osd['id'], osd.id)
-        self.assertEqual(fake_osd['name'],
-                         osd.name)
+        self.assertEqual(fake_osd['osd_id'],
+                         osd.osd_id)
 
     @mock.patch('t2stor.db.osd_update')
     def test_save(self, osd_update):
         osd = objects.Osd._from_db_object(
             self.context, objects.Osd(), fake_osd)
-        osd.name = 'foobar'
+        osd.osd_id = '6'
         osd.save()
         osd_update.assert_called_once_with(
-            self.context, osd.id, {'name': 'foobar'})
+            self.context, osd.id, {'osd_id': '6'})
 
     @mock.patch('oslo_utils.timeutils.utcnow', return_value=timeutils.utcnow())
     @mock.patch('t2stor.db.sqlalchemy.api.osd_destroy')

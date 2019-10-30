@@ -196,7 +196,7 @@ class Osd(BASE, StorBase):
     __tablename__ = "osds"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), index=True)
+    osd_id = Column(String(32), index=True)
     size = Column(BigInteger)  # bytes
     used = Column(BigInteger)  # bytes
     status = Column(String(32), index=True)
