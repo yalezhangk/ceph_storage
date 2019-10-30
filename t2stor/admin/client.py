@@ -414,9 +414,13 @@ class AdminClient(BaseClient):
             ctxt, "volume_client_group_delete", group_id=group_id)
         return response
 
-    def volume_client_get_by_group(self, ctxt, group_id):
+    def volume_client_get_all(self, ctxt, marker=None, limit=None,
+                              sort_keys=None, sort_dirs=None,
+                              filters=None, offset=None):
         response = self.call(
-            ctxt, "volume_client_get_by_group", group_id=group_id)
+            ctxt, "volume_client_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
         return response
 
     ##################
