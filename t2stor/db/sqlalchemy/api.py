@@ -2723,6 +2723,18 @@ def ceph_config_get(context, ceph_config_id, expected_attrs=None):
 
 
 @require_context
+def ceph_config_get_by_key(context, group, key):
+    session = get_session()
+    with session.begin():
+        result = _ceph_config_get_query(context, session)
+        result = result.filter_by(group=group, key=key).first()
+
+        if not result:
+            raise exception.CephConfigKeyNotFound(group=group, key=key)
+        return result
+
+
+@require_context
 def ceph_config_get_all(context, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
     session = get_session()
