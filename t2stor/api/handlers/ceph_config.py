@@ -96,3 +96,12 @@ class CephConfigActionHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "ceph_config": config
         }))
+
+
+class CephConfigContentHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        content = yield client.ceph_config_content(ctxt)
+        self.write(content)

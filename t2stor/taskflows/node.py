@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import configparser
+import logging
 import os
 
 from t2stor import objects
 from t2stor.admin.genconf import get_agent_conf
 from t2stor.admin.genconf import yum_repo
+from t2stor.agent.client import AgentClientManager
 from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
 from t2stor.tools.docker import Docker as DockerTool
@@ -13,6 +15,8 @@ from t2stor.tools.file import File as FileTool
 from t2stor.tools.package import Package as PackageTool
 from t2stor.tools.service import Service as ServiceTool
 from t2stor.utils import template
+
+logger = logging.getLogger(__name__)
 
 
 class NodeTask(object):
@@ -22,6 +26,7 @@ class NodeTask(object):
 
     def __init__(self, ctxt, node, host_prefix=None):
         self.host_prefix = host_prefix
+        self.ctxt = ctxt
         self.node = node
 
     def _wapper(self, path):
@@ -32,8 +37,14 @@ class NodeTask(object):
         return os.path.join(self.host_prefix, path)
 
     def get_ssh_executor(self):
-        return SSHExecutor(hostname=self.node.ip_address,
+        return SSHExecutor(hostname=str(self.node.ip_address),
                            password=self.node.password)
+
+    def get_agent(self):
+        client = AgentClientManager(
+            self.ctxt, cluster_id=self.ctxt.cluster_id
+        ).get_client(self.node.id)
+        return client
 
     def get_yum_repo(self):
         repo_url = objects.sysconfig.sys_config_get("repo_url")
@@ -81,10 +92,19 @@ class NodeTask(object):
         # uninstall package
         pass
 
-    def ceph_osd_install(self):
+    def ceph_osd_install(self, osd):
         # write ceph.conf
-        # start service
-        pass
+        logger.debug("write config")
+        ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
+        agent = self.get_agent()
+        agent.ceph_conf_write(self.ctxt, ceph_conf_content)
+
+        # TODO: key
+        logger.debug("osd create on node")
+        osd = agent.ceph_osd_create(self.ctxt, osd)
+
+        osd.save()
+        return True
 
     def ceph_osd_uninstall(self):
         # update ceph.conf

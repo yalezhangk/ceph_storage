@@ -19,7 +19,7 @@ class Osd(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'osd_id': fields.StringField(),
+        'osd_id': fields.StringField(nullable=True),
         'size': fields.IntegerField(),
         'used': fields.IntegerField(),
         'status': s_fields.OsdStatusField(),

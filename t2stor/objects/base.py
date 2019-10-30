@@ -67,7 +67,7 @@ class StorPersistentObject(object):
 
     @classmethod
     def _get_expected_attrs(cls, context, *args, **kwargs):
-        return None
+        return cls.OPTIONAL_FIELDS
 
     @classmethod
     def get_by_id(cls, context, id, expected_attrs=None, *args, **kwargs):
@@ -75,6 +75,9 @@ class StorPersistentObject(object):
             msg = ('VersionedObject %s cannot retrieve object by id.' %
                    cls.obj_name())
             raise NotImplementedError(msg)
+
+        if kwargs.pop('joined_load', False):
+            expected_attrs = cls._get_expected_attrs(context)
 
         orm_obj = db.get_by_id(context, cls.obj_name(), id,
                                expected_attrs, *args, **kwargs)

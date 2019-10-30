@@ -18,7 +18,7 @@ from t2stor.service import ServiceBase
 from t2stor.taskflows.ceph import CephTask
 from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
-from t2stor.tools.ceph import Ceph as CephTool
+from t2stor.tools.ceph import CephTool
 from t2stor.utils import cluster_config as ClusterConfg
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -400,12 +400,26 @@ class AdminHandler(object):
         return objects.Osd.get_by_id(ctxt, osd_id,
                                      expected_attrs=expected_attrs)
 
+    def _osd_create(self, ctxt, node, osd):
+        try:
+            task = NodeTask(ctxt, node)
+            task.ceph_osd_install(osd)
+        except Exception as e:
+            logger.error(e)
+
     def osd_create(self, ctxt, data):
+        node_id = data.get('node_id')
+        node = objects.Node.get_by_id(ctxt, node_id)
         osd = objects.Osd(
-            ctxt, node_id=data.get('node_id'),
+            ctxt, node_id=node_id,
+            type=data.get('type'),
             disk_id=data.get('disk_id'),
-            status='creating')
+            disk_type="ssd",
+            status=s_fields.OsdStatus.CREATING
+        )
         osd.create()
+        osd = objects.Osd.get_by_id(ctxt, osd.id, joined_load=True)
+        self._osd_create(ctxt, node, osd)
         return osd
 
     def osd_update(self, ctxt, osd_id, data):
@@ -1247,6 +1261,10 @@ class AdminHandler(object):
                 )
                 return False
         return True
+
+    def ceph_config_content(self, ctxt):
+        content = objects.ceph_config.ceph_config_content(ctxt)
+        return content
 
     def _ceph_config_db(self, ctxt, values):
         filters = {

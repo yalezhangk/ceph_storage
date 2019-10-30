@@ -21,8 +21,12 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "disk_get_all")
         return response
 
-    def ceph_conf_write(self, ctxt, ceph_conf):
-        response = self.call(ctxt, "disk_get_all", ceph_conf=ceph_conf)
+    def ceph_conf_write(self, ctxt, content):
+        response = self.call(ctxt, "ceph_conf_write", content=content)
+        return response
+
+    def ceph_osd_create(self, ctxt, osd):
+        response = self.call(ctxt, "ceph_osd_create", osd=osd)
         return response
 
     def package_install(self, ctxt, packages):
