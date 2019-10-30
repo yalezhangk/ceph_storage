@@ -82,7 +82,8 @@ class NotFound(StorException):
 
 
 class Duplicate(StorException):
-    pass
+    code = 409
+    safe = True
 
 
 class SysConfigNotFound(NotFound):
@@ -188,6 +189,15 @@ class VolumeClientNotFound(NotFound):
 
 class VolumeClientGroupNotFound(NotFound):
     message = _("VolumeClientGroup %(client_group_id)s could not be found.")
+
+
+class VolumeClientExists(Duplicate):
+    message = _("iqn %(iqn)s already exists.")
+
+
+class VolumeClientGroupExists(Duplicate):
+    message = _("VolumeClientGroup %(volume_client_group_name)s "
+                "already exists.")
 
 
 class LicenseNotFound(NotFound):
