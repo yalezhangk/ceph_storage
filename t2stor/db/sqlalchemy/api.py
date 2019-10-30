@@ -1557,8 +1557,7 @@ def volume_client_destroy(context, volume_client_id):
     session = get_session()
     now = timeutils.utcnow()
     with session.begin():
-        updated_values = {'status': 'deleted',
-                          'deleted': True,
+        updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
         model_query(context, models.VolumeClient, session=session).\
@@ -1699,8 +1698,7 @@ def volume_client_group_destroy(context, client_group_id):
     session = get_session()
     now = timeutils.utcnow()
     with session.begin():
-        updated_values = {'status': 'deleted',
-                          'deleted': True,
+        updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
         model_query(context, models.VolumeClientGroup, session=session).\
@@ -2869,7 +2867,9 @@ PAGINATION_HELPERS = {
                         process_filters(models.RPCService), _rpc_service_get),
     models.VolumeAccessPath: (_volume_access_path_get_query),
     models.VolumeGateway: (_volume_gateway_get_query),
-    models.VolumeClient: (_volume_client_get_query),
+    models.VolumeClient: (_volume_client_get_query,
+                          process_filters(models.VolumeClient),
+                          _volume_client_get),
     models.VolumeClientGroup: (_volume_client_group_get_query,
                                process_filters(models.VolumeClientGroup),
                                _volume_client_group_get),

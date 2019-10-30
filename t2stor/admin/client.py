@@ -404,6 +404,21 @@ class AdminClient(BaseClient):
             ctxt, "volume_client_create", data=data)
         return response
 
+    def volume_client_group_get(self, ctxt, group_id):
+        response = self.call(
+            ctxt, "volume_client_group_get", group_id=group_id)
+        return response
+
+    def volume_client_group_delete(self, ctxt, group_id):
+        response = self.call(
+            ctxt, "volume_client_group_delete", group_id=group_id)
+        return response
+
+    def volume_client_get_by_group(self, ctxt, group_id):
+        response = self.call(
+            ctxt, "volume_client_get_by_group", group_id=group_id)
+        return response
+
     ##################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,

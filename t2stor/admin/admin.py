@@ -625,6 +625,23 @@ class AdminHandler(object):
         v.create()
         return v
 
+    def volume_client_group_get(self, ctxt, group_id):
+        return objects.VolumeClientGroup.get_by_id(ctxt, group_id)
+
+    def volume_client_get_by_group(self, ctxt, group_id):
+        filters = {"volume_client_group_id": group_id}
+        return objects.VolumeClientList.get_all(ctxt, filters=filters)
+
+    def volume_client_group_delete(self, ctxt, group_id):
+        filters = {"volume_client_group_id": group_id}
+        # delete volume clients of the volume client group
+        for vc in objects.VolumeClientList.get_all(ctxt, filters=filters):
+            vc.destroy()
+        volume_client_group = objects.VolumeClientGroup.get_by_id(
+            ctxt, group_id)
+        volume_client_group.destroy()
+        return volume_client_group
+
     ###################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
