@@ -303,6 +303,7 @@ def define_tables(meta):
         Column('size', BigInteger, nullable=True),
         Column('used', BigInteger, nullable=True),
         Column('status', String(32), nullable=True),
+        Column('type', String(32), nullable=True),
         Column('disk_type', String(32), nullable=True),
         Column('role', String(32), nullable=True),
         Column('fsid', String(36), nullable=True),
