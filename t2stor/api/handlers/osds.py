@@ -20,8 +20,10 @@ class OsdListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['node', 'disk', 'db_partition', 'wal_partition',
+                          'cache_partition', 'journal_partition']
         osds = yield client.osd_get_all(
-            ctxt, expected_attrs=['node'], **page_args)
+            ctxt, expected_attrs=expected_attrs, **page_args)
         self.write(objects.json_encode({
             "osds": osds
         }))

@@ -1024,7 +1024,7 @@ def _osd_load_attr(osd, expected_attrs=None):
     if 'wal_partition' in expected_attrs:
         osd.wal_partition = osd._wal_partition
     if 'journal_partition' in expected_attrs:
-        osd.journal_partition = osd._jouranl_partition
+        osd.journal_partition = osd._journal_partition
 
 
 @require_context

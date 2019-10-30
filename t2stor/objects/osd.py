@@ -44,7 +44,8 @@ class Osd(base.StorPersistentObject, base.StorObject,
                                                 nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('node', 'disk')
+    OPTIONAL_FIELDS = ('node', 'disk', 'cache_partition', 'db_partition',
+                       'wal_partition', 'journal_partition')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -83,9 +84,10 @@ class Osd(base.StorPersistentObject, base.StorObject,
         partations = ["cache_partition", "db_partition",
                       "wal_partition", "journal_partition"]
         for attr in partations:
-            logger.debug("try load %s", attr)
             if attr in expected_attrs:
                 db_partition = db_obj.get(attr, None)
+                if not db_partition:
+                    continue
                 obj_partition = objects.DiskPartition._from_db_object(
                     context, objects.DiskPartition(context), db_partition
                 )
