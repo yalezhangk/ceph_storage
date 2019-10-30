@@ -1017,6 +1017,14 @@ def _osd_load_attr(osd, expected_attrs=None):
         osd.node = osd._node
     if 'disk' in expected_attrs:
         osd.disk = osd._disk
+    if 'cache_partition' in expected_attrs:
+        osd.cache_partition = osd._cache_partition
+    if 'db_partition' in expected_attrs:
+        osd.db_partition = osd._db_partition
+    if 'wal_partition' in expected_attrs:
+        osd.wal_partition = osd._wal_partition
+    if 'journal_partition' in expected_attrs:
+        osd.journal_partition = osd._jouranl_partition
 
 
 @require_context

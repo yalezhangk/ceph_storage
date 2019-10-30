@@ -34,6 +34,11 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'cluster_id': fields.UUIDField(nullable=True),
         'node': fields.ObjectField("Node", nullable=True),
         'disk': fields.ObjectField("Disk", nullable=True),
+        'cache_partition': fields.ObjectField("DiskPartition", nullable=True),
+        'db_partition': fields.ObjectField("DiskPartition", nullable=True),
+        'wal_partition': fields.ObjectField("DiskPartition", nullable=True),
+        'journal_partition': fields.ObjectField("DiskPartition",
+                                                nullable=True),
     }
 
     OPTIONAL_FIELDS = ('node', 'disk')
@@ -72,6 +77,15 @@ class Osd(base.StorPersistentObject, base.StorObject,
             obj.disk = objects.Disk._from_db_object(
                 context, objects.Disk(context), disk
             )
+        partations = ["cache_partition", "db_partition", "cache_partition",
+                      "wal_partition", "jounal_partition"]
+        for attr in partations:
+            if 'cache_partition' in expected_attrs:
+                db_partition = db_obj.get(attr, None)
+                obj_partition = objects.DiskPartition._from_db_object(
+                    context, objects.DiskPartition(context), db_partition
+                )
+                setattr(obj, attr, obj_partition)
         return super(Osd, cls)._from_db_object(context, obj, db_obj)
 
 
