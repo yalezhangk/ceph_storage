@@ -10,6 +10,7 @@ from t2stor import exception
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
 from t2stor.i18n import _
+from t2stor.utils import cluster_config
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,11 @@ class CephConfigListHandler(ClusterAPIHandler):
             if values.get(arg) is None:
                 raise exception.InvalidInput(
                     reason=_("Ceph config: missing required arguments!"))
+
+        if values['key'] not in cluster_config.cluster_configs:
+            raise exception.InvalidInput(
+                reason=_("{} do not support to modify".format(values['key']))
+            )
 
         client = self.get_admin_client(ctxt)
         config = yield client.ceph_config_set(ctxt, values=values)

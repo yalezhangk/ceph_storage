@@ -13,6 +13,7 @@ from t2stor.common.config import CONF
 from t2stor.context import RequestContext
 from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
+from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
 from t2stor.tools.disk import DiskTool as DiskTool
@@ -281,6 +282,16 @@ class AgentHandler(object):
             logger.error("Create partitions error: {}".format(e))
             _success = False
         return _success
+
+    def ceph_config_update(self, ctxt, values):
+        logger.debug('Update ceph config for this node')
+        node_task = NodeTask(ctxt, node=None)
+        try:
+            node_task.ceph_config_update(values)
+        except exception.StorException as e:
+            logger.error('Update ceph config error: {}'.format(e))
+            return False
+        return True
 
 
 class AgentService(ServiceBase):

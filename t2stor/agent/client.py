@@ -52,6 +52,10 @@ class AgentClient(BaseClient):
                              name=name)
         return response
 
+    def ceph_config_update(self, ctxt, values):
+        response = self.call(ctxt, "ceph_config_update", values=values)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"
