@@ -12,6 +12,7 @@ from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import Text
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
 from t2stor.db.sqlalchemy import types
@@ -212,7 +213,19 @@ class Osd(BASE, StorBase):
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     pools = relationship('Pool', secondary=osd_pools, back_populates='osds')
-    _disk = relationship("Disk", backref="_osd")
+    _disk = relationship("Disk", backref=backref("_osd", uselist=False))
+    _db_partition = relationship("DiskPartition",
+                                 foreign_keys=[db_partition_id],
+                                 backref=backref("_osd", uselist=False))
+    _wal_partition = relationship("DiskPartition",
+                                  foreign_keys=[wal_partition_id],
+                                  backref=backref("_osd", uselist=False))
+    _cache_partition = relationship("DiskPartition",
+                                    foreign_keys=[cache_partition_id],
+                                    backref=backref("_osd", uselist=False))
+    _jounal_partition = relationship("DiskPartition",
+                                     foreign_keys=[journal_partition_id],
+                                     backref=backref("_osd", uselist=False))
 
 
 class Pool(BASE, StorBase):
