@@ -215,3 +215,29 @@ class VolumeSnapshotStatus(BaseStorEnum):
 
 class VolumeSnapshotStatusField(BaseEnumField):
     AUTO_TYPE = VolumeSnapshotStatus()
+
+
+class OsdType(BaseStorEnum):
+    FILESTORE = 'filestore'
+    BLUESTORE = 'bluestore'
+
+    ALL = (FILESTORE, BLUESTORE)
+
+
+class OsdTypeField(BaseEnumField):
+    AUTO_TYPE = OsdType()
+
+
+class OsdStatus(BaseStorEnum):
+    UP = 'up'
+    DOWN = 'down'
+
+    ALL = (UP, DOWN)
+
+
+class OsdStatusField(BaseEnumField):
+    AUTO_TYPE = OsdStatus()
+
+
+class OsdDiskTypeField(BaseEnumField):
+    AUTO_TYPE = DiskType()
