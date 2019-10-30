@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
 
 from oslo_versionedobjects import fields
 
@@ -8,6 +9,8 @@ from t2stor import exception
 from t2stor import objects
 from t2stor.objects import base
 from t2stor.objects import fields as s_fields
+
+logger = logging.getLogger(__name__)
 
 
 @base.StorObjectRegistry.register
@@ -77,10 +80,11 @@ class Osd(base.StorPersistentObject, base.StorObject,
             obj.disk = objects.Disk._from_db_object(
                 context, objects.Disk(context), disk
             )
-        partations = ["cache_partition", "db_partition", "cache_partition",
-                      "wal_partition", "jounal_partition"]
+        partations = ["cache_partition", "db_partition",
+                      "wal_partition", "journal_partition"]
         for attr in partations:
-            if 'cache_partition' in expected_attrs:
+            logger.debug("try load %s", attr)
+            if attr in expected_attrs:
                 db_partition = db_obj.get(attr, None)
                 obj_partition = objects.DiskPartition._from_db_object(
                     context, objects.DiskPartition(context), db_partition
