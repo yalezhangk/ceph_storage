@@ -80,10 +80,10 @@ class VolumeActionHandler(ClusterAPIHandler):
 
     def _rollback(self, client, ctxt, volume_id, volume_data):
         snap_id = volume_data.get('volume_snapshot_id')
-        snap = objects.VolumeSnapshot.get_by_id(snap_id)
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, snap_id)
         if not snap:
             raise exception.VolumeSnapshotNotFound(volume_snapshot_id=snap_id)
-        if snap.volume_id != volume_id:
+        if snap.volume_id != int(volume_id):
             raise exception.InvalidInput(_(
                 'The volume_id {} has not the snap_id {}').format(
                 volume_id, snap_id))
@@ -91,13 +91,13 @@ class VolumeActionHandler(ClusterAPIHandler):
         volume_data.update({'snap_name': snap.uuid})
         return client.volume_rollback(ctxt, volume_id, volume_data)
 
-    def _unlink(self, client, ctxt, volume_id, volume_data):
-        volume = objects.Volume.get_by_id(volume_id)
-        if not volume.snapshot_id:
+    def _unlink(self, client, ctxt, volume_id, volume_data=None):
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume.is_link_clone:
             raise exception.Invalid(
                 msg=_('the volume_name {} has not relate_snap').format(
                     volume.volume_name))
-        return client.volume_unlink(ctxt, volume_id, volume_data)
+        return client.volume_unlink(ctxt, volume_id)
 
     @gen.coroutine
     def put(self, volume_id):
