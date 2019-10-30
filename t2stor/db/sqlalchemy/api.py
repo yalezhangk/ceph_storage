@@ -550,7 +550,7 @@ def process_sort_params(sort_keys, sort_dirs, default_keys=None,
 def volume_update(context, volume_id, values):
     session = get_session()
     with session.begin():
-        query = _volume_get_query(context, session, joined_load=False)
+        query = _volume_get_query(context, session)
         result = query.filter_by(id=volume_id).update(values)
         if not result:
             raise exception.VolumeNotFound(volume_id=volume_id)
