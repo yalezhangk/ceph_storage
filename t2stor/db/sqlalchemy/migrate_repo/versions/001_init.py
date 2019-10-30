@@ -299,7 +299,7 @@ def define_tables(meta):
         Column('deleted_at', DateTime),
         Column('deleted', Boolean, nullable=False),
         Column('id', Integer, primary_key=True, nullable=False),
-        Column('name', String(32), nullable=True),
+        Column('osd_id', String(32), nullable=True),
         Column('size', BigInteger, nullable=True),
         Column('used', BigInteger, nullable=True),
         Column('status', String(32), nullable=True),
