@@ -224,7 +224,7 @@ class Osd(BASE, StorBase):
         "DiskPartition",
         foreign_keys=[cache_partition_id],
         backref=backref("_osd_cacahe", uselist=False))
-    _jounal_partition = relationship(
+    _journal_partition = relationship(
         "DiskPartition",
         foreign_keys=[journal_partition_id],
         backref=backref("_osd_journal", uselist=False))
