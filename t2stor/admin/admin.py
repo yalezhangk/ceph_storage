@@ -1272,11 +1272,12 @@ class AdminHandler(object):
         nodes = self._get_config_nodes(ctxt, values)
         if nodes:
             _success = self._ceph_confg_update(ctxt, nodes, values)
+            msg = _('Ceph config update failed')
             if _success:
                 self._ceph_config_db(ctxt, values)
-                msg = _('Ceph onfig set successful')
+                msg = _('Ceph config update successful')
         else:
-            msg = _('Ceph onfig set failed')
+            msg = _('Ceph config update failed')
 
         # send ws message
         wb_client = WebSocketClientManager(
