@@ -383,6 +383,36 @@ class AdminClient(BaseClient):
 
     ##################
 
+    def volume_access_path_get_all(self, ctxt, marker=None, limit=None,
+                                   sort_keys=None, sort_dirs=None,
+                                   filters=None, offset=None):
+        response = self.call(
+            ctxt, "volume_access_path_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def volume_access_path_get(self, ctxt, volume_access_path_id):
+        response = self.call(ctxt, "volume_access_path_get",
+                             volume_access_path_id=volume_access_path_id)
+        return response
+
+    def volume_access_path_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "volume_access_path_create", data=data)
+        return response
+
+    def volume_access_path_update(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_update",
+                             id=id, data=data)
+        return response
+
+    def volume_access_path_delete(self, ctxt, id):
+        response = self.call(ctxt, "volume_access_path_delete", id=id)
+        return response
+
+    ##################
+
     def volume_client_group_get_all(self, ctxt, marker=None, limit=None,
                                     sort_keys=None, sort_dirs=None,
                                     filters=None, offset=None):
