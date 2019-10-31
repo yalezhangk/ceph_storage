@@ -11,6 +11,8 @@ from t2stor.api.handlers.ceph_config import CephConfigContentHandler
 from t2stor.api.handlers.ceph_config import CephConfigListHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
 from t2stor.api.handlers.clusters import ClusterHandler
+from t2stor.api.handlers.clusters import ClusterHistoryMetricsHandler
+from t2stor.api.handlers.clusters import ClusterMetricsHandler
 from t2stor.api.handlers.datacenters import DataCenterHandler
 from t2stor.api.handlers.datacenters import DataCenterListHandler
 from t2stor.api.handlers.datacenters import DataCenterRacksHandler
@@ -72,6 +74,8 @@ def get_routers():
         (r"/ceph_configs/content/", CephConfigContentHandler),
         (r"/clusters/", ClusterHandler),
         (r"/cluster_detect/", ClusterDetectHandler),
+        (r"/clusters/metrics/", ClusterMetricsHandler),
+        (r"/clusters/history_metrics/", ClusterHistoryMetricsHandler),
         (r"/datacenters/", DataCenterListHandler),
         (r"/datacenters/([0-9]*)/", DataCenterHandler),
         (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
@@ -96,7 +100,7 @@ def get_routers():
         (r"/pools/([0-9]*)/capacity/", PoolCapacityHandler),
         (r"/pools/([0-9]*)/decrease_disk/", PoolDecreaseDiskHandler),
         (r"/pools/([0-9]*)/increase_disk/", PoolIncreaseDiskHandler),
-        (r"/pools/([0-9]*)/histroy_metrics/", PoolHistoryMetricsHandler),
+        (r"/pools/([0-9]*)/history_metrics/", PoolHistoryMetricsHandler),
         (r"/pools/([0-9]*)/metrics/", PoolMetricsHandler),
         (r"/pools/([0-9]*)/osds/", PoolOsdsHandler),
         (r"/pools/([0-9]*)/update_security_policy/", PoolPolicyHandler),

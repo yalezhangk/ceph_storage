@@ -149,6 +149,12 @@ class EndpointNotFound(NotFound):
                 "could not be found.")
 
 
+class PrometheusEndpointNotFound(NotFound):
+    code = 400
+    message = _("Endpoint for %(service_name)s:%(cluster_id)s "
+                "could not be found.")
+
+
 class ClusterExists(Duplicate):
     message = _("Cluster %(cluster_id)s already exists.")
 

@@ -8,6 +8,7 @@ from tornado.web import RequestHandler
 from t2stor import exception
 from t2stor.admin.client import AdminClientManager
 from t2stor.context import RequestContext
+from t2stor.i18n import _
 
 
 class BaseAPIHandler(RequestHandler):
@@ -40,6 +41,18 @@ class BaseAPIHandler(RequestHandler):
             "sort_dirs": self.get_query_argument('sort_dirs', default=None),
             "offset": self.get_query_argument('offset', default=None)
         }
+
+    def get_metrics_history_args(self):
+        start = self.get_query_argument('start', default=None)
+        end = self.get_query_argument('end', default=None)
+        if start and end:
+            return {
+                'start': start,
+                'end': end,
+            }
+        else:
+            raise exception.InvalidInput(
+                reason=_("get_metrics_history_args: start and end required"))
 
     def get_current_user(self):
         token_id = self.request.headers.get('token-id')
