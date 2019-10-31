@@ -66,10 +66,8 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
-    def volume_unlink(self, ctxt, volume_id, data):
-        response = self.call(ctxt, "volume_unlink",
-                             volume_id=volume_id,
-                             data=data)
+    def volume_unlink(self, ctxt, volume_id):
+        response = self.call(ctxt, "volume_unlink", volume_id=volume_id)
         return response
 
     ###################
@@ -514,14 +512,14 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
-    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
+    def volume_snapshot_delete(self, ctxt, snap_data):
         response = self.call(ctxt, "volume_snapshot_delete",
-                             volume_snapshot_id=volume_snapshot_id)
+                             snap_data=snap_data)
         return response
 
-    def volume_create_from_snapshot(self, ctxt, volume_snapshot_id, data):
+    def volume_create_from_snapshot(self, ctxt, snapshot_id, data):
         response = self.call(ctxt, "volume_create_from_snapshot",
-                             volume_snapshot_id=volume_snapshot_id,
+                             snapshot_id=snapshot_id,
                              data=data)
         return response
 

@@ -129,8 +129,8 @@ class RBDProxy(object):
         try:
             image = rbd.Image(self.io_ctx, rbd_name)
             image.remove_snap(snap_name)
-        except Exception as e:
-            raise e
+        except rbd.Error as e:
+            raise CephException(message=str(e))
 
     def rbd_snap_rename(self, rbd_name, old_name, new_name):
         try:

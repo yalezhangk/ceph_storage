@@ -508,6 +508,17 @@ class CephTask(object):
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_snap_remove(rbd_name, snap_name)
 
+    def rbd_snap_delete(self, pool_name, rbd_name, snap_name):
+        try:
+            self.rbd_snap_remove(pool_name, rbd_name, snap_name)
+        except exc.CephException:
+            shell_client = Executor()
+            cmd = ['rbd snap rm {}/{}@{} -c {}'.format(
+                pool_name, rbd_name, snap_name, self.conf_file)]
+            rc, out, err = shell_client.run_command(cmd, timeout=0)
+            if rc:
+                raise exc.CephException(message=out)
+
     def rbd_snap_rename(self, pool_name, rbd_name, old_name, new_name):
         with RADOSClient(self.rados_args()) as rados_client:
             if pool_name not in rados_client.pool_list():

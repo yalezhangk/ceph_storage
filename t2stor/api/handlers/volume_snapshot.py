@@ -29,6 +29,13 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
         data = json_decode(self.request.body)
         data = data.get("volume_snapshot")
         client = self.get_admin_client(ctxt)
+        volume_id = data.get('volume_id')
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        data.update({'volume_name': volume.volume_name,
+                     'pool_name': pool.pool_name})
         volume_snapshot = yield client.volume_snapshot_create(ctxt, data)
         self.write(objects.json_encode({
             "volume_snapshot": volume_snapshot
@@ -39,6 +46,10 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, volume_snapshot_id):
         ctxt = self.get_context()
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+        if not snap:
+            raise exception.VolumeSnapshotNotFound(
+                volume_snapshot_id=volume_snapshot_id)
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_get(
             ctxt, volume_snapshot_id)
@@ -49,6 +60,10 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
         # 编辑:改名及描述
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+        if not snap:
+            raise exception.VolumeSnapshotNotFound(
+                volume_snapshot_id=volume_snapshot_id)
         volume_data = data.get('volume_snapshot')
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_update(
@@ -61,8 +76,19 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
     def delete(self, volume_snapshot_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+        if not snap:
+            raise exception.VolumeSnapshotNotFound(
+                volume_snapshot_id=volume_snapshot_id)
+        volume = objects.Volume.get_by_id(ctxt, snap.volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=snap.volume_id)
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        snap_data = {'volume_name': volume.volume_name,
+                     'pool_name': pool.pool_name,
+                     'snap': snap}
         volume_snapshot = yield client.volume_snapshot_delete(
-            ctxt, volume_snapshot_id)
+            ctxt, snap_data)
         self.write(objects.json_encode({
             "volume_snapshot": volume_snapshot
         }))
