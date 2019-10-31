@@ -36,15 +36,14 @@ class CephConfigListHandler(ClusterAPIHandler):
             "ceph_configs": ceph_config
         }))
 
-    @gen.coroutine
-    def post(self):
-        ctxt = self.get_context()
-        values = json_decode(self.request.body).get('ceph_config')
-        if not values:
-            raise exception.InvalidInput(reason=_("Ceph config: config is "
-                                                  "none!"))
 
-        required_args = ['group', 'key', 'value']
+class CephConfigActionHandler(ClusterAPIHandler):
+    def _ceph_config_set(self, ctxt, client, action, values):
+        if action == 'update':
+            required_args = ['group', 'key', 'value']
+        if action == 'reset':
+            required_args = ['group', 'key']
+
         for arg in required_args:
             if values.get(arg) is None:
                 raise exception.InvalidInput(
@@ -55,14 +54,45 @@ class CephConfigListHandler(ClusterAPIHandler):
             raise exception.InvalidInput(
                 reason=_("{} do not support to modify".format(values['key']))
             )
-        if not isinstance(values['value'], detail.get('type')):
-            raise exception.InvalidInput(
-                reason=_("Type of config is error, it needs to be".format(
-                    detail.get('type')))
-            )
+        if action == 'update':
+            if not isinstance(values['value'], detail.get('type')):
+                raise exception.InvalidInput(
+                    reason=_("Type of config is error, it needs to be".format(
+                        detail.get('type')))
+                )
+        if action == 'reset':
+            values.update({'value': detail.get('default')})
 
+        return client.ceph_config_set(ctxt, values=values)
+
+    def _ceph_config_update(self, ctxt, client, values):
+        return self._ceph_config_set(ctxt, client, 'update', values)
+
+    def _ceph_config_reset(self, ctxt, client, values):
+        return self._ceph_config_set(ctxt, client, 'reset', values)
+
+    @gen.coroutine
+    def post(self):
+        ctxt = self.get_context()
+        body = json_decode(self.request.body)
+        action = body.get('action')
+        if not action:
+            raise exception.InvalidInput(reason=_("Ceph config: action is "
+                                                  "none"))
+        values = body.get('ceph_config')
+        if not values:
+            raise exception.InvalidInput(reason=_("Ceph config: config is "
+                                                  "none!"))
         client = self.get_admin_client(ctxt)
-        config = yield client.ceph_config_set(ctxt, values=values)
+        action_map = {
+            "config_update": self._ceph_config_update,
+            "config_reset": self._ceph_config_reset,
+        }
+        fun_action = action_map.get(action)
+        if fun_action is None:
+            raise exception.DiskActionNotFound(action=action)
+        config = yield fun_action(ctxt, client, values)
+
         self.write(objects.json_encode({
             "ceph_config": config
         }))
