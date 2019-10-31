@@ -70,8 +70,9 @@ class VolumeAccessPathStatus(BaseStorEnum):
     ACTIVE = 'active'
     DELETING = 'deleting'
     ERROR = 'error'
+    DELETED = 'deleted'
 
-    ALL = (CREATING, ACTIVE, DELETING, ERROR)
+    ALL = (CREATING, ACTIVE, DELETING, ERROR, DELETED)
 
 
 class VolumeAccessPathStatusField(BaseEnumField):
