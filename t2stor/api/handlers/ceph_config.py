@@ -104,4 +104,7 @@ class CephConfigContentHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         content = yield client.ceph_config_content(ctxt)
+        self.set_header('Content-Type', 'application/force-download')
+        self.set_header('Content-Disposition',
+                        'attachment; filename="ceph.conf"')
         self.write(content)
