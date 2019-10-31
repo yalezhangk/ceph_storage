@@ -15,9 +15,12 @@ logger = logging.getLogger(__name__)
 class LogFileListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        # 日志文件列表(元数据)
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        log_files = yield client.log_file_get_all(ctxt)
+        node_id = self.get_argument('node_id')
+        service_type = self.get_argument('service_type')
+        log_files = yield client.log_file_get_all(ctxt, node_id, service_type)
         self.write(objects.json_encode({
             "log_files": log_files
         }))

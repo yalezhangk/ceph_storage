@@ -845,14 +845,53 @@ class AdminHandler(object):
 
     ###################
 
-    def log_file_get_all(self, ctxt, marker=None, limit=None,
-                         sort_keys=None, sort_dirs=None, filters=None,
-                         offset=None):
-        filters = filters or {}
-        filters['cluster_id'] = ctxt.cluster_id
-        return objects.LogFileList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+    def log_file_get_all(self, ctxt, node_id, service_type, marker=None,
+                         limit=None, sort_keys=None, sort_dirs=None,
+                         filters=None, offset=None):
+        # 1 参数校验，node/osd是否存在
+        node = objects.Node.get_by_id(ctxt, node_id)
+        if not node:
+            raise exception.NodeNotFound(node_id=node_id)
+        if service_type == s_fields.LogfileType.MON:
+            if not node.role_monitor:
+                raise exception.InvalidInput(
+                    reason=_('node_id {} is not monitor role'.format(node_id)))
+        elif service_type == s_fields.LogfileType.OSD:
+            if not node.role_storage:
+                raise exception.InvalidInput(
+                    reason=_('node_id {} is not storage role'.format(node_id)))
+        else:
+            raise exception.InvalidInput(reason=_('service_type must is mon or'
+                                                  'osd'))
+        # 2 agent获取日志文件元数据
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node_id=int(node_id))
+        metadata = client.get_logfile_metadata(
+            ctxt, node=node, service_type=service_type)
+        if not metadata:
+            logger.error('get log_file metadata erro or without log_files')
+            return None
+        # 3 入库，删除旧的，再新增
+        logger.info('get log_file metadata success')
+        del_filter = {'cluster_id': ctxt.cluster_id, 'node_id': node_id,
+                      'service_type': service_type}
+        del_objs = objects.LogFileList.get_all(ctxt, filters=del_filter)
+        for del_obj in del_objs:
+            del_obj.destroy()
+        result = []
+        for per_log in metadata:
+            filename = per_log['file_name']
+            filesize = per_log['file_size']
+            directory = per_log['directory']
+            filters = {'cluster_id': ctxt.cluster_id, 'node_id': node_id,
+                       'service_type': service_type, 'filename': filename,
+                       'filesize': filesize, 'directory': directory}
+            new_log = objects.LogFile(ctxt, **filters)
+            new_log.create()
+            result.append(new_log)
+        # todo 分页返回
+        return result
 
     def log_file_create(self, ctxt, data):
         data.update({'cluster_id': ctxt.cluster_id})
@@ -950,7 +989,6 @@ class AdminHandler(object):
         snap.status = status
         snap.save()
         # send ws message
-        WebSocketClientManager(ctxt, )
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=snap.cluster_id
         ).get_client()

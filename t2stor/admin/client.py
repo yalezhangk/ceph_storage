@@ -485,13 +485,14 @@ class AdminClient(BaseClient):
 
     ###################
 
-    def log_file_get_all(self, ctxt, marker=None, limit=None,
-                         sort_keys=None, sort_dirs=None, filters=None,
-                         offset=None):
+    def log_file_get_all(self, ctxt, node_id, service_type, marker=None,
+                         limit=None, sort_keys=None, sort_dirs=None,
+                         filters=None, offset=None):
         response = self.call(
-            ctxt, "log_file_get_all", marker=marker, limit=limit,
-            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            ctxt, "log_file_get_all", node_id=node_id,
+            service_type=service_type, marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs,
+            filters=filters, offset=offset)
         return response
 
     def log_file_create(self, ctxt, data):

@@ -52,8 +52,8 @@ class LogFileList(base.ObjectListBase, base.StorObject):
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        log_files = db.alert_group_get_all(context, marker, limit,
-                                           sort_keys, sort_dirs, filters,
-                                           offset)
+        log_files = db.log_file_get_all(context, marker, limit,
+                                        sort_keys, sort_dirs, filters,
+                                        offset)
         return base.obj_make_list(context, cls(context), objects.LogFile,
                                   log_files)

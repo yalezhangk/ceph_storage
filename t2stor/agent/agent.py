@@ -20,6 +20,7 @@ from t2stor.tools.ceph import CephTool
 from t2stor.tools.disk import DiskTool as DiskTool
 from t2stor.tools.docker import Docker as DockerTool
 from t2stor.tools.file import File as FileTool
+from t2stor.tools.log_file import LogFile as LogFileTool
 from t2stor.tools.pysmart import Device as DevideTool
 from t2stor.tools.service import Service
 from t2stor.tools.storcli import StorCli as StorCliTool
@@ -340,6 +341,21 @@ class AgentHandler(object):
             logger.error('Update ceph config error: {}'.format(e))
             return False
         return True
+
+    def get_logfile_metadata(self, ctxt, node, service_type):
+        logger.debug('begin get_logfile_metadata,service_type:%s',
+                     service_type)
+        ssh_client = self._get_ssh_client(node)
+        if not ssh_client:
+            return False
+        log_file_tool = LogFileTool(ssh_client)
+        try:
+            metadata = log_file_tool.get_logfile_metadata(service_type)
+            logger.info("get_logfile_metadata success:{}".format(service_type))
+        except exception.StorException as e:
+            logger.error("get_logfile_metadata error:{}".format(e))
+            metadata = None
+        return metadata
 
 
 class AgentService(ServiceBase):
