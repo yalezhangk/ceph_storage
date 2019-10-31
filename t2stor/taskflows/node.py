@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import configparser
+import os
+
 from t2stor import objects
 from t2stor.admin.genconf import get_agent_conf
 from t2stor.admin.genconf import yum_repo
@@ -15,15 +18,24 @@ from t2stor.utils import template
 class NodeTask(object):
     ctxt = None
     node = None
+    host_perfix = None
 
-    def __init__(self, ctxt, node):
+    def __init__(self, ctxt, node, host_prefix=None):
+        self.host_prefix = host_prefix
         self.node = node
+
+    def _wapper(self, path):
+        if not self.host_prefix:
+            return path
+        if path[0] == os.path.sep:
+            path = path[1:]
+        return os.path.join(self.host_prefix, path)
 
     def get_ssh_executor(self):
         return SSHExecutor(hostname=self.node.ip_address,
                            password=self.node.password)
 
-    def get_yum_repo():
+    def get_yum_repo(self):
         repo_url = objects.sysconfig.sys_config_get("repo_url")
         tpl = template.get('yum.repo.j2')
         repo = tpl.render(repo_baseurl=repo_url)
@@ -127,3 +139,12 @@ class NodeTask(object):
         # rm config file
         # rm image
         pass
+
+    def ceph_config_update(self, values):
+        path = self._wapper('/etc/ceph/ceph.conf')
+        configer = configparser.ConfigParser()
+        configer.read(path)
+        if not configer.has_section(values['group']):
+            configer.add_section(values['group'])
+        configer.set(values['group'], values['key'], values['value'])
+        configer.write(open(path, 'w'))
