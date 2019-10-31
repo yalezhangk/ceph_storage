@@ -60,6 +60,11 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_config_update", values=values)
         return response
 
+    def get_logfile_metadata(self, ctxt, node, service_type):
+        response = self.call(ctxt, "get_logfile_metadata", node=node,
+                             service_type=service_type)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"

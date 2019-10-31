@@ -244,3 +244,13 @@ class OsdStatusField(BaseEnumField):
 
 class OsdDiskTypeField(BaseEnumField):
     AUTO_TYPE = DiskType()
+
+
+class LogfileType(BaseStorEnum):
+    MON = 'mon'
+    OSD = 'osd'
+    ALL = (MON, OSD)
+
+
+class LogfileTypeField(BaseEnumField):
+    AUTO_TYPE = LogfileType()
