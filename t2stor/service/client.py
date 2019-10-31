@@ -112,10 +112,10 @@ class BaseClient(object):
             return self._sync_call(context, method, version, **kwargs)
 
     def _sync_call(self, context, method, version, **kwargs):
-        context = self.serializer.serialize_context(context)
+        _context = self.serializer.serialize_context(context)
         kwargs = self.serializer.serialize_entity(context, kwargs)
         response = self._stub.call(stor_pb2.Request(
-            context=json.dumps(context),
+            context=json.dumps(_context),
             method=method,
             kwargs=json.dumps(kwargs),
             version=version
