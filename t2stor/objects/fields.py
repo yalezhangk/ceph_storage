@@ -232,8 +232,10 @@ class OsdTypeField(BaseEnumField):
 class OsdStatus(BaseStorEnum):
     UP = 'up'
     DOWN = 'down'
+    CREATING = 'creating'
+    DELETING = 'deleting'
 
-    ALL = (UP, DOWN)
+    ALL = (UP, DOWN, CREATING, DELETING)
 
 
 class OsdStatusField(BaseEnumField):

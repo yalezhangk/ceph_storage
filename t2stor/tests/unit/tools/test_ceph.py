@@ -6,7 +6,7 @@ import mock
 
 from t2stor import test
 from t2stor.tools.base import Executor
-from t2stor.tools.ceph import Ceph
+from t2stor.tools.ceph import CephTool
 from t2stor.tools.ceph import RADOSClient
 
 get_mons_re = """
@@ -173,7 +173,7 @@ class TestServiceTool(test.TestCase):
     @mock.patch.object(Executor, 'run_command')
     def test_get_networks(self, run_command):
         run_command.return_value = (0, "172.159.3.0/16", "")
-        tool = Ceph(Executor())
+        tool = CephTool(Executor())
         re = tool.get_networks()
         self.assertEqual(("172.159.3.0/16", "172.159.3.0/16"), re)
         run_command.assert_has_calls([

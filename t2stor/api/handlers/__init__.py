@@ -7,6 +7,7 @@ from t2stor.api.handlers.alert_log import AlertLogListHandler
 from t2stor.api.handlers.alert_rule import AlertRuleHandler
 from t2stor.api.handlers.alert_rule import AlertRuleListHandler
 from t2stor.api.handlers.ceph_config import CephConfigActionHandler
+from t2stor.api.handlers.ceph_config import CephConfigContentHandler
 from t2stor.api.handlers.ceph_config import CephConfigListHandler
 from t2stor.api.handlers.clusters import ClusterDetectHandler
 from t2stor.api.handlers.clusters import ClusterHandler
@@ -65,6 +66,7 @@ def get_routers():
         (r"/alert_rules/([0-9]*)/", AlertRuleHandler),
         (r"/ceph_configs/", CephConfigListHandler),
         (r"/ceph_configs/action/", CephConfigActionHandler),
+        (r"/ceph_configs/content/", CephConfigContentHandler),
         (r"/clusters/", ClusterHandler),
         (r"/cluster_detect/", ClusterDetectHandler),
         (r"/datacenters/", DataCenterListHandler),

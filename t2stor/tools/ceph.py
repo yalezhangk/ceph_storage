@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_POOL = 'rbd'
 
 
-class Ceph(ToolBase):
+class CephTool(ToolBase):
     """Deprecated Ceph Tool
 
     All function need move to rados client
@@ -44,6 +44,39 @@ class Ceph(ToolBase):
         public_network = stdout
 
         return cluster_network, public_network
+
+    def disk_prepare(self, backend, diskname, db_partition=None,
+                     wal_partition=None, cache_partition=None,
+                     journal_partition=None, fsid=None, osd_id=None):
+        # ceph-disk --setuser root --setgroup root prepare
+        # --osd-uuid {{ osd_fsid }} --osd-id {{ osd_id}}
+        # --cluster {{ cluster }} --{{ store_backend }}
+        # --block.db {{ item.0 }} --block.t2ce {{ item.1 }} {{ item.2 }}"
+        cmd = ["ceph-disk", "--setuser", "ceph", "--setgroup", "ceph",
+               "prepare", ]
+        if fsid and osd_id:
+            cmd.extend(['--osd-uuid', fsid, "--osd-id", osd_id])
+        cmd.extend(["--cluster", "ceph", "--%s" % backend])
+        if cache_partition:
+            cmd.extend(['--block.t2ce', "/dev/%s" % cache_partition])
+        if db_partition:
+            cmd.extend(['--block.db', "/dev/%s" % db_partition])
+        if wal_partition:
+            cmd.extend(['--block.wal', "/dev/%s" % wal_partition])
+        if journal_partition:
+            cmd.extend(['--block.journal', "/dev/%s" % journal_partition])
+        cmd.append("/dev/%s" % diskname)
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def disk_active(self, diskname):
+        cmd = ["ceph-disk", "activate", "/dev/%s1" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=300)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
 
 
 def get_json_output(json_databuf):

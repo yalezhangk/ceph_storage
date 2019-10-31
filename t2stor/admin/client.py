@@ -583,6 +583,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "ceph_config_set", values=values)
         return response
 
+    def ceph_config_content(self, ctxt):
+        response = self.call(ctxt, "ceph_config_content")
+        return response
+
     def ceph_cluster_info(self, ctxt):
         response = self.call(ctxt, "ceph_cluster_info")
         return response

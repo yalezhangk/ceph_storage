@@ -16,8 +16,10 @@ from t2stor.service import ServiceBase
 from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
 from t2stor.tools.base import SSHExecutor
+from t2stor.tools.ceph import CephTool
 from t2stor.tools.disk import DiskTool as DiskTool
 from t2stor.tools.docker import Docker as DockerTool
+from t2stor.tools.file import File as FileTool
 from t2stor.tools.pysmart import Device as DevideTool
 from t2stor.tools.service import Service
 from t2stor.tools.storcli import StorCli as StorCliTool
@@ -68,10 +70,21 @@ service_map = {
 
 
 class AgentHandler(object):
+    Node = None
+    ctxt = None
 
     def __init__(self):
         self.executors = futures.ThreadPoolExecutor(max_workers=10)
+        self.ctxt = RequestContext(user_id="xxx", project_id="stor",
+                                   is_admin=False, cluster_id=CONF.cluster_id)
+        self._get_node()
         self.executors.submit(self._cron)
+
+    def _get_node(self):
+        client = AdminClientManager(
+            self.ctxt, CONF.cluster_id, async_support=False
+        ).get_client()
+        self.node = client.node_get(self.ctxt, node_id=CONF.node_id)
 
     def _cron(self):
         logger.debug("Start crontab")
@@ -94,9 +107,45 @@ class AgentHandler(object):
         logger.debug("disk get all")
         return []
 
-    def ceph_conf_write(self, context, conf):
+    def ceph_conf_write(self, context, content):
         logger.debug("Write Ceph Conf")
+        client = self._get_ssh_client()
+        file_tool = FileTool(client)
+        file_tool.mkdir("/etc/ceph")
+        file_tool.write("/etc/ceph/ceph.conf", content)
         return True
+
+    def ceph_prepare_disk(self, context, osd):
+        kwargs = {
+            "diskname": osd.disk.name,
+            "backend": osd.type,
+        }
+        if osd.fsid and osd.osd_id:
+            kwargs['fsid'] = osd.fsid
+            kwargs['osd_id'] = osd.osd_id
+        if osd.cache_partition_id:
+            kwargs['cache_partition'] = osd.cache_partition.name
+        if osd.db_partition_id:
+            kwargs['db_partition'] = osd.cache_partition.name
+        if osd.wal_partition_id:
+            kwargs['wal_partition'] = osd.wal_partition.name
+        if osd.journal_partition_id:
+            kwargs['jounal_partition'] = osd.jounal_partition.name
+
+        client = self._get_ssh_client()
+        ceph_tool = CephTool(client)
+        ceph_tool.disk_prepare(**kwargs)
+        return True
+
+    def ceph_active_disk(self, context, osd):
+        client = self._get_ssh_client()
+        ceph_tool = CephTool(client)
+        ceph_tool.disk_active(osd.disk.name)
+
+    def ceph_osd_create(self, context, osd):
+        self.ceph_prepare_disk(context, osd)
+        self.ceph_active_disk(context, osd)
+        return osd
 
     def package_install(self, context, packages):
         logger.debug("Install Package")
@@ -115,10 +164,10 @@ class AgentHandler(object):
         tool.restart(name)
         return True
 
-    def _get_ssh_client(self, node):
+    def _get_ssh_client(self):
         try:
-            ssh_client = SSHExecutor(hostname=node.hostname,
-                                     password=node.password)
+            ssh_client = SSHExecutor(hostname=self.node.hostname,
+                                     password=self.node.password)
         except exception.StorException as e:
             logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
             return None
@@ -126,14 +175,9 @@ class AgentHandler(object):
 
     def service_check(self):
         logger.debug("Get services status")
-        context = RequestContext(user_id="xxx", project_id="stor",
-                                 is_admin=False, cluster_id=CONF.cluster_id)
-        client = AdminClientManager(
-            context, CONF.cluster_id, async_support=False
-        ).get_client()
 
-        node = client.node_get(context, node_id=CONF.node_id)
-        ssh_client = self._get_ssh_client(node)
+        node = self.node
+        ssh_client = self._get_ssh_client()
         if not ssh_client:
             return False
         docker_tool = DockerTool(ssh_client)
@@ -159,7 +203,7 @@ class AgentHandler(object):
                     "node_id": CONF.node_id
                 })
         logger.debug(services)
-        response = client.service_update(context, json.dumps(services))
+        response = self.node.service_update(self.ctxt, json.dumps(services))
         if not response:
             logger.debug('Update service status failed!')
             return False
@@ -282,6 +326,10 @@ class AgentHandler(object):
             logger.error("Create partitions error: {}".format(e))
             _success = False
         return _success
+
+    def osd_create(self, ctxt, node, osd):
+        task = NodeTask(ctxt, node)
+        task.ceph_osd_install(osd)
 
     def ceph_config_update(self, ctxt, values):
         logger.debug('Update ceph config for this node')
