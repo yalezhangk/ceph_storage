@@ -50,9 +50,15 @@ class CephConfigListHandler(ClusterAPIHandler):
                 raise exception.InvalidInput(
                     reason=_("Ceph config: missing required arguments!"))
 
-        if values['key'] not in cluster_config.cluster_configs:
+        detail = cluster_config.cluster_configs.get(values['key'])
+        if not detail:
             raise exception.InvalidInput(
                 reason=_("{} do not support to modify".format(values['key']))
+            )
+        if not isinstance(values['value'], detail.get('type')):
+            raise exception.InvalidInput(
+                reason=_("Type of config is error, it needs to be".format(
+                    detail.get('type')))
             )
 
         client = self.get_admin_client(ctxt)

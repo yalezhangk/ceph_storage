@@ -146,5 +146,5 @@ class NodeTask(object):
         configer.read(path)
         if not configer.has_section(values['group']):
             configer.add_section(values['group'])
-        configer.set(values['group'], values['key'], values['value'])
+        configer.set(values['group'], values['key'], str(values['value']))
         configer.write(open(path, 'w'))
