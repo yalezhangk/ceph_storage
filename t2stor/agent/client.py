@@ -69,6 +69,11 @@ class AgentClient(BaseClient):
                              service_type=service_type)
         return response
 
+    def pull_logfile(self, ctxt, node, directory, filename):
+        response = self.call(ctxt, "pull_logfile", node=node,
+                             directory=directory, filename=filename)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"

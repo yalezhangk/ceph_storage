@@ -3,7 +3,11 @@
 import configparser
 import logging
 import os
+from pathlib import Path
 
+import paramiko
+
+from t2stor import exception as exc
 from t2stor import objects
 from t2stor.admin.genconf import get_agent_conf
 from t2stor.admin.genconf import yum_repo
@@ -39,6 +43,20 @@ class NodeTask(object):
     def get_ssh_executor(self):
         return SSHExecutor(hostname=str(self.node.ip_address),
                            password=self.node.password)
+
+    def get_ssh_key(self):
+        home = str(Path.home())
+        pk = paramiko.RSAKey.from_private_key(open('%s/.ssh/id_rsa' % home))
+        return pk
+
+    def get_sftp_client(self):
+        ip_addr = str(self.node.ip_address)
+        password = self.node.password
+        p_key = self.get_ssh_key()
+        transport = paramiko.Transport((ip_addr, 22))
+        transport.connect(username='root', password=password, pkey=p_key)
+        sftp_client = paramiko.SFTPClient.from_transport(transport)
+        return sftp_client, transport
 
     def get_agent(self):
         client = AgentClientManager(
@@ -168,3 +186,15 @@ class NodeTask(object):
             configer.add_section(values['group'])
         configer.set(values['group'], values['key'], str(values['value']))
         configer.write(open(path, 'w'))
+
+    def pull_logfile(self, directory, filename, LOCAL_LOGFILE_DIR):
+        try:
+            sftp_client, transport = self.get_sftp_client()
+            sftp_client.get('{}{}'.format(directory, filename),
+                            '{}{}'.format(LOCAL_LOGFILE_DIR, filename))
+            # 将node140上的/var/log/ceph/xx.log下载到admin201.131上
+            transport.close()
+        except Exception as e:
+            logger.error('pull_logfile error,error:{}'.format(e))
+            raise exc.CephException(message='pull log_file error,reason:'
+                                            '{}'.format(str(e)))

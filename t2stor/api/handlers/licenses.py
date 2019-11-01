@@ -83,6 +83,9 @@ class DownloadlicenseHandler(BaseAPIHandler):
             file = {file_name: PRIVATE_FILE}
         else:
             raise InvalidInput(reason=_('file_name not exist'))
+        self.set_header('Content-Type', 'application/octet-stream')
+        self.set_header('Content-Disposition',
+                        'attachment; filename={}.pem'.format(file_name))
         with open(file[file_name], 'r') as f:
             file_content = f.read()
             self.write(file_content)

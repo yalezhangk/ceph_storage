@@ -529,8 +529,7 @@ class AdminClient(BaseClient):
         return response
 
     def log_file_get(self, ctxt, log_file_id):
-        response = self.call(ctxt, "log_file_get",
-                             log_file_id=log_file_id)
+        response = self.call(ctxt, "log_file_get", log_file_id=log_file_id)
         return response
 
     def log_file_update(self, ctxt, log_file_id, data):
