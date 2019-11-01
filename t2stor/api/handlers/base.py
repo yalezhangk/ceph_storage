@@ -14,9 +14,11 @@ class BaseAPIHandler(RequestHandler):
     user = None
 
     def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Origin", "http://localhost:8088")
+        self.set_header("Access-Control-Allow-Credentials", "true")
         self.set_header("Access-Control-Allow-Headers",
-                        "x-requested-with, Content-Type, token-id")
+                        "x-requested-with, Content-Type, Cluster-Id, "
+                        "x-access-module")
         self.set_header('Access-Control-Allow-Methods',
                         'POST, GET, OPTIONS, PUT, DELETE')
         self.set_header("Content-Type", "application/json")
