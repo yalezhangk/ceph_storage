@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
 
 from tornado import gen
 from tornado.escape import json_decode
@@ -38,14 +39,28 @@ class LogFileListHandler(ClusterAPIHandler):
 
 
 class LogFileHandler(ClusterAPIHandler):
+
     @gen.coroutine
     def get(self, log_file_id):
+        # 日志文件下载
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        log_file = yield client.log_file_get(ctxt, log_file_id)
-        self.write(objects.json_encode({
-            "log_file": log_file
-        }))
+        file_path = yield client.log_file_get(ctxt, log_file_id)
+        filename = file_path.split('/')[-1]
+        self.set_header('Content-Type', 'application/octet-stream')
+        self.set_header('Content-Disposition',
+                        'attachment; filename={}'.format(filename))
+        with open(file_path, 'rb') as f:
+            while True:
+                data = f.read(512)
+                if not data:
+                    # del log file
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    break
+                self.write(data)
+        # todo stream 传输
+        self.finish()
 
     @gen.coroutine
     def put(self, log_file_id):

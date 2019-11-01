@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import queue
 import time
 import uuid
@@ -25,6 +26,7 @@ from t2stor.utils import cluster_config as ClusterConfg
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 OSD_ID_MAX = 1024 ^ 2
 logger = logging.getLogger(__name__)
+LOCAL_LOGFILE_DIR = '/var/log/t2stor_log/'
 
 
 class AdminQueue(queue.Queue):
@@ -1322,7 +1324,24 @@ class AdminHandler(object):
         return alert_log
 
     def log_file_get(self, ctxt, log_file_id):
-        return objects.LogFile.get_by_id(ctxt, log_file_id)
+        # todo
+        # 参数校验
+        log_file = objects.LogFile.get_by_id(ctxt, log_file_id)
+        if not log_file:
+            raise exception.LogFileNotFound(log_file_id=log_file_id)
+        node = objects.Node.get_by_id(ctxt, log_file.node_id)
+        directory = log_file.directory
+        filename = log_file.filename
+        # 拉取agent上文件到本机文件夹下
+        if not os.path.exists(LOCAL_LOGFILE_DIR):
+            os.makedirs(LOCAL_LOGFILE_DIR, mode=0o0755)
+        try:
+            task = NodeTask(ctxt, node)
+            task.pull_logfile(directory, filename, LOCAL_LOGFILE_DIR)
+        except exception.StorException as e:
+            logger.error('pull log_file error,{}'.format(e))
+            raise exception.CephException(message='pull log_file error')
+        return '{}{}'.format(LOCAL_LOGFILE_DIR, filename)
 
     def log_file_update(self, ctxt, log_file_id, data):
         log_file = self.log_file_get(ctxt, log_file_id)
