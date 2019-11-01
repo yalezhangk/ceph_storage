@@ -17,9 +17,12 @@ class EmailGroupListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        email_groups = yield client.email_group_get_all(ctxt)
+        page_args = self.get_paginated_args()
+        email_groups = yield client.email_group_get_all(ctxt, **page_args)
+        email_groups_all = yield client.email_group_get_all(ctxt)
         self.write(objects.json_encode({
-            "email_groups": email_groups
+            "email_groups": email_groups,
+            "total": len(email_groups_all)
         }))
 
     @gen.coroutine
