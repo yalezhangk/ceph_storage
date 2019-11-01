@@ -7,6 +7,7 @@ import logging
 from tornado import gen
 from tornado.escape import json_decode
 
+from t2stor import exception
 from t2stor.api.handlers.base import ClusterAPIHandler
 from t2stor.exception import InvalidInput
 from t2stor.i18n import _
@@ -57,7 +58,6 @@ class SysInfoHandler(ClusterAPIHandler):
                 cluster_cidr, gateway_cidr)
 
         # TODO agent设置Chrony服务器
-        return True
 
 
 class SmtpHandler(ClusterAPIHandler):
@@ -97,3 +97,20 @@ class SmtpHandler(ClusterAPIHandler):
             ctxt, smtp_enabled, smtp_user, smtp_password,
             smtp_host, smtp_port, smtp_enable_ssl, smtp_enable_tls)
         self.write(json.dumps({'a': 'a'}))
+
+
+class SmtpTestHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        config = json_decode(self.request.body)
+        config = config.get('smtp_conf')
+        if not config:
+            raise exception.NotFound(_("smtp could not be found."))
+        subject = config.pop("smtp_subject")
+        content = config.pop("smtp_content")
+        if not content["smtp_subject"]:
+            raise exception.NotFound(_("smtp_context could not be found."))
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        yield client.send_mail(subject, content, config)
+        self.write(json.dumps({'result': 'true'}))

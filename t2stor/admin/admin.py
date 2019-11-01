@@ -22,6 +22,7 @@ from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
 from t2stor.tools.ceph import CephTool
 from t2stor.utils import cluster_config as ClusterConfg
+from t2stor.utils.mail import send_mail
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 OSD_ID_MAX = 1024 ^ 2
@@ -1563,6 +1564,23 @@ class AdminHandler(object):
         return new_volume
 
     ###################
+    def send_mail(subject, content, config):
+        send_mail(subject, content, config)
+
+    def smtp_init(self, ctxt):
+        data = [
+            ("smtp_enabled", '0', 'string'),
+            ("smtp_user", '0', 'string'),
+            ("smtp_password", '0', 'string'),
+            ("smtp_host", '0', 'string'),
+            ("smtp_port", '0', 'string'),
+            ("smtp_enable_ssl", 'True', 'string'),
+            ("smtp_enable_tls", 'Flase', 'string'),
+        ]
+        for key, value, value_type in data:
+            cfg = objects.SysConfig(key=key, value=value,
+                                    value_type=value_type)
+            cfg.save()
 
     def smtp_get(self, ctxt):
         result = {}

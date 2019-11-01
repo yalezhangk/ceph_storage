@@ -46,6 +46,7 @@ from t2stor.api.handlers.racks import RackListHandler
 from t2stor.api.handlers.rpc_service import RpcServiceListHandler
 from t2stor.api.handlers.service import ServiceListHandler
 from t2stor.api.handlers.sysinfos import SmtpHandler
+from t2stor.api.handlers.sysinfos import SmtpTestHandler
 from t2stor.api.handlers.sysinfos import SysInfoHandler
 from t2stor.api.handlers.volume_access_paths import VolumeAccessPathHandler
 from t2stor.api.handlers.volume_access_paths import VolumeAccessPathListHandler
@@ -108,8 +109,8 @@ def get_routers():
         (r"/racks/([0-9]*)/", RackHandler),
         (r"/rpc_services/", RpcServiceListHandler),
         (r"/services/", ServiceListHandler),
-        (r"/sysconfs/set_smtp/", SmtpHandler),
         (r"/sysconfs/smtp/", SmtpHandler),
+        (r"/sysconfs/mail/test/", SmtpTestHandler),
         (r"/sysinfos/", SysInfoHandler),
         (r"/volume_access_paths/", VolumeAccessPathListHandler),
         (r"/volume_access_paths/([0-9]*)/", VolumeAccessPathHandler),
