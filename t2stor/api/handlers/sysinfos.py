@@ -50,7 +50,7 @@ class SysInfoHandler(ClusterAPIHandler):
         if chrony_server:
             if len(str(chrony_server).split('.')) < 3:
                 raise InvalidInput(reason=_("chrony_server is not a IP"))
-            yield client.update_chrony(chrony_server)
+            yield client.update_chrony(ctxt, chrony_server)
         else:
             yield client.update_sysinfo(
                 ctxt, cluster_name, admin_cidr, public_cidr,
