@@ -579,3 +579,7 @@ class CephTask(object):
                 raise exc.PoolNameNotFound(pool=pool_name)
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_resize(v_name, size)
+
+    def osd_new(self, osd_fsid):
+        with RADOSClient(self.rados_args()) as rados_client:
+            return rados_client.osd_new(osd_fsid)

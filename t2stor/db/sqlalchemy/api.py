@@ -2706,6 +2706,7 @@ def _ceph_config_get(context, ceph_config_id, session=None):
 def ceph_config_create(context, values):
     ceph_config_ref = models.CephConfig()
     ceph_config_ref.update(values)
+    ceph_config_ref.cluster_id = context.cluster_id
     session = get_session()
     with session.begin():
         ceph_config_ref.save(session)

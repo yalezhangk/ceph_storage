@@ -173,10 +173,11 @@ class DiskPartitionTypeField(BaseEnumField):
 class DiskPartitionRole(BaseStorEnum):
     CACHE = 'cache'
     DB = 'db'
+    WAL = 'wal'
     JOURNAL = 'journal'
     MIX = 'mix'
 
-    ALL = (CACHE, DB, JOURNAL, MIX)
+    ALL = (CACHE, DB, WAL, JOURNAL, MIX)
 
 
 class DiskPartitionRoleField(BaseEnumField):
@@ -234,8 +235,9 @@ class OsdStatus(BaseStorEnum):
     DOWN = 'down'
     CREATING = 'creating'
     DELETING = 'deleting'
+    ERROR = 'error'
 
-    ALL = (UP, DOWN, CREATING, DELETING)
+    ALL = (UP, DOWN, CREATING, DELETING, ERROR)
 
 
 class OsdStatusField(BaseEnumField):

@@ -63,9 +63,9 @@ class CephTool(ToolBase):
             cmd.extend(['--block.db', "/dev/%s" % db_partition])
         if wal_partition:
             cmd.extend(['--block.wal', "/dev/%s" % wal_partition])
-        if journal_partition:
-            cmd.extend(['--block.journal', "/dev/%s" % journal_partition])
         cmd.append("/dev/%s" % diskname)
+        if journal_partition:
+            cmd.extend(["/dev/%s" % journal_partition])
         rc, stdout, stderr = self.run_command(cmd, timeout=60)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
@@ -828,3 +828,15 @@ class RADOSClient(object):
             mon_hosts.append(public_addr)
 
         return mon_hosts
+
+    def osd_new(self, osd_fsid):
+        logger.debug("detect mons from cluster")
+
+        cmd = {
+            "prefix": "osd new",
+            "uuid": osd_fsid,
+            "format": "json",
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res.get("osdid")
