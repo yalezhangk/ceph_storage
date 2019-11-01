@@ -105,10 +105,11 @@ class NodeTask(object):
 
         return osd
 
-    def ceph_osd_uninstall(self):
-        # update ceph.conf
-        # stop service
-        pass
+    def ceph_osd_uninstall(self, osd):
+        logger.debug("osd destroy on node")
+        agent = self.get_agent()
+        osd = agent.ceph_osd_destroy(self.ctxt, osd)
+        return osd
 
     def ceph_rgw_install(self):
         # write ceph.conf

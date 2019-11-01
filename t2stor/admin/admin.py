@@ -411,7 +411,7 @@ class AdminHandler(object):
             osd.save()
         except exception.StorException as e:
             logger.error(e)
-            osd.status = s_fields.OsdStatus.DOWN
+            osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             msg = _("Osd create error!")
 
@@ -421,6 +421,8 @@ class AdminHandler(object):
         wb_client.send_message(ctxt, osd, "CREATED", msg)
 
     def _set_osd_partation_role(self, osd):
+        osd.disk.status = s_fields.DiskStatus.INUSE
+        osd.disk.save()
         if osd.db_partition_id:
             osd.db_partition.role = s_fields.DiskPartitionRole.DB
             osd.db_partition.status = s_fields.DiskStatus.INUSE
@@ -474,7 +476,8 @@ class AdminHandler(object):
         self._set_osd_partation_role(osd)
         self._osd_config_set(ctxt, osd)
 
-        self._osd_create(ctxt, node, osd)
+        self.executor.submit(self._osd_create, ctxt, node, osd)
+
         return osd
 
     def osd_update(self, ctxt, osd_id, data):
@@ -484,9 +487,62 @@ class AdminHandler(object):
         osd.save()
         return osd
 
-    def osd_delete(self, ctxt, osd_id):
+    def _osd_config_remove(self, ctxt, osd):
+        logger.debug("osd clear config")
+        if osd.cache_partition_id:
+            osd_cfgs = objects.CephConfigList.get_all(
+                ctxt, filters={'group': "osd.%s" % osd.osd_id}
+            )
+            for cfg in osd_cfgs:
+                cfg.destroy()
+
+    def _osd_clear_partition_role(self, osd):
+        logger.debug("osd clear partition role")
+        osd.disk.status = s_fields.DiskStatus.AVAILABLE
+        osd.disk.save()
+        if osd.db_partition_id:
+            osd.db_partition.role = None
+            osd.db_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.db_partition.save()
+        if osd.cache_partition_id:
+            osd.cache_partition.role = None
+            osd.cache_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.cache_partition.save()
+        if osd.journal_partition_id:
+            osd.journal_partition.role = None
+            osd.journal_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.journal_partition.save()
+        if osd.wal_partition_id:
+            osd.wal_partition.role = None
+            osd.wal_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.wal_partition.save()
+
+    def _osd_delete(self, ctxt, node, osd):
+        osd_id = osd.id
+        try:
+            task = NodeTask(ctxt, node)
+            osd = task.ceph_osd_uninstall(osd)
+            self._osd_config_remove(ctxt, osd)
+            self._osd_clear_partition_role(osd)
+            osd.destroy()
+            msg = _("Osd uninstall!")
+        except exception.StorException as e:
+            logger.error(e)
+            osd.status = s_fields.OsdStatus.ERROR
+            osd.save()
+            msg = _("Osd create error!")
+
         osd = objects.Osd.get_by_id(ctxt, osd_id)
-        osd.destroy()
+        wb_client = WebSocketClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client()
+        wb_client.send_message(ctxt, osd, "DELETED", msg)
+
+    def osd_delete(self, ctxt, osd_id):
+        osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        osd.status = s_fields.OsdStatus.DELETING
+        osd.save()
+        self.executor.submit(self._osd_delete, ctxt, osd.node, osd)
         return osd
 
     ###################

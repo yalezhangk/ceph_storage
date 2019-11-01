@@ -4,6 +4,7 @@ import logging
 import os
 
 from t2stor.exception import ProgrammingError
+from t2stor.exception import RunCommandError
 from t2stor.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,15 @@ class DiskTool(ToolBase):
             logger.exception("Create partations error, Stdout: %s", out)
             raise ProgrammingError(
                 reason="partitions argument not end with %")
+        return True
+
+    def data_clear(self, disk):
+        disk_path = self._wapper("/dev/%s" % disk)
+        cmd = "dd if=/dev/zero of={} bs=4M count=30".format(disk_path)
+        code, out, err = self.run_command(cmd)
+        if code:
+            raise RunCommandError(cmd=cmd, return_code=code,
+                                  stdout=out, stderr=err)
         return True
 
 

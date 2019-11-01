@@ -29,6 +29,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_osd_create", osd=osd)
         return response
 
+    def ceph_osd_destroy(self, ctxt, osd):
+        response = self.call(ctxt, "ceph_osd_destroy", osd=osd)
+        return response
+
     def package_install(self, ctxt, packages):
         response = self.call(ctxt, "package_install", packages=packages)
         return response
