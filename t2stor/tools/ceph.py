@@ -765,6 +765,28 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         self._send_mon_command(command_str)
 
+    def rule_get(self, rule_name='replicated_rule'):
+        cmd = {
+            "prefix": "osd crush rule dump",
+            "name": rule_name,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+        rule_detail = self._send_mon_command(command_str)
+        return rule_detail
+
+    def rule_rename(self, srcname='replicated_rule', dstname=None):
+        if not dstname:
+            return
+        cmd = {
+            "srcname": srcname,
+            "prefix": "osd crush rule rename",
+            "dstname": dstname
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
     def get_osd_hosts(self):
         logger.debug("detect osds from cluster")
 

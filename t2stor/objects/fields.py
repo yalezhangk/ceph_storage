@@ -256,3 +256,7 @@ class LogfileType(BaseStorEnum):
 
 class LogfileTypeField(BaseEnumField):
     AUTO_TYPE = LogfileType()
+
+
+class DictOfNullableField(fields.AutoTypedField):
+    AUTO_TYPE = fields.Dict(fields.FieldType(), nullable=True)

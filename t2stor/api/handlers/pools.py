@@ -1,9 +1,12 @@
 import logging
 
 from tornado import gen
+from tornado.escape import json_decode
 
 from t2stor import objects
 from t2stor.api.handlers.base import ClusterAPIHandler
+from t2stor.exception import InvalidInput
+from t2stor.i18n import _
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +18,32 @@ class PoolListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         pools = yield client.pool_get_all(ctxt)
         self.write(objects.json_encode({
-            "pool": pools
+            "pools": pools
+        }))
+
+    @gen.coroutine
+    def post(self):
+        """创建存储池
+        pool:
+        {
+            "name": string,
+            "type": string[replicated,erasure],
+            "speed_type": string[HDD,SSD],
+            "role": string[data,metadata],
+            "data_chunk_num": number,
+            "coding_chunk_num": number,
+            "replicated_size": number,
+            "failure_domain_type": string[host,rack,datacenter],
+            'osds', [1,3]
+        }
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body).get('pool')
+        logger.debug("create pool data: {}".format(data))
+        client = self.get_admin_client(ctxt)
+        pool = yield client.pool_create(ctxt, data)
+        self.write(objects.json_encode({
+            "pool": pool
         }))
 
 
@@ -26,6 +54,36 @@ class PoolHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_get(ctxt, pool_id)
         self.write(objects.json_encode({"pool": pool}))
+
+    @gen.coroutine
+    def put(self, pool_id):
+        """编辑存储池
+
+        {"pool": {"name":"pool-name"}}
+        """
+        data = json_decode(self.request.body).get('pool')
+        pool_name = data.get('name')
+        if not pool_name:
+            raise InvalidInput(reason=_("pool: name is none"))
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        pool = yield client.pool_update_display_name(
+            ctxt, pool_id, pool_name)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))
+
+    @gen.coroutine
+    def delete(self, pool_id):
+        """删除存储池
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        pool = yield client.pool_delete(
+            ctxt, pool_id)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))
 
 
 class PoolOsdsHandler(ClusterAPIHandler):
@@ -56,3 +114,57 @@ class PoolCapacityHandler(ClusterAPIHandler):
     def get(self):
         """TODO 存储池容量"""
         self.write(objects.json_encode({}))
+
+
+class PoolIncreaseDiskHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self, pool_id):
+        """添加磁盘
+
+        {"pool":{"osds":[1,2,3]}}
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body).get('pool')
+        logger.debug("increase disk: {}".format(data))
+        client = self.get_admin_client(ctxt)
+        pool = yield client.pool_increase_disk(
+            ctxt, pool_id, data)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))
+
+
+class PoolDecreaseDiskHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self, pool_id):
+        """移除磁盘
+
+        {"pool":{"osds":[1,2,3]}}
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body).get('pool')
+        logger.debug("decrease disk: {}".format(data))
+        client = self.get_admin_client(ctxt)
+        pool = yield client.pool_decrease_disk(
+            ctxt, pool_id, data)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))
+
+
+class PoolPolicyHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self, pool_id):
+        """修改存储池安全策略
+
+        {"pool":{"rep_size":3,"fault_domain":"rack"}}
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body).get('pool')
+        logger.debug("update security policy: {}".format(data))
+        client = self.get_admin_client(ctxt)
+        pool = yield client.pool_update_policy(
+            ctxt, pool_id, data)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))

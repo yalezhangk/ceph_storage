@@ -235,6 +235,11 @@ class CephTask(object):
                                         config['key'],
                                         config['value'])
 
+    def rule_get(self, rule_name):
+        with RADOSClient(self.ceph_config()) as rados_client:
+            rule_detail = rados_client.rule_get(rule_name)
+            return rule_detail
+
     def _cal_pg_num(self, osd_num, rep_size):
         if not osd_num:
             return 0
@@ -411,11 +416,8 @@ class CephTask(object):
 
     def pool_del_disk(self, data):
         logger.debug("pool_data: {}".format(data))
-        # pool_name = data.get('pool_name')
         root = data.get('root_name')
-        # rule_name = data.get('crush_rule_name')
         with RADOSClient(self.rados_args()) as rados_client:
-            # with CrushmapTool() as crushmap_tool:
             if 'osds' in data:
                 osds = data.get('osds')
                 for osd in osds:
@@ -438,10 +440,12 @@ class CephTask(object):
         with RADOSClient(self.rados_args(), timeout='1') as rados_client:
             return rados_client.get_cluster_info()
 
-    # TODO will update crushmap
-    def update_pool_policy(self, pool_data):
-        rep_size = pool_data.get('rep_size')
-        pool_name = pool_data.get('pool_name')
+    def update_pool_policy(self, data):
+        rep_size = data.get('rep_size')
+        pool_name = data.get('pool_name')
+        root_name = data.get('root_name')
+        fault_domain = data.get('fault_domain')
+        rule_name = data.get('crush_rule_name')
         if pool_name is None:
             raise exc.CephException(
                 message='pool name must be specifed while update policy')
@@ -450,6 +454,33 @@ class CephTask(object):
                 raise exc.PoolNameNotFound(pool=pool_name)
             rados_client.pool_set_replica_size(pool_name=pool_name,
                                                rep_size=rep_size)
+            if fault_domain == "datacenter":
+                if 'datacenter' in data:
+                    for d, r in six.iteritems(data.get('datacenter')):
+                        rados_client.datacenter_add(d)
+                        rados_client.datacenter_move(d, root_name)
+                        for rack_name in r:
+                            rados_client.rack_add(rack_name)
+                            rados_client.rack_move_to_datacenter(rack_name, d)
+                if 'rack' in data:
+                    for r, h in six.iteritems(data.get('rack')):
+                        for host_name in h:
+                            rados_client.host_add(host_name)
+                            rados_client.host_move_to_rack(host_name, r)
+            if fault_domain == "rack":
+                if 'rack' in data:
+                    for r, h in six.iteritems(data.get('rack')):
+                        rados_client.rack_add(r)
+                        rados_client.rack_move_to_root(r, root_name)
+                        for host_name in h:
+                            rados_client.host_add(host_name)
+                            rados_client.host_move_to_rack(host_name, r)
+            tmp_rule_name = "{}-new".format(rule_name)
+            rados_client.rule_add(tmp_rule_name, root_name, fault_domain)
+            rados_client.set_pool_info(pool_name, "crush_rule", tmp_rule_name)
+            rados_client.rule_rename(tmp_rule_name, rule_name)
+            rados_client.rule_remove(tmp_rule_name)
+            return rados_client.rule_get(rule_name)
 
     def rbd_list(self, pool_name):
         with RADOSClient(self.rados_args(), timeout='1') as rados_client:

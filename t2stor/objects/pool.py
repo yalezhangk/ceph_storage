@@ -29,7 +29,7 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'osd_num': fields.IntegerField(nullable=True),
         'speed_type': fields.StringField(nullable=True),
         'failure_domain_type': fields.StringField(nullable=True),
-        'crush_rule_id': fields.IntegerField(),
+        'crush_rule_id': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(nullable=True),
     }
 

@@ -305,7 +305,6 @@ def define_tables(meta):
         Column('status', String(32), nullable=True),
         Column('type', String(32), nullable=True),
         Column('disk_type', String(32), nullable=True),
-        Column('role', String(32), nullable=True),
         Column('fsid', String(36), nullable=True),
         Column('mem_read_cache', BigInteger, nullable=True),
         Column('crush_rule_id', Integer, ForeignKey('crush_rules.id')),

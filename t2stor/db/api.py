@@ -742,10 +742,12 @@ def crush_rule_get(context, crush_rule_id):
 
 
 def crush_rule_get_all(context, filters, marker, limit,
-                       offset, sort_keys, sort_dirs):
+                       offset, sort_keys, sort_dirs,
+                       expected_attrs=None):
     return IMPL.crush_rule_get_all(
         context, marker=marker, limit=limit, sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters, offset=offset)
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
 
 
 def crush_rule_update(context, crush_rule_id, values):
