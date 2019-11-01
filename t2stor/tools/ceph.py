@@ -78,6 +78,21 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def osd_deactivate(self, diskname):
+        cmd = ["ceph-disk", "deactivate", "/dev/%s1" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=300)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def osd_zap(self, diskname):
+        cmd = ["ceph-disk", "zap", "/dev/%s" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=300)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        return True
+
 
 def get_json_output(json_databuf):
     outbuf = encodeutils.safe_decode(json_databuf)

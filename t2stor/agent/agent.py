@@ -148,6 +148,22 @@ class AgentHandler(object):
         self.ceph_active_disk(context, osd)
         return osd
 
+    def ceph_osd_destroy(self, context, osd):
+        client = self._get_ssh_client()
+        ceph_tool = CephTool(client)
+        ceph_tool.osd_deactivate(osd.disk.name)
+        ceph_tool.osd_zap(osd.disk.name)
+        disk_tool = DiskTool(client)
+        if osd.cache_partition_id:
+            disk_tool.data_clear(osd.cache_partition.name)
+        if osd.db_partition_id:
+            disk_tool.data_clear(osd.db_partition.name)
+        if osd.wal_partition_id:
+            disk_tool.data_clear(osd.wal_partition.name)
+        if osd.journal_partition_id:
+            disk_tool.data_clear(osd.journal_partition.name)
+        return osd
+
     def package_install(self, context, packages):
         logger.debug("Install Package")
         return True
