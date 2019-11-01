@@ -103,8 +103,7 @@ class NodeTask(object):
         logger.debug("osd create on node")
         osd = agent.ceph_osd_create(self.ctxt, osd)
 
-        osd.save()
-        return True
+        return osd
 
     def ceph_osd_uninstall(self):
         # update ceph.conf

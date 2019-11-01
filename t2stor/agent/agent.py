@@ -127,11 +127,11 @@ class AgentHandler(object):
         if osd.cache_partition_id:
             kwargs['cache_partition'] = osd.cache_partition.name
         if osd.db_partition_id:
-            kwargs['db_partition'] = osd.cache_partition.name
+            kwargs['db_partition'] = osd.db_partition.name
         if osd.wal_partition_id:
             kwargs['wal_partition'] = osd.wal_partition.name
         if osd.journal_partition_id:
-            kwargs['jounal_partition'] = osd.jounal_partition.name
+            kwargs['journal_partition'] = osd.journal_partition.name
 
         client = self._get_ssh_client()
         ceph_tool = CephTool(client)
