@@ -570,9 +570,9 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
-    def volume_snapshot_delete(self, ctxt, snap_data):
+    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
         response = self.call(ctxt, "volume_snapshot_delete",
-                             snap_data=snap_data)
+                             volume_snapshot_id=volume_snapshot_id)
         return response
 
     def volume_create_from_snapshot(self, ctxt, snapshot_id, data):
