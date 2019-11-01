@@ -134,6 +134,11 @@ class AdminHandler(object):
     def volume_extend(self, ctxt, volume_id, data):
         # 扩容
         volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
+                                 s_fields.VolumeStatus.ERROR]:
+            raise exception.VolumeStatusNotAllowAction()
         extra_data = {'old_size': volume.size}
         for k, v in six.iteritems(data):
             setattr(volume, k, v)
@@ -172,6 +177,11 @@ class AdminHandler(object):
     def volume_shrink(self, ctxt, volume_id, data):
         # 缩容
         volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
+                                 s_fields.VolumeStatus.ERROR]:
+            raise exception.VolumeStatusNotAllowAction()
         extra_data = {'old_size': volume.size}
         for k, v in six.iteritems(data):
             setattr(volume, k, v)
@@ -181,6 +191,21 @@ class AdminHandler(object):
 
     def volume_rollback(self, ctxt, volume_id, data):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
+                                 s_fields.VolumeStatus.ERROR]:
+            raise exception.VolumeStatusNotAllowAction()
+        snap_id = data.get('volume_snapshot_id')
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, snap_id)
+        if not snap:
+            raise exception.VolumeSnapshotNotFound(volume_snapshot_id=snap_id)
+        if snap.volume_id != int(volume_id):
+            raise exception.InvalidInput(_(
+                'The volume_id {} has not the snap_id {}').format(
+                volume_id, snap_id))
+        # todo other verify
+        data.update({'snap_name': snap.uuid})
         extra_data = {'snap_name': data.get('snap_name')}
         self.executor.submit(self._volume_rollback, ctxt, volume, extra_data)
         return volume
@@ -212,6 +237,15 @@ class AdminHandler(object):
 
     def volume_unlink(self, ctxt, volume_id):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
+                                 s_fields.VolumeStatus.ERROR]:
+            raise exception.VolumeStatusNotAllowAction()
+        if not volume.is_link_clone:
+            raise exception.Invalid(
+                msg=_('the volume_name {} has not relate_snap').format(
+                    volume.volume_name))
         self.executor.submit(self._volume_unlink, ctxt, volume)
         return volume
 
@@ -1396,6 +1430,13 @@ class AdminHandler(object):
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
     def volume_snapshot_create(self, ctxt, data):
+        volume_id = data.get('volume_id')
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        data.update({'volume_name': volume.volume_name,
+                     'pool_name': pool.pool_name})
         uid = str(uuid.uuid4())
         data.update({
             'cluster_id': ctxt.cluster_id,
@@ -1471,7 +1512,18 @@ class AdminHandler(object):
         ).get_client()
         wb_client.send_message(ctxt, snap, 'DELETED', msg)
 
-    def volume_snapshot_delete(self, ctxt, snap_data):
+    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+        if not snap:
+            raise exception.VolumeSnapshotNotFound(
+                volume_snapshot_id=volume_snapshot_id)
+        volume = objects.Volume.get_by_id(ctxt, snap.volume_id)
+        if not volume:
+            raise exception.VolumeNotFound(volume_id=snap.volume_id)
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        snap_data = {'volume_name': volume.volume_name,
+                     'pool_name': pool.pool_name,
+                     'snap': snap}
         snap = snap_data['snap']
         snap.status = s_fields.VolumeSnapshotStatus.DELETING
         snap.save()
