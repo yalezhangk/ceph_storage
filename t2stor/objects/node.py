@@ -45,9 +45,10 @@ class Node(base.StorPersistentObject, base.StorObject,
         'disks': fields.ListOfObjectsField("Disk", nullable=True),
         'networks': fields.ListOfObjectsField("Network", nullable=True),
         'osds': fields.ListOfObjectsField("Osd", nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('disks', 'networks', 'osds')
+    OPTIONAL_FIELDS = ('disks', 'networks', 'osds', 'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):

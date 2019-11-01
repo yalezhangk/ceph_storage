@@ -1,3 +1,4 @@
+import json
 import logging
 
 from tornado import gen
@@ -95,20 +96,6 @@ class PoolOsdsHandler(ClusterAPIHandler):
         self.write(objects.json_encode({"osds": osds}))
 
 
-class PoolHistoryMetricsHandler(ClusterAPIHandler):
-    @gen.coroutine
-    def get(self):
-        """TODO 存储池历史监控"""
-        self.write(objects.json_encode({}))
-
-
-class PoolMetricsHandler(ClusterAPIHandler):
-    @gen.coroutine
-    def get(self):
-        """TODO 存储池实时监控"""
-        self.write(objects.json_encode({}))
-
-
 class PoolCapacityHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -167,4 +154,29 @@ class PoolPolicyHandler(ClusterAPIHandler):
             ctxt, pool_id, data)
         self.write(objects.json_encode({
             "pool": pool
+        }))
+
+
+class PoolMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, pool_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.pool_metrics_get(ctxt, pool_id=pool_id)
+        self.write(json.dumps({
+            "pool_metrics": data
+        }))
+
+
+class PoolMetricsHistoryHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, pool_id):
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        client = self.get_admin_client(ctxt)
+        data = yield client.pool_metrics_history_get(
+            ctxt, pool_id=pool_id, start=his_args['start'],
+            end=his_args['end'])
+        self.write(json.dumps({
+            "pool_metrics_history": data
         }))

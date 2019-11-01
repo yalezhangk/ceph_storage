@@ -32,15 +32,21 @@ from t2stor.api.handlers.log_file import LogFileListHandler
 from t2stor.api.handlers.networks import NetworkListHandler
 from t2stor.api.handlers.nodes import NodeHandler
 from t2stor.api.handlers.nodes import NodeListHandler
+from t2stor.api.handlers.nodes import NodeMetricsHistroyMonitorHandler
+from t2stor.api.handlers.nodes import NodeMetricsHistroyNetworkHandler
+from t2stor.api.handlers.nodes import NodeMetricsMonitorHandler
+from t2stor.api.handlers.nodes import NodeMetricsNetworkHandler
 from t2stor.api.handlers.osds import OsdHandler
 from t2stor.api.handlers.osds import OsdListHandler
+from t2stor.api.handlers.osds import OsdMetricsHandler
+from t2stor.api.handlers.osds import OsdMetricsHistoryHandler
 from t2stor.api.handlers.pools import PoolCapacityHandler
 from t2stor.api.handlers.pools import PoolDecreaseDiskHandler
 from t2stor.api.handlers.pools import PoolHandler
-from t2stor.api.handlers.pools import PoolHistoryMetricsHandler
 from t2stor.api.handlers.pools import PoolIncreaseDiskHandler
 from t2stor.api.handlers.pools import PoolListHandler
 from t2stor.api.handlers.pools import PoolMetricsHandler
+from t2stor.api.handlers.pools import PoolMetricsHistoryHandler
 from t2stor.api.handlers.pools import PoolOsdsHandler
 from t2stor.api.handlers.pools import PoolPolicyHandler
 from t2stor.api.handlers.racks import RackHandler
@@ -98,14 +104,22 @@ def get_routers():
         (r"/networks/", NetworkListHandler),
         (r"/nodes/", NodeListHandler),
         (r"/nodes/([0-9]*)/", NodeHandler),
+        (r"/nodes/([0-9]*)/metrics/", NodeMetricsMonitorHandler),
+        (r"/nodes/([0-9]*)/history_metrics/",
+            NodeMetricsHistroyMonitorHandler),
+        (r"/nodes/([0-9]*)/history_network/",
+            NodeMetricsHistroyNetworkHandler),
+        (r"/nodes/([0-9]*)/metrics/network/", NodeMetricsNetworkHandler),
         (r"/osds/", OsdListHandler),
         (r"/osds/([0-9]*)/", OsdHandler),
+        (r"/osds/([0-9]*)/history_metrics/", OsdMetricsHistoryHandler),
+        (r"/osds/([0-9]*)/metrics/", OsdMetricsHandler),
         (r"/pools/", PoolListHandler),
         (r"/pools/([0-9]*)/", PoolHandler),
         (r"/pools/([0-9]*)/capacity/", PoolCapacityHandler),
         (r"/pools/([0-9]*)/decrease_disk/", PoolDecreaseDiskHandler),
         (r"/pools/([0-9]*)/increase_disk/", PoolIncreaseDiskHandler),
-        (r"/pools/([0-9]*)/history_metrics/", PoolHistoryMetricsHandler),
+        (r"/pools/([0-9]*)/history_metrics/", PoolMetricsHistoryHandler),
         (r"/pools/([0-9]*)/metrics/", PoolMetricsHandler),
         (r"/pools/([0-9]*)/osds/", PoolOsdsHandler),
         (r"/pools/([0-9]*)/update_security_policy/", PoolPolicyHandler),

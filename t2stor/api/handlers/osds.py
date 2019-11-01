@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 
 from tornado import gen
@@ -73,4 +74,28 @@ class OsdHandler(ClusterAPIHandler):
         osd = yield client.osd_delete(ctxt, osd_id)
         self.write(objects.json_encode({
             "osd": osd
+        }))
+
+
+class OsdMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, osd_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.osd_metrics_get(ctxt, osd_id=osd_id)
+        self.write(json.dumps({
+            "osd_metrics": data
+        }))
+
+
+class OsdMetricsHistoryHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, osd_id):
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        client = self.get_admin_client(ctxt)
+        data = yield client.osd_metrics_history_get(
+            ctxt, osd_id=osd_id, start=his_args['start'], end=his_args['end'])
+        self.write(json.dumps({
+            "osd_metrics_history": data
         }))
