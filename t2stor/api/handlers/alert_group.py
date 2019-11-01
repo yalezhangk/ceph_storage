@@ -17,9 +17,12 @@ class AlertGroupListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        alert_groups = yield client.alert_group_get_all(ctxt)
+        page_args = self.get_paginated_args()
+        alert_groups_all = yield client.alert_group_get_all(ctxt)
+        alert_groups = yield client.alert_group_get_all(ctxt, **page_args)
         self.write(objects.json_encode({
-            "alert_groups": alert_groups
+            "alert_groups": alert_groups,
+            "total": len(alert_groups_all)
         }))
 
     @gen.coroutine
