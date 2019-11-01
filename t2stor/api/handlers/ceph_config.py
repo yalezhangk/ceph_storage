@@ -32,8 +32,11 @@ class CephConfigListHandler(ClusterAPIHandler):
         ceph_config = yield client.ceph_config_get_all(ctxt,
                                                        filters=filters,
                                                        **page_args)
+        ceph_config_all = yield client.ceph_config_get_all(
+            ctxt, filters=filters)
         self.write(objects.json_encode({
-            "ceph_configs": ceph_config
+            "ceph_configs": ceph_config,
+            "total": len(ceph_config_all)
         }))
 
 
