@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class Docker(ToolBase):
-    def run(self, name, image, command=None, volumes=None, envs=None):
+    def run(self, name, image, command=None, volumes=None, envs=None,
+            privileged=False):
         """Run container
 
         :param name: the container name
@@ -36,6 +37,8 @@ class Docker(ToolBase):
         envs = envs or []
         for k, v in envs:
             cmd.extend(["-e", "{}={}".format(k, v)])
+        if privileged:
+            cmd.extend(["--privileged"])
         cmd.append(image)
         if command:
             cmd.append(command)
