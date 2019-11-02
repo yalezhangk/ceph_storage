@@ -9,6 +9,7 @@ def register_all():
     # NOTE(danms): You must make sure your object gets imported in this
     # function in order for it to be registered by services that may
     # need to receive it via RPC.
+    __import__('t2stor.objects.action_log')
     __import__('t2stor.objects.alert_log')
     __import__('t2stor.objects.alert_group')
     __import__('t2stor.objects.alert_rule')

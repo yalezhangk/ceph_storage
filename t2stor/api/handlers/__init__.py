@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from t2stor.api.handlers.action_log import ActionLogHandler
+from t2stor.api.handlers.action_log import ActionLogListHandler
 from t2stor.api.handlers.alert_group import AlertGroupHandler
 from t2stor.api.handlers.alert_group import AlertGroupListHandler
 from t2stor.api.handlers.alert_log import AlertLogHandler
@@ -64,6 +66,8 @@ from t2stor.api.handlers.volumes import VolumeListHandler
 
 def get_routers():
     return [
+        (r"/action_logs/", ActionLogListHandler),
+        (r"/action_logs/([0-9]*)/", ActionLogHandler),
         (r"/alert_groups/", AlertGroupListHandler),
         (r"/alert_groups/([0-9]*)/", AlertGroupHandler),
         (r"/alert_logs/", AlertLogListHandler),
