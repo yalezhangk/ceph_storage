@@ -17,9 +17,15 @@ class PoolListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        pools = yield client.pool_get_all(ctxt)
+        page_args = self.get_paginated_args()
+        expected_attrs = ['crush_rule', 'osds']
+        pools = yield client.pool_get_all(ctxt, expected_attrs=expected_attrs,
+                                          **page_args)
+        pools_all = yield client.pool_get_all(ctxt,
+                                              expected_attrs=expected_attrs)
         self.write(objects.json_encode({
-            "pools": pools
+            "pools": pools,
+            "total": len(pools_all)
         }))
 
     @gen.coroutine

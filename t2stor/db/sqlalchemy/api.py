@@ -1135,6 +1135,14 @@ def pool_destroy(context, pool_id):
     return updated_values
 
 
+def _pool_load_attr(ctxt, pool, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'crush_rule' in expected_attrs:
+        pool.crush_rule = pool._crush_rule
+    if 'osds' in expected_attrs:
+        pool.osds = [osd for osd in pool.crush_rule._osds]
+
+
 @require_context
 def pool_get(context, pool_id, expected_attrs=None):
     return _pool_get(context, pool_id)
@@ -1142,7 +1150,8 @@ def pool_get(context, pool_id, expected_attrs=None):
 
 @require_context
 def pool_get_all(context, marker=None, limit=None, sort_keys=None,
-                 sort_dirs=None, filters=None, offset=None):
+                 sort_dirs=None, filters=None, offset=None,
+                 expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1153,7 +1162,12 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        return query.all()
+        pools = query.all()
+        if not expected_attrs:
+            return pools
+        for pool in pools:
+            _pool_load_attr(context, pool, expected_attrs)
+        return pools
 
 
 @require_context

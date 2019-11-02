@@ -31,7 +31,11 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'failure_domain_type': fields.StringField(nullable=True),
         'crush_rule_id': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(nullable=True),
+        'osds': fields.ListOfObjectsField('Osd', nullable=True),
+        'crush_rule': fields.ObjectField("CrushRule", nullable=True),
     }
+
+    OPTIONAL_FIELDS = ('osds', 'crush_rule')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -54,6 +58,21 @@ class Pool(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'crush_rule' in expected_attrs:
+            crush_rule = db_obj.get('crush_rule', None)
+            obj.crush_rule = objects.CrushRule._from_db_object(
+                context, objects.CrushRule(context), crush_rule
+            )
+        if 'osds' in expected_attrs:
+            osds = db_obj.get('osds', [])
+            obj.osds = [objects.Osd._from_db_object(
+                context, objects.Osd(context), osd
+            ) for osd in osds]
+        return super(Pool, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class PoolList(base.ObjectListBase, base.StorObject):
@@ -64,8 +83,9 @@ class PoolList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         pools = db.pool_get_all(context, filters, marker, limit, offset,
-                                sort_keys, sort_dirs)
+                                sort_keys, sort_dirs, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Pool,
-                                  pools)
+                                  pools, expected_attrs=expected_attrs)
