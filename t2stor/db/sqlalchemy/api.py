@@ -2121,6 +2121,7 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
             return []
         disks = query.all()
 
+        expected_attrs = expected_attrs or []
         if 'node' in expected_attrs:
             for disk in disks:
                 disk.node = disk._node

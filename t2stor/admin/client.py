@@ -648,6 +648,56 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def cluster_metrics_get(self, ctxt):
+        response = self.call(ctxt, "cluster_metrics_get")
+        return response
+
+    def cluster_history_metrics_get(self, ctxt, start, end):
+        response = self.call(
+            ctxt, "cluster_history_metrics_get", start=start, end=end)
+        return response
+
+    def node_metrics_monitor_get(self, ctxt, node_id):
+        response = self.call(ctxt, "node_metrics_monitor_get", node_id=node_id)
+        return response
+
+    def node_metrics_histroy_monitor_get(self, ctxt, node_id, start, end):
+        response = self.call(ctxt, "node_metrics_histroy_monitor_get",
+                             node_id=node_id, start=start, end=end)
+        return response
+
+    def node_metrics_network_get(self, ctxt, node_id, net_name):
+        response = self.call(ctxt, "node_metrics_network_get", node_id=node_id,
+                             net_name=net_name)
+        return response
+
+    def node_metrics_histroy_network_get(
+            self, ctxt, node_id, net_name, start, end):
+        response = self.call(
+            ctxt, "node_metrics_histroy_network_get", node_id=node_id,
+            net_name=net_name, start=start, end=end)
+        return response
+
+    def osd_metrics_get(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_metrics_get", osd_id=osd_id)
+        return response
+
+    def osd_metrics_history_get(self, ctxt, osd_id, start, end):
+        response = self.call(
+            ctxt, "osd_metrics_history_get", osd_id=osd_id,
+            start=start, end=end)
+        return response
+
+    def pool_metrics_get(self, ctxt, pool_id):
+        response = self.call(ctxt, "pool_metrics_get", pool_id=pool_id)
+        return response
+
+    def pool_metrics_history_get(self, ctxt, pool_id, start, end):
+        response = self.call(
+            ctxt, "pool_metrics_history_get", pool_id=pool_id,
+            start=start, end=end)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
