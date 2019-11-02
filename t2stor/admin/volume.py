@@ -19,15 +19,18 @@ LOCAL_LOGFILE_DIR = '/var/log/t2stor_log/'
 
 class VolumeHandler(AdminBaseHandler):
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                       sort_dirs=None, filters=None, offset=None):
+                       sort_dirs=None, filters=None, offset=None,
+                       expected_attrs=None):
         filters = filters or {}
         filters['cluster_id'] = ctxt.cluster_id
         return objects.VolumeList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
 
-    def volume_get(self, ctxt, volume_id):
-        return objects.Volume.get_by_id(ctxt, volume_id)
+    def volume_get(self, ctxt, volume_id, expected_attrs=None):
+        return objects.Volume.get_by_id(ctxt, volume_id,
+                                        expected_attrs=expected_attrs)
 
     def volume_create(self, ctxt, data):
         uid = str(uuid.uuid4())

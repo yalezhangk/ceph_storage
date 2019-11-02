@@ -29,7 +29,11 @@ class Volume(base.StorPersistentObject, base.StorObject,
         'pool_id': fields.IntegerField(),
         'snapshot_id': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(),
+        'snapshots': fields.ListOfObjectsField("VolumeSnapshot",
+                                               nullable=True),
     }
+
+    OPTIONAL_FIELDS = ('snapshots',)
 
     @property
     def name(self):
@@ -56,6 +60,17 @@ class Volume(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'snapshots' in expected_attrs:
+            snapshots = db_obj.get('snapshots', [])
+            obj.snapshots = [objects.VolumeSnapshot._from_db_object(
+                context, objects.VolumeSnapshot(context), snapshot
+            ) for snapshot in snapshots]
+
+        return super(Volume, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class VolumeList(base.ObjectListBase, base.StorObject):
@@ -66,18 +81,11 @@ class VolumeList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         volumes = db.volume_get_all(
             context, marker=marker, limit=limit,
-            sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
-        expected_attrs = Volume._get_expected_attrs(context)
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset, expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Volume,
                                   volumes, expected_attrs=expected_attrs)
-
-    @classmethod
-    def get_all_by_pool(cls, context, pool):
-        volumes = db.volume_get_all_by_volume(context, pool)
-        return base.obj_make_list(context, cls(context), objects.Volume,
-                                  volumes)

@@ -15,11 +15,12 @@ from t2stor.service import BaseClientManager
 class AdminClient(BaseClient):
 
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                       sort_dirs=None, filters=None, offset=None):
+                       sort_dirs=None, filters=None, offset=None,
+                       expected_attrs=None):
         response = self.call(
             ctxt, "volume_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return response
 
     def volume_create(self, ctxt, data):
@@ -27,8 +28,9 @@ class AdminClient(BaseClient):
             ctxt, "volume_create", data=data)
         return response
 
-    def volume_get(self, ctxt, volume_id):
-        response = self.call(ctxt, "volume_get", volume_id=volume_id)
+    def volume_get(self, ctxt, volume_id, expected_attrs=None):
+        response = self.call(ctxt, "volume_get", volume_id=volume_id,
+                             expected_attrs=expected_attrs)
         return response
 
     def volume_update(self, ctxt, volume_id, data):
@@ -547,11 +549,11 @@ class AdminClient(BaseClient):
 
     def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,
                                 sort_keys=None, sort_dirs=None, filters=None,
-                                offset=None):
+                                offset=None, expected_attrs=None):
         response = self.call(
             ctxt, "volume_snapshot_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return response
 
     def volume_snapshot_create(self, ctxt, data):
@@ -559,9 +561,10 @@ class AdminClient(BaseClient):
             ctxt, "volume_snapshot_create", data=data)
         return response
 
-    def volume_snapshot_get(self, ctxt, volume_snapshot_id):
+    def volume_snapshot_get(self, ctxt, volume_snapshot_id, expected_attrs):
         response = self.call(ctxt, "volume_snapshot_get",
-                             volume_snapshot_id=volume_snapshot_id)
+                             volume_snapshot_id=volume_snapshot_id,
+                             expected_attrs=expected_attrs)
         return response
 
     def volume_snapshot_update(self, ctxt, volume_snapshot_id, data):

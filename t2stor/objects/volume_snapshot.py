@@ -23,7 +23,10 @@ class VolumeSnapshot(base.StorPersistentObject, base.StorObject,
         'display_description': fields.StringField(nullable=True),
         'volume_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
+        'volume': fields.ObjectField('Volume', nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('volume',)
 
     @property
     def name(self):
@@ -50,6 +53,16 @@ class VolumeSnapshot(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'volume' in expected_attrs:
+            volume = db_obj.get('volume', None)
+            obj.volume = objects.Volume._from_db_object(
+                context, objects.Volume(context), volume
+            )
+        return super(VolumeSnapshot, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class VolumeSnapshotList(base.ObjectListBase, base.StorObject):
@@ -60,11 +73,12 @@ class VolumeSnapshotList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         volume_snapshot = db.volume_snapshot_get_all(
             context, marker=marker, limit=limit,
-            sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset, expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context),
-                                  objects.VolumeSnapshot, volume_snapshot)
+                                  objects.VolumeSnapshot, volume_snapshot,
+                                  expected_attrs=expected_attrs)

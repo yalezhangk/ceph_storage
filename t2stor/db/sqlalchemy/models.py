@@ -258,8 +258,9 @@ class Volume(BASE, StorBase):
     volume_client_group_id = Column(Integer,
                                     ForeignKey('volume_client_groups.id'))
     pool_id = Column(Integer, ForeignKey('pools.id'))
-    snapshot_id = Column(Integer, ForeignKey('volume_snapshots.id'))
+    snapshot_id = Column(Integer)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _snapshots = relationship("VolumeSnapshot", backref="_volume")
 
 
 class VolumeSnapshot(BASE, StorBase):

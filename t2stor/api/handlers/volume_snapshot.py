@@ -19,8 +19,8 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        volume_snapshots = yield client.volume_snapshot_get_all(ctxt,
-                                                                **page_args)
+        volume_snapshots = yield client.volume_snapshot_get_all(
+            ctxt, expected_attrs=['volume'], **page_args)
         volume_snapshots_all = yield client.volume_snapshot_get_all(ctxt)
         self.write(objects.json_encode({
             "volume_snapshots": volume_snapshots,
@@ -43,13 +43,9 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, volume_snapshot_id):
         ctxt = self.get_context()
-        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
-        if not snap:
-            raise exception.VolumeSnapshotNotFound(
-                volume_snapshot_id=volume_snapshot_id)
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_get(
-            ctxt, volume_snapshot_id)
+            ctxt, volume_snapshot_id, expected_attrs=['volume'])
         self.write(objects.json_encode({"volume_snapshot": volume_snapshot}))
 
     @gen.coroutine
@@ -57,10 +53,6 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
         # 编辑:改名及描述
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
-        if not snap:
-            raise exception.VolumeSnapshotNotFound(
-                volume_snapshot_id=volume_snapshot_id)
         volume_data = data.get('volume_snapshot')
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_update(

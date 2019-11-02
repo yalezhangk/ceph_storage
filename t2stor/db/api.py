@@ -83,13 +83,13 @@ def volume_get(context, volume_id):
 
 
 def volume_get_all(context, marker=None, limit=None, sort_keys=None,
-                   sort_dirs=None, filters=None, offset=None):
+                   sort_dirs=None, filters=None, offset=None,
+                   expected_attrs=None):
     """Get all volumes."""
     return IMPL.volume_get_all(
         context, marker=marker, limit=limit,
-        sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters,
-        offset=offset)
+        sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+        offset=offset, expected_attrs=expected_attrs)
 
 
 def volume_update(context, volume_id, values):
