@@ -5,6 +5,7 @@ from oslo_log import log as logging
 
 from t2stor import exception
 from t2stor import objects
+from t2stor.admin.base import AdminBaseHandler
 from t2stor.api.wsclient import WebSocketClientManager
 from t2stor.i18n import _
 from t2stor.objects import fields as s_fields
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 LOCAL_LOGFILE_DIR = '/var/log/t2stor_log/'
 
 
-class VolumeHandler(object):
+class VolumeHandler(AdminBaseHandler):
     def volume_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
         filters = filters or {}
