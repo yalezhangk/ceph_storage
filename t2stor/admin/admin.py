@@ -14,7 +14,7 @@ from t2stor.admin.action_log import ActionLogHandler
 from t2stor.admin.alert_log import AlertLogHandler
 from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
-from t2stor.admin.email import EmailHandler
+from t2stor.admin.email_group import EmailGroupHandler
 from t2stor.admin.genconf import ceph_conf
 from t2stor.admin.osd import OsdHandler
 from t2stor.admin.pool import PoolHandler
@@ -47,7 +47,7 @@ class AdminHandler(ActionLogHandler,
                    AlertLogHandler,
                    DatacenterHandler,
                    DiskHandler,
-                   EmailHandler,
+                   EmailGroupHandler,
                    OsdHandler,
                    PoolHandler,
                    RackHandler,
