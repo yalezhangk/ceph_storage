@@ -38,6 +38,28 @@ import style
 - line width 79
 
 
+Commit Style
+=============
+
+.. code-block::
+   type(module): what's changed
+
+   full message ...
+
+
+type:
+- fe: feature
+- re: refactor
+- fix: fix bug
+
+Example:
+
+.. code-block::
+  fe(osd): add deploy osd
+
+  Support deploy osd, include cache, wal, db, journal.
+
+
 Tests
 =====
 Simple unit test file
