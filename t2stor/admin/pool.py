@@ -17,11 +17,13 @@ logger = logging.getLogger(__name__)
 
 class PoolHandler(AdminBaseHandler):
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                     sort_dirs=None, filters=None, offset=None):
+                     sort_dirs=None, filters=None, offset=None,
+                     expected_attrs=None):
         filters = filters or {}
         return objects.PoolList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
 
     def pool_get(self, ctxt, pool_id):
         return objects.Pool.get_by_id(ctxt, pool_id)
