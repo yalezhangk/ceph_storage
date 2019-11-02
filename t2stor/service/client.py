@@ -120,15 +120,19 @@ class BaseClient(object):
             kwargs=json.dumps(kwargs),
             version=version
         ))
+        res = json.loads(response.value)
+        self.serializer.deserialize_exception(context, res)
         ret = self.serializer.deserialize_entity(
-            context, json.loads(response.value))
+            context, res)
         return ret
 
     def _fwrap(self, f, gf, context):
         try:
             response = gf.result()
+            res = json.loads(response.value)
+            self.serializer.deserialize_exception(context, res)
             ret = self.serializer.deserialize_entity(
-                context, json.loads(response.value))
+                context, res)
             f.set_result(ret)
         except Exception as e:
             f.set_exception(e)
