@@ -63,9 +63,10 @@ class PrometheusTool(object):
                                                         endpoint['port'])
 
     def _get_sys_disk(self, node_id):
-        return objects.DiskList.get_all(
+        disk = objects.DiskList.get_all(
             self.ctxt, filters={"node_id": node_id, "role": "system",
                                 "cluster_id": self.ctxt.cluster_id})[0]
+        return disk.name
 
     def _get_net_name(self, node_id, ipaddr):
         network = objects.NetworkList.get_all(self.ctxt, filters={
