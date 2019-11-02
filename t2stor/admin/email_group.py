@@ -7,7 +7,7 @@ from t2stor.admin.base import AdminBaseHandler
 logger = logging.getLogger(__name__)
 
 
-class EmailHandler(AdminBaseHandler):
+class EmailGroupHandler(AdminBaseHandler):
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,
                             sort_keys=None, sort_dirs=None, filters=None,
