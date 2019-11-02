@@ -47,7 +47,6 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
 
     @classmethod
     def get_by_key(cls, context, key):
-        return db.sys_config_get_by_key(key)
         orm_obj = db.sys_config_get_by_key(key)
         return cls._from_db_object(context, cls(context), orm_obj)
 
