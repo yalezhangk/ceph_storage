@@ -2240,6 +2240,7 @@ def alert_group_get(context, alert_group_id, expected_attrs=None):
 @require_context
 def alert_group_create(context, values):
     alert_group_ref = models.AlertGroup()
+    alert_group_ref.cluster_id = context.cluster_id
     alert_rule_ids = values.pop('alert_rule_ids')
     db_rules = [alert_rule_get(context, rule_id) for rule_id in alert_rule_ids]
     email_group_ids = values.pop('email_group_ids')
@@ -2280,6 +2281,8 @@ def alert_group_update(context, alert_group_id, values):
 def alert_group_get_all(context, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
     session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
