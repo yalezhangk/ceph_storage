@@ -39,18 +39,22 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
 
     @gen.coroutine
     def post(self):
+        """创建访问路径
+
+        {"access_path":{"name":"iscsi-t1","type":"iscsi"}}
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
 
         # TODO 数据验证 传没传 -> 有没有
-        volume_access_path = json_decode(self.request.body)
-        name = volume_access_path.get("name")
-        type = volume_access_path.get("type")
+        data = json_decode(self.request.body).get('access_path')
+        name = data.get("name")
+        type = data.get("type")
         if not name or not type:
             raise exception.InvalidInput(_("name or type not found"))
         yield self.check_volume_access_path_by_name(ctxt, client, name)
         volume_access_path = yield client.volume_access_path_create(
-            ctxt, volume_access_path)
+            ctxt, data)
         self.write(objects.json_encode({
             "volume_access_path": volume_access_path
         }))
@@ -69,13 +73,16 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
 
     @gen.coroutine
     def put(self, id):
+        """编辑访问路径
+
+        {"access_path":{"name":"iscsi-t2"}
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
 
-        # TODO 数据验证
         yield self.check_volume_access_path_by_id(ctxt, client, id)
 
-        data = json_decode(self.request.body)
+        data = json_decode(self.request.body).get('access_path')
         if not data.get('name'):
             raise exception.InvalidInput(_("name or type not found"))
         yield self.check_volume_access_path_by_name(
@@ -89,9 +96,13 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
 
     @gen.coroutine
     def delete(self, id):
+        """删除访问路径
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         yield self.check_volume_access_path_by_id(ctxt, client, id)
+        # TODO 如果存在客户端组，不能删除
+        # TODO 如果存在块存储网关，不能删除
         volume_access_path = yield client.volume_access_path_delete(ctxt, id)
         self.write(objects.json_encode({
             "volume_access_path": volume_access_path
