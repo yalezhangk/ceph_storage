@@ -251,3 +251,35 @@ class VolumeHandler(AdminBaseHandler):
             context=ctxt,
             cluster_id=volume.cluster_id).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_UNLINK', msg)
+
+    def _volume_create_from_snapshot(self, ctxt, verify_data):
+        p_pool_name = verify_data['p_pool_name']
+        p_volume_name = verify_data['p_volume_name']
+        p_snap_name = verify_data['p_snap_name']
+        c_pool_name = verify_data['c_pool_name']
+        new_volume = verify_data['new_volume']
+        c_volume_name = new_volume.volume_name
+        is_link_clone = verify_data['is_link_clone']
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.rbd_clone_volume(
+                p_pool_name, p_volume_name, p_snap_name, c_pool_name,
+                c_volume_name)
+            if not is_link_clone:  # 独立克隆，断开关系链
+                ceph_client.rbd_flatten(c_pool_name, c_volume_name)
+            status = s_fields.VolumeStatus.ACTIVE
+            logger.info('volume clone success, volume_name={}'.format(
+                c_volume_name))
+            msg = 'volume clone success'
+        except exception.StorException as e:
+            status = s_fields.VolumeStatus.ERROR
+            logger.error('volume clone error, volume_name={},reason:{}'.format(
+                c_volume_name, str(e)))
+            msg = 'volume clone error'
+        new_volume.status = status
+        new_volume.save()
+        # send msg
+        wb_client = WebSocketClientManager(
+            ctxt, cluster_id=new_volume.cluster_id
+        ).get_client()
+        wb_client.send_message(ctxt, new_volume, 'VOLUME_CLONE', msg)
