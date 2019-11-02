@@ -621,6 +621,33 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def action_log_get_all(self, ctxt, marker=None, limit=None,
+                           sort_keys=None, sort_dirs=None, filters=None,
+                           offset=None):
+        response = self.call(
+            ctxt, "action_log_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def action_log_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "action_log_create", data=data)
+        return response
+
+    def action_log_get(self, ctxt, action_log_id):
+        response = self.call(ctxt, "action_log_get",
+                             action_log_id=action_log_id)
+        return response
+
+    def action_log_update(self, ctxt, action_log_id, data):
+        response = self.call(ctxt, "action_log_update",
+                             action_log_id=action_log_id,
+                             data=data)
+        return response
+
+    ###################
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

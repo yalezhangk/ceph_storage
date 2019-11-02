@@ -754,6 +754,21 @@ def crush_rule_update(context, crush_rule_id, values):
     return IMPL.crush_rule_update(context, crush_rule_id, values)
 
 
+###################
+
+
+def action_log_create(context, values):
+    return IMPL.action_log_create(context, values)
+
+
+def action_log_update(context, action_log_id, values):
+    return IMPL.action_log_update(context, action_log_id, values)
+
+
+def action_log_get_all(context, *args, **kwargs):
+    return IMPL.action_log_get_all(context, *args, **kwargs)
+
+
 ###############
 
 

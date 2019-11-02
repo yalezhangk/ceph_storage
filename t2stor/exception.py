@@ -291,3 +291,7 @@ class PoolNameNotFound(StorException):
 class VolumeStatusNotAllowAction(StorException):
     code = 400
     message = _('volume status must in [active, error]')
+
+
+class ActionLogNotFound(NotFound):
+    message = _("ActionLog %(action_log_id)s could not be found.")

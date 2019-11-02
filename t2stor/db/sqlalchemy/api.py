@@ -2862,6 +2862,67 @@ def crush_rule_update(context, crush_rule_id, values):
 
 ###############################
 
+
+@require_context
+def _action_log_get_query(context, session=None):
+    return model_query(context, models.ActionLog, session=session)
+
+
+def _action_log_get(context, action_log_id, session=None):
+    result = _action_log_get_query(context, session=session)
+    result = result.filter_by(id=action_log_id).first()
+
+    if not result:
+        raise exception.ActionLogNotFound(action_log_id=action_log_id)
+
+    return result
+
+
+@require_context
+def action_log_get(context, action_log_id, expected_attrs=None):
+    return _action_log_get(context, action_log_id)
+
+
+@require_context
+def action_log_create(context, values):
+    action_log_ref = models.ActionLog()
+    action_log_ref.update(values)
+    session = get_session()
+    with session.begin():
+        action_log_ref.save(session)
+
+    return action_log_ref
+
+
+@handle_db_data_error
+@require_context
+def action_log_update(context, action_log_id, values):
+    session = get_session()
+    with session.begin():
+        query = _action_log_get_query(context, session)
+        result = query.filter_by(id=action_log_id).update(values)
+        if not result:
+            raise exception.ActionLogNotFound(action_log_id=action_log_id)
+
+
+@require_context
+def action_log_get_all(context, marker=None, limit=None, sort_keys=None,
+                       sort_dirs=None, filters=None, offset=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.ActionLog,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
@@ -2960,6 +3021,9 @@ PAGINATION_HELPERS = {
     models.CephConfig: (_ceph_config_get_query,
                         process_filters(models.CephConfig),
                         _ceph_config_get),
+    models.ActionLog: (_action_log_get_query,
+                       process_filters(models.ActionLog),
+                       _action_log_get),
 }
 
 
