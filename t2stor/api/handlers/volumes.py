@@ -18,9 +18,12 @@ class VolumeListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        volumes = yield client.volume_get_all(ctxt)
+        page_args = self.get_paginated_args()
+        volumes = yield client.volume_get_all(ctxt, **page_args)
+        volumes_all = yield client.volume_get_all(ctxt)
         self.write(objects.json_encode({
-            "volumes": volumes
+            "volumes": volumes,
+            "total": len(volumes_all)
         }))
 
     @gen.coroutine

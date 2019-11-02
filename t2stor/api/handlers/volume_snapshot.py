@@ -18,9 +18,13 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        volume_snapshots = yield client.volume_snapshot_get_all(ctxt)
+        page_args = self.get_paginated_args()
+        volume_snapshots = yield client.volume_snapshot_get_all(ctxt,
+                                                                **page_args)
+        volume_snapshots_all = yield client.volume_snapshot_get_all(ctxt)
         self.write(objects.json_encode({
-            "volume_snapshots": volume_snapshots
+            "volume_snapshots": volume_snapshots,
+            "total": len(volume_snapshots_all)
         }))
 
     @gen.coroutine

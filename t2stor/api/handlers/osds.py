@@ -24,8 +24,11 @@ class OsdListHandler(ClusterAPIHandler):
                           'cache_partition', 'journal_partition']
         osds = yield client.osd_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
+        osds_all = yield client.osd_get_all(ctxt,
+                                            expected_attrs=expected_attrs)
         self.write(objects.json_encode({
-            "osds": osds
+            "osds": osds,
+            "total": len(osds_all)
         }))
 
     @gen.coroutine
