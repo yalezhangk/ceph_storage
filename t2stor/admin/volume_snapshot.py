@@ -17,12 +17,13 @@ logger = logging.getLogger(__name__)
 class VolumeSnapshotHandler(AdminBaseHandler):
     def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,
                                 sort_keys=None, sort_dirs=None, filters=None,
-                                offset=None):
+                                offset=None, expected_attrs=None):
         filters = filters or {}
         filters['cluster_id'] = ctxt.cluster_id
         return objects.VolumeSnapshotList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
 
     def volume_snapshot_create(self, ctxt, data):
         volume_id = data.get('volume_id')
@@ -72,8 +73,10 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         ).get_client()
         wb_client.send_message(ctxt, snap, "CREATED", msg)
 
-    def volume_snapshot_get(self, ctxt, volume_snapshot_id):
-        return objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+    def volume_snapshot_get(self, ctxt, volume_snapshot_id,
+                            expected_attrs=None):
+        return objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id,
+                                                expected_attrs=expected_attrs)
 
     def volume_snapshot_update(self, ctxt, volume_snapshot_id, data):
         volume_snapshot = self.volume_snapshot_get(ctxt, volume_snapshot_id)

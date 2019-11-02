@@ -365,14 +365,25 @@ def _volume_get(context, volume_id, session=None):
     return result
 
 
+def _volume_load_attr(volume, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'snapshots' in expected_attrs:
+        volume.snapshots = [snapshot for snapshot in volume._snapshots]
+
+
 @require_context
 def volume_get(context, volume_id, expected_attrs=None):
-    return _volume_get(context, volume_id)
+    session = get_session()
+    with session.begin():
+        volume = _volume_get(context, volume_id, session)
+        _volume_load_attr(volume, expected_attrs)
+    return volume
 
 
 @require_context
 def volume_get_all(context, marker=None, limit=None, sort_keys=None,
-                   sort_dirs=None, filters=None, offset=None):
+                   sort_dirs=None, filters=None, offset=None,
+                   expected_attrs=None):
     """Retrieves all volumes.
 
     If no sort parameters are specified then the returned volumes are sorted
@@ -403,7 +414,10 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
         # No volumes would match, return empty list
         if query is None:
             return []
-        return query.all()
+        volumes = query.all()
+        for volume in volumes:
+            _volume_load_attr(volume, expected_attrs)
+        return volumes
 
 
 def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
@@ -2570,9 +2584,19 @@ def _volume_snapshot_get(context, volume_snapshot_id, session=None):
     return result
 
 
+def _snap_load_attr(snap, expected_attrs):
+    if 'volume' in expected_attrs:
+        snap.volume = snap._volume
+
+
 @require_context
 def volume_snapshot_get(context, volume_snapshot_id, expected_attrs=None):
-    return _volume_snapshot_get(context, volume_snapshot_id)
+
+    session = get_session()
+    with session.begin():
+        snap = _volume_snapshot_get(context, volume_snapshot_id, session)
+        _snap_load_attr(snap, expected_attrs)
+    return snap
 
 
 @require_context
@@ -2600,7 +2624,8 @@ def volume_snapshot_update(context, volume_snapshot_id, values):
 
 @require_context
 def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
-                            sort_dirs=None, filters=None, offset=None):
+                            sort_dirs=None, filters=None, offset=None,
+                            expected_attrs=None):
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2610,7 +2635,13 @@ def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
             sort_keys, sort_dirs, filters, offset)
         if query is None:
             return []
-        return query.all()
+        volume_snapshots = query.all()
+
+        expected_attrs = expected_attrs or []
+        if 'volume' in expected_attrs:
+            for snapshot in volume_snapshots:
+                snapshot.volume = snapshot._volume
+        return volume_snapshots
 
 
 def volume_snapshot_destroy(context, volume_snapshot_id):
