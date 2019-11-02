@@ -136,7 +136,7 @@ def get_routers():
         (r"/volume_access_paths/([0-9]*)/", VolumeAccessPathHandler),
         (r"/volume_client_groups/", VolumeClientGroupListHandler),
         (r"/volume_client_groups/([0-9]*)/", VolumeClientGroupHandler),
-        (r"/volume_client_groups/([0-9]*)/clients", VolumeClientByGroup),
+        (r"/volume_client_groups/([0-9]*)/clients/", VolumeClientByGroup),
         (r"/volume_snapshots/", VolumeSnapshotListHandler),
         (r"/volume_snapshots/([0-9]*)/", VolumeSnapshotHandler),
         (r"/volume_snapshots/([0-9]*)/action/", VolumeSnapshotActionHandler),
