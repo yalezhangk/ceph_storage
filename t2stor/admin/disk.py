@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 class DiskHandler(AdminBaseHandler):
     def disk_get(self, ctxt, disk_id):
-        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        disk = objects.Disk.get_by_id(ctxt, disk_id,
+                                      expected_attrs=['partition_used'])
         return disk
 
     def disk_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
@@ -21,7 +22,7 @@ class DiskHandler(AdminBaseHandler):
         disks = objects.DiskList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=['node'])
+            expected_attrs=['node', 'partition_used'])
         return disks
 
     def disk_update(self, ctxt, disk_id, disk_type):

@@ -2086,6 +2086,16 @@ def alert_rule_get_all(context, marker=None, limit=None, sort_keys=None,
 
 ###############################
 
+def _disk_load_attr(context, disk, expected_attrs=None, session=None):
+    expected_attrs = expected_attrs or []
+    if 'node' in expected_attrs:
+        disk.node = disk._node
+    if "partition_used" in expected_attrs:
+        parts = model_query(
+            context, models.DiskPartition, session=session
+        ).filter_by(status='inuse', disk_id= disk.id)
+        disk.partition_used = parts.count()
+
 
 def _disk_get_query(context, session=None):
     return model_query(
@@ -2130,7 +2140,9 @@ def disk_destroy(context, disk_id):
 
 @require_context
 def disk_get(context, disk_id, expected_attrs=None):
-    return _disk_get(context, disk_id)
+    disk = _disk_get(context, disk_id)
+    _disk_load_attr(context, disk, expected_attrs)
+    return disk
 
 
 @require_context
@@ -2148,12 +2160,10 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         disks = query.all()
-
-        expected_attrs = expected_attrs or []
-        if 'node' in expected_attrs:
-            for disk in disks:
-                disk.node = disk._node
-
+        if not expected_attrs:
+            return disks
+        for disk in disks:
+            _disk_load_attr(context, disk, expected_attrs, session)
         return disks
 
 
