@@ -17,6 +17,7 @@ from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
 from t2stor.admin.email_group import EmailGroupHandler
 from t2stor.admin.genconf import ceph_conf
+from t2stor.admin.node import NodeHandler
 from t2stor.admin.osd import OsdHandler
 from t2stor.admin.pool import PoolHandler
 from t2stor.admin.prometheus import PrometheusHandler
@@ -50,6 +51,7 @@ class AdminHandler(ActionLogHandler,
                    DiskHandler,
                    EmailGroupHandler,
                    OsdHandler,
+                   NodeHandler,
                    PoolHandler,
                    PrometheusHandler,
                    RackHandler,
