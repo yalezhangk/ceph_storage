@@ -48,6 +48,7 @@ class StorException(Exception):
             message = self.message
 
         self.msg = message
+        self.code = self.kwargs['code']
         super(StorException, self).__init__(message)
 
     def _log_exception(self):
@@ -61,6 +62,10 @@ class StorException(Exception):
 
     def __unicode__(self):
         return self.msg
+
+    @classmethod
+    def obj_cls(cls):
+        return cls.__name__
 
 
 ObjectActionError = obj_exc.ObjectActionError

@@ -59,12 +59,11 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
                 value=json.dumps(self.serializer.serialize_entity(ctxt, ret))
             )
         except Exception as e:
-            raise e
-            logger.exception(e)
+            logger.debug("%s raise exception: %s" % (
+                func.__name__, e
+            ))
             res = stor_pb2.Response(
-                value=self.serializer.serialize_entity(ctxt, {
-                    "exception": str(e)
-                })
+                value=json.dumps(self.serializer.serialize_exception(ctxt, e))
             )
         return res
 
