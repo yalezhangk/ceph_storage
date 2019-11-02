@@ -363,6 +363,7 @@ class CephConfig(BASE, StorBase):
     group = Column(String(255))
     key = Column(String(255))
     value = Column(String(255))
+    value_type = Column(String(36))
     display_description = Column(String(255))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 

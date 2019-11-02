@@ -15,6 +15,7 @@ fake_ceph_config = {
     'group': "DEFAULT",
     'key': "devel",
     'value': "value",
+    'value_type': "string",
     'cluster_id': "8466c699-42c4-4abb-bae2-19b3ef0d8b90"
 }
 

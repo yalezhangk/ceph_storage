@@ -43,7 +43,7 @@ class CephConfigListHandler(ClusterAPIHandler):
 class CephConfigActionHandler(ClusterAPIHandler):
     def _ceph_config_set(self, ctxt, client, action, values):
         if action == 'update':
-            required_args = ['group', 'key', 'value']
+            required_args = ['group', 'key', 'value', 'value_type']
         if action == 'reset':
             required_args = ['group', 'key']
 
@@ -58,7 +58,7 @@ class CephConfigActionHandler(ClusterAPIHandler):
                 reason=_("{} do not support to modify".format(values['key']))
             )
         if action == 'update':
-            if not isinstance(values['value'], detail.get('type')):
+            if values['value_type'] != detail.get('type'):
                 raise exception.InvalidInput(
                     reason=_("Type of config is error, it needs to be".format(
                         detail.get('type')))

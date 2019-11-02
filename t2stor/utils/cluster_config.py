@@ -20,7 +20,8 @@ cluster_osd_temp_configs = ['debug_ms', 'debug_osd', 'debug_bluestore',
 cluster_mon_temp_configs = ['debug_ms', 'debug_mon', 'debug_perfcounter']
 
 cluster_configs = {
-    'debug_osd': {'type': int, 'default': 5},
-    'debug_mon': {'type': int, 'default': 5},
-    'osd_pool_default_type': {'type': str, 'default': 'replicated'},
+    'debug_osd': {'type': 'int', 'default': 5},
+    'debug_mon': {'type': 'int', 'default': 5},
+    'debug_rgw': {'type': 'int', 'default': 5},
+    'osd_pool_default_type': {'type': 'string', 'default': 'replicated'},
 }
