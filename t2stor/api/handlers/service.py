@@ -25,9 +25,12 @@ class ServiceListHandler(ClusterAPIHandler):
         client = self.get_admin_client(context)
         services = yield client.services_get_all(
             context, filters=filters, **page_args)
+        services_all = yield client.services_get_all(
+            context, filters=filters)
 
         self.write(objects.json_encode({
-            "services": services
+            "services": services,
+            "total": len(services_all),
         }))
 
 

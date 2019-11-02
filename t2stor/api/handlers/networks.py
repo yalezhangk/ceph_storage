@@ -25,10 +25,13 @@ class NetworkListHandler(ClusterAPIHandler):
 
         client = self.get_admin_client(context)
         networks = yield client.network_get_all(
-            context, **page_args, expected_attrs=['node'])
+            context, expected_attrs=['node'], **page_args)
+        networks_all = yield client.network_get_all(
+            context, expected_attrs=['node'])
 
         self.write(objects.json_encode({
-            "networks": networks
+            "networks": networks,
+            "total": len(networks_all)
         }))
 
 
