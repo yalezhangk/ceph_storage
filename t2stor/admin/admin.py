@@ -118,43 +118,6 @@ class AdminHandler(ActionLogHandler,
         rule.save()
         return rule
 
-    def node_get(self, ctxt, node_id, expected_attrs=None):
-        node_info = objects.Node.get_by_id(
-            ctxt, node_id, expected_attrs=expected_attrs)
-        return node_info
-
-    def node_update(self, ctxt, node_id, data):
-        node = objects.Node.get_by_id(ctxt, node_id)
-        for k, v in six.iteritems(data):
-            setattr(node, k, v)
-        node.save()
-        return node
-
-    def node_delete(self, ctxt, node_id):
-        node = objects.Node.get_by_id(ctxt, node_id)
-        node.destroy()
-        return node
-
-    def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                     sort_dirs=None, filters=None, offset=None,
-                     expected_attrs=None):
-        nodes = objects.NodeList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=expected_attrs)
-        return nodes
-
-    def node_create(self, ctxt, data):
-        node = objects.Node(
-            ctxt, ip_address=data.get('ip_address'),
-            password=data.get('password'),
-            gateway_ip_address=data.get('gateway_ip_address'),
-            storage_cluster_ip_address=data.get('storage_cluster_ip_address'),
-            storage_public_ip_address=data.get('storage_public_ip_address'),
-            status='creating')
-        node.create()
-        return node
-
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None,
                         expected_attrs=None):

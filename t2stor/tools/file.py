@@ -17,3 +17,12 @@ class File(ToolBase):
 
     def mkdir(self, dirname):
         self.executor.run_command(["mkdir", "-p", dirname])
+
+    def chown(self, path, user='root', group='root'):
+        self.executor.run_command(["chown",
+                                   "-R",
+                                   "{}:{}".format(user, group),
+                                   path])
+
+    def chmod(self, path, mode='0644'):
+        self.executor.run_command(["chmod", "-R", mode, path])

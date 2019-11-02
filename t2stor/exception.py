@@ -111,6 +111,11 @@ class NodeNotFound(NotFound):
     message = _("Node %(node_id)s could not be found.")
 
 
+class NodeStatusNotAllow(StorException):
+    code = 400
+    message = _('node status must in [active, error]')
+
+
 class DatacenterNotFound(NotFound):
     message = _("Datacenter %(datacenter_id)s could not be found.")
 
