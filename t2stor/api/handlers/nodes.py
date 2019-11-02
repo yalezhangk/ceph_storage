@@ -74,6 +74,21 @@ class NodeHandler(ClusterAPIHandler):
         }))
 
 
+class NodeRoleHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, node_id):
+        # monitor, mds, rgw, bgw role
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        node_data = data.get('node')
+        client = self.get_admin_client(ctxt)
+        node = yield client.node_roles_set(ctxt, node_id, node_data)
+
+        self.write(objects.json_encode({
+            "node": node
+        }))
+
+
 class NodeMetricsMonitorHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
