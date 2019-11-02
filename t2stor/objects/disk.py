@@ -33,10 +33,11 @@ class Disk(base.StorPersistentObject, base.StorObject,
         'partition_num': fields.IntegerField(nullable=True),
         'node_id': fields.IntegerField(),
         'cluster_id': fields.StringField(),
-        'node': fields.ObjectField("Node", nullable=True)
+        'node': fields.ObjectField("Node", nullable=True),
+        'partition_used': fields.IntegerField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('node',)
+    OPTIONAL_FIELDS = ('node', 'partition_used', )
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -67,6 +68,8 @@ class Disk(base.StorPersistentObject, base.StorObject,
             obj.node = objects.Node._from_db_object(
                 context, objects.Node(context), node
             )
+        if 'partition_used' in expected_attrs:
+            obj.partition_used = db_obj.get('partition_used', None)
         return super(Disk, cls)._from_db_object(context, obj, db_obj)
 
 
