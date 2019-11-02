@@ -32,7 +32,8 @@ Code Style
 
 import style
 
-.. code-block::
+.. code-block:: shell
+
   isort -rc -ns __init__.py --force-single-line-imports server/
 
 - line width 79
@@ -41,22 +42,25 @@ import style
 Commit Style
 =============
 
-.. code-block::
-   type(module): what's changed
+.. code-block:: shell
 
-   full message ...
+  type(module): what's changed
+  
+  full message ...
 
 
 type:
+
 - fe: feature
 - re: refactor
 - fix: fix bug
 
 Example:
 
-.. code-block::
-  fe(osd): add deploy osd
+.. code-block:: shell
 
+  fe(osd): add deploy osd
+  
   Support deploy osd, include cache, wal, db, journal.
 
 
@@ -72,7 +76,7 @@ All unit tests
 
 Tox:
 
-.. code-block::
+.. code-block:: shell
 
   tox
 
