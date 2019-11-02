@@ -149,7 +149,7 @@ class CephConfigHandler(AdminBaseHandler):
         if not cephconf:
             cephconf = objects.CephConfig(
                 ctxt, group=values.get('group'), key=values.get('key'),
-                value=values.get('value'),
+                value=values.get('value'), value_type=values.get('value_type'),
                 display_description=values.get('display_description'),
                 cluster_id=ctxt.cluster_id
             )

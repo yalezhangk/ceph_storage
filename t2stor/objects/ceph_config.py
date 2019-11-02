@@ -20,6 +20,7 @@ class CephConfig(base.StorPersistentObject, base.StorObject,
         'group': fields.StringField(),
         'key': fields.StringField(),
         'value': fields.StringField(),
+        'value_type': fields.StringField(),
         'display_description': fields.StringField(nullable=True),
         'cluster_id': fields.StringField(nullable=True)
     }
