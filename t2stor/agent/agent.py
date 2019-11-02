@@ -181,10 +181,12 @@ class AgentHandler(object):
         tool.restart(name)
         return True
 
-    def _get_ssh_client(self):
+    def _get_ssh_client(self, node=None):
+        if not node:
+            node = self.node
         try:
-            ssh_client = SSHExecutor(hostname=self.node.hostname,
-                                     password=self.node.password)
+            ssh_client = SSHExecutor(hostname=node.hostname,
+                                     password=node.password)
         except exception.StorException as e:
             logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
             return None
