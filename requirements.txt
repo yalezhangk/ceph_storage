@@ -12,5 +12,6 @@ paramiko
 tooz
 truepy
 licepy
+rtslib-fb
 six
 prometheus_http_client

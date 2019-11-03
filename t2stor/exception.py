@@ -300,3 +300,31 @@ class VolumeStatusNotAllowAction(StorException):
 
 class ActionLogNotFound(NotFound):
     message = _("ActionLog %(action_log_id)s could not be found.")
+
+
+class IscsiTargetError(StorException):
+    message = _('iscsi target operation error: %(action)s')
+
+
+class IscsiTargetExists(Duplicate):
+    message = _("iscsi target %(iqn)s already exists.")
+
+
+class IscsiTargetNotFound(NotFound):
+    message = _("iscsi target %(iqn)s not found.")
+
+
+class IscsiAclExists(Duplicate):
+    message = _("iscsi acl %(iqn)s already exists.")
+
+
+class IscsiBackstoreExists(Duplicate):
+    message = _("iscsi backstore %(disk_name)s already exists.")
+
+
+class IscsiBackstoreNotFound(NotFound):
+    message = _("iscsi backstore %(disk_name)s not found.")
+
+
+class IscsiAclNotFound(NotFound):
+    message = _("iscsi acl %(iqn_initiator)s not found.")
