@@ -1,5 +1,4 @@
 import time
-from concurrent import futures
 
 from oslo_log import log as logging
 
@@ -9,6 +8,7 @@ from t2stor.admin.alert_group import AlertGroupHandler
 from t2stor.admin.alert_log import AlertLogHandler
 from t2stor.admin.alert_rule import AlertRuleHandler
 from t2stor.admin.ceph_config import CephConfigHandler
+from t2stor.admin.cluster import ClusterHandler
 from t2stor.admin.crush_rule import CephCrushHandler
 from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
@@ -17,7 +17,6 @@ from t2stor.admin.mail import MailHandler
 from t2stor.admin.node import NodeHandler
 from t2stor.admin.osd import OsdHandler
 from t2stor.admin.pool import PoolHandler
-from t2stor.admin.probe import ProbeHandler
 from t2stor.admin.prometheus import PrometheusHandler
 from t2stor.admin.rack import RackHandler
 from t2stor.admin.service import ServiceHandler
@@ -27,8 +26,6 @@ from t2stor.admin.volume_access_path import VolumeAccessPathHandler
 from t2stor.admin.volume_client import VolumeClientHandler
 from t2stor.admin.volume_snapshot import VolumeSnapshotHandler
 from t2stor.service import ServiceBase
-from t2stor.taskflows.ceph import CephTask
-from t2stor.taskflows.node import NodeTask
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)
@@ -40,6 +37,7 @@ class AdminHandler(ActionLogHandler,
                    AlertRuleHandler,
                    CephConfigHandler,
                    CephCrushHandler,
+                   ClusterHandler,
                    DatacenterHandler,
                    DiskHandler,
                    EmailGroupHandler,
@@ -47,7 +45,6 @@ class AdminHandler(ActionLogHandler,
                    MailHandler,
                    NodeHandler,
                    PoolHandler,
-                   ProbeHandler,
                    PrometheusHandler,
                    RackHandler,
                    ServiceHandler,
@@ -56,24 +53,6 @@ class AdminHandler(ActionLogHandler,
                    VolumeHandler,
                    VolumeClientHandler,
                    VolumeSnapshotHandler):
-    def __init__(self):
-        self.executor = futures.ThreadPoolExecutor(max_workers=10)
-
-    ###################
-
-    def cluster_import(self, ctxt):
-        """Cluster import"""
-        pass
-
-    def cluster_new(self, ctxt):
-        """Deploy a new cluster"""
-        pass
-
-    def cluster_install_agent(self, ctxt, ip_address, password):
-        logger.debug("Install agent on {}".format(ip_address))
-        task = NodeTask()
-        task.t2stor_agent_install(ip_address, password)
-        return True
 
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None,
@@ -84,25 +63,6 @@ class AdminHandler(ActionLogHandler,
             expected_attrs=expected_attrs
         )
         return networks
-
-    ###################
-
-    def ceph_cluster_info(self, ctxt):
-        try:
-            ceph_client = CephTask(ctxt)
-            cluster_info = ceph_client.cluster_info()
-        except Exception as e:
-            logger.error(e)
-            return {}
-        fsid = cluster_info.get('fsid')
-        total_cluster_byte = cluster_info.get('cluster_data', {}).get(
-            'stats', {}).get('total_bytes')
-        pool_list = cluster_info.get('cluster_data', {}).get('pools')
-        return {
-            'fsid': fsid,
-            'total_cluster_byte': total_cluster_byte,
-            'pool_list': pool_list
-        }
 
 
 class AdminService(ServiceBase):
