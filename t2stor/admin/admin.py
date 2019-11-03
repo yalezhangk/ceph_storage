@@ -1,13 +1,11 @@
 import json
 import queue
 import time
-import uuid
 from concurrent import futures
 
 import six
 from oslo_log import log as logging
 
-from t2stor import exception
 from t2stor import objects
 from t2stor.admin.action_log import ActionLogHandler
 from t2stor.admin.alert_group import AlertGroupHandler
@@ -234,59 +232,6 @@ class AdminHandler(ActionLogHandler,
                 service.status = s.get('status')
                 service.save()
         return True
-
-    def _verify_clone_data(self, ctxt, snapshot_id, data):
-        display_name = data.get('display_name')
-        display_description = data.get('display_description')
-        c_pool_id = data.get('pool_id')
-        is_link_clone = data.get('is_link_clone')
-        snap = objects.VolumeSnapshot.get_by_id(ctxt, snapshot_id)
-        if not snap:
-            raise exception.VolumeSnapshotNotFound(
-                volume_snapshot_id=snapshot_id)
-        snap_name = snap.uuid
-        p_volume = objects.Volume.get_by_id(ctxt, snap.volume_id)
-        if not p_volume:
-            raise exception.VolumeNotFound(volume_id=snap.volume_id)
-        size = p_volume.size
-        p_volume_name = p_volume.volume_name
-        p_pool_name = objects.Pool.get_by_id(ctxt, p_volume.pool_id).pool_name
-        c_pool_name = objects.Pool.get_by_id(ctxt, c_pool_id).pool_name
-        return {
-            'p_pool_name': p_pool_name,
-            'p_volume_name': p_volume_name,
-            'p_snap_name': snap_name,
-            'c_pool_name': c_pool_name,
-            'pool_id': c_pool_id,
-            'display_name': display_name,
-            'size': size,
-            'display_description': display_description,
-            'is_link_clone': is_link_clone,
-        }
-
-    def volume_create_from_snapshot(self, ctxt, snapshot_id, data):
-        verify_data = self._verify_clone_data(ctxt, snapshot_id, data)
-        # create volume
-        uid = str(uuid.uuid4())
-        volume_name = "volume-{}".format(uid)
-        volume_data = {
-            "cluster_id": ctxt.cluster_id,
-            'volume_name': volume_name,
-            'display_name': verify_data['display_name'],
-            'display_description': verify_data['display_description'],
-            'size': verify_data['size'],
-            'status': s_fields.VolumeStatus.CREATING,
-            'snapshot_id': snapshot_id,
-            'is_link_clone': verify_data['is_link_clone'],
-            'pool_id': verify_data['pool_id']
-        }
-        new_volume = objects.Volume(ctxt, **volume_data)
-        new_volume.create()
-        verify_data.update({'new_volume': new_volume})
-        # put into thread pool
-        self.executor.submit(self._volume_create_from_snapshot, ctxt,
-                             verify_data)
-        return new_volume
 
     ###################
     def send_mail(subject, content, config):
