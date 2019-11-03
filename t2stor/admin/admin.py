@@ -1,5 +1,3 @@
-import json
-import queue
 import time
 from concurrent import futures
 
@@ -15,11 +13,13 @@ from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
 from t2stor.admin.email_group import EmailGroupHandler
 from t2stor.admin.genconf import ceph_conf
+from t2stor.admin.mail import MailHandler
 from t2stor.admin.node import NodeHandler
 from t2stor.admin.osd import OsdHandler
 from t2stor.admin.pool import PoolHandler
 from t2stor.admin.prometheus import PrometheusHandler
 from t2stor.admin.rack import RackHandler
+from t2stor.admin.service import ServiceHandler
 from t2stor.admin.volume import VolumeHandler
 from t2stor.admin.volume_access_path import VolumeAccessPathHandler
 from t2stor.admin.volume_client import VolumeClientHandler
@@ -30,16 +30,9 @@ from t2stor.taskflows.ceph import CephTask
 from t2stor.taskflows.node import NodeTask
 from t2stor.tools.base import Executor
 from t2stor.tools.ceph import CephTool
-from t2stor.utils.mail import send_mail
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-OSD_ID_MAX = 1024 ^ 2
 logger = logging.getLogger(__name__)
-LOCAL_LOGFILE_DIR = '/var/log/t2stor_log/'
-
-
-class AdminQueue(queue.Queue):
-    pass
 
 
 class AdminHandler(ActionLogHandler,
@@ -50,16 +43,17 @@ class AdminHandler(ActionLogHandler,
                    DiskHandler,
                    EmailGroupHandler,
                    OsdHandler,
+                   MailHandler,
                    NodeHandler,
                    PoolHandler,
                    PrometheusHandler,
                    RackHandler,
+                   ServiceHandler,
                    VolumeAccessPathHandler,
                    VolumeHandler,
                    VolumeClientHandler,
                    VolumeSnapshotHandler):
     def __init__(self):
-        self.worker_queue = AdminQueue()
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
 
     def get_ceph_conf(self, ctxt, ceph_host):
@@ -204,107 +198,6 @@ class AdminHandler(ActionLogHandler,
             osd.save()
 
     ###################
-
-    def services_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                         sort_dirs=None, filters=None, offset=None):
-        services = objects.ServiceList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
-        return services
-
-    def service_update(self, ctxt, services):
-        services = json.loads(services)
-        logger.debug('Update service status')
-        for s in services:
-            filters = {
-                "name": s['name'],
-                "node_id": s['node_id']
-            }
-            service = objects.ServiceList.get_all(ctxt, filters=filters)
-            if not service:
-                service_new = objects.Service(
-                    ctxt, name=s.get('name'), status=s.get('status'),
-                    node_id=s.get('node_id'), cluster_id=ctxt.cluster_id
-                )
-                service_new.create()
-            else:
-                service = service[0]
-                service.status = s.get('status')
-                service.save()
-        return True
-
-    ###################
-    def send_mail(subject, content, config):
-        send_mail(subject, content, config)
-
-    def smtp_init(self, ctxt):
-        data = [
-            ("smtp_enabled", '0', 'string'),
-            ("smtp_user", '0', 'string'),
-            ("smtp_password", '0', 'string'),
-            ("smtp_host", '0', 'string'),
-            ("smtp_port", '0', 'string'),
-            ("smtp_enable_ssl", 'True', 'string'),
-            ("smtp_enable_tls", 'Flase', 'string'),
-        ]
-        for key, value, value_type in data:
-            cfg = objects.SysConfig(key=key, value=value,
-                                    value_type=value_type)
-            cfg.save()
-
-    def smtp_get(self, ctxt):
-        result = {}
-        sysconfs = objects.SysConfigList.get_all(
-            ctxt, filters={"cluster_id": ctxt.cluster_id})
-        keys = ['smtp_enabled', 'smtp_user', 'smtp_password', 'smtp_host',
-                'smtp_port', 'smtp_enable_ssl', 'smtp_enable_tls']
-        for sysconf in sysconfs:
-            if sysconf.key in keys:
-                result[sysconf.key] = sysconf.value
-        return result
-
-    def update_smtp(self, ctxt, smtp_enabled,
-                    smtp_user, smtp_password,
-                    smtp_host, smtp_port,
-                    smtp_enable_ssl,
-                    smtp_enable_tls):
-        # TODO check a object exists
-        sysconf = None
-        if smtp_enabled:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_enabled", value=smtp_enabled,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if smtp_user:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_user", value=smtp_user,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if smtp_password:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_password", value=smtp_password,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if smtp_host:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_host", value=smtp_host,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if smtp_port:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_port", value=smtp_port,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if smtp_enable_ssl:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_enable_ssl", value=smtp_enable_ssl,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if smtp_enable_tls:
-            sysconf = objects.SysConfig(
-                ctxt, key="smtp_enable_tls", value=smtp_enable_tls,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
 
     def ceph_cluster_info(self, ctxt):
         try:
