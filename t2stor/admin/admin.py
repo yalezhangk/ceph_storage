@@ -17,6 +17,7 @@ from t2stor.admin.mail import MailHandler
 from t2stor.admin.node import NodeHandler
 from t2stor.admin.osd import OsdHandler
 from t2stor.admin.pool import PoolHandler
+from t2stor.admin.probe import ProbeHandler
 from t2stor.admin.prometheus import PrometheusHandler
 from t2stor.admin.rack import RackHandler
 from t2stor.admin.service import ServiceHandler
@@ -28,8 +29,6 @@ from t2stor.admin.volume_snapshot import VolumeSnapshotHandler
 from t2stor.service import ServiceBase
 from t2stor.taskflows.ceph import CephTask
 from t2stor.taskflows.node import NodeTask
-from t2stor.tools.base import Executor
-from t2stor.tools.ceph import CephTool
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)
@@ -48,6 +47,7 @@ class AdminHandler(ActionLogHandler,
                    MailHandler,
                    NodeHandler,
                    PoolHandler,
+                   ProbeHandler,
                    PrometheusHandler,
                    RackHandler,
                    ServiceHandler,
@@ -68,24 +68,6 @@ class AdminHandler(ActionLogHandler,
     def cluster_new(self, ctxt):
         """Deploy a new cluster"""
         pass
-
-    def cluster_get_info(self, ctxt, ip_address, password=None):
-        logger.debug("detect an exist cluster from {}".format(ip_address))
-        ssh_client = Executor()
-        ssh_client.connect(hostname=ip_address, password=password)
-        tool = CephTool(ssh_client)
-        cluster_info = {}
-        mon_hosts = tool.get_mons()
-        osd_hosts = tool.get_osds()
-        mgr_hosts = tool.get_mgrs()
-        cluster_network, public_network = tool.get_networks()
-
-        cluster_info.update({'mon_hosts': mon_hosts,
-                             'osd_hosts': osd_hosts,
-                             'mgr_hosts': mgr_hosts,
-                             'public_network': str(public_network),
-                             'cluster_network': str(cluster_network)})
-        return cluster_info
 
     def cluster_install_agent(self, ctxt, ip_address, password):
         logger.debug("Install agent on {}".format(ip_address))
