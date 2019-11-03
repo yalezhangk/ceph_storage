@@ -12,7 +12,6 @@ from t2stor.admin.ceph_config import CephConfigHandler
 from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
 from t2stor.admin.email_group import EmailGroupHandler
-from t2stor.admin.genconf import ceph_conf
 from t2stor.admin.mail import MailHandler
 from t2stor.admin.node import NodeHandler
 from t2stor.admin.osd import OsdHandler
@@ -20,11 +19,11 @@ from t2stor.admin.pool import PoolHandler
 from t2stor.admin.prometheus import PrometheusHandler
 from t2stor.admin.rack import RackHandler
 from t2stor.admin.service import ServiceHandler
+from t2stor.admin.sys_config import SysConfigHandler
 from t2stor.admin.volume import VolumeHandler
 from t2stor.admin.volume_access_path import VolumeAccessPathHandler
 from t2stor.admin.volume_client import VolumeClientHandler
 from t2stor.admin.volume_snapshot import VolumeSnapshotHandler
-from t2stor.objects import fields as s_fields
 from t2stor.service import ServiceBase
 from t2stor.taskflows.ceph import CephTask
 from t2stor.taskflows.node import NodeTask
@@ -49,17 +48,13 @@ class AdminHandler(ActionLogHandler,
                    PrometheusHandler,
                    RackHandler,
                    ServiceHandler,
+                   SysConfigHandler,
                    VolumeAccessPathHandler,
                    VolumeHandler,
                    VolumeClientHandler,
                    VolumeSnapshotHandler):
     def __init__(self):
         self.executor = futures.ThreadPoolExecutor(max_workers=10)
-
-    def get_ceph_conf(self, ctxt, ceph_host):
-        logger.debug("try get ceph conf with location "
-                     "{}".format(ceph_host))
-        return ceph_conf
 
     ###################
 
@@ -123,53 +118,6 @@ class AdminHandler(ActionLogHandler,
             expected_attrs=expected_attrs
         )
         return networks
-
-    def sysconf_get_all(self, ctxt):
-        result = {}
-        sysconfs = objects.SysConfigList.get_all(
-            ctxt, filters={"cluster_id": ctxt.cluster_id})
-        keys = ['cluster_name', 'admin_cidr', 'public_cidr', 'cluster_cidr',
-                'gateway_cidr', 'chrony_server']
-        for sysconf in sysconfs:
-            if sysconf.key in keys:
-                result[sysconf.key] = sysconf.value
-        return result
-
-    def update_chrony(self, ctxt, chrony_server):
-        sysconf = objects.SysConfig(
-            ctxt, key="chrony_server", value=chrony_server,
-            value_type=s_fields.SysConfigType.STRING)
-        sysconf.create()
-
-    def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
-                       cluster_cidr, gateway_cidr):
-        # TODO check a object exists
-        sysconf = None
-        if cluster_name:
-            sysconf = objects.SysConfig(
-                ctxt, key="cluster_name", value=cluster_name,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if admin_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="admin_cidr", value=admin_cidr,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if public_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="public_cidr", value=public_cidr,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if cluster_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="cluster_cidr", value=cluster_cidr,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
-        if gateway_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="gateway_cidr", value=gateway_cidr,
-                value_type=s_fields.SysConfigType.STRING)
-            sysconf.create()
 
     ###################
 
