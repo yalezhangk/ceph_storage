@@ -172,3 +172,9 @@ class OsdHandler(AdminBaseHandler):
         osd.save()
         self.executor.submit(self._osd_delete, ctxt, osd.node, osd)
         return osd
+
+    def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
+        for osd_id in osds:
+            osd = self.osd_get(ctxt, osd_id)
+            osd.crush_rule_id = crush_rule_id
+            osd.save()
