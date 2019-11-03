@@ -2,7 +2,6 @@ import time
 
 from oslo_log import log as logging
 
-from t2stor import objects
 from t2stor.admin.action_log import ActionLogHandler
 from t2stor.admin.alert_group import AlertGroupHandler
 from t2stor.admin.alert_log import AlertLogHandler
@@ -14,6 +13,7 @@ from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
 from t2stor.admin.email_group import EmailGroupHandler
 from t2stor.admin.mail import MailHandler
+from t2stor.admin.network import NetworkHandler
 from t2stor.admin.node import NodeHandler
 from t2stor.admin.osd import OsdHandler
 from t2stor.admin.pool import PoolHandler
@@ -43,6 +43,7 @@ class AdminHandler(ActionLogHandler,
                    EmailGroupHandler,
                    OsdHandler,
                    MailHandler,
+                   NetworkHandler,
                    NodeHandler,
                    PoolHandler,
                    PrometheusHandler,
@@ -53,16 +54,7 @@ class AdminHandler(ActionLogHandler,
                    VolumeHandler,
                    VolumeClientHandler,
                    VolumeSnapshotHandler):
-
-    def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                        sort_dirs=None, filters=None, offset=None,
-                        expected_attrs=None):
-        networks = objects.NetworkList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=expected_attrs
-        )
-        return networks
+    pass
 
 
 class AdminService(ServiceBase):
