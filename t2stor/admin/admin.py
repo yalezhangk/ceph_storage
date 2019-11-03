@@ -1,13 +1,13 @@
 import time
 from concurrent import futures
 
-import six
 from oslo_log import log as logging
 
 from t2stor import objects
 from t2stor.admin.action_log import ActionLogHandler
 from t2stor.admin.alert_group import AlertGroupHandler
 from t2stor.admin.alert_log import AlertLogHandler
+from t2stor.admin.alert_rule import AlertRuleHandler
 from t2stor.admin.ceph_config import CephConfigHandler
 from t2stor.admin.crush_rule import CephCrushHandler
 from t2stor.admin.datacenter import DatacenterHandler
@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 class AdminHandler(ActionLogHandler,
                    AlertGroupHandler,
                    AlertLogHandler,
+                   AlertRuleHandler,
                    CephConfigHandler,
                    CephCrushHandler,
                    DatacenterHandler,
@@ -91,25 +92,6 @@ class AdminHandler(ActionLogHandler,
         task = NodeTask()
         task.t2stor_agent_install(ip_address, password)
         return True
-
-    def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                           sort_dirs=None, filters=None, offset=None):
-        filters = filters or {}
-        filters['cluster_id'] = ctxt.cluster_id
-        return objects.AlertRuleList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
-
-    def alert_rule_get(self, ctxt, alert_rule_id):
-        return objects.AlertRule.get_by_id(ctxt, alert_rule_id)
-
-    def alert_rule_update(self, ctxt, alert_rule_id, data):
-        rule = self.alert_rule_get(ctxt, alert_rule_id)
-        for k, v in six.iteritems(data):
-            setattr(rule, k, v)
-
-        rule.save()
-        return rule
 
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None,
