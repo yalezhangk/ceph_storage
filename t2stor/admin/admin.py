@@ -9,6 +9,7 @@ from t2stor.admin.action_log import ActionLogHandler
 from t2stor.admin.alert_group import AlertGroupHandler
 from t2stor.admin.alert_log import AlertLogHandler
 from t2stor.admin.ceph_config import CephConfigHandler
+from t2stor.admin.crush_rule import CephCrushHandler
 from t2stor.admin.datacenter import DatacenterHandler
 from t2stor.admin.disk import DiskHandler
 from t2stor.admin.email_group import EmailGroupHandler
@@ -38,6 +39,7 @@ class AdminHandler(ActionLogHandler,
                    AlertGroupHandler,
                    AlertLogHandler,
                    CephConfigHandler,
+                   CephCrushHandler,
                    DatacenterHandler,
                    DiskHandler,
                    EmailGroupHandler,
@@ -120,24 +122,6 @@ class AdminHandler(ActionLogHandler,
         return networks
 
     ###################
-
-    def crush_rule_create(self, ctxt, rule_name, failure_domain_type,
-                          rule_content):
-        crush_rule = objects.CrushRule(
-            ctxt, cluster_id=ctxt.cluster_id, rule_name=rule_name,
-            type=failure_domain_type,
-            content=rule_content)
-        crush_rule.create()
-        return crush_rule
-
-    def crush_rule_get(self, ctxt, crush_rule_id):
-        return objects.CrushRule.get_by_id(
-            ctxt, crush_rule_id, expected_attrs=['osds'])
-
-    def crush_rule_delete(self, ctxt, crush_rule_id):
-        crush_rule = objects.CrushRule.get_by_id(ctxt, crush_rule_id)
-        crush_rule.destroy()
-        return crush_rule
 
     def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
         for osd_id in osds:
