@@ -105,14 +105,6 @@ class AdminHandler(ActionLogHandler,
 
     ###################
 
-    def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
-        for osd_id in osds:
-            osd = self.osd_get(ctxt, osd_id)
-            osd.crush_rule_id = crush_rule_id
-            osd.save()
-
-    ###################
-
     def ceph_cluster_info(self, ctxt):
         try:
             ceph_client = CephTask(ctxt)
