@@ -58,11 +58,10 @@ class DatacenterHandler(AdminBaseHandler):
             if rack.datacenter_id not in dc_ids:
                 dc_ids[rack.datacenter_id] = []
             dc_ids[rack.datacenter_id].append(rack)
-            rack.nodes = rack_ids.get(rack.id)
+            rack.nodes = rack_ids.get(rack.id, [])
 
         # datacenters
         dcs = objects.DatacenterList.get_all(ctxt)
         for dc in dcs:
-            dc.racks = dc_ids.get(dc.id)
-
+            dc.racks = dc_ids.get(dc.id, [])
         return dcs

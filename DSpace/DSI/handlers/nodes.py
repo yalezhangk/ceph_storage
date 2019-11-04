@@ -55,11 +55,17 @@ class NodeHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, node_id):
+        """修改节点信息
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         client = self.get_admin_client(ctxt)
         node = data.get("node")
-        node = yield client.node_update(ctxt, node_id, node)
+        if "rack_id" in node:
+            rack_id = node.get("rack_id")
+            node = yield client.node_update_rack(ctxt, node_id, rack_id)
+        else:
+            node = yield client.node_update(ctxt, node_id, node)
         self.write(objects.json_encode({
             "node": node
         }))
@@ -145,4 +151,17 @@ class NodeMetricsHistroyNetworkHandler(ClusterAPIHandler):
             end=his_args['end'])
         self.write(json.dumps({
             "node_metrics_histroy_network_get": data
+        }))
+
+
+class NodeListBareNodeHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        filters = {}
+        filters['rack_id'] = None
+        nodes = yield client.node_get_all(ctxt, filters=filters)
+        self.write(objects.json_encode({
+            "nodes": nodes
         }))

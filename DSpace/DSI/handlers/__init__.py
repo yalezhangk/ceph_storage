@@ -31,6 +31,7 @@ from DSpace.DSI.handlers.log_file import LogFileHandler
 from DSpace.DSI.handlers.log_file import LogFileListHandler
 from DSpace.DSI.handlers.networks import NetworkListHandler
 from DSpace.DSI.handlers.nodes import NodeHandler
+from DSpace.DSI.handlers.nodes import NodeListBareNodeHandler
 from DSpace.DSI.handlers.nodes import NodeListHandler
 from DSpace.DSI.handlers.nodes import NodeMetricsHistroyMonitorHandler
 from DSpace.DSI.handlers.nodes import NodeMetricsHistroyNetworkHandler
@@ -104,6 +105,7 @@ def get_routers():
         (r"/licenses/download_file/", DownloadlicenseHandler),
         (r"/networks/", NetworkListHandler),
         (r"/nodes/", NodeListHandler),
+        (r"/nodes/bare_node/", NodeListBareNodeHandler),
         (r"/nodes/([0-9]*)/", NodeHandler),
         (r"/nodes/([0-9]*)/role/", NodeRoleHandler),
         (r"/nodes/([0-9]*)/metrics/", NodeMetricsMonitorHandler),

@@ -27,6 +27,12 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
+    def node_update_rack(self, ctxt, node_id, rack_id):
+        node = objects.Node.get_by_id(ctxt, node_id)
+        node.rack_id = rack_id
+        node.save()
+        return node
+
     def node_delete(self, ctxt, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
         node.destroy()
