@@ -12,8 +12,6 @@ class ActionLogHandler(AdminBaseHandler):
     def action_log_get_all(self, ctxt, marker=None, limit=None,
                            sort_keys=None, sort_dirs=None, filters=None,
                            offset=None):
-        filters = filters or {}
-        filters['cluster_id'] = ctxt.cluster_id
         return objects.ActionLogList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
@@ -33,3 +31,7 @@ class ActionLogHandler(AdminBaseHandler):
             setattr(action_log, k, v)
         action_log.save()
         return action_log
+
+    def action_log_get_count(self, ctxt, filters=None):
+        return objects.ActionLogList.get_count(
+            ctxt, filters=filters)

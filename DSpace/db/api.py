@@ -774,6 +774,9 @@ def action_log_get_all(context, *args, **kwargs):
     return IMPL.action_log_get_all(context, *args, **kwargs)
 
 
+def action_log_get_count(context, filters):
+    return IMPL.action_log_get_count(context, filters=filters)
+
 ###############
 
 

@@ -17,9 +17,12 @@ class ActionLogListHandler(ClusterAPIHandler):
     def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        action_logs = yield client.action_log_get_all(ctxt)
+        page_args = self.get_paginated_args()
+        action_logs = yield client.action_log_get_all(ctxt, **page_args)
+        action_log_count = yield client.action_log_get_count(ctxt)
         self.write(objects.json_encode({
-            "action_logs": action_logs
+            "action_logs": action_logs,
+            "total": action_log_count
         }))
 
     @gen.coroutine
