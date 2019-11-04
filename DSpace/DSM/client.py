@@ -503,6 +503,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def alert_log_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "alert_log_get_count", filters=filters)
+        return response
+
     def alert_log_create(self, ctxt, data):
         response = self.call(
             ctxt, "alert_log_create", data=data)

@@ -641,6 +641,9 @@ def alert_log_destroy(context, alert_log_id):
     return IMPL.alert_log_destroy(context, alert_log_id)
 
 
+def alert_log_get_count(context, filters):
+    return IMPL.alert_log_get_count(context, filters=filters)
+
 ###############
 
 
