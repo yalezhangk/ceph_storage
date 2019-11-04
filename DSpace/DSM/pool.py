@@ -25,8 +25,9 @@ class PoolHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
 
-    def pool_get(self, ctxt, pool_id):
-        return objects.Pool.get_by_id(ctxt, pool_id)
+    def pool_get(self, ctxt, pool_id, expected_attrs=None):
+        return objects.Pool.get_by_id(
+            ctxt, pool_id, expected_attrs=expected_attrs)
 
     def pool_osds_get(self, ctxt, pool_id):
         return objects.OsdList.get_by_pool(ctxt, pool_id)

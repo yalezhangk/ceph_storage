@@ -201,8 +201,8 @@ def pool_destroy(context, pool_id):
     return IMPL.pool_destroy(context, pool_id)
 
 
-def pool_get(context, pool_id):
-    return IMPL.pool_get(context, pool_id)
+def pool_get(context, pool_id, expected_attrs=None):
+    return IMPL.pool_get(context, pool_id, expected_attrs=expected_attrs)
 
 
 def pool_get_all(context, filters, marker, limit,

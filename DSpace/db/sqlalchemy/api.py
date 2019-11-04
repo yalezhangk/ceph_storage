@@ -1155,11 +1155,19 @@ def _pool_load_attr(ctxt, pool, expected_attrs=None):
         pool.crush_rule = pool._crush_rule
     if 'osds' in expected_attrs:
         pool.osds = [osd for osd in pool.crush_rule._osds]
+    if 'volumes' in expected_attrs:
+        filters = {"pool_id": pool.id}
+        volumes = volume_get_all(ctxt, filters=filters)
+        pool.volumes = [volume for volume in volumes]
 
 
 @require_context
 def pool_get(context, pool_id, expected_attrs=None):
-    return _pool_get(context, pool_id)
+    session = get_session()
+    with session.begin():
+        pool = _pool_get(context, pool_id, session)
+        _pool_load_attr(context, pool, expected_attrs)
+        return pool
 
 
 @require_context

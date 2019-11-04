@@ -375,8 +375,9 @@ class AdminClient(BaseClient):
             offset=offset, expected_attrs=expected_attrs)
         return response
 
-    def pool_get(self, ctxt, pool_id):
-        response = self.call(ctxt, "pool_get", pool_id=pool_id)
+    def pool_get(self, ctxt, pool_id, expected_attrs=None):
+        response = self.call(
+            ctxt, "pool_get", pool_id=pool_id, expected_attrs=expected_attrs)
         return response
 
     def pool_osds_get(self, ctxt, pool_id):
