@@ -1221,12 +1221,18 @@ def pool_update(context, pool_id, values):
 
 
 @require_context
-def osd_get_by_pool(context, pool_id):
+def osd_get_by_pool(context, pool_id, expected_attrs=None):
     session = get_session()
     with session.begin():
         pool = _pool_get(context, pool_id, session)  # model object
         crush = pool._crush_rule
-        return crush._osds
+        osds = crush._osds
+        if not expected_attrs:
+            return osds
+        for osd in osds:
+            _osd_load_attr(osd, expected_attrs)
+        return osds
+
 
 ###############################
 

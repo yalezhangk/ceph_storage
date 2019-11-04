@@ -100,7 +100,9 @@ class PoolOsdsHandler(ClusterAPIHandler):
     def get(self, pool_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        osds = yield client.pool_osds_get(ctxt, pool_id)
+        expected_attrs = ['disk', 'node']
+        osds = yield client.pool_osds_get(
+            ctxt, pool_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode({"osds": osds}))
 
 

@@ -302,11 +302,13 @@ def osd_update(context, osd_id, values):
     return IMPL.osd_update(context, osd_id, values)
 
 
-def osd_get_by_pool(context, pool_id):
-    return IMPL.osd_get_by_pool(context, pool_id)
+def osd_get_by_pool(context, pool_id, expected_attrs=None):
+    return IMPL.osd_get_by_pool(
+        context, pool_id, expected_attrs=expected_attrs)
 
 
 ###################
+
 
 def volume_access_path_create(context, values):
     """Create a volume from the values dictionary."""
