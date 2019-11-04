@@ -97,6 +97,25 @@ class CephHandler(AgentBaseHandler):
         service_tool.start("ceph-mgr@{}".format(self.node.hostname))
         return True
 
+    def ceph_mon_remove(self, context, last_mon=False):
+        client = self._get_ssh_executor()
+        # remove mon service
+        ceph_tool = CephTool(client)
+        if not last_mon:
+            ceph_tool.mon_uninstall(self.node.hostname)
+        # stop and disable ceph-mon
+        service_tool = ServiceTool(client)
+        service_tool.stop("ceph-mon@{}".format(self.node.hostname))
+        service_tool.disable("ceph-mon@{}".format(self.node.hostname))
+        service_tool.stop("ceph-mgr@{}".format(self.node.hostname))
+        service_tool.disable("ceph-mgr@{}".format(self.node.hostname))
+
+        # remove mon and dir
+        file_tool = FileTool(client)
+        file_tool.rm("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
+        file_tool.rm("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
+        return True
+
     def osd_create(self, ctxt, node, osd):
         task = NodeTask(ctxt, node)
         task.ceph_osd_install(osd)

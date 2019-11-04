@@ -33,6 +33,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_mon_create", ceph_auth=ceph_auth)
         return response
 
+    def ceph_mon_remove(self, ctxt, last_mon=False):
+        response = self.call(ctxt, "ceph_mon_remove", last_mon=last_mon)
+        return response
+
     def ceph_osd_destroy(self, ctxt, osd):
         response = self.call(ctxt, "ceph_osd_destroy", osd=osd)
         return response

@@ -168,7 +168,16 @@ class NodeTask(object):
         )
 
     def chrony_uninstall(self):
-        pass
+        logger.debug("uninstall chrony")
+        ssh = self.get_ssh_executor()
+        # remove container and image
+        docker_tool = DockerTool(ssh)
+        docker_tool.stop('dspace_chrony')
+        docker_tool.rm('dspace_chrony')
+        docker_tool.image_rm('dspace_chrony', force=True)
+        # rm config file
+        file_tool = FileTool(ssh)
+        file_tool.rm("/etc/dspace/chrony.conf")
 
     def chrony_update(self):
         ssh = self.get_ssh_executor()
@@ -194,10 +203,13 @@ class NodeTask(object):
         )
 
     def node_exporter_uninstall(self):
-        pass
-
-    def node_exporter_restart(self):
-        pass
+        logger.debug("uninstall node exporter")
+        ssh = self.get_ssh_executor()
+        # remove container and image
+        docker_tool = DockerTool(ssh)
+        docker_tool.stop('dspace_node_exporter')
+        docker_tool.rm('dspace_node_exporter')
+        docker_tool.image_rm('dspace_node_exporter', force=True)
 
     def ceph_mon_install(self):
         logger.debug("install ceph mon")
@@ -205,17 +217,17 @@ class NodeTask(object):
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
 
-        # TODO: key
-        logger.debug("mon install on node")
         ceph_auth = objects.CephConfig.get_by_key(
             self.ctxt, 'global', 'auth_cluster_required')
         agent.ceph_mon_create(self.ctxt, ceph_auth=ceph_auth)
 
-    def ceph_mon_uninstall(self):
+    def ceph_mon_uninstall(self, last_mon=False):
         # update ceph.conf
-        # stop service
-        # uninstall package
-        pass
+        logger.debug("uninstall ceph mon")
+        ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
+        agent = self.get_agent()
+        agent.ceph_conf_write(self.ctxt, ceph_conf_content)
+        agent.ceph_mon_remove(self.ctxt, last_mon=last_mon)
 
     def ceph_osd_install(self, osd):
         # write ceph.conf
@@ -266,6 +278,7 @@ class NodeTask(object):
         # install docker
         package_tool = PackageTool(ssh)
         package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
+        package_tool.install(["ceph", "ceph-common"])
         # start docker
         service_tool = ServiceTool(ssh)
         service_tool.start('docker')
@@ -276,15 +289,21 @@ class NodeTask(object):
         docker_tool.run(
             image="dspace/dspace:v2.3",
             command="agent",
-            name="dspace_portal",
+            name="dsa",
             volumes=[("/etc/dspace", "/etc/dspace")]
         )
 
     def dspace_agent_uninstall(self):
-        # stop agent
+        logger.debug("uninstall chrony")
+        ssh = self.get_ssh_executor()
+        # remove container and image
+        docker_tool = DockerTool(ssh)
+        docker_tool.stop('dsa')
+        docker_tool.rm('dsa')
+        docker_tool.image_rm('dsa', force=True)
         # rm config file
-        # rm image
-        pass
+        file_tool = FileTool(ssh)
+        file_tool.rm("/etc/dspace")
 
     def ceph_config_update(self, values):
         path = self._wapper('/etc/ceph/ceph.conf')

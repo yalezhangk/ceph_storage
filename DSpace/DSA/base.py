@@ -33,7 +33,7 @@ class AgentBaseHandler(object):
     def _get_executor(self):
         return Executor()
 
-    def _get_ssh_executor(self, node):
+    def _get_ssh_executor(self, node=None):
         if not node:
             node = self.node
         try:

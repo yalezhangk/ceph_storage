@@ -18,6 +18,9 @@ class File(ToolBase):
     def mkdir(self, dirname):
         self.executor.run_command(["mkdir", "-p", dirname])
 
+    def rm(self, path):
+        self.executor.run_command(["rm", "-rf", path])
+
     def chown(self, path, user='root', group='root'):
         self.executor.run_command(["chown",
                                    "-R",
