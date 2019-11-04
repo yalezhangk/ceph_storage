@@ -78,7 +78,11 @@ def service():
     logger.info("api server run on %d", CONF.api_port)
     routers = get_routers()
     routers += [(r"/ws", EchoWebSocket)]
-    application = tornado.web.Application(routers, debug=CONF.debug)
+    settings = {
+        "cookie_secret": CONF.cookie_secret,
+        "debug": CONF.debug,
+    }
+    application = tornado.web.Application(routers, **settings)
     application.listen(CONF.api_port, CONF.my_ip)
     ioloop = tornado.ioloop.IOLoop.current()
     websocket = WebSocketService(ioloop)
