@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from oslo_versionedobjects import fields
+
+from DSpace import db
+from DSpace import exception
+from DSpace import objects
+from DSpace.objects import base
+
+
+@base.StorObjectRegistry.register
+class Pool(base.StorPersistentObject, base.StorObject,
+           base.StorObjectDictCompat, base.StorComparableObject):
+
+    fields = {
+        'id': fields.IntegerField(),
+        'display_name': fields.StringField(nullable=False),
+        'pool_id': fields.IntegerField(nullable=True),
+        'pool_name': fields.StringField(nullable=True),
+        'type': fields.StringField(nullable=True),
+        'data_chunk_num': fields.IntegerField(nullable=True),
+        'coding_chunk_num': fields.IntegerField(nullable=True),
+        'replicate_size': fields.IntegerField(nullable=True),
+        'role': fields.StringField(nullable=True),
+        'status': fields.StringField(nullable=True),
+        'size': fields.IntegerField(nullable=True),
+        'used': fields.IntegerField(nullable=True),
+        'osd_num': fields.IntegerField(nullable=True),
+        'speed_type': fields.StringField(nullable=True),
+        'failure_domain_type': fields.StringField(nullable=True),
+        'crush_rule_id': fields.IntegerField(nullable=True),
+        'cluster_id': fields.UUIDField(nullable=True),
+        'osds': fields.ListOfObjectsField('Osd', nullable=True),
+        'crush_rule': fields.ObjectField("CrushRule", nullable=True),
+    }
+
+    OPTIONAL_FIELDS = ('osds', 'crush_rule')
+
+    def create(self):
+        if self.obj_attr_is_set('id'):
+            raise exception.ObjectActionError(action='create',
+                                              reason='already created')
+        updates = self.stor_obj_get_changes()
+
+        db_pool = db.pool_create(self._context, updates)
+        self._from_db_object(self._context, self, db_pool)
+
+    def save(self):
+        updates = self.stor_obj_get_changes()
+        if updates:
+            db.pool_update(self._context, self.id, updates)
+
+        self.obj_reset_changes()
+
+    def destroy(self):
+        updated_values = db.pool_destroy(self._context, self.id)
+        self.update(updated_values)
+        self.obj_reset_changes(updated_values.keys())
+
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'crush_rule' in expected_attrs:
+            crush_rule = db_obj.get('crush_rule', None)
+            obj.crush_rule = objects.CrushRule._from_db_object(
+                context, objects.CrushRule(context), crush_rule
+            )
+        if 'osds' in expected_attrs:
+            osds = db_obj.get('osds', [])
+            obj.osds = [objects.Osd._from_db_object(
+                context, objects.Osd(context), osd
+            ) for osd in osds]
+        return super(Pool, cls)._from_db_object(context, obj, db_obj)
+
+
+@base.StorObjectRegistry.register
+class PoolList(base.ObjectListBase, base.StorObject):
+
+    fields = {
+        'objects': fields.ListOfObjectsField('Pool'),
+    }
+
+    @classmethod
+    def get_all(cls, context, filters=None, marker=None, limit=None,
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
+        pools = db.pool_get_all(context, filters, marker, limit, offset,
+                                sort_keys, sort_dirs, expected_attrs)
+        return base.obj_make_list(context, cls(context), objects.Pool,
+                                  pools, expected_attrs=expected_attrs)

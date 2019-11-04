@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from DSpace.DSI.handlers.action_log import ActionLogHandler
+from DSpace.DSI.handlers.action_log import ActionLogListHandler
+from DSpace.DSI.handlers.alert_group import AlertGroupHandler
+from DSpace.DSI.handlers.alert_group import AlertGroupListHandler
+from DSpace.DSI.handlers.alert_log import AlertLogHandler
+from DSpace.DSI.handlers.alert_log import AlertLogListHandler
+from DSpace.DSI.handlers.alert_rule import AlertRuleHandler
+from DSpace.DSI.handlers.alert_rule import AlertRuleListHandler
+from DSpace.DSI.handlers.ceph_config import CephConfigActionHandler
+from DSpace.DSI.handlers.ceph_config import CephConfigContentHandler
+from DSpace.DSI.handlers.ceph_config import CephConfigListHandler
+from DSpace.DSI.handlers.clusters import ClusterDetectHandler
+from DSpace.DSI.handlers.clusters import ClusterHandler
+from DSpace.DSI.handlers.clusters import ClusterHistoryMetricsHandler
+from DSpace.DSI.handlers.clusters import ClusterMetricsHandler
+from DSpace.DSI.handlers.datacenters import DataCenterHandler
+from DSpace.DSI.handlers.datacenters import DataCenterListHandler
+from DSpace.DSI.handlers.datacenters import DataCenterRacksHandler
+from DSpace.DSI.handlers.disk_partitions import DiskPartitionListHandler
+from DSpace.DSI.handlers.disks import DiskActionHandler
+from DSpace.DSI.handlers.disks import DiskHandler
+from DSpace.DSI.handlers.disks import DiskListHandler
+from DSpace.DSI.handlers.disks import DiskSmartHandler
+from DSpace.DSI.handlers.email_group import EmailGroupHandler
+from DSpace.DSI.handlers.email_group import EmailGroupListHandler
+from DSpace.DSI.handlers.licenses import DownloadlicenseHandler
+from DSpace.DSI.handlers.licenses import LicenseHandler
+from DSpace.DSI.handlers.log_file import LogFileHandler
+from DSpace.DSI.handlers.log_file import LogFileListHandler
+from DSpace.DSI.handlers.networks import NetworkListHandler
+from DSpace.DSI.handlers.nodes import NodeHandler
+from DSpace.DSI.handlers.nodes import NodeListHandler
+from DSpace.DSI.handlers.nodes import NodeMetricsHistroyMonitorHandler
+from DSpace.DSI.handlers.nodes import NodeMetricsHistroyNetworkHandler
+from DSpace.DSI.handlers.nodes import NodeMetricsMonitorHandler
+from DSpace.DSI.handlers.nodes import NodeMetricsNetworkHandler
+from DSpace.DSI.handlers.nodes import NodeRoleHandler
+from DSpace.DSI.handlers.osds import OsdHandler
+from DSpace.DSI.handlers.osds import OsdListHandler
+from DSpace.DSI.handlers.osds import OsdMetricsHandler
+from DSpace.DSI.handlers.osds import OsdMetricsHistoryHandler
+from DSpace.DSI.handlers.pools import PoolCapacityHandler
+from DSpace.DSI.handlers.pools import PoolDecreaseDiskHandler
+from DSpace.DSI.handlers.pools import PoolHandler
+from DSpace.DSI.handlers.pools import PoolIncreaseDiskHandler
+from DSpace.DSI.handlers.pools import PoolListHandler
+from DSpace.DSI.handlers.pools import PoolMetricsHandler
+from DSpace.DSI.handlers.pools import PoolMetricsHistoryHandler
+from DSpace.DSI.handlers.pools import PoolOsdsHandler
+from DSpace.DSI.handlers.pools import PoolPolicyHandler
+from DSpace.DSI.handlers.racks import RackHandler
+from DSpace.DSI.handlers.racks import RackListHandler
+from DSpace.DSI.handlers.rpc_service import RpcServiceListHandler
+from DSpace.DSI.handlers.service import ServiceListHandler
+from DSpace.DSI.handlers.sysinfos import SmtpHandler
+from DSpace.DSI.handlers.sysinfos import SmtpTestHandler
+from DSpace.DSI.handlers.sysinfos import SysInfoHandler
+from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathHandler
+from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathListHandler
+from DSpace.DSI.handlers.volume_client_groups import VolumeClientByGroup
+from DSpace.DSI.handlers.volume_client_groups import VolumeClientGroupHandler
+from DSpace.DSI.handlers.volume_client_groups import \
+    VolumeClientGroupListHandler
+from DSpace.DSI.handlers.volume_snapshot import VolumeSnapshotActionHandler
+from DSpace.DSI.handlers.volume_snapshot import VolumeSnapshotHandler
+from DSpace.DSI.handlers.volume_snapshot import VolumeSnapshotListHandler
+from DSpace.DSI.handlers.volumes import VolumeActionHandler
+from DSpace.DSI.handlers.volumes import VolumeHandler
+from DSpace.DSI.handlers.volumes import VolumeListHandler
+
+
+def get_routers():
+    return [
+        (r"/action_logs/", ActionLogListHandler),
+        (r"/action_logs/([0-9]*)/", ActionLogHandler),
+        (r"/alert_groups/", AlertGroupListHandler),
+        (r"/alert_groups/([0-9]*)/", AlertGroupHandler),
+        (r"/alert_logs/", AlertLogListHandler),
+        (r"/alert_logs/([0-9]*)/", AlertLogHandler),
+        (r"/alert_rules/", AlertRuleListHandler),
+        (r"/alert_rules/([0-9]*)/", AlertRuleHandler),
+        (r"/ceph_configs/", CephConfigListHandler),
+        (r"/ceph_configs/action/", CephConfigActionHandler),
+        (r"/ceph_configs/content/", CephConfigContentHandler),
+        (r"/clusters/", ClusterHandler),
+        (r"/cluster_detect/", ClusterDetectHandler),
+        (r"/clusters/metrics/", ClusterMetricsHandler),
+        (r"/clusters/history_metrics/", ClusterHistoryMetricsHandler),
+        (r"/datacenters/", DataCenterListHandler),
+        (r"/datacenters/([0-9]*)/", DataCenterHandler),
+        (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
+        (r"/disks/", DiskListHandler),
+        (r"/disks/([0-9]*)/", DiskHandler),
+        (r"/disks/([0-9]*)/action/", DiskActionHandler),
+        (r"/disks/([0-9]*)/smart/", DiskSmartHandler),
+        (r"/disk_partitions/", DiskPartitionListHandler),
+        (r"/email_groups/", EmailGroupListHandler),
+        (r"/email_groups/([0-9]*)/", EmailGroupHandler),
+        (r"/log_files/", LogFileListHandler),
+        (r"/log_files/([0-9]*)/", LogFileHandler),
+        (r"/licenses/", LicenseHandler),
+        (r"/licenses/download_file/", DownloadlicenseHandler),
+        (r"/networks/", NetworkListHandler),
+        (r"/nodes/", NodeListHandler),
+        (r"/nodes/([0-9]*)/", NodeHandler),
+        (r"/nodes/([0-9]*)/role/", NodeRoleHandler),
+        (r"/nodes/([0-9]*)/metrics/", NodeMetricsMonitorHandler),
+        (r"/nodes/([0-9]*)/history_metrics/",
+            NodeMetricsHistroyMonitorHandler),
+        (r"/nodes/([0-9]*)/history_network/",
+            NodeMetricsHistroyNetworkHandler),
+        (r"/nodes/([0-9]*)/metrics/network/", NodeMetricsNetworkHandler),
+        (r"/osds/", OsdListHandler),
+        (r"/osds/([0-9]*)/", OsdHandler),
+        (r"/osds/([0-9]*)/history_metrics/", OsdMetricsHistoryHandler),
+        (r"/osds/([0-9]*)/metrics/", OsdMetricsHandler),
+        (r"/pools/", PoolListHandler),
+        (r"/pools/([0-9]*)/", PoolHandler),
+        (r"/pools/([0-9]*)/capacity/", PoolCapacityHandler),
+        (r"/pools/([0-9]*)/decrease_disk/", PoolDecreaseDiskHandler),
+        (r"/pools/([0-9]*)/increase_disk/", PoolIncreaseDiskHandler),
+        (r"/pools/([0-9]*)/history_metrics/", PoolMetricsHistoryHandler),
+        (r"/pools/([0-9]*)/metrics/", PoolMetricsHandler),
+        (r"/pools/([0-9]*)/osds/", PoolOsdsHandler),
+        (r"/pools/([0-9]*)/update_security_policy/", PoolPolicyHandler),
+        (r"/racks/", RackListHandler),
+        (r"/racks/([0-9]*)/", RackHandler),
+        (r"/rpc_services/", RpcServiceListHandler),
+        (r"/services/", ServiceListHandler),
+        (r"/sysconfs/smtp/", SmtpHandler),
+        (r"/sysconfs/mail/test/", SmtpTestHandler),
+        (r"/sysinfos/", SysInfoHandler),
+        (r"/volume_access_paths/", VolumeAccessPathListHandler),
+        (r"/volume_access_paths/([0-9]*)/", VolumeAccessPathHandler),
+        (r"/volume_client_groups/", VolumeClientGroupListHandler),
+        (r"/volume_client_groups/([0-9]*)/", VolumeClientGroupHandler),
+        (r"/volume_client_groups/([0-9]*)/clients/", VolumeClientByGroup),
+        (r"/volume_snapshots/", VolumeSnapshotListHandler),
+        (r"/volume_snapshots/([0-9]*)/", VolumeSnapshotHandler),
+        (r"/volume_snapshots/([0-9]*)/action/", VolumeSnapshotActionHandler),
+        (r"/volumes/", VolumeListHandler),
+        (r"/volumes/([0-9]*)/", VolumeHandler),
+        (r"/volumes/([0-9]*)/action/", VolumeActionHandler),
+    ]
