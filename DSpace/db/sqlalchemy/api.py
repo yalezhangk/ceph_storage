@@ -1080,6 +1080,8 @@ def osd_get_all(context, marker=None, limit=None, sort_keys=None,
                 sort_dirs=None, filters=None, offset=None,
                 expected_attrs=None):
     session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -1095,6 +1097,18 @@ def osd_get_all(context, marker=None, limit=None, sort_keys=None,
         for osd in osds:
             _osd_load_attr(osd, expected_attrs)
         return osds
+
+
+@require_context
+def osd_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _osd_get_query(context, session)
+        process_filters(models.Osd)(query, filters)
+        return query.count()
 
 
 @require_context

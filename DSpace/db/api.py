@@ -294,6 +294,10 @@ def osd_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def osd_get_count(context, filters):
+    return IMPL.osd_get_count(context, filters=filters)
+
+
 def osd_update(context, osd_id, values):
     return IMPL.osd_update(context, osd_id, values)
 

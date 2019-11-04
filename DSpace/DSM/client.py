@@ -180,6 +180,11 @@ class AdminClient(BaseClient):
             offset=offset, **kwargs)
         return response
 
+    def osd_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "osd_get_count", filters=filters)
+        return response
+
     ###################
 
     def datacenter_create(self, ctxt):
