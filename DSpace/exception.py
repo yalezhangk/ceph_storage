@@ -80,6 +80,10 @@ class NotAuthorized(StorException):
     code = 403
 
 
+class PasswordError(NotAuthorized):
+    message = _("User or password was error.")
+
+
 class NotFound(StorException):
     message = _("Resource could not be found.")
     code = 404
@@ -89,6 +93,10 @@ class NotFound(StorException):
 class Duplicate(StorException):
     code = 409
     safe = True
+
+
+class UserNotFound(NotFound):
+    message = _("User %(user_id)s could not be found.")
 
 
 class SysConfigNotFound(NotFound):

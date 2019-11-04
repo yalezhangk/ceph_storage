@@ -1,20 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+import logging
 import traceback
 
 from tornado.web import RequestHandler
 
 from DSpace import exception
+from DSpace.common.config import CONF
 from DSpace.context import RequestContext
+from DSpace.DSI.session import Session
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
 
+logger = logging.getLogger(__name__)
+
 
 class BaseAPIHandler(RequestHandler):
-    user = None
+
+    def initialize(self):
+        self.session = Session(self)
 
     def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+        if CONF.check_origin:
+            return
         self.set_header("Access-Control-Allow-Origin", "http://localhost:8088")
         self.set_header("Access-Control-Allow-Credentials", "true")
         self.set_header("Access-Control-Allow-Headers",
@@ -22,7 +32,6 @@ class BaseAPIHandler(RequestHandler):
                         "x-access-module")
         self.set_header('Access-Control-Allow-Methods',
                         'POST, GET, OPTIONS, PUT, DELETE')
-        self.set_header("Content-Type", "application/json")
 
     def options(self, *args, **kwargs):
         self.set_status(204)
@@ -33,7 +42,9 @@ class BaseAPIHandler(RequestHandler):
         self.write({"error": msg})
 
     def get_context(self):
-        return RequestContext(user_id="xxx", project_id="stor", is_admin=False)
+        if not self.current_user:
+            raise exception.NotAuthorized()
+        return RequestContext(user_id=self.current_user.id, is_admin=False)
 
     def get_paginated_args(self):
         return {
@@ -57,13 +68,8 @@ class BaseAPIHandler(RequestHandler):
                 reason=_("get_metrics_history_args: start and end required"))
 
     def get_current_user(self):
-        token_id = self.request.headers.get('token-id')
-        if not token_id:
-            return None
-        user = None
-        if not user:
-            return None
-        return user
+        logger.debug("User: %s", self.session['user'])
+        return self.session['user']
 
     def write_error(self, status_code, **kwargs):
         """Override to implement custom error pages.
@@ -92,6 +98,7 @@ class BaseAPIHandler(RequestHandler):
 
     def _handle_request_exception(self, e):
         """Overide to handle StorException"""
+        logger.exception(e)
         if isinstance(e, exception.StorException):
             self.send_error(e.code, reason=str(e))
         else:
@@ -101,13 +108,14 @@ class BaseAPIHandler(RequestHandler):
 class ClusterAPIHandler(BaseAPIHandler):
 
     def get_context(self):
+        ctxt = super(ClusterAPIHandler, self).get_context()
         cluster_id = self.get_query_argument('cluster_id', default=None)
         if not cluster_id:
             cluster_id = self.request.headers.get('Cluster-Id')
         if not cluster_id:
             raise exception.ClusterIDNotFound()
-        return RequestContext(user_id="xxx", project_id="stor", is_admin=False,
-                              cluster_id=cluster_id)
+        ctxt.cluster_id = cluster_id
+        return ctxt
 
     def get_admin_client(self, ctxt):
         client = AdminClientManager(

@@ -81,18 +81,9 @@ def is_user_context(context):
         return False
     if context.is_admin:
         return False
-    if not context.user_id or not context.project_id:
+    if not context.user_id:
         return False
     return True
-
-
-def authorize_project_context(context, project_id):
-    """Ensures a request has permission to access the given project."""
-    if is_user_context(context):
-        if not context.project_id:
-            raise exception.NotAuthorized()
-        elif context.project_id != project_id:
-            raise exception.NotAuthorized()
 
 
 def authorize_user_context(context, user_id):
@@ -130,8 +121,7 @@ def require_admin_context(f):
 def require_context(f):
     """Decorator to require *any* user or admin context.
 
-    This does no authorization for user or project access matching, see
-    :py:func:`authorize_project_context` and
+    This does no authorization for user access matching, see
     :py:func:`authorize_user_context`.
 
     The first argument to the wrapped function must be the context.
@@ -209,8 +199,6 @@ def model_query(context, model, *args, **kwargs):
     :param model:        Model to query. Must be a subclass of ModelBase.
     :param args:         Arguments to query. If None - model is used.
     :param read_deleted: if present, overrides context's read_deleted field.
-    :param project_only: if present and context is user-type, then restrict
-                         query to match the context's project_id.
     """
     session = kwargs.get('session') or get_session()
     read_deleted = kwargs.get('read_deleted') or context.read_deleted
@@ -1348,30 +1336,21 @@ def volume_access_path_destroy(context, access_path_id):
 
 
 @require_context
-def _volume_access_path_get_query(context, session=None, project_only=False,
-                                  joined_load=True):
+def _volume_access_path_get_query(context, session=None):
     """Get the query to retrieve the volume.
 
     :param context: the context used to run _volume_access_path_get_query
     :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.VolumeAccessPath, session=session,
-                       project_only=project_only)
+    return model_query(context, models.VolumeAccessPath, session=session)
 
 
 @require_context
 def _volume_access_path_get(context, access_path_id, session=None,
                             joined_load=True):
     result = _volume_access_path_get_query(
-        context, session=session, project_only=True, joined_load=joined_load)
+        context, session=session)
     result = result.filter_by(id=access_path_id).first()
 
     if not result:
@@ -1488,30 +1467,20 @@ def volume_gateway_destroy(context, ap_gateway_id):
 
 
 @require_context
-def _volume_gateway_get_query(context, session=None, project_only=False,
-                              joined_load=True):
+def _volume_gateway_get_query(context, session=None):
     """Get the query to retrieve the volume.
 
     :param context: the context used to run _volume_gateway_get_query
     :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.VolumeGateway, session=session,
-                       project_only=project_only)
+    return model_query(context, models.VolumeGateway, session=session)
 
 
 @require_context
-def _volume_gateway_get(context, ap_gateway_id, session=None,
-                        joined_load=True):
+def _volume_gateway_get(context, ap_gateway_id, session=None):
     result = _volume_gateway_get_query(
-        context, session=session, project_only=True, joined_load=joined_load)
+        context, session=session)
     result = result.filter_by(id=ap_gateway_id).first()
 
     if not result:
@@ -1629,30 +1598,20 @@ def volume_client_destroy(context, volume_client_id):
 
 
 @require_context
-def _volume_client_get_query(context, session=None, project_only=False,
-                             joined_load=True):
+def _volume_client_get_query(context, session=None):
     """Get the query to retrieve the volume.
 
     :param context: the context used to run _volume_client_get_query
     :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.VolumeClient, session=session,
-                       project_only=project_only)
+    return model_query(context, models.VolumeClient, session=session)
 
 
 @require_context
-def _volume_client_get(context, volume_client_id, session=None,
-                       joined_load=True):
+def _volume_client_get(context, volume_client_id, session=None):
     result = _volume_client_get_query(
-        context, session=session, project_only=True, joined_load=joined_load)
+        context, session=session)
     result = result.filter_by(id=volume_client_id).first()
 
     if not result:
@@ -1770,30 +1729,21 @@ def volume_client_group_destroy(context, client_group_id):
 
 
 @require_context
-def _volume_client_group_get_query(context, session=None, project_only=False,
-                                   joined_load=True):
+def _volume_client_group_get_query(context, session=None):
     """Get the query to retrieve the volume.
 
     :param context: the context used to run _volume_client_group_get_query
     :param session: the session to use
-    :param project_only: the boolean used to decide whether to query the
-                         volume in the current project or all projects
-    :param joined_load: the boolean used to decide whether the query loads
-                        the other models, which join the volume model in
-                        the database. Currently, the False value for this
-                        parameter is specially for the case of updating
-                        database during volume migration
     :returns: updated query or None
     """
-    return model_query(context, models.VolumeClientGroup, session=session,
-                       project_only=project_only)
+    return model_query(context, models.VolumeClientGroup, session=session)
 
 
 @require_context
 def _volume_client_group_get(context, client_group_id, session=None,
                              joined_load=True):
     result = _volume_client_group_get_query(
-        context, session=session, project_only=True, joined_load=joined_load)
+        context, session=session)
     result = result.filter_by(id=client_group_id).first()
 
     if not result:
@@ -3004,6 +2954,75 @@ def action_log_get_all(context, marker=None, limit=None, sort_keys=None,
 ###############################
 
 
+def _user_get_query(context, session=None):
+    return model_query(context, models.User, session=session)
+
+
+def _user_get(context, user_id, session=None):
+    result = _user_get_query(context, session=session)
+    result = result.filter_by(id=user_id).first()
+
+    if not result:
+        raise exception.UserNotFound(user_id=user_id)
+
+    return result
+
+
+@require_context
+def user_get(context, user_id, expected_attrs=None):
+    return _user_get(context, user_id)
+
+
+@require_context
+def user_create(context, values):
+    user_ref = models.User()
+    user_ref.update(values)
+    session = get_session()
+    with session.begin():
+        user_ref.save(session)
+
+    return user_ref
+
+
+@handle_db_data_error
+@require_context
+def user_update(context, user_id, values):
+    session = get_session()
+    with session.begin():
+        query = _user_get_query(context, session)
+        result = query.filter_by(id=user_id).update(values)
+        if not result:
+            raise exception.UserNotFound(user_id=user_id)
+
+
+def user_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None,
+                 expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.User,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def user_get_count(context, filters=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _user_get_query(context, session)
+        process_filters(models.User)(query, filters)
+        return query.count()
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
@@ -3105,6 +3124,9 @@ PAGINATION_HELPERS = {
     models.ActionLog: (_action_log_get_query,
                        process_filters(models.ActionLog),
                        _action_log_get),
+    models.User: (_user_get_query,
+                  process_filters(models.User),
+                  _user_get),
 }
 
 
@@ -3114,9 +3136,6 @@ def resource_exists(context, model, resource_id, session=None):
     # Match non deleted resources by the id
     if 'no' == context.read_deleted:
         conditions.append(~model.deleted)
-    # If the context is not admin we limit it to the context's project
-    if is_user_context(context) and hasattr(model, 'project_id'):
-        conditions.append(model.project_id == context.project_id)
     session = session or get_session()
     query = session.query(sql.exists().where(and_(*conditions)))
     return query.scalar()
@@ -3229,7 +3248,7 @@ def _check_is_not_multitable(values, model):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def conditional_update(context, model, values, expected_values, filters=(),
-                       include_deleted='no', project_only=False, order=None):
+                       include_deleted='no', order=None):
     """Compare-and-swap conditional update SQLAlchemy implementation."""
     _check_is_not_multitable(values, model)
 
@@ -3243,8 +3262,8 @@ def conditional_update(context, model, values, expected_values, filters=(),
         where_conds.append(condition.get_filter(model, field))
 
     # Create the query with the where clause
-    query = model_query(context, model, read_deleted=include_deleted,
-                        project_only=project_only).filter(*where_conds)
+    query = model_query(context, model, read_deleted=include_deleted
+                        ).filter(*where_conds)
 
     # NOTE(geguileo): Some DBs' update method are order dependent, and they
     # behave differently depending on the order of the values, example on a

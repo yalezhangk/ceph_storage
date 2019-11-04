@@ -47,6 +47,9 @@ global_opts = [
                        help='Name of this node.  This can be an opaque '
                             'identifier. It is not necessarily a host name, '
                             'FQDN, or IP address.'),
+    cfg.StrOpt('cookie_secret',
+               default="_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
+               help="Cookie secret")
 ]
 
 CONF.register_cli_opts(core_opts)

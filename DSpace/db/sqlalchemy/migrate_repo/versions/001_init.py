@@ -597,6 +597,19 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
+    users = Table(
+        'users', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(64)),
+        Column('password', String(255)),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
     return [clusters, crush_rules, pools, volume_access_path,
             volume_client_group, volume, volume_snapshot, datacenter,
             rack, node, rpc_services, disks, disk_partitions, volume_gateway,
@@ -604,7 +617,7 @@ def define_tables(meta):
             sysconf, ceph_config, license_files, log_files, alert_rules,
             email_groups, alert_groups, alert_group_relate_rule,
             alert_group_relate_email, alert_logs, action_logs,
-            networks, services]
+            networks, services, users]
 
 
 def upgrade(migrate_engine):

@@ -777,6 +777,38 @@ def action_log_get_all(context, *args, **kwargs):
 ###############
 
 
+def user_create(context, values):
+    return IMPL.user_create(context, values)
+
+
+def user_destroy(context, user_id):
+    return IMPL.user_destroy(context, user_id)
+
+
+def user_get(context, user_id):
+    return IMPL.user_get(context, user_id)
+
+
+def user_get_all(context, filters, marker, limit,
+                 offset, sort_keys, sort_dirs,
+                 expected_attrs=None):
+    return IMPL.user_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def user_get_count(context, filters):
+    return IMPL.user_get_all(context, filters=filters)
+
+
+def user_update(context, user_id, values):
+    return IMPL.user_update(context, user_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

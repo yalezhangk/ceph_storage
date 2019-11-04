@@ -507,3 +507,10 @@ class CrushRule(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     _osds = relationship("Osd", backref="_crush_rule")
     _pools = relationship("Pool", backref="_crush_rule")
+
+
+class User(BASE, StorBase):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64))
+    password = Column(String(255))
