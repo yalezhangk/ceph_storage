@@ -832,6 +832,8 @@ def node_get(context, node_id, expected_attrs=None):
 def node_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -985,6 +987,8 @@ def rack_get(context, rack_id, expected_attrs=None):
 @require_context
 def rack_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query

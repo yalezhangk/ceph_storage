@@ -42,8 +42,27 @@ class DatacenterHandler(AdminBaseHandler):
         datacenter.save()
         return datacenter
 
-    def datacenter_racks(self, ctxt, datacenter_id):
-        filters = {}
-        filters['datacenter_id'] = datacenter_id
-        racks = self.rack_get_all(ctxt, filters=filters)
-        return racks
+    def datacenter_tree(self, ctxt):
+        # nodes
+        nodes = objects.NodeList.get_all(ctxt)
+        rack_ids = {}
+        for node in nodes:
+            if node.rack_id not in rack_ids:
+                rack_ids[node.rack_id] = []
+            rack_ids[node.rack_id].append(node)
+
+        # racks
+        racks = objects.RackList.get_all(ctxt)
+        dc_ids = {}
+        for rack in racks:
+            if rack.datacenter_id not in dc_ids:
+                dc_ids[rack.datacenter_id] = []
+            dc_ids[rack.datacenter_id].append(rack)
+            rack.nodes = rack_ids.get(rack.id)
+
+        # datacenters
+        dcs = objects.DatacenterList.get_all(ctxt)
+        for dc in dcs:
+            dc.racks = dc_ids.get(dc.id)
+
+        return dcs

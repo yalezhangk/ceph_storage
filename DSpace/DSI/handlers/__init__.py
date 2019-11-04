@@ -17,7 +17,7 @@ from DSpace.DSI.handlers.clusters import ClusterHistoryMetricsHandler
 from DSpace.DSI.handlers.clusters import ClusterMetricsHandler
 from DSpace.DSI.handlers.datacenters import DataCenterHandler
 from DSpace.DSI.handlers.datacenters import DataCenterListHandler
-from DSpace.DSI.handlers.datacenters import DataCenterRacksHandler
+from DSpace.DSI.handlers.datacenters import DataCenterTreeHandler
 from DSpace.DSI.handlers.disk_partitions import DiskPartitionListHandler
 from DSpace.DSI.handlers.disks import DiskActionHandler
 from DSpace.DSI.handlers.disks import DiskHandler
@@ -89,8 +89,8 @@ def get_routers():
         (r"/clusters/metrics/", ClusterMetricsHandler),
         (r"/clusters/history_metrics/", ClusterHistoryMetricsHandler),
         (r"/datacenters/", DataCenterListHandler),
+        (r"/datacenters/tree/", DataCenterTreeHandler),
         (r"/datacenters/([0-9]*)/", DataCenterHandler),
-        (r"/datacenters/([0-9]*)/racks/", DataCenterRacksHandler),
         (r"/disks/", DiskListHandler),
         (r"/disks/([0-9]*)/", DiskHandler),
         (r"/disks/([0-9]*)/action/", DiskActionHandler),

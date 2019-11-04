@@ -210,9 +210,8 @@ class AdminClient(BaseClient):
                              id=datacenter_id, name=datacenter_name)
         return response
 
-    def datacenter_racks(self, ctxt, datacenter_id):
-        response = self.call(ctxt, "datacenter_racks",
-                             datacenter_id=datacenter_id)
+    def datacenter_tree(self, ctxt):
+        response = self.call(ctxt, "datacenter_tree")
         return response
 
     ###################
