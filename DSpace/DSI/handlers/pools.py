@@ -59,7 +59,9 @@ class PoolHandler(ClusterAPIHandler):
     def get(self, pool_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        pool = yield client.pool_get(ctxt, pool_id)
+        expected_attrs = ['crush_rule', 'osds', 'volumes']
+        pool = yield client.pool_get(
+            ctxt, pool_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode({"pool": pool}))
 
     @gen.coroutine

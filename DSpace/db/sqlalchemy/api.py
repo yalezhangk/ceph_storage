@@ -1163,7 +1163,11 @@ def _pool_load_attr(ctxt, pool, expected_attrs=None):
 
 @require_context
 def pool_get(context, pool_id, expected_attrs=None):
-    return _pool_get(context, pool_id)
+    session = get_session()
+    with session.begin():
+        pool = _pool_get(context, pool_id, session)
+        _pool_load_attr(context, pool, expected_attrs)
+        return pool
 
 
 @require_context
