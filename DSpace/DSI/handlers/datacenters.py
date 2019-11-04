@@ -87,13 +87,12 @@ class DataCenterHandler(ClusterAPIHandler):
         }))
 
 
-class DataCenterRacksHandler(ClusterAPIHandler):
-    # TODO 获取数据中心下的机架
+class DataCenterTreeHandler(ClusterAPIHandler):
     @gen.coroutine
-    def get(self, datacenter_id):
+    def get(self):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        racks = yield client.datacenter_racks(ctxt, datacenter_id)
+        dc_tree = yield client.datacenter_tree(ctxt)
         self.write(objects.json_encode({
-            "racks": racks
+            "datacenter_tree": dc_tree
         }))

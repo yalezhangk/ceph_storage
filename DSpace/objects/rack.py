@@ -17,8 +17,11 @@ class Rack(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'name': fields.StringField(nullable=True),
         'datacenter_id': fields.IntegerField(),
-        'cluster_id': fields.StringField()
+        'cluster_id': fields.StringField(),
+        'nodes': fields.ListOfObjectsField("Node", nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('nodes')
 
     def create(self):
         if self.obj_attr_is_set('id'):

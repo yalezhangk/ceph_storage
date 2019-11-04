@@ -16,8 +16,11 @@ class Datacenter(base.StorPersistentObject, base.StorObject,
     fields = {
         'id': fields.IntegerField(),
         'name': fields.StringField(nullable=True),
-        'cluster_id': fields.UUIDField()
+        'cluster_id': fields.UUIDField(),
+        'racks': fields.ListOfObjectsField("Rack", nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('racks')
 
     def create(self):
         if self.obj_attr_is_set('id'):
