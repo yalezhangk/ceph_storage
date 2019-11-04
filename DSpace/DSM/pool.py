@@ -29,8 +29,9 @@ class PoolHandler(AdminBaseHandler):
         return objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=expected_attrs)
 
-    def pool_osds_get(self, ctxt, pool_id):
-        return objects.OsdList.get_by_pool(ctxt, pool_id)
+    def pool_osds_get(self, ctxt, pool_id, expected_attrs=None):
+        return objects.OsdList.get_by_pool(
+            ctxt, pool_id, expected_attrs=expected_attrs)
 
     def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
         for osd_id in osds:
