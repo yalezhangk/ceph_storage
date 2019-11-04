@@ -31,19 +31,18 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
-        data.update({'volume_name': volume.volume_name,
-                     'pool_name': pool.pool_name})
-        uid = str(uuid.uuid4())
-        data.update({
+        snap_data = {
             'cluster_id': ctxt.cluster_id,
-            'uuid': uid,
-            'status': s_fields.VolumeSnapshotStatus.CREATING
-        })
-        extra_data = {'volume_name': data.pop('volume_name'),
-                      'pool_name': data.pop('pool_name')}
-        snap = objects.VolumeSnapshot(ctxt, **data)
+            'uuid': str(uuid.uuid4()),
+            'display_name': data.get('display_name'),
+            'status': s_fields.VolumeSnapshotStatus.CREATING,
+            'display_description': data.get('display_description'),
+            'volume_id': data.get('volume_id')
+        }
+        snap = objects.VolumeSnapshot(ctxt, **snap_data)
         snap.create()
-        # TODO create snapshot
+        extra_data = {'volume_name': volume.volume_name,
+                      'pool_name': pool.pool_name}
         self.executor.submit(self._snap_create, ctxt, snap, extra_data)
         return snap
 

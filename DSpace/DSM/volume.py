@@ -30,18 +30,42 @@ class VolumeHandler(AdminBaseHandler):
                                         expected_attrs=expected_attrs)
 
     def volume_create(self, ctxt, data):
-        uid = str(uuid.uuid4())
-        volume_name = "volume-{}".format(uid)
-        data.update({
-            'cluster_id': ctxt.cluster_id,
-            'status': s_fields.VolumeStatus.CREATING,
-            'volume_name': volume_name,
-        })
-        volume = objects.Volume(ctxt, **data)
-        volume.create()
-        # put into thread pool
-        self.executor.submit(self._volume_create, ctxt, volume)
-        return volume
+        batch_create = data.get('batch_create')
+        if batch_create:
+            # 批量创建
+            prefix_name = data.get('display_name')
+            number = data.get('number')
+            volumes = []
+            for i in range(int(number)):
+                volume_data = {
+                    'volume_name': "volume-{}".format(str(uuid.uuid4())),
+                    'size': data.get('size'),
+                    'status': s_fields.VolumeStatus.CREATING,
+                    'display_name': '{}-{}'.format(prefix_name, i + 1),
+                    'display_description': data.get('display_description'),
+                    'pool_id': data.get('pool_id'),
+                    'cluster_id': ctxt.cluster_id
+                }
+                volume = objects.Volume(ctxt, **volume_data)
+                volume.create()
+                volumes.append(volume)
+                self.executor.submit(self._volume_create, ctxt, volume)
+            return volumes
+        else:
+            volume_data = {
+                'volume_name': "volume-{}".format(str(uuid.uuid4())),
+                'size': data.get('size'),
+                'status': s_fields.VolumeStatus.CREATING,
+                'display_name': data.get('display_name'),
+                'display_description': data.get('display_description'),
+                'pool_id': data.get('pool_id'),
+                'cluster_id': ctxt.cluster_id
+            }
+            volume = objects.Volume(ctxt, **volume_data)
+            volume.create()
+            # put into thread pool
+            self.executor.submit(self._volume_create, ctxt, volume)
+            return volume
 
     def _volume_create(self, ctxt, volume):
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
@@ -313,23 +337,50 @@ class VolumeHandler(AdminBaseHandler):
     def volume_create_from_snapshot(self, ctxt, snapshot_id, data):
         verify_data = self._verify_clone_data(ctxt, snapshot_id, data)
         # create volume
-        uid = str(uuid.uuid4())
-        volume_name = "volume-{}".format(uid)
-        volume_data = {
-            "cluster_id": ctxt.cluster_id,
-            'volume_name': volume_name,
-            'display_name': verify_data['display_name'],
-            'display_description': verify_data['display_description'],
-            'size': verify_data['size'],
-            'status': s_fields.VolumeStatus.CREATING,
-            'snapshot_id': snapshot_id,
-            'is_link_clone': verify_data['is_link_clone'],
-            'pool_id': verify_data['pool_id']
-        }
-        new_volume = objects.Volume(ctxt, **volume_data)
-        new_volume.create()
-        verify_data.update({'new_volume': new_volume})
-        # put into thread pool
-        self.executor.submit(self._volume_create_from_snapshot, ctxt,
-                             verify_data)
-        return new_volume
+        batch_create = data.get('batch_create')
+        if batch_create:
+            # 批量创建
+            number = data.get('number')
+            prefix_name = verify_data['display_name']
+            new_volumes = []
+            for i in range(int(number)):
+                volume_data = {
+                    "cluster_id": ctxt.cluster_id,
+                    'volume_name': F'volume-{str(uuid.uuid4())}',
+                    'display_name': F'{prefix_name}-{i+1}',
+                    'display_description': verify_data['display_description'],
+                    'size': verify_data['size'],
+                    'status': s_fields.VolumeStatus.CREATING,
+                    'snapshot_id': snapshot_id,
+                    'is_link_clone': verify_data['is_link_clone'],
+                    'pool_id': verify_data['pool_id']
+                }
+                new_volume = objects.Volume(ctxt, **volume_data)
+                new_volume.create()
+                verify_data.update({'new_volume': new_volume})
+                # put into thread pool
+                self.executor.submit(self._volume_create_from_snapshot, ctxt,
+                                     verify_data)
+                new_volumes.append(new_volume)
+            return new_volumes
+        else:
+            uid = str(uuid.uuid4())
+            volume_name = "volume-{}".format(uid)
+            volume_data = {
+                "cluster_id": ctxt.cluster_id,
+                'volume_name': volume_name,
+                'display_name': verify_data['display_name'],
+                'display_description': verify_data['display_description'],
+                'size': verify_data['size'],
+                'status': s_fields.VolumeStatus.CREATING,
+                'snapshot_id': snapshot_id,
+                'is_link_clone': verify_data['is_link_clone'],
+                'pool_id': verify_data['pool_id']
+            }
+            new_volume = objects.Volume(ctxt, **volume_data)
+            new_volume.create()
+            verify_data.update({'new_volume': new_volume})
+            # put into thread pool
+            self.executor.submit(self._volume_create_from_snapshot, ctxt,
+                                 verify_data)
+            return new_volume
