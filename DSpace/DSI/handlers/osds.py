@@ -61,8 +61,10 @@ class OsdHandler(ClusterAPIHandler):
     def get(self, osd_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['node', 'disk', 'db_partition', 'wal_partition',
+                          'cache_partition', 'journal_partition']
         osd = yield client.osd_get(
-            ctxt, osd_id, expected_attrs=['node'])
+            ctxt, osd_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode({
             "osd": osd
         }))
