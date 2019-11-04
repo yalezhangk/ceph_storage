@@ -36,11 +36,10 @@ class OsdListHandler(ClusterAPIHandler):
         osds = yield client.osd_get_all(
             ctxt, filters=filters, expected_attrs=expected_attrs, **page_args)
 
-        osds_all = yield client.osd_get_all(ctxt,
-                                            expected_attrs=expected_attrs)
+        osd_count = yield client.osd_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "osds": osds,
-            "total": len(osds_all)
+            "total": osd_count
         }))
 
     @gen.coroutine
