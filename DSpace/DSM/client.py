@@ -117,6 +117,11 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "node_update", node_id=node_id, data=data)
         return response
 
+    def node_update_rack(self, ctxt, node_id, rack_id):
+        response = self.call(ctxt, "node_update_rack", node_id=node_id,
+                             rack_id=rack_id)
+        return response
+
     def node_delete(self, ctxt, node_id):
         response = self.call(ctxt, "node_delete", node_id=node_id)
         return response
