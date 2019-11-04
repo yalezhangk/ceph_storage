@@ -334,6 +334,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def alert_group_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "alert_group_get_count", filters=filters)
+        return response
+
     def alert_group_create(self, ctxt, data):
         response = self.call(
             ctxt, "alert_group_create", data=data)

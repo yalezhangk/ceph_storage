@@ -618,6 +618,10 @@ def alert_group_destroy(context, email_group_id):
     return IMPL.alert_group_destroy(context, email_group_id)
 
 
+def alert_group_get_count(context, filters):
+    return IMPL.alert_group_get_count(context, filters=filters)
+
+
 ###############
 
 

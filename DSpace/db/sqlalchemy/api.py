@@ -2372,6 +2372,17 @@ def alert_group_destroy(context, alert_group_id):
     return updated_values
 
 
+@require_context
+def alert_group_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _alert_group_get_query(context, session)
+        process_filters(models.AlertGroup)(query, filters)
+        return query.count()
+
 ###############################
 
 
