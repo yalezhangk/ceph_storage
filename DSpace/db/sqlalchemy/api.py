@@ -1155,6 +1155,10 @@ def _pool_load_attr(ctxt, pool, expected_attrs=None):
         pool.crush_rule = pool._crush_rule
     if 'osds' in expected_attrs:
         pool.osds = [osd for osd in pool.crush_rule._osds]
+    if 'volumes' in expected_attrs:
+        filters = {"pool_id": pool.id}
+        volumes = volume_get_all(ctxt, filters=filters)
+        pool.volumes = [volume for volume in volumes]
 
 
 @require_context

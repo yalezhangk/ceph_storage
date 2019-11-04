@@ -18,7 +18,7 @@ class PoolListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        expected_attrs = ['crush_rule', 'osds']
+        expected_attrs = ['crush_rule', 'osds', 'volumes']
         pools = yield client.pool_get_all(ctxt, expected_attrs=expected_attrs,
                                           **page_args)
         pools_all = yield client.pool_get_all(ctxt,

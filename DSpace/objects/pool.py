@@ -33,9 +33,10 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'cluster_id': fields.UUIDField(nullable=True),
         'osds': fields.ListOfObjectsField('Osd', nullable=True),
         'crush_rule': fields.ObjectField("CrushRule", nullable=True),
+        'volumes': fields.ListOfObjectsField('Volume', nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('osds', 'crush_rule')
+    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -71,6 +72,11 @@ class Pool(base.StorPersistentObject, base.StorObject,
             obj.osds = [objects.Osd._from_db_object(
                 context, objects.Osd(context), osd
             ) for osd in osds]
+        if 'volumes' in expected_attrs:
+            volumes = db_obj.get('volumes', [])
+            obj.volumes = [objects.Volume._from_db_object(
+                context, objects.Volume(context), volume
+            ) for volume in volumes]
         return super(Pool, cls)._from_db_object(context, obj, db_obj)
 
 
