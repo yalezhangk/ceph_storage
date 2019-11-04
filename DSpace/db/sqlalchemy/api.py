@@ -2616,7 +2616,8 @@ def _volume_snapshot_get(context, volume_snapshot_id, session=None):
     return result
 
 
-def _snap_load_attr(snap, expected_attrs):
+def _snap_load_attr(snap, expected_attrs=None):
+    expected_attrs = expected_attrs or []
     if 'volume' in expected_attrs:
         snap.volume = snap._volume
 
