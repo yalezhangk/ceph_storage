@@ -59,3 +59,8 @@ class AlertLogList(base.ObjectListBase, base.StorObject):
                                           offset)
         return base.obj_make_list(context, cls(context), objects.AlertLog,
                                   alert_logs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.alert_log_get_count(context, filters)
+        return count

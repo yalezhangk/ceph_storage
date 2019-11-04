@@ -55,3 +55,8 @@ class AlertGroupList(base.ObjectListBase, base.StorObject):
                                               offset)
         return base.obj_make_list(context, cls(context), objects.AlertGroup,
                                   alert_groups)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.alert_group_get_count(context, filters)
+        return count

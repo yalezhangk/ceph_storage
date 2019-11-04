@@ -334,6 +334,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def alert_group_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "alert_group_get_count", filters=filters)
+        return response
+
     def alert_group_create(self, ctxt, data):
         response = self.call(
             ctxt, "alert_group_create", data=data)
@@ -498,6 +503,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def alert_log_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "alert_log_get_count", filters=filters)
+        return response
+
     def alert_log_create(self, ctxt, data):
         response = self.call(
             ctxt, "alert_log_create", data=data)
@@ -517,6 +527,11 @@ class AdminClient(BaseClient):
     def alert_log_delete(self, ctxt, alert_log_id):
         response = self.call(ctxt, "alert_log_delete",
                              alert_log_id=alert_log_id)
+        return response
+
+    def action_log_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "action_log_get_count", filters=filters)
         return response
 
     ###################

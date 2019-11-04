@@ -11,11 +11,13 @@ class AlertLogHandler(AdminBaseHandler):
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
                           sort_keys=None, sort_dirs=None, filters=None,
                           offset=None):
-        filters = filters or {}
-        filters['cluster_id'] = ctxt.cluster_id
         return objects.AlertLogList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+    def alert_log_get_count(self, ctxt, filters=None):
+        return objects.AlertLogList.get_count(
+            ctxt, filters=filters)
 
     def alert_log_create(self, ctxt, data):
         data.update({'cluster_id': ctxt.cluster_id})

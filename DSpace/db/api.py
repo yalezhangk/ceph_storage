@@ -618,6 +618,10 @@ def alert_group_destroy(context, email_group_id):
     return IMPL.alert_group_destroy(context, email_group_id)
 
 
+def alert_group_get_count(context, filters):
+    return IMPL.alert_group_get_count(context, filters=filters)
+
+
 ###############
 
 
@@ -636,6 +640,9 @@ def alert_log_get_all(context, *args, **kwargs):
 def alert_log_destroy(context, alert_log_id):
     return IMPL.alert_log_destroy(context, alert_log_id)
 
+
+def alert_log_get_count(context, filters):
+    return IMPL.alert_log_get_count(context, filters=filters)
 
 ###############
 
@@ -773,6 +780,9 @@ def action_log_update(context, action_log_id, values):
 def action_log_get_all(context, *args, **kwargs):
     return IMPL.action_log_get_all(context, *args, **kwargs)
 
+
+def action_log_get_count(context, filters):
+    return IMPL.action_log_get_count(context, filters=filters)
 
 ###############
 

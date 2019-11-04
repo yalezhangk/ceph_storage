@@ -11,7 +11,6 @@ class AlertGroupHandler(AdminBaseHandler):
     def alert_group_get_all(self, ctxt, marker=None, limit=None,
                             sort_keys=None, sort_dirs=None, filters=None,
                             offset=None):
-        filters = filters or {}
         return objects.AlertGroupList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
@@ -35,3 +34,7 @@ class AlertGroupHandler(AdminBaseHandler):
         alert_group = self.alert_group_get(ctxt, alert_group_id)
         alert_group.destroy()
         return alert_group
+
+    def alert_group_get_count(self, ctxt, filters=None):
+        return objects.AlertGroupList.get_count(
+            ctxt, filters=filters)

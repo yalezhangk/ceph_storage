@@ -57,3 +57,8 @@ class ActionLogList(base.ObjectListBase, base.StorObject):
                                             offset)
         return base.obj_make_list(context, cls(context), objects.ActionLog,
                                   action_logs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.action_log_get_count(context, filters)
+        return count
