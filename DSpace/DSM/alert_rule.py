@@ -3,6 +3,8 @@ from oslo_log import log as logging
 
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.objects.fields import AllActionType
+from DSpace.objects.fields import AllResourceType
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +21,18 @@ class AlertRuleHandler(AdminBaseHandler):
 
     def alert_rule_update(self, ctxt, alert_rule_id, data):
         rule = self.alert_rule_get(ctxt, alert_rule_id)
-        for k, v in six.iteritems(data):
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ALERT_RULE,
+            action=AllActionType.OPEN_OR_CLOSE_RULE)
+        rule_data = {
+            'enabled': data.get('enabled')
+        }
+        for k, v in six.iteritems(rule_data):
             setattr(rule, k, v)
-
         rule.save()
+        self.finish_action(begin_action, resource_id=rule.id,
+                           resource_name=rule.type,
+                           resource_data=objects.json_encode(rule))
         return rule
 
     def alert_rule_get_count(self, ctxt, filters=None):

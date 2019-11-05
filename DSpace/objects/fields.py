@@ -263,15 +263,17 @@ class DictOfNullableField(fields.AutoTypedField):
 
 
 class AllResourceType(BaseStorEnum):
+    ALERT_RULE = 'alert_rule'
     EMAIL_GROUP = 'email_group'
-    ALL = (EMAIL_GROUP, )
+    ALL = (ALERT_RULE, EMAIL_GROUP)
 
 
 class AllActionType(BaseStorEnum):
     CREATE = 'create'
-    UPDATE = 'update'
     DELETE = 'delete'
-    ALL = (CREATE, UPDATE, DELETE)
+    OPEN_OR_CLOSE_RULE = 'open_or_close_alert_rule'
+    UPDATE = 'update'
+    ALL = (CREATE, DELETE, OPEN_OR_CLOSE_RULE, UPDATE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -286,6 +288,10 @@ class ResourceAction(object):
     @classmethod
     def relation_resource_action(cls):
         relation = {
+            AllResourceType.ALERT_RULE: {
+                AllActionType.OPEN_OR_CLOSE_RULE:
+                    AllActionType.OPEN_OR_CLOSE_RULE
+            },
             AllResourceType.EMAIL_GROUP: {
                 AllActionType.CREATE: AllActionType.CREATE,
                 AllActionType.UPDATE: AllActionType.UPDATE,
