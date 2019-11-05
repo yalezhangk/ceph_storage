@@ -47,13 +47,30 @@ class OsdListHandler(ClusterAPIHandler):
     def post(self):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        data = data.get('osd')
-        client = self.get_admin_client(ctxt)
-        osd = yield client.osd_create(ctxt, data)
+        if 'osd' in data:
+            data = data.get('osd')
+            client = self.get_admin_client(ctxt)
+            osd = yield client.osd_create(ctxt, data)
 
-        self.write(objects.json_encode({
-            "osd": osd
-        }))
+            self.write(objects.json_encode({
+                "osd": osd
+            }))
+        elif 'osds' in data:
+            datas = data.get('osds')
+            client = self.get_admin_client(ctxt)
+            osds = []
+            for data in datas:
+                try:
+                    osd = yield client.osd_create(ctxt, data)
+                    osds.append(osd)
+                except Exception:
+                    pass
+
+            self.write(objects.json_encode({
+                "osds": osds
+            }))
+        else:
+            raise ValueError("data not accept: %s", data)
 
 
 class OsdHandler(ClusterAPIHandler):

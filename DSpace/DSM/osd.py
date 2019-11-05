@@ -81,7 +81,9 @@ class OsdHandler(AdminBaseHandler):
             ceph_cfg.create()
 
     def osd_create(self, ctxt, data):
-        node_id = data.get('node_id')
+        disk_id = data.get('disk_id')
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        node_id = disk.node_id
         osd_fsid = str(uuid.uuid4())
         node = objects.Node.get_by_id(ctxt, node_id)
         osd = objects.Osd(
@@ -93,8 +95,8 @@ class OsdHandler(AdminBaseHandler):
             wal_partition_id=data.get('wal_partition_id'),
             cache_partition_id=data.get('cache_partition_id'),
             journal_partition_id=data.get('journal_partition_id'),
-            disk_id=data.get('disk_id'),
-            disk_type="ssd",
+            disk_id=disk_id,
+            disk_type=disk.type,
             status=s_fields.OsdStatus.CREATING
         )
         osd.create()
