@@ -77,7 +77,7 @@ class WebSocketService(ServiceBase):
 def service():
     logger.info("api server run on %d", CONF.api_port)
     routers = get_routers()
-    routers += [(r"/ws", EchoWebSocket)]
+    routers += [(r"/ws/", EchoWebSocket)]
     settings = {
         "cookie_secret": CONF.cookie_secret,
         "debug": CONF.debug,
