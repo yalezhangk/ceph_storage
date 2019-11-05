@@ -18,7 +18,7 @@ class DiskPartitionListHandler(ClusterAPIHandler):
         page_args = self.get_paginated_args()
 
         filters = {}
-        supported_filters = ['disk_id']
+        supported_filters = ['disk_id', 'role', 'status']
         for f in supported_filters:
             value = self.get_query_argument(f, default=None)
             if value:
