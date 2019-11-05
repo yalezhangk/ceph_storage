@@ -2220,14 +2220,29 @@ def disk_partition_destroy(context, disk_part_id):
     return updated_values
 
 
+def _disk_pattition_load_attr(partition, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'disk' in expected_attrs:
+        partition.disk = partition._disk
+    if 'node' in expected_attrs:
+        partition.node = partition._disk._node
+
+
 @require_context
 def disk_partition_get(context, disk_part_id, expected_attrs=None):
-    return _disk_partition_get(context, disk_part_id)
+    session = get_session()
+    with session.begin():
+        partition = _disk_partition_get(context, disk_part_id)
+        _disk_pattition_load_attr(partition, expected_attrs)
+        return partition
 
 
 @require_context
 def disk_partition_get_all(context, marker=None, limit=None, sort_keys=None,
-                           sort_dirs=None, filters=None, offset=None):
+                           sort_dirs=None, filters=None, offset=None,
+                           expected_attrs=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2238,7 +2253,12 @@ def disk_partition_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        return query.all()
+        partitions = query.all()
+        if not expected_attrs:
+            return partitions
+        for partition in partitions:
+            _disk_pattition_load_attr(partition, expected_attrs)
+        return partitions
 
 
 @require_context
