@@ -3,12 +3,13 @@ from DSpace.i18n import _
 
 class RequestContext(object):
     def __init__(self, user_id=None, project_id=None, is_admin=False,
-                 read_deleted='no', cluster_id=None):
+                 read_deleted='no', cluster_id=None, client_ip=None):
         self.user_id = user_id
         self.project_id = project_id
         self.is_admin = is_admin
         self.read_deleted = read_deleted
         self.cluster_id = cluster_id
+        self.client_ip = client_ip
 
     def to_dict(self):
         return {
@@ -17,6 +18,7 @@ class RequestContext(object):
             "read_deleted": self.read_deleted,
             "is_admin": self.is_admin,
             "cluster_id": self.cluster_id,
+            "client_ip": self.client_ip,
         }
 
     @classmethod
@@ -25,6 +27,7 @@ class RequestContext(object):
                    project_id=values['project_id'],
                    read_deleted=values['read_deleted'],
                    cluster_id=values['cluster_id'],
+                   client_ip=values.get('client_ip'),
                    is_admin=values['is_admin'])
 
     def _get_read_deleted(self):

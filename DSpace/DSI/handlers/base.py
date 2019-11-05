@@ -115,6 +115,10 @@ class ClusterAPIHandler(BaseAPIHandler):
         if not cluster_id:
             raise exception.ClusterIDNotFound()
         ctxt.cluster_id = cluster_id
+        client_ip = (self.request.headers.get("X-Real-IP") or
+                     self.request.headers.get("X-Forwarded-For") or
+                     self.request.remote_ip)
+        ctxt.client_ip = client_ip
         return ctxt
 
     def get_admin_client(self, ctxt):
