@@ -87,3 +87,8 @@ class DiskPartitionList(base.ObjectListBase, base.StorObject):
         return base.obj_make_list(
             context, cls(context), objects.DiskPartition,
             disk_partitions, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.disk_partition_get_count(context, filters)
+        return count

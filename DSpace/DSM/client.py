@@ -300,6 +300,11 @@ class AdminClient(BaseClient):
                              offset=offset, expected_attrs=expected_attrs)
         return response
 
+    def disk_partition_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "disk_partition_get_count", filters=filters)
+        return response
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,

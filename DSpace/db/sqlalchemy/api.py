@@ -2262,6 +2262,18 @@ def disk_partition_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+def disk_partition_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _disk_partition_get_query(context, session)
+        process_filters(models.DiskPartition)(query, filters)
+        return query.count()
+
+
+@require_context
 def disk_partition_update(context, disk_part_id, values):
     session = get_session()
     with session.begin():

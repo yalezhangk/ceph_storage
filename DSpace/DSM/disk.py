@@ -141,3 +141,7 @@ class DiskHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
         return disks
+
+    def disk_partition_get_count(self, ctxt, filters=None):
+        return objects.DiskPartitionList.get_count(
+            ctxt, filters=filters)
