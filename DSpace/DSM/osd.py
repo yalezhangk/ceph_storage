@@ -55,20 +55,15 @@ class OsdHandler(AdminBaseHandler):
         osd.disk.status = s_fields.DiskStatus.INUSE
         osd.disk.save()
         if osd.db_partition_id:
-            osd.db_partition.role = s_fields.DiskPartitionRole.DB
             osd.db_partition.status = s_fields.DiskStatus.INUSE
             osd.db_partition.save()
         if osd.cache_partition_id:
-            osd.cache_partition.role = s_fields.DiskPartitionRole.CACHE
             osd.cache_partition.status = s_fields.DiskStatus.INUSE
             osd.cache_partition.save()
         if osd.journal_partition_id:
-            role = s_fields.DiskPartitionRole.JOURNAL
-            osd.journal_partition.role = role
             osd.journal_partition.status = s_fields.DiskStatus.INUSE
             osd.journal_partition.save()
         if osd.wal_partition_id:
-            osd.wal_partition.role = s_fields.DiskPartitionRole.WAL
             osd.wal_partition.status = s_fields.DiskStatus.INUSE
             osd.wal_partition.save()
 
@@ -132,19 +127,15 @@ class OsdHandler(AdminBaseHandler):
         osd.disk.status = s_fields.DiskStatus.AVAILABLE
         osd.disk.save()
         if osd.db_partition_id:
-            osd.db_partition.role = None
             osd.db_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.db_partition.save()
         if osd.cache_partition_id:
-            osd.cache_partition.role = None
             osd.cache_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.cache_partition.save()
         if osd.journal_partition_id:
-            osd.journal_partition.role = None
             osd.journal_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.journal_partition.save()
         if osd.wal_partition_id:
-            osd.wal_partition.role = None
             osd.wal_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.wal_partition.save()
 
