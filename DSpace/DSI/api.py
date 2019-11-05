@@ -17,19 +17,29 @@ class EchoWebSocket(WebSocketHandler):
     clients = {}
 
     def check_origin(self, origin):
-        return CONF.check_origin
+        return True
 
     def open(self):
         logger.debug("WebSocket opened")
         self.clients['user_id'] = self
+        self.write_message(u"3probe")
 
     def on_message(self, message):
         logger.debug("WebSocket(%s) on message: %s" % (self, message))
-        self.write_message(u"You said: " + message)
+        if message == "2":
+            self.write_message(u"3")
+        else:
+            self.write_message(u"You said: " + message)
 
     def on_close(self):
         logger.debug("WebSocket closed")
-        self.clients.pop("user_id")
+        self.clients.pop("user_id", None)
+
+    def on_pong(self, data):
+        logger.debug("WebSocket(%s) on pong: %s" % (self, data))
+
+    def on_ping(self, data):
+        logger.debug("WebSocket(%s) on ping: %s" % (self, data))
 
     @classmethod
     def notify(cls, context, obj, op_type, msg=None):

@@ -7,7 +7,6 @@ import traceback
 from tornado.web import RequestHandler
 
 from DSpace import exception
-from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSI.session import Session
 from DSpace.DSM.client import AdminClientManager
@@ -23,9 +22,8 @@ class BaseAPIHandler(RequestHandler):
 
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
-        if CONF.check_origin:
-            return
-        self.set_header("Access-Control-Allow-Origin", "http://localhost:8088")
+        origin = self.request.headers.get('Origin')
+        self.set_header("Access-Control-Allow-Origin", origin)
         self.set_header("Access-Control-Allow-Credentials", "true")
         self.set_header("Access-Control-Allow-Headers",
                         "x-requested-with, Content-Type, Cluster-Id, "
