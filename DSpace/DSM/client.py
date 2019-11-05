@@ -110,6 +110,14 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
+    def node_get_infos(self, ctxt, data):
+        response = self.call(ctxt, "node_get_infos", data=data)
+        return response
+
+    def node_check(self, ctxt, data):
+        response = self.call(ctxt, "node_check", data=data)
+        return response
+
     def node_roles_set(self, ctxt, node_id, data):
         response = self.call(ctxt, "node_roles_set", node_id=node_id,
                              data=data)

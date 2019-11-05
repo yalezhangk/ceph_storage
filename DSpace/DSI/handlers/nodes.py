@@ -165,3 +165,29 @@ class NodeListBareNodeHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "nodes": nodes
         }))
+
+
+class NodeInfoHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        client = self.get_admin_client(ctxt)
+        info = yield client.node_get_infos(ctxt, data)
+
+        self.write(objects.json_encode({
+            "data": info
+        }))
+
+
+class NodeCheckHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        client = self.get_admin_client(ctxt)
+        info = yield client.node_check(ctxt, data)
+
+        self.write(objects.json_encode({
+            "data": info
+        }))
