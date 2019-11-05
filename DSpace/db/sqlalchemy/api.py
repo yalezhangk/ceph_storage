@@ -2454,6 +2454,8 @@ def email_group_update(context, email_group_id, values):
 @require_context
 def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2464,6 +2466,18 @@ def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         return query.all()
+
+
+@require_context
+def email_group_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _email_group_get_query(context, session)
+        process_filters(models.EmailGroup)(query, filters)
+        return query.count()
 
 
 def email_group_destroy(context, email_group_id):

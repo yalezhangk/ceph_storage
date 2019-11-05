@@ -610,6 +610,10 @@ def email_group_get_all(context, *args, **kwargs):
     return IMPL.email_group_get_all(context, *args, **kwargs)
 
 
+def email_group_get_count(context, filters):
+    return IMPL.email_group_get_count(context, filters=filters)
+
+
 def email_group_destroy(context, email_group_id):
     return IMPL.email_group_destroy(context, email_group_id)
 

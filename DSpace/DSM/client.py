@@ -23,6 +23,11 @@ class AdminClient(BaseClient):
             offset=offset, expected_attrs=expected_attrs)
         return response
 
+    def email_group_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "email_group_get_count", filters=filters)
+        return response
+
     def volume_create(self, ctxt, data):
         response = self.call(
             ctxt, "volume_create", data=data)
