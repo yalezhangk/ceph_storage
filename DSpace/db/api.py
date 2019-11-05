@@ -572,10 +572,12 @@ def disk_partition_get(context, disk_part_id):
 
 
 def disk_partition_get_all(context, filters, marker, limit,
-                           offset, sort_keys, sort_dirs):
+                           offset, sort_keys, sort_dirs,
+                           expected_attrs=None):
     return IMPL.disk_partition_get_all(
         context, marker=marker, limit=limit, sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters, offset=offset)
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
 
 
 def disk_partition_update(context, disk_part_id, values):

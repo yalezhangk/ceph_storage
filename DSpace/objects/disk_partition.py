@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
 
 from oslo_versionedobjects import fields
 
@@ -8,6 +9,8 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
 from DSpace.objects import fields as s_field
+
+logger = logging.getLogger(__name__)
 
 
 @base.StorObjectRegistry.register
@@ -24,7 +27,11 @@ class DiskPartition(base.StorPersistentObject, base.StorObject,
         'node_id': fields.IntegerField(),
         'disk_id': fields.IntegerField(),
         'cluster_id': fields.StringField(),
+        'node': fields.ObjectField("Node", nullable=True),
+        'disk': fields.ObjectField("Disk", nullable=True),
     }
+
+    OPTIONAL_FIELDS = ('node', 'disk')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -47,6 +54,21 @@ class DiskPartition(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'node' in expected_attrs:
+            node = db_obj.get('node', None)
+            obj.node = objects.Node._from_db_object(
+                context, objects.Node(context), node
+            )
+        if 'disk' in expected_attrs:
+            disk = db_obj.get('disk', None)
+            obj.disk = objects.Disk._from_db_object(
+                context, objects.Disk(context), disk
+            )
+        return super(DiskPartition, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class DiskPartitionList(base.ObjectListBase, base.StorObject):
@@ -57,9 +79,11 @@ class DiskPartitionList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         disk_partitions = db.disk_partition_get_all(
-            context, filters, marker, limit, offset, sort_keys, sort_dirs)
+            context, filters, marker, limit, offset, sort_keys, sort_dirs,
+            expected_attrs=expected_attrs)
         return base.obj_make_list(
             context, cls(context), objects.DiskPartition,
-            disk_partitions)
+            disk_partitions, expected_attrs=expected_attrs)

@@ -135,8 +135,9 @@ class DiskHandler(AdminBaseHandler):
 
     def disk_partition_get_all(self, ctxt, marker=None, limit=None,
                                sort_keys=None, sort_dirs=None, filters=None,
-                               offset=None):
+                               offset=None, expected_attrs=None):
         disks = objects.DiskPartitionList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
         return disks

@@ -26,9 +26,10 @@ class DiskPartitionListHandler(ClusterAPIHandler):
                     f: value
                 })
 
+        expected_attrs = ['disk', 'node']
         client = self.get_admin_client(ctxt)
         disk_parts = yield client.disk_partition_get_all(
-            ctxt, filters=filters, **page_args)
+            ctxt, filters=filters, expected_attrs=expected_attrs, **page_args)
         disk_parts_all = yield client.disk_partition_get_all(
             ctxt, filters=filters)
 

@@ -155,6 +155,7 @@ class DiskPartition(BASE, StorBase):
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _disk = relationship("Disk", backref="_partitions")
 
 
 class Network(BASE, StorBase):
