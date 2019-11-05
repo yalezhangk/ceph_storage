@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from DSpace.DSI.handlers.action_log import ActionLogHandler
 from DSpace.DSI.handlers.action_log import ActionLogListHandler
+from DSpace.DSI.handlers.action_log import ResourceActionHandler
 from DSpace.DSI.handlers.alert_group import AlertGroupHandler
 from DSpace.DSI.handlers.alert_group import AlertGroupListHandler
 from DSpace.DSI.handlers.alert_log import AlertLogHandler
@@ -81,6 +82,7 @@ def get_routers():
     return [
         (r"/action_logs/", ActionLogListHandler),
         (r"/action_logs/([0-9]*)/", ActionLogHandler),
+        (r"/action_logs/resource_action/", ResourceActionHandler),
         (r"/alert_groups/", AlertGroupListHandler),
         (r"/alert_groups/([0-9]*)/", AlertGroupHandler),
         (r"/alert_logs/", AlertLogListHandler),

@@ -56,3 +56,14 @@ class ActionLogHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "action_log": action_log
         }))
+
+
+class ResourceActionHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        resource_action = yield client.resource_action(ctxt)
+        self.write(objects.json_encode(
+            {'resource_action': resource_action}
+        ))

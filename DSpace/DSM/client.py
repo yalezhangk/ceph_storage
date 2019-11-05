@@ -545,6 +545,11 @@ class AdminClient(BaseClient):
             ctxt, "action_log_get_count", filters=filters)
         return response
 
+    def resource_action(self, ctxt):
+        response = self.call(
+            ctxt, "resource_action")
+        return response
+
     ###################
 
     def log_file_get_all(self, ctxt, node_id, service_type, marker=None,

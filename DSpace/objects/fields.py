@@ -260,3 +260,36 @@ class LogfileTypeField(BaseEnumField):
 
 class DictOfNullableField(fields.AutoTypedField):
     AUTO_TYPE = fields.Dict(fields.FieldType(), nullable=True)
+
+
+class AllResourceType(BaseStorEnum):
+    EMAIL_GROUP = 'email_group'
+    ALL = (EMAIL_GROUP, )
+
+
+class AllActionType(BaseStorEnum):
+    CREATE = 'create'
+    UPDATE = 'update'
+    DELETE = 'delete'
+    ALL = (CREATE, UPDATE, DELETE)
+
+
+class AllActionStatus(BaseStorEnum):
+    SUCCESS = 'success'
+    UNDER_WAY = 'under way'  # 进行中
+    FAIL = 'fail'
+    ALL = (SUCCESS, UNDER_WAY, FAIL)
+
+
+class ResourceAction(object):
+
+    @classmethod
+    def relation_resource_action(cls):
+        relation = {
+            AllResourceType.EMAIL_GROUP: {
+                AllActionType.CREATE: AllActionType.CREATE,
+                AllActionType.UPDATE: AllActionType.UPDATE,
+                AllActionType.DELETE: AllActionType.DELETE,
+            }
+        }
+        return relation
