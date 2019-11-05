@@ -2634,6 +2634,8 @@ def log_file_update(context, log_file_id, values):
 def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
     session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -2643,6 +2645,18 @@ def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         return query.all()
+
+
+@require_context
+def log_file_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _log_file_get_query(context, session)
+        process_filters(models.LogFile)(query, filters)
+        return query.count()
 
 
 def log_file_destroy(context, log_file_id):

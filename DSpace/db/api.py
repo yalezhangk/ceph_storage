@@ -678,6 +678,10 @@ def log_file_get_all(context, *args, **kwargs):
     return IMPL.log_file_get_all(context, *args, **kwargs)
 
 
+def log_file_get_count(context, filters):
+    return IMPL.log_file_get_count(context, filters=filters)
+
+
 def log_file_destroy(context, log_file_id):
     return IMPL.log_file_destroy(context, log_file_id)
 

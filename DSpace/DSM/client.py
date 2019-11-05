@@ -577,6 +577,12 @@ class AdminClient(BaseClient):
             filters=filters, offset=offset)
         return response
 
+    def log_file_get_count(self, ctxt, node_id, service_type, filters=None):
+        response = self.call(
+            ctxt, "log_file_get_count", node_id=node_id,
+            service_type=service_type, filters=filters)
+        return response
+
     def log_file_create(self, ctxt, data):
         response = self.call(
             ctxt, "log_file_create", data=data)
