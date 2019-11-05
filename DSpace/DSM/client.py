@@ -89,6 +89,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def alert_rule_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "alert_rule_get_count", filters=filters)
+        return response
+
     def alert_rule_get(self, ctxt, alert_rule_id):
         response = self.call(ctxt, "alert_rule_get",
                              alert_rule_id=alert_rule_id)

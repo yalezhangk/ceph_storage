@@ -19,10 +19,10 @@ class AlertRuleListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
         alert_rules = yield client.alert_rule_get_all(ctxt, **page_args)
-        alert_rules_all = yield client.alert_rule_get_all(ctxt)
+        alert_rule_count = yield client.alert_rule_get_count(ctxt)
         self.write(objects.json_encode({
             "alert_rules": alert_rules,
-            "total": len(alert_rules_all)
+            "total": alert_rule_count
         }))
 
 
