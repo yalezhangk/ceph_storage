@@ -58,9 +58,11 @@ from DSpace.DSI.handlers.service import ServiceListHandler
 from DSpace.DSI.handlers.sysinfos import SmtpHandler
 from DSpace.DSI.handlers.sysinfos import SmtpTestHandler
 from DSpace.DSI.handlers.sysinfos import SysInfoHandler
+from DSpace.DSI.handlers.user import PermissionHandler
 from DSpace.DSI.handlers.user import UserHandler
 from DSpace.DSI.handlers.user import UserListHandler
 from DSpace.DSI.handlers.user import UserLoginHandler
+from DSpace.DSI.handlers.user import UserLogoutHandler
 from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathHandler
 from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathListHandler
 from DSpace.DSI.handlers.volume_client_groups import VolumeClientByGroup
@@ -103,6 +105,7 @@ def get_routers():
         (r"/email_groups/", EmailGroupListHandler),
         (r"/email_groups/([0-9]*)/", EmailGroupHandler),
         (r"/login/", UserLoginHandler),
+        (r"/logout/", UserLogoutHandler),
         (r"/log_files/", LogFileListHandler),
         (r"/log_files/([0-9]*)/", LogFileHandler),
         (r"/licenses/", LicenseHandler),
@@ -140,6 +143,7 @@ def get_routers():
         (r"/sysinfos/", SysInfoHandler),
         (r"/users/", UserListHandler),
         (r"/users/([0-9]*)/", UserHandler),
+        (r"/permissions/", PermissionHandler),
         (r"/volume_access_paths/", VolumeAccessPathListHandler),
         (r"/volume_access_paths/([0-9]*)/", VolumeAccessPathHandler),
         (r"/volume_client_groups/", VolumeClientGroupListHandler),

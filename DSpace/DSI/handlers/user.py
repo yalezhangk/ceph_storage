@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 import logging
 
 import six
@@ -13,6 +14,92 @@ from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
+
+fake = {
+    "message": "ok",
+    "code": 0,
+    "data": {
+        "license": True,
+        "ws_info": {
+            "url": "http://192.168.103.140:2080/",
+            "path": "/ws/",
+            "token": "TEcTfdRXUc4rhn79nOM6WSCj-DgTYXOFYvLBOAHAfKY"
+        },
+        "app": [
+            {
+                "app": "stor",
+                "current_app": True
+            }
+        ],
+        "user": {
+            "mobile_phone": "11111111111",
+            "name": "超级管理员",
+            "email": "admin",
+            "id": 1,
+            "type": "CLOUD_ADMIN",
+            "domain_id": 1,
+            "uuid": "263c16f15a7342879029aba6ace89847"
+        },
+        "provider": [],
+        "region": [],
+        "permissions": {
+            "stor": {
+                "cluster": {
+                    "collect": True
+                },
+                "manage-cluster": {
+                    "collect": True
+                },
+                "object-storage": {
+                    "collect": True
+                },
+                "download": {
+                    "collect": True
+                },
+                "block_client": {
+                    "collect": True
+                },
+                "object-router": {
+                    "collect": True
+                },
+                "block_path": {
+                    "collect": True
+                },
+                "cache": True,
+                "storage": {
+                    "collect": True
+                },
+                "alarm_center": {
+                    "collect": True
+                },
+                "block_roll": {
+                    "collect": True
+                },
+                "event_center": {
+                    "collect": True
+                },
+                "settopology": {
+                    "collect": True
+                },
+                "topology": {
+                    "collect": True
+                },
+                "email_groups": {
+                    "collect": True
+                },
+                "license": {
+                    "collect": True
+                },
+                "server": {
+                    "collect": True
+                },
+                "pools": {
+                    "collect": True
+                }
+            }
+        }
+    }
+}
 
 
 class UserListHandler(BaseAPIHandler):
@@ -62,4 +149,19 @@ class UserLoginHandler(BaseAPIHandler):
         if not r:
             raise exception.PasswordError()
         self.session['user'] = user
+        self.write(objects.json_encode(fake))
+
+
+class UserLogoutHandler(BaseAPIHandler):
+    @gen.coroutine
+    def get(self):
+        self.get_context()
+        self.session['user'] = None
         self.write(objects.json_encode({}))
+
+
+class PermissionHandler(BaseAPIHandler):
+    @gen.coroutine
+    def get(self):
+        self.get_context()
+        self.write(json.dumps(fake))
