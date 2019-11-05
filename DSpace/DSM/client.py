@@ -145,6 +145,10 @@ class AdminClient(BaseClient):
             offset=offset, expected_attrs=expected_attrs)
         return response
 
+    def node_get_count(self, ctxt, filters=None):
+        response = self.call(ctxt, "node_get_count", filters=filters)
+        return response
+
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None, **kwargs):
         response = self.call(

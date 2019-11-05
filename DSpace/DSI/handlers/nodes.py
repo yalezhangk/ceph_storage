@@ -23,10 +23,10 @@ class NodeListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         nodes = yield client.node_get_all(
             ctxt, expected_attrs=['disks', 'networks', 'osds'], **page_args)
-        nodes_all = yield client.node_get_all(ctxt)
+        node_count = yield client.node_get_count(ctxt)
         self.write(objects.json_encode({
             "nodes": nodes,
-            "total": len(nodes_all)
+            "total": node_count
         }))
 
     @gen.coroutine
