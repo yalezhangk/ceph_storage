@@ -37,6 +37,7 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'cluster_id': fields.UUIDField(nullable=True),
         'node': fields.ObjectField("Node", nullable=True),
         'disk': fields.ObjectField("Disk", nullable=True),
+        'pools': fields.ListOfObjectsField('Pool', nullable=True),
         'cache_partition': fields.ObjectField("DiskPartition", nullable=True),
         'db_partition': fields.ObjectField("DiskPartition", nullable=True),
         'wal_partition': fields.ObjectField("DiskPartition", nullable=True),
@@ -44,8 +45,8 @@ class Osd(base.StorPersistentObject, base.StorObject,
                                                 nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('node', 'disk', 'cache_partition', 'db_partition',
-                       'wal_partition', 'journal_partition')
+    OPTIONAL_FIELDS = ('node', 'disk', 'pools', 'cache_partition',
+                       'db_partition', 'wal_partition', 'journal_partition')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -81,6 +82,11 @@ class Osd(base.StorPersistentObject, base.StorObject,
             obj.disk = objects.Disk._from_db_object(
                 context, objects.Disk(context), disk
             )
+        if 'pools' in expected_attrs:
+            pools = db_obj.get('pools', [])
+            obj.pools = [objects.Pool._from_db_object(
+                context, objects.Pool(context), pool
+            ) for pool in pools]
         partations = ["cache_partition", "db_partition",
                       "wal_partition", "journal_partition"]
         for attr in partations:
