@@ -31,10 +31,10 @@ class DiskListHandler(ClusterAPIHandler):
 
         client = self.get_admin_client(ctxt)
         disks = yield client.disk_get_all(ctxt, filters=filters, **page_args)
-        disks_all = yield client.disk_get_all(ctxt, filters=filters)
+        disk_count = yield client.ceph_config_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "disks": disks,
-            "total": len(disks_all)
+            "total": disk_count
         }))
 
 

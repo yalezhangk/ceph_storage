@@ -20,6 +20,9 @@ class EmailGroupHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
+    def email_group_get_count(self, ctxt, filters=None):
+        return objects.EmailGroupList.get_count(ctxt, filters=filters)
+
     def email_group_create(self, ctxt, data):
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,

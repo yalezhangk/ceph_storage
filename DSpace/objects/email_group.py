@@ -54,3 +54,8 @@ class EmailGroupList(base.ObjectListBase, base.StorObject):
                                               offset)
         return base.obj_make_list(context, cls(context), objects.EmailGroup,
                                   email_groups)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.email_group_get_count(context, filters)
+        return count

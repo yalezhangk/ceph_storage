@@ -555,6 +555,10 @@ def disk_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def disk_get_count(context, filters):
+    return IMPL.disk_get_count(context, filters=filters)
+
+
 def disk_update(context, disk_id, values):
     return IMPL.disk_update(context, disk_id, values)
 
@@ -583,6 +587,10 @@ def disk_partition_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def disk_partition_get_count(context, filters):
+    return IMPL.disk_partition_get_count(context, filters=filters)
+
+
 def disk_partition_update(context, disk_part_id, values):
     return IMPL.disk_partition_update(context, disk_part_id, values)
 
@@ -600,6 +608,10 @@ def email_group_update(context, alert_rule_id, values):
 
 def email_group_get_all(context, *args, **kwargs):
     return IMPL.email_group_get_all(context, *args, **kwargs)
+
+
+def email_group_get_count(context, filters):
+    return IMPL.email_group_get_count(context, filters=filters)
 
 
 def email_group_destroy(context, email_group_id):

@@ -25,6 +25,9 @@ class DiskHandler(AdminBaseHandler):
             expected_attrs=['node', 'partition_used'])
         return disks
 
+    def disk_get_count(self, ctxt, filters=None):
+        return objects.DiskList.get_count(ctxt, filters=filters)
+
     def disk_update(self, ctxt, disk_id, disk_type):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         disk.type = disk_type
@@ -141,3 +144,7 @@ class DiskHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
         return disks
+
+    def disk_partition_get_count(self, ctxt, filters=None):
+        return objects.DiskPartitionList.get_count(
+            ctxt, filters=filters)

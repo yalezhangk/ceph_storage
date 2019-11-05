@@ -23,6 +23,11 @@ class AdminClient(BaseClient):
             offset=offset, expected_attrs=expected_attrs)
         return response
 
+    def email_group_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "email_group_get_count", filters=filters)
+        return response
+
     def volume_create(self, ctxt, data):
         response = self.call(
             ctxt, "volume_create", data=data)
@@ -268,6 +273,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def disk_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "disk_get_count", filters=filters)
+        return response
+
     def disk_update(self, ctxt, disk_id, disk_type):
         response = self.call(
             ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)
@@ -298,6 +308,11 @@ class AdminClient(BaseClient):
                              limit=limit, sort_keys=sort_keys,
                              sort_dirs=sort_dirs, filters=filters,
                              offset=offset, expected_attrs=expected_attrs)
+        return response
+
+    def disk_partition_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "disk_partition_get_count", filters=filters)
         return response
 
     ###################

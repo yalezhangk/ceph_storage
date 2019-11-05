@@ -28,12 +28,11 @@ class DiskPartitionListHandler(ClusterAPIHandler):
 
         expected_attrs = ['disk', 'node']
         client = self.get_admin_client(ctxt)
-        disk_parts = yield client.disk_partition_get_all(
+        disk_partitions = yield client.disk_partition_get_all(
             ctxt, filters=filters, expected_attrs=expected_attrs, **page_args)
-        disk_parts_all = yield client.disk_partition_get_all(
+        disk_partition_count = yield client.disk_partition_get_count(
             ctxt, filters=filters)
-
         self.write(objects.json_encode({
-            "disk_partitions": disk_parts,
-            "total": len(disk_parts_all)
+            "disk_partitions": disk_partitions,
+            "total": disk_partition_count
         }))
