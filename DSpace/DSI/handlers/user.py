@@ -21,9 +21,9 @@ fake = {
     "data": {
         "license": True,
         "ws_info": {
-            "url": "http://192.168.103.140:2080/",
+            "url": "http://192.168.103.140:2080",
             "path": "/ws/",
-            "token": "TEcTfdRXUc4rhn79nOM6WSCj-DgTYXOFYvLBOAHAfKY"
+            "token": ""
         },
         "app": [
             {
