@@ -52,3 +52,8 @@ class AlertRuleList(base.ObjectListBase, base.StorObject):
                                             sort_dirs, filters, offset)
         return base.obj_make_list(context, cls(context), objects.AlertRule,
                                   alert_rules)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.alert_rule_get_count(context, filters)
+        return count
