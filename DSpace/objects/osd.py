@@ -118,6 +118,9 @@ class OsdList(base.ObjectListBase, base.StorObject):
         return count
 
     @classmethod
-    def get_by_pool(cls, context, pool_id):
-        db_osds = db.osd_get_by_pool(context, pool_id)
-        return base.obj_make_list(context, cls(context), objects.Osd, db_osds)
+    def get_by_pool(cls, context, pool_id, expected_attrs=None):
+        db_osds = db.osd_get_by_pool(context, pool_id,
+                                     expected_attrs=expected_attrs)
+        return base.obj_make_list(
+            context, cls(context), objects.Osd, db_osds,
+            expected_attrs=expected_attrs)
