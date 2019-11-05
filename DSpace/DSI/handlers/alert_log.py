@@ -61,8 +61,20 @@ class AlertLogListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        alert_logs = yield client.alert_log_get_all(ctxt, **page_args)
-        alert_log_count = yield client.alert_log_get_count(ctxt)
+        resource_type = self.get_query_argument('resource_type', default=None)
+        readed = self.get_query_argument('readed', default=None)
+        level = self.get_query_argument('level', default=None)
+        filters = {}
+        if resource_type:
+            filters['resource_type'] = resource_type
+        if readed:
+            filters['readed'] = readed
+        if level:
+            filters['level'] = level
+        alert_logs = yield client.alert_log_get_all(ctxt, filters=filters,
+                                                    **page_args)
+        alert_log_count = yield client.alert_log_get_count(ctxt,
+                                                           filters=filters)
         self.write(objects.json_encode({
             "alert_logs": alert_logs,
             "total": alert_log_count
