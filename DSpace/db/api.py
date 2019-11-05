@@ -509,6 +509,10 @@ def network_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def network_get_count(context, filters):
+    return IMPL.network_get_count(context, filters=filters)
+
+
 def network_update(context, net_id, values):
     return IMPL.network_update(context, net_id, values)
 

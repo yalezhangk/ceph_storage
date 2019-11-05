@@ -153,6 +153,10 @@ class AdminClient(BaseClient):
             offset=offset, **kwargs)
         return response
 
+    def network_get_count(self, ctxt, filters=None):
+        response = self.call(ctxt, "network_get_count", filters=filters)
+        return response
+
     def sysconf_get_all(self, ctxt):
         response = self.call(ctxt, "sysconf_get_all")
         return response

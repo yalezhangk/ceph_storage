@@ -16,3 +16,6 @@ class NetworkHandler(AdminBaseHandler):
             expected_attrs=expected_attrs
         )
         return networks
+
+    def network_get_count(self, ctxt, filters=None):
+        return objects.NetworkList.get_count(ctxt, filters=filters)
