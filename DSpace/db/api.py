@@ -186,6 +186,10 @@ def node_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def node_get_count(context, filters):
+    return IMPL.node_get_count(context, filters=filters)
+
+
 def node_update(context, node_id, values):
     return IMPL.node_update(context, node_id, values)
 

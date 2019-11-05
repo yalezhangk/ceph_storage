@@ -78,6 +78,9 @@ class NodeHandler(AdminBaseHandler):
             expected_attrs=expected_attrs)
         return nodes
 
+    def node_get_count(self, ctxt, filters=None):
+        return objects.NodeList.get_count(ctxt, filters=filters)
+
     def _set_ceph_conf(self, ctxt, key, value, group="global",
                        display_description=None):
         filters = {

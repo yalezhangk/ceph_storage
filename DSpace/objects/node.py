@@ -111,3 +111,8 @@ class NodeList(base.ObjectListBase, base.StorObject):
                                 expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Node,
                                   nodes, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.node_get_count(context, filters)
+        return count
