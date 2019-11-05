@@ -1023,6 +1023,9 @@ def _osd_load_attr(osd, expected_attrs=None):
         osd.node = osd._node
     if 'disk' in expected_attrs:
         osd.disk = osd._disk
+    if 'pools' in expected_attrs:
+        crush = osd._crush_rule
+        osd.pools = crush._pools
     if 'cache_partition' in expected_attrs:
         osd.cache_partition = osd._cache_partition
     if 'db_partition' in expected_attrs:

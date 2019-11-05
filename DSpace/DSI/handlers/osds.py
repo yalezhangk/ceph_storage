@@ -21,8 +21,9 @@ class OsdListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
         client = self.get_admin_client(ctxt)
-        expected_attrs = ['node', 'disk', 'db_partition', 'wal_partition',
-                          'cache_partition', 'journal_partition']
+        expected_attrs = ['node', 'disk', 'pools', 'db_partition',
+                          'wal_partition', 'cache_partition',
+                          'journal_partition']
 
         filters = {}
         supported_filters = ['node_id']
