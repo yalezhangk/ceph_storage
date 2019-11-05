@@ -44,7 +44,6 @@ class AlertRuleHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         rule = yield client.alert_rule_update(ctxt, alert_rule_id,
                                               alert_rule_data)
-
         self.write(objects.json_encode({
             "alert_rule": rule
         }))
