@@ -153,6 +153,10 @@ class AdminClient(BaseClient):
             offset=offset, **kwargs)
         return response
 
+    def network_get_count(self, ctxt, filters=None):
+        response = self.call(ctxt, "network_get_count", filters=filters)
+        return response
+
     def sysconf_get_all(self, ctxt):
         response = self.call(ctxt, "sysconf_get_all")
         return response
@@ -575,6 +579,12 @@ class AdminClient(BaseClient):
             service_type=service_type, marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs,
             filters=filters, offset=offset)
+        return response
+
+    def log_file_get_count(self, ctxt, node_id, service_type, filters=None):
+        response = self.call(
+            ctxt, "log_file_get_count", node_id=node_id,
+            service_type=service_type, filters=filters)
         return response
 
     def log_file_create(self, ctxt, data):

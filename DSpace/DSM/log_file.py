@@ -66,6 +66,13 @@ class LogFileHandler(AdminBaseHandler):
         # todo 分页返回
         return result
 
+    def log_file_get_count(self, ctxt, node_id, service_type, filters=None):
+        filters = {
+            'node_id': node_id,
+            'service_type': service_type,
+        }
+        return objects.LogFileList.get_count(ctxt, filters=filters)
+
     def log_file_create(self, ctxt, data):
         data.update({'cluster_id': ctxt.cluster_id})
         alert_log = objects.LogFile(ctxt, **data)

@@ -509,6 +509,10 @@ def network_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def network_get_count(context, filters):
+    return IMPL.network_get_count(context, filters=filters)
+
+
 def network_update(context, net_id, values):
     return IMPL.network_update(context, net_id, values)
 
@@ -676,6 +680,10 @@ def log_file_update(context, log_file_id, values):
 
 def log_file_get_all(context, *args, **kwargs):
     return IMPL.log_file_get_all(context, *args, **kwargs)
+
+
+def log_file_get_count(context, filters):
+    return IMPL.log_file_get_count(context, filters=filters)
 
 
 def log_file_destroy(context, log_file_id):

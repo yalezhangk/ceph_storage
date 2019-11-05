@@ -22,13 +22,13 @@ class LogFileListHandler(ClusterAPIHandler):
         node_id = self.get_argument('node_id')
         page_args = self.get_paginated_args()
         service_type = self.get_argument('service_type')
-        log_files = yield client.log_file_get_all(ctxt, node_id, service_type,
-                                                  **page_args)
-        log_files_all = yield client.log_file_get_all(
+        log_files = yield client.log_file_get_all(
+            ctxt, node_id, service_type, **page_args)
+        log_file_count = yield client.log_file_get_count(
             ctxt, node_id, service_type)
         self.write(objects.json_encode({
             "log_files": log_files,
-            "total": len(log_files_all)
+            "total": log_file_count
         }))
 
     @gen.coroutine

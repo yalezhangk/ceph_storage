@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class NetworkListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
-        context = self.get_context()
+        ctxt = self.get_context()
         page_args = self.get_paginated_args()
 
         node_id = self.get_query_argument('node', default=None)
@@ -23,15 +23,14 @@ class NetworkListHandler(ClusterAPIHandler):
             })
         page_args.update({"filters": filters})
 
-        client = self.get_admin_client(context)
+        client = self.get_admin_client(ctxt)
         networks = yield client.network_get_all(
-            context, expected_attrs=['node'], **page_args)
-        networks_all = yield client.network_get_all(
-            context, expected_attrs=['node'])
+            ctxt, expected_attrs=['node'], **page_args)
+        network_count = yield client.network_get_count(ctxt)
 
         self.write(objects.json_encode({
             "networks": networks,
-            "total": len(networks_all)
+            "total": network_count
         }))
 
 

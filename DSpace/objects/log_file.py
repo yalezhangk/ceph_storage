@@ -57,3 +57,8 @@ class LogFileList(base.ObjectListBase, base.StorObject):
                                         offset)
         return base.obj_make_list(context, cls(context), objects.LogFile,
                                   log_files)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.log_file_get_count(context, filters)
+        return count

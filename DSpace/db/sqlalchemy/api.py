@@ -1981,6 +1981,8 @@ def network_get(context, net_id, expected_attrs=None):
 def network_get_all(context, marker=None, limit=None, sort_keys=None,
                     sort_dirs=None, filters=None, offset=None,
                     expected_attrs=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1997,6 +1999,18 @@ def network_get_all(context, marker=None, limit=None, sort_keys=None,
             for net in networks:
                 net.node = net._node
         return networks
+
+
+@require_context
+def network_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _network_get_query(context, session)
+        process_filters(models.Network)(query, filters)
+        return query.count()
 
 
 @require_context
@@ -2634,6 +2648,8 @@ def log_file_update(context, log_file_id, values):
 def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
     session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -2643,6 +2659,18 @@ def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         return query.all()
+
+
+@require_context
+def log_file_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _log_file_get_query(context, session)
+        process_filters(models.LogFile)(query, filters)
+        return query.count()
 
 
 def log_file_destroy(context, log_file_id):

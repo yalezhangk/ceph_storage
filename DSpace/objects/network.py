@@ -78,3 +78,8 @@ class NetworkList(base.ObjectListBase, base.StorObject):
                                   expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Network,
                                   nets, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.network_get_count(context, filters)
+        return count
