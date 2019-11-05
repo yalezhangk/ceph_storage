@@ -1,6 +1,7 @@
 import six
 from oslo_log import log as logging
 
+from DSpace import exception as exc
 from DSpace import objects
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
@@ -316,3 +317,94 @@ class NodeHandler(AdminBaseHandler):
 
         self.executor.submit(self._node_create, ctxt, node, data)
         return node
+
+    def node_get_infos(self, ctxt, data):
+        logger.debug("get node infos: {}".format(data.get('ip_address')))
+
+        node = objects.Node(
+            ctxt, ip_address=data.get('ip_address'),
+            password=data.get('password'))
+
+        node_task = NodeTask(ctxt, node)
+        node_infos = node_task.node_get_infos()
+        return node_infos
+
+    def _validate_ip(self, ip_str):
+        sep = ip_str.split('.')
+        if len(sep) != 4:
+            raise exc.Invalid(_('IP address {} format'
+                                'is incorrect!').format(ip_str))
+        for i, x in enumerate(sep):
+            int_x = int(x)
+            if int_x < 0 or int_x > 255:
+                raise exc.Invalid(_('IP address {} format'
+                                    'is incorrect!').format(ip_str))
+        return True
+
+    def node_check(self, ctxt, data):
+        logger.debug("check node: {}".format(data.get('admin_ip')))
+
+        ip_dict = {}
+        ip_dict['check_through'] = True
+        node = objects.Node(
+            ctxt, ip_address=data.get('admin_ip'),
+            password=data.get('password'))
+
+        admin_ip = data.get('admin_ip')
+        public_ip = data.get('public_ip')
+        cluster_ip = data.get('cluster_ip')
+        node_task = NodeTask(ctxt, node)
+        node_infos = node_task.node_get_infos()
+        hostname = node_infos.get('hostname')
+        if not hostname:
+            ip_dict['check_through'] = False
+            return ip_dict
+
+        li_ip = [admin_ip, public_ip, cluster_ip]
+        if not all(li_ip):
+            raise exc.Invalid(_('admin_ip,cluster_ip,public_ip is required'))
+        for ip in li_ip:
+            self._validate_ip(ip)
+        ip_dict['check_admin_ip'] = True
+        ip_dict['check_hostname'] = True
+        ip_dict['check_gateway_ip'] = True
+        ip_dict['check_cluster_ip'] = True
+        ip_dict['check_public_ip'] = True
+        if objects.NodeList.get_all(ctxt, filters={"ip_address": admin_ip}):
+            ip_dict['check_admin_ip'] = False
+        if objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "storage_cluster_ip_address": cluster_ip
+            }
+        ):
+            ip_dict['check_cluster_ip'] = False
+        if objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "storage_public_ip_address": public_ip
+            }
+        ):
+            ip_dict['check_public_ip'] = False
+        if objects.NodeList.get_all(ctxt, filters={"hostname": hostname}):
+            ip_dict['check_hostname'] = False
+        port = ["6789", "9876", "9100", "9283", "7480"]
+        ip_dict['check_port'] = []
+        for po in port:
+            if not node_task.check_port(po):
+                ip_dict['check_port'].append({"port": po, "status": False})
+            else:
+                ip_dict['check_port'].append({"port": po, "status": True})
+        ip_dict['check_SELinux'] = node_task.check_selinux()
+        pkg_name = 'ceph'
+        if node_task.check_package(pkg_name):
+            ip_dict['check_Installation_package'] = True
+        else:
+            ip_dict['check_Installation_package'] = False
+        if (node_task.check_network(public_ip) and
+                node_task.check_network(cluster_ip)):
+            ip_dict['check_network'] = True
+        else:
+            ip_dict['check_network'] = True
+
+        return ip_dict

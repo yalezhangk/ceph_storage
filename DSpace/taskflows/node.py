@@ -1,6 +1,7 @@
 import configparser
 import logging
 import os
+import socket
 from pathlib import Path
 
 import paramiko
@@ -15,6 +16,7 @@ from DSpace.tools.docker import Docker as DockerTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
 from DSpace.tools.service import Service as ServiceTool
+from DSpace.tools.system import System as SystemTool
 from DSpace.utils import template
 
 logger = logging.getLogger(__name__)
@@ -48,7 +50,8 @@ class NodeMixin(object):
             }
         ):
             raise exc.Invalid("storage_cluster_ip_address already exists!")
-        if IPAddress(storage_cluster_ip_address)not in IPNetwork(cluster_cidr):
+        if (IPAddress(storage_cluster_ip_address) not in
+                IPNetwork(cluster_cidr)):
             raise exc.Invalid("cluster ip not in cluster cidr ({})"
                               "".format(cluster_cidr))
         if objects.NodeList.get_all(
@@ -325,3 +328,46 @@ class NodeTask(object):
             logger.error('pull_logfile error,error:{}'.format(e))
             raise exc.CephException(message='pull log_file error,reason:'
                                             '{}'.format(str(e)))
+
+    def node_get_infos(self):
+        ssh = self.get_ssh_executor()
+        sys_tool = SystemTool(ssh)
+        node_infos = sys_tool.get_node_baseinfo()
+        return node_infos
+
+    def check_port(self, port):
+        res = True
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((str(self.node.ip_address), port))
+            logger.info("port %d has been used" % port)
+            res = False
+        except Exception:
+            pass
+        finally:
+            sock.close()
+        return res
+
+    def check_network(self, address):
+        res = True
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((address, 22))
+        except Exception:
+            logger.info("connect to %s error" % address)
+            res = False
+        finally:
+            sock.close()
+        return res
+
+    def check_selinux(self):
+        ssh = self.get_ssh_executor()
+        sys_tool = SystemTool(ssh)
+        result = sys_tool.check_selinux()
+        return result
+
+    def check_package(self, pkg_name):
+        ssh = self.get_ssh_executor()
+        sys_tool = SystemTool(ssh)
+        result = sys_tool.check_package(pkg_name)
+        return result
