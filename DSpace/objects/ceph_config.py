@@ -68,6 +68,11 @@ class CephConfigList(base.ObjectListBase, base.StorObject):
         return base.obj_make_list(context, cls(context), objects.CephConfig,
                                   ceph_configs)
 
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.ceph_config_get_count(context, filters)
+        return count
+
 
 def ceph_config_content(ctxt):
     configer = configparser.ConfigParser()

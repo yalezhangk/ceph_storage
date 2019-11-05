@@ -2851,8 +2851,22 @@ def ceph_config_get_by_key(context, group, key):
 
 
 @require_context
+def ceph_config_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _ceph_config_get_query(context, session)
+        process_filters(models.CephConfig)(query, filters)
+        return query.count()
+
+
+@require_context
 def ceph_config_get_all(context, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
