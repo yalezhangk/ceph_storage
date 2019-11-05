@@ -21,6 +21,10 @@ class CephConfigHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset)
         return ceph_conf
 
+    def ceph_config_get_count(self, ctxt, filters=None):
+        return objects.CephConfigList.get_count(
+            ctxt, filters=filters)
+
     def _get_mon_node(self, ctxt):
         mons = objects.ServiceList.get_all(
             ctxt, filters={'name': 'mon', 'cluster_id': ctxt.cluster_id})

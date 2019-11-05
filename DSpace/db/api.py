@@ -737,6 +737,10 @@ def ceph_config_get_all(context, filters, marker, limit,
         sort_dirs=sort_dirs, filters=filters, offset=offset)
 
 
+def ceph_config_get_count(context, filters):
+    return IMPL.ceph_config_get_count(context, filters=filters)
+
+
 def ceph_config_update(context, ceph_config_id, values):
     return IMPL.ceph_config_update(context, ceph_config_id, values)
 
