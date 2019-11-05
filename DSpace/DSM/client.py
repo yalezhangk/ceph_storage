@@ -268,6 +268,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def disk_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "disk_get_count", filters=filters)
+        return response
+
     def disk_update(self, ctxt, disk_id, disk_type):
         response = self.call(
             ctxt, "disk_update", disk_id=disk_id, disk_type=disk_type)

@@ -2148,6 +2148,8 @@ def disk_get(context, disk_id, expected_attrs=None):
 def disk_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2164,6 +2166,18 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
         for disk in disks:
             _disk_load_attr(context, disk, expected_attrs, session)
         return disks
+
+
+@require_context
+def disk_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _disk_get_query(context, session)
+        process_filters(models.Disk)(query, filters)
+        return query.count()
 
 
 @require_context

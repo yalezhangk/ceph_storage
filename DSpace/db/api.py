@@ -555,6 +555,10 @@ def disk_get_all(context, filters, marker, limit,
         expected_attrs=expected_attrs)
 
 
+def disk_get_count(context, filters):
+    return IMPL.disk_get_count(context, filters=filters)
+
+
 def disk_update(context, disk_id, values):
     return IMPL.disk_update(context, disk_id, values)
 
