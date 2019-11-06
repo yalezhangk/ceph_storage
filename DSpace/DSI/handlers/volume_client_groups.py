@@ -82,8 +82,9 @@ class VolumeClientGroupHandler(ClusterAPIHandler):
     def get(self, group_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['access_path', 'volumes', 'clients']
         volume_client_group = yield client.volume_client_group_get(
-            ctxt, group_id)
+            ctxt, group_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode(
             {"volume_client_group": volume_client_group}))
 

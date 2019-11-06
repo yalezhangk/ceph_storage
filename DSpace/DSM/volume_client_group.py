@@ -36,8 +36,9 @@ class VolumeClientGroupHandler(AdminBaseHandler):
         v.create()
         return v
 
-    def volume_client_group_get(self, ctxt, group_id):
-        return objects.VolumeClientGroup.get_by_id(ctxt, group_id)
+    def volume_client_group_get(self, ctxt, group_id, expected_attrs=None):
+        return objects.VolumeClientGroup.get_by_id(
+            ctxt, group_id, expected_attrs=expected_attrs)
 
     def volume_client_group_delete(self, ctxt, group_id):
         filters = {"volume_client_group_id": group_id}

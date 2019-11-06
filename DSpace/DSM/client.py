@@ -521,9 +521,10 @@ class AdminClient(BaseClient):
             ctxt, "volume_client_create", data=data)
         return response
 
-    def volume_client_group_get(self, ctxt, group_id):
+    def volume_client_group_get(self, ctxt, group_id, expected_attrs=None):
         response = self.call(
-            ctxt, "volume_client_group_get", group_id=group_id)
+            ctxt, "volume_client_group_get", group_id=group_id,
+            expected_attrs=expected_attrs)
         return response
 
     def volume_client_group_delete(self, ctxt, group_id):

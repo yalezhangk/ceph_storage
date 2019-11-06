@@ -452,9 +452,10 @@ def volume_client_group_destroy(context, client_group_id):
     return IMPL.volume_client_group_destroy(context, client_group_id)
 
 
-def volume_client_group_get(context, client_group_id):
+def volume_client_group_get(context, client_group_id, expected_attrs=None):
     """Get a volume or raise if it does not exist."""
-    return IMPL.volume_client_group_get(context, client_group_id)
+    return IMPL.volume_client_group_get(
+        context, client_group_id, expected_attrs=expected_attrs)
 
 
 def volume_client_group_get_all(context, marker=None, limit=None,
