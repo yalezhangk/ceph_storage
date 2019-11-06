@@ -3,11 +3,13 @@ from concurrent import futures
 from oslo_utils import timeutils
 
 from DSpace import objects
+from DSpace.common.config import CONF
 
 
 class AdminBaseHandler(object):
     def __init__(self):
-        self.executor = futures.ThreadPoolExecutor(max_workers=10)
+        self.executor = futures.ThreadPoolExecutor(
+            max_workers=CONF.task_workers)
 
     def begin_action(self, ctxt, resource_type=None, action=None):
         action_data = {

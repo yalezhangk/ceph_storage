@@ -49,7 +49,10 @@ global_opts = [
                             'FQDN, or IP address.'),
     cfg.StrOpt('cookie_secret',
                default="_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
-               help="Cookie secret")
+               help="Cookie secret"),
+    cfg.IntOpt('task_workers',
+               default=50,
+               help='Task worker number.')
 ]
 
 CONF.register_cli_opts(core_opts)
