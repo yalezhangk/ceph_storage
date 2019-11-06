@@ -882,7 +882,7 @@ def node_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _node_get_query(context, session)
-        process_filters(models.Node)(query, filters)
+        query = process_filters(models.Node)(query, filters)
         return query.count()
 
 
@@ -1146,7 +1146,7 @@ def osd_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _osd_get_query(context, session)
-        process_filters(models.Osd)(query, filters)
+        query = process_filters(models.Osd)(query, filters)
         return query.count()
 
 
@@ -1829,7 +1829,7 @@ def volume_client_group_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _volume_client_group_get_query(context, session)
-        process_filters(models.VolumeClientGroup)(query, filters)
+        query = process_filters(models.VolumeClientGroup)(query, filters)
         return query.count()
 
 
@@ -2094,7 +2094,7 @@ def network_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _network_get_query(context, session)
-        process_filters(models.Network)(query, filters)
+        query = process_filters(models.Network)(query, filters)
         return query.count()
 
 
@@ -2178,7 +2178,7 @@ def alert_rule_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _alert_rule_get_query(context, session)
-        process_filters(models.AlertRule)(query, filters)
+        query = process_filters(models.AlertRule)(query, filters)
         return query.count()
 
 ###############################
@@ -2275,7 +2275,7 @@ def disk_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _disk_get_query(context, session)
-        process_filters(models.Disk)(query, filters)
+        query = process_filters(models.Disk)(query, filters)
         return query.count()
 
 
@@ -2382,7 +2382,7 @@ def disk_partition_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _disk_partition_get_query(context, session)
-        process_filters(models.DiskPartition)(query, filters)
+        query = process_filters(models.DiskPartition)(query, filters)
         return query.count()
 
 
@@ -2502,7 +2502,7 @@ def alert_group_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _alert_group_get_query(context, session)
-        process_filters(models.AlertGroup)(query, filters)
+        query = process_filters(models.AlertGroup)(query, filters)
         return query.count()
 
 ###############################
@@ -2575,7 +2575,7 @@ def email_group_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _email_group_get_query(context, session)
-        process_filters(models.EmailGroup)(query, filters)
+        query = process_filters(models.EmailGroup)(query, filters)
         return query.count()
 
 
@@ -2666,7 +2666,7 @@ def alert_log_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _alert_log_get_query(context, session)
-        process_filters(models.AlertLog)(query, filters)
+        query = process_filters(models.AlertLog)(query, filters)
         return query.count()
 
 
@@ -2754,7 +2754,7 @@ def log_file_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _log_file_get_query(context, session)
-        process_filters(models.LogFile)(query, filters)
+        query = process_filters(models.LogFile)(query, filters)
         return query.count()
 
 
@@ -3016,7 +3016,7 @@ def ceph_config_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _ceph_config_get_query(context, session)
-        process_filters(models.CephConfig)(query, filters)
+        query = process_filters(models.CephConfig)(query, filters)
         return query.count()
 
 
@@ -3206,7 +3206,7 @@ def action_log_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _action_log_get_query(context, session)
-        process_filters(models.ActionLog)(query, filters)
+        query = process_filters(models.ActionLog)(query, filters)
         return query.count()
 
 
@@ -3275,7 +3275,7 @@ def user_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _user_get_query(context, session)
-        process_filters(models.User)(query, filters)
+        query = process_filters(models.User)(query, filters)
         return query.count()
 
 
