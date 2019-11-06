@@ -1,6 +1,9 @@
+import six
 from oslo_log import log as logging
 
+from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.base import SSHExecutor
@@ -31,9 +34,20 @@ class ClusterHandler(AdminBaseHandler):
         """Cluster import"""
         pass
 
-    def cluster_new(self, ctxt):
+    def cluster_create(self, ctxt, data):
         """Deploy a new cluster"""
-        pass
+        cluster = objects.Cluster(
+            ctxt, display_name=data.get('cluster_name'))
+        cluster.create()
+
+        ctxt.cluster_id = cluster.id
+        # TODO check key value
+        for key, value in six.iteritems(data):
+            sysconf = objects.SysConfig(
+                ctxt, key=key, value=value,
+                value_type=s_fields.SysConfigType.STRING)
+            sysconf.create()
+        return cluster
 
     def cluster_install_agent(self, ctxt, ip_address, password):
         logger.debug("Install agent on {}".format(ip_address))

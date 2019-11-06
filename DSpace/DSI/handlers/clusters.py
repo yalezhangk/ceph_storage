@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClusterHandler(BaseAPIHandler):
+    @gen.coroutine
     def get(self):
         ctxt = self.get_context()
         clusters = objects.ClusterList.get_all(ctxt)
@@ -23,12 +24,15 @@ class ClusterHandler(BaseAPIHandler):
             "clusters": clusters
         }))
 
+    @gen.coroutine
     def post(self):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         cluster_data = data.get("cluster")
-        cluster = objects.Cluster(ctxt, display_name=cluster_data.get('name'))
-        cluster.create()
+
+        client = self.get_admin_client(ctxt)
+
+        cluster = yield client.cluster_create(ctxt, cluster_data)
         # init alert_rule
         init_alert_rule(ctxt, cluster.id)
         self.write(objects.json_encode({

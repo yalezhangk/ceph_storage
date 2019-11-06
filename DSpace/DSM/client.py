@@ -178,6 +178,10 @@ class AdminClient(BaseClient):
                              chrony_server=chrony_server)
         return response
 
+    def cluster_create(self, ctxt, data):
+        response = self.call(ctxt, "cluster_create", data=data)
+        return response
+
     def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
                        cluster_cidr, gateway_cidr):
         response = self.call(
