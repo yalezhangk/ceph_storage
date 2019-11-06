@@ -24,7 +24,7 @@ from DSpace.DSM.service import ServiceHandler
 from DSpace.DSM.sys_config import SysConfigHandler
 from DSpace.DSM.volume import VolumeHandler
 from DSpace.DSM.volume_access_path import VolumeAccessPathHandler
-from DSpace.DSM.volume_client import VolumeClientHandler
+from DSpace.DSM.volume_client_group import VolumeClientGroupHandler
 from DSpace.DSM.volume_snapshot import VolumeSnapshotHandler
 from DSpace.service import ServiceBase
 
@@ -54,7 +54,7 @@ class AdminHandler(ActionLogHandler,
                    SysConfigHandler,
                    VolumeAccessPathHandler,
                    VolumeHandler,
-                   VolumeClientHandler,
+                   VolumeClientGroupHandler,
                    VolumeSnapshotHandler):
     pass
 

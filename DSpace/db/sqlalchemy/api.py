@@ -1816,9 +1816,37 @@ def volume_client_group_get(context, client_group_id, expected_attrs=None):
 
 
 @require_context
+def volume_client_group_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _volume_client_group_get_query(context, session)
+        process_filters(models.VolumeClientGroup)(query, filters)
+        return query.count()
+
+
+def _volume_client_group_load_attr(ctxt, vcg, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'access_path' in expected_attrs:
+        vcg.access_path = volume_access_path_get(
+            ctxt, vcg.volume_access_path_id)
+    if 'clients' in expected_attrs:
+        filters = {"volume_client_group_id": vcg.id}
+        clients = volume_client_get_all(ctxt, filters=filters)
+        vcg.clients = [client for client in clients]
+    if 'volumes' in expected_attrs:
+        filters = {"volume_client_group_id": vcg.id}
+        volumes = volume_get_all(ctxt, filters=filters)
+        vcg.volumes = [volume for volume in volumes]
+
+
+@require_context
 def volume_client_group_get_all(context, marker=None,
                                 limit=None, sort_keys=None,
-                                sort_dirs=None, filters=None, offset=None):
+                                sort_dirs=None, filters=None, offset=None,
+                                expected_attrs=None):
     """Retrieves all volumes.
 
     If no sort parameters are specified then the returned volumes are sorted
@@ -1839,6 +1867,8 @@ def volume_client_group_get_all(context, marker=None,
                     function for more information
     :returns: list of matching volumes
     """
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1849,7 +1879,12 @@ def volume_client_group_get_all(context, marker=None,
         # No volumes would match, return empty list
         if query is None:
             return []
-        return query.all()
+        vcgs = query.all()
+        if not expected_attrs:
+            return vcgs
+        for vcg in vcgs:
+            _volume_client_group_load_attr(context, vcg, expected_attrs)
+        return vcgs
 
 
 @handle_db_data_error

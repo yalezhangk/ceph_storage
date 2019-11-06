@@ -459,13 +459,18 @@ def volume_client_group_get(context, client_group_id):
 
 def volume_client_group_get_all(context, marker=None, limit=None,
                                 sort_keys=None, sort_dirs=None,
-                                filters=None, offset=None):
+                                filters=None, offset=None,
+                                expected_attrs=None):
     """Get all volumes."""
     return IMPL.volume_client_group_get_all(
         context, marker=marker, limit=limit,
         sort_keys=sort_keys,
         sort_dirs=sort_dirs, filters=filters,
-        offset=offset)
+        offset=offset, expected_attrs=expected_attrs)
+
+
+def volume_client_group_get_count(context, filters):
+    return IMPL.volume_client_group_get_count(context, filters=filters)
 
 
 def volume_client_group_update(context, client_group_id, values):

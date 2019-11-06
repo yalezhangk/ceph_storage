@@ -21,7 +21,12 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
         'chap_password': fields.StringField(nullable=True),
         'volume_access_path_id': fields.IntegerField(),
         'cluster_id': fields.StringField(nullable=True),
+        'access_path': fields.ObjectField("VolumeAccessPath", nullable=True),
+        'volumes': fields.ListOfObjectsField('Volume', nullable=True),
+        'clients': fields.ListOfObjectsField('VolumeClient', nullable=True),
     }
+
+    OPTIONAL_FIELDS = ('access_path', 'volumes', 'clients')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -45,6 +50,27 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if 'access_path' in expected_attrs:
+            access_path = db_obj.get('access_path', None)
+            obj.access_path = objects.VolumeAccessPath._from_db_object(
+                context, objects.VolumeAccessPath(context), access_path
+            )
+        if 'clients' in expected_attrs:
+            clients = db_obj.get('clients', [])
+            obj.clients = [objects.VolumeClient._from_db_object(
+                context, objects.VolumeClient(context), client
+            ) for client in clients]
+        if 'volumes' in expected_attrs:
+            volumes = db_obj.get('volumes', [])
+            obj.volumes = [objects.Volume._from_db_object(
+                context, objects.Volume(context), volume
+            ) for volume in volumes]
+        return super(VolumeClientGroup, cls)._from_db_object(
+            context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class VolumeClientGroupList(base.ObjectListBase, base.StorObject):
@@ -55,13 +81,19 @@ class VolumeClientGroupList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         volume_client_groups = db.volume_client_group_get_all(
             context, marker=marker, limit=limit,
             sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return base.obj_make_list(
             context, cls(context),
             objects.VolumeClientGroup,
-            volume_client_groups)
+            volume_client_groups, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.volume_client_group_get_count(context, filters)
+        return count
