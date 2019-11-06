@@ -19,8 +19,11 @@ class VolumeListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
+        expected_attrs = ['snapshots', 'pool', 'volume_access_path',
+                          'volume_client_group', 'parent_snap',
+                          'volume_clients']
         volumes = yield client.volume_get_all(
-            ctxt, expected_attrs=['snapshots'], **page_args)
+            ctxt, expected_attrs=expected_attrs, **page_args)
         volumes_all = yield client.volume_get_all(ctxt)
         self.write(objects.json_encode({
             "volumes": volumes,
@@ -44,8 +47,11 @@ class VolumeHandler(ClusterAPIHandler):
     def get(self, volume_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['snapshots', 'pool', 'volume_access_path',
+                          'volume_client_group', 'parent_snap',
+                          'volume_clients']
         volume = yield client.volume_get(ctxt, volume_id,
-                                         expected_attrs=['snapshots'])
+                                         expected_attrs=expected_attrs)
         self.write(objects.json_encode({"volume": volume}))
 
     @gen.coroutine
