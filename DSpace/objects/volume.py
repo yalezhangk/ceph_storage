@@ -31,9 +31,18 @@ class Volume(base.StorPersistentObject, base.StorObject,
         'cluster_id': fields.UUIDField(),
         'snapshots': fields.ListOfObjectsField("VolumeSnapshot",
                                                nullable=True),
+        'pool': fields.ObjectField("Pool", nullable=True),
+        'volume_access_path': fields.ObjectField("VolumeAccessPath",
+                                                 nullable=True),
+        'volume_client_group': fields.ObjectField("VolumeClientGroup",
+                                                  nullable=True),
+        'parent_snap': fields.ObjectField("VolumeSnapshot", nullable=True),
+        'volume_clients': fields.ListOfObjectsField('VolumeClient',
+                                                    nullable=True)
     }
 
-    OPTIONAL_FIELDS = ('snapshots',)
+    OPTIONAL_FIELDS = ('snapshots', 'pool', 'volume_access_path',
+                       'volume_client_group', 'parent_snap', 'volume_clients')
 
     @property
     def name(self):
@@ -68,6 +77,47 @@ class Volume(base.StorPersistentObject, base.StorObject,
             obj.snapshots = [objects.VolumeSnapshot._from_db_object(
                 context, objects.VolumeSnapshot(context), snapshot
             ) for snapshot in snapshots]
+
+        if 'pool' in expected_attrs:
+            pool = db_obj.get('pool', None)
+            if pool:
+                obj.pool = objects.Pool._from_db_object(
+                    context, objects.Pool(context), pool)
+            else:
+                obj.pool = None
+
+        if 'volume_access_path' in expected_attrs:
+            volume_access_path = db_obj.get('volume_access_path', None)
+            if volume_access_path:
+                obj.volume_access_path = (
+                    objects.VolumeAccessPath._from_db_object(
+                        context, objects.VolumeAccessPath(context),
+                        volume_access_path))
+            else:
+                obj.volume_access_path = None
+        if 'volume_client_group' in expected_attrs:
+            volume_client_group = db_obj.get('volume_client_group', None)
+            if volume_client_group:
+                obj.volume_client_group = (
+                    objects.VolumeClientGroup._from_db_object(
+                        context, objects.VolumeClientGroup(context),
+                        volume_client_group))
+            else:
+                obj.volume_client_group = None
+
+        if 'parent_snap' in expected_attrs:
+            parent_snap = db_obj.get('parent_snap', None)
+            if parent_snap:
+                obj.parent_snap = objects.VolumeSnapshot._from_db_object(
+                    context, objects.VolumeSnapshot(context), parent_snap)
+            else:
+                obj.parent_snap = None
+
+        if 'volume_clients' in expected_attrs:
+            volume_clients = db_obj.get('volume_clients', [])
+            obj.volume_clients = [objects.VolumeClient._from_db_object(
+                context, objects.VolumeClient(context), volume_client
+            ) for volume_client in volume_clients]
 
         return super(Volume, cls)._from_db_object(context, obj, db_obj)
 

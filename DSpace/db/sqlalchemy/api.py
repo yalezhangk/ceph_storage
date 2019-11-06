@@ -353,10 +353,42 @@ def _volume_get(context, volume_id, session=None):
     return result
 
 
-def _volume_load_attr(volume, expected_attrs=None):
+def _volume_load_attr(ctxt, volume, expected_attrs=None, session=None):
     expected_attrs = expected_attrs or []
     if 'snapshots' in expected_attrs:
         volume.snapshots = [snapshot for snapshot in volume._snapshots]
+    if 'pool' in expected_attrs:
+        volume.pool = _pool_get(ctxt, volume.pool_id, session)
+    if 'volume_access_path' in expected_attrs:
+        ac_path_id = volume.volume_access_path_id
+        if ac_path_id:
+            volume.volume_access_path = _volume_access_path_get(
+                ctxt, ac_path_id, session)
+        else:
+            volume.volume_access_path = None
+    if 'volume_client_group' in expected_attrs:
+        cli_group_id = volume.volume_client_group_id
+        if cli_group_id:
+            volume.volume_client_group = _volume_client_group_get(
+                ctxt, cli_group_id, session)
+        else:
+            volume.volume_client_group = None
+    if 'parent_snap' in expected_attrs:
+        parent_snap_id = volume.snapshot_id
+        if parent_snap_id and volume.is_link_clone:
+            volume.parent_snap = _volume_snapshot_get(ctxt, parent_snap_id,
+                                                      session)
+        else:
+            volume.parent_snap = None
+    if 'volume_clients' in expected_attrs:
+        cli_group_id = volume.volume_client_group_id
+        if cli_group_id:
+            v_clients = model_query(
+                ctxt, models.VolumeClient, session=session).filter_by(
+                volume_client_group_id=cli_group_id)
+            volume.volume_clients = [v_client for v_client in v_clients]
+        else:
+            volume.volume_clients = []
 
 
 @require_context
@@ -364,7 +396,7 @@ def volume_get(context, volume_id, expected_attrs=None):
     session = get_session()
     with session.begin():
         volume = _volume_get(context, volume_id, session)
-        _volume_load_attr(volume, expected_attrs)
+        _volume_load_attr(context, volume, expected_attrs, session)
     return volume
 
 
@@ -404,7 +436,7 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
             return []
         volumes = query.all()
         for volume in volumes:
-            _volume_load_attr(volume, expected_attrs)
+            _volume_load_attr(context, volume, expected_attrs, session)
         return volumes
 
 
@@ -2718,10 +2750,18 @@ def _volume_snapshot_get(context, volume_snapshot_id, session=None):
     return result
 
 
-def _snap_load_attr(snap, expected_attrs=None):
+def _snap_load_attr(ctxt, snap, expected_attrs=None, session=None):
     expected_attrs = expected_attrs or []
     if 'volume' in expected_attrs:
         snap.volume = snap._volume
+    if 'pool' in expected_attrs:
+        p_volume = _volume_get(ctxt, snap.volume_id, session)
+        snap.pool = _pool_get(ctxt, p_volume.pool_id, session)
+    if 'child_volumes' in expected_attrs:
+        child_volumes = model_query(
+            ctxt, models.Volume, session=session).filter_by(
+            snapshot_id=snap.id, is_link_clone=True)
+        snap.child_volumes = [child_volume for child_volume in child_volumes]
 
 
 @require_context
@@ -2730,7 +2770,7 @@ def volume_snapshot_get(context, volume_snapshot_id, expected_attrs=None):
     session = get_session()
     with session.begin():
         snap = _volume_snapshot_get(context, volume_snapshot_id, session)
-        _snap_load_attr(snap, expected_attrs)
+        _snap_load_attr(context, snap, expected_attrs, session)
     return snap
 
 
@@ -2771,11 +2811,8 @@ def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         volume_snapshots = query.all()
-
-        expected_attrs = expected_attrs or []
-        if 'volume' in expected_attrs:
-            for snapshot in volume_snapshots:
-                snapshot.volume = snapshot._volume
+        for snapshot in volume_snapshots:
+            _snap_load_attr(context, snapshot, expected_attrs, session)
         return volume_snapshots
 
 

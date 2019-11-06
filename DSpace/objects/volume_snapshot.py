@@ -23,10 +23,12 @@ class VolumeSnapshot(base.StorPersistentObject, base.StorObject,
         'display_description': fields.StringField(nullable=True),
         'volume_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
-        'volume': fields.ObjectField('Volume', nullable=True)
+        'volume': fields.ObjectField('Volume', nullable=True),
+        'pool': fields.ObjectField('Pool', nullable=True),
+        'child_volumes': fields.ListOfObjectsField('Volume', nullable=True)
     }
 
-    OPTIONAL_FIELDS = ('volume',)
+    OPTIONAL_FIELDS = ('volume', 'pool', 'child_volumes')
 
     @property
     def name(self):
@@ -58,9 +60,26 @@ class VolumeSnapshot(base.StorPersistentObject, base.StorObject,
         expected_attrs = expected_attrs or []
         if 'volume' in expected_attrs:
             volume = db_obj.get('volume', None)
-            obj.volume = objects.Volume._from_db_object(
-                context, objects.Volume(context), volume
-            )
+            if volume:
+                obj.volume = objects.Volume._from_db_object(
+                    context, objects.Volume(context), volume)
+            else:
+                obj.volume = None
+
+        if 'pool' in expected_attrs:
+            pool = db_obj.get('pool', None)
+            if pool:
+                obj.pool = objects.Pool._from_db_object(
+                    context, objects.Pool(context), pool)
+            else:
+                obj.pool = None
+
+        if 'child_volumes' in expected_attrs:
+            child_volumes = db_obj.get('child_volumes', [])
+            obj.child_volumes = [objects.Volume._from_db_object(
+                context, objects.Volume(context), child_volume
+            ) for child_volume in child_volumes]
+
         return super(VolumeSnapshot, cls)._from_db_object(context, obj, db_obj)
 
 
