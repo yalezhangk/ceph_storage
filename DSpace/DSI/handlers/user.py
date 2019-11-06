@@ -12,6 +12,7 @@ from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSI.handlers.base import BaseAPIHandler
+from DSpace.utils.license_verify import LicenseVerify
 from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
@@ -156,9 +157,26 @@ class UserLogoutHandler(BaseAPIHandler):
 
 
 class PermissionHandler(BaseAPIHandler):
+
+    @staticmethod
+    def license_verify(ctxt):
+        # license校验
+        licenses = objects.LicenseList.get_latest_valid(ctxt)
+        if not licenses:
+            is_available = False
+        else:
+            v = LicenseVerify(licenses[0].content, ctxt)
+            if not v.licenses_data:
+                is_available = False
+            else:
+                is_available = v.is_available()
+        return is_available
+
     @gen.coroutine
     def get(self):
-        self.get_context()
+        ctxt = self.get_context()
         permission = copy.deepcopy(fake)
         permission['data']['user'] = self.current_user
+        license = self.license_verify(ctxt)
+        permission['data']['license'] = license
         self.write(objects.json_encode(permission))
