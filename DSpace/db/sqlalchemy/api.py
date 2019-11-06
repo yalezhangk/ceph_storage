@@ -1464,7 +1464,7 @@ def volume_access_path_update(context, access_path_id, values):
     session = get_session()
     with session.begin():
         query = _volume_access_path_get_query(
-            context, session, joined_load=False)
+            context, session)
         result = query.filter_by(id=access_path_id).update(values)
         if not result:
             raise exception.VolumeAccessPathNotFound(
@@ -1488,6 +1488,32 @@ def volume_access_paths_update(context, values_list):
             volume_access_path_refs.append(volume_access_path_ref)
 
         return volume_access_path_refs
+
+
+@handle_db_data_error
+@require_context
+def volume_access_path_append_gateway(context, access_path_id,
+                                      volume_gateway_id):
+    session = get_session()
+    with session.begin():
+        volume_access_path_ref = _volume_access_path_get(
+            context, access_path_id, session=session)
+        volume_gateway_ref = _volume_gateway_get(
+            context, volume_gateway_id, session=session)
+        volume_access_path_ref.volume_gateways.append(volume_gateway_ref)
+        volume_access_path_ref.save(session)
+    return volume_access_path_ref
+
+
+@handle_db_data_error
+@require_context
+def volume_access_path_get_gateways(context, access_path_id):
+    session = get_session()
+    with session.begin():
+        volume_access_path_ref = _volume_access_path_get(
+            context, access_path_id, session=session)
+        return volume_access_path_ref.volume_gateways
+
 ###############################
 
 
@@ -1575,6 +1601,8 @@ def volume_gateway_get_all(context, marker=None,
                     function for more information
     :returns: list of matching volumes
     """
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1610,7 +1638,7 @@ def volume_gateways_update(context, values_list):
         for values in values_list:
             ap_gateway_id = values['id']
             values.pop('id')
-            volume_gateway_ref = _volume_access_path_get(
+            volume_gateway_ref = _volume_gateway_get(
                 context,
                 ap_gateway_id,
                 session=session)
@@ -3326,7 +3354,9 @@ PAGINATION_HELPERS = {
     models.VolumeAccessPath: (_volume_access_path_get_query,
                               process_filters(models.VolumeAccessPath),
                               _volume_access_path_get),
-    models.VolumeGateway: (_volume_gateway_get_query),
+    models.VolumeGateway: (_volume_gateway_get_query,
+                           process_filters(models.VolumeGateway),
+                           _volume_gateway_get),
     models.VolumeClient: (_volume_client_get_query,
                           process_filters(models.VolumeClient),
                           _volume_client_get),

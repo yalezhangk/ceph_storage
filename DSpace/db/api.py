@@ -357,7 +357,18 @@ def volume_access_paths_update(context, values_list):
     return IMPL.volume_access_paths_update(context, values_list)
 
 
+def volume_access_path_append_gateway(context, access_path_id,
+                                      volume_gateway_id):
+    return IMPL.volume_access_path_append_gateway(
+        context, access_path_id, volume_gateway_id)
+
+
+def volume_access_path_get_gateways(context, access_path_id):
+    return IMPL.volume_access_path_get_gateways(
+        context, access_path_id)
+
 ###############
+
 
 def volume_gateway_create(context, values):
     """Create a volume from the values dictionary."""

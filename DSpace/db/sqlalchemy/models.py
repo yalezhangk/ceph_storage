@@ -277,8 +277,8 @@ class VolumeSnapshot(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
-volume_access_paths_gateway = Table(
-    'volume_access_paths_gateway', BASE.metadata,
+volume_access_path_gateways = Table(
+    'volume_access_path_gateways', BASE.metadata,
     Column('created_at', DateTime),
     Column('updated_at', DateTime),
     Column('deleted_at', DateTime),
@@ -306,7 +306,7 @@ class VolumeAccessPath(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     volume_gateways = relationship(
         'VolumeGateway',
-        secondary=volume_access_paths_gateway,
+        secondary=volume_access_path_gateways,
         back_populates='volume_access_paths')
 
 
@@ -318,7 +318,7 @@ class VolumeGateway(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     volume_access_paths = relationship(
         'VolumeAccessPath',
-        secondary=volume_access_paths_gateway,
+        secondary=volume_access_path_gateways,
         back_populates='volume_gateways')
 
 
