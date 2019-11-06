@@ -7,8 +7,11 @@ import logging
 from tornado import gen
 from tornado.escape import json_decode
 
+from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.i18n import _
+from DSpace.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,23 @@ class OsdListHandler(ClusterAPIHandler):
             "total": osd_count
         }))
 
+    def _osd_create_check(self, osd):
+        osd_type = osd.get("type")
+        journal_id = osd.get('journal_partition_id')
+        db_id = osd.get('db_partition_id')
+        wal_id = osd.get('wal_partition_id')
+        cache_id = osd.get('cache_partition_id')
+        if osd_type not in s_fields.OsdType.ALL:
+            raise exception.InvalidInput(_("Osd type err"))
+        if osd_type == s_fields.OsdType.BLUESTORE:
+            if journal_id:
+                raise exception.InvalidInput(
+                    _("BlueStore not support journal"))
+        elif osd_type == s_fields.OsdType.FILESTORE:
+            if db_id or wal_id or cache_id:
+                raise exception.InvalidInput(
+                    _("FileStore not support DB, WAL or Cache"))
+
     @gen.coroutine
     def post(self):
         ctxt = self.get_context()
@@ -50,6 +70,7 @@ class OsdListHandler(ClusterAPIHandler):
         if 'osd' in data:
             data = data.get('osd')
             client = self.get_admin_client(ctxt)
+            self._osd_create_check(data)
             osd = yield client.osd_create(ctxt, data)
 
             self.write(objects.json_encode({
@@ -59,6 +80,8 @@ class OsdListHandler(ClusterAPIHandler):
             datas = data.get('osds')
             client = self.get_admin_client(ctxt)
             osds = []
+            for data in datas:
+                self._osd_create_check(data)
             for data in datas:
                 try:
                     osd = yield client.osd_create(ctxt, data)
