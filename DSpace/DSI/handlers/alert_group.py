@@ -18,7 +18,9 @@ class AlertGroupListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        alert_groups = yield client.alert_group_get_all(ctxt, **page_args)
+        expected_attrs = ['alert_rules', 'email_groups']
+        alert_groups = yield client.alert_group_get_all(
+            ctxt, expected_attrs=expected_attrs, **page_args)
         alert_group_count = yield client.alert_group_get_count(ctxt)
         self.write(objects.json_encode({
             "alert_groups": alert_groups,
@@ -42,7 +44,9 @@ class AlertGroupHandler(ClusterAPIHandler):
     def get(self, alert_group_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        alert_group = yield client.alert_group_get(ctxt, alert_group_id)
+        expected_attrs = ['alert_rules', 'email_groups']
+        alert_group = yield client.alert_group_get(ctxt, alert_group_id,
+                                                   expected_attrs)
         self.write(objects.json_encode({
             "alert_group": alert_group
         }))

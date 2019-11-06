@@ -2444,7 +2444,11 @@ def _alert_group_get(context, alert_group_id, session=None):
 
 @require_context
 def alert_group_get(context, alert_group_id, expected_attrs=None):
-    return _alert_group_get(context, alert_group_id)
+    session = get_session()
+    with session.begin():
+        alert_group = _alert_group_get(context, alert_group_id, session)
+        _alert_group_load_attr(context, alert_group, expected_attrs, session)
+    return alert_group
 
 
 @require_context
@@ -2487,9 +2491,20 @@ def alert_group_update(context, alert_group_id, values):
         result.update(values)
 
 
+def _alert_group_load_attr(ctxt, ale_group, expected_attrs, session=None):
+    expected_attrs = expected_attrs or []
+    if 'alert_rules' in expected_attrs:
+        ale_group.alert_rules = [al_rule for al_rule in ale_group.alert_rules]
+    if 'email_groups' in expected_attrs:
+        ale_group.email_groups = [
+            al_email for al_email in ale_group.email_groups
+        ]
+
+
 @require_context
 def alert_group_get_all(context, marker=None, limit=None, sort_keys=None,
-                        sort_dirs=None, filters=None, offset=None):
+                        sort_dirs=None, filters=None, offset=None,
+                        expected_attrs=None):
     session = get_session()
     filters = filters or {}
     filters['cluster_id'] = context.cluster_id
@@ -2501,7 +2516,10 @@ def alert_group_get_all(context, marker=None, limit=None, sort_keys=None,
             sort_keys, sort_dirs, filters, offset)
         if query is None:
             return []
-        return query.all()
+        alert_groups = query.all()
+        for ale_group in alert_groups:
+            _alert_group_load_attr(context, ale_group, expected_attrs, session)
+        return alert_groups
 
 
 def alert_group_destroy(context, alert_group_id):

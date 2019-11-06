@@ -16,7 +16,11 @@ class AlertGroup(base.StorPersistentObject, base.StorObject,
         'alert_rule_ids': fields.ListOfIntegersField(nullable=True),
         'email_group_ids': fields.ListOfIntegersField(nullable=True),
         'cluster_id': fields.UUIDField(),
+        'alert_rules': fields.ListOfObjectsField('AlertRule', nullable=True),
+        'email_groups': fields.ListOfObjectsField('EmailGroup', nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('alert_rules', 'email_groups')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -39,6 +43,24 @@ class AlertGroup(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+
+        if 'alert_rules' in expected_attrs:
+            alert_rules = db_obj.get('alert_rules', [])
+            obj.alert_rules = [objects.AlertRule._from_db_object(
+                context, objects.AlertRule(context), alert_rule
+            ) for alert_rule in alert_rules]
+
+        if 'email_groups' in expected_attrs:
+            email_groups = db_obj.get('email_groups', [])
+            obj.email_groups = [objects.EmailGroup._from_db_object(
+                context, objects.EmailGroup(context), email_group
+            ) for email_group in email_groups]
+
+        return super(AlertGroup, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class AlertGroupList(base.ObjectListBase, base.StorObject):
@@ -49,12 +71,13 @@ class AlertGroupList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         alert_groups = db.alert_group_get_all(context, marker, limit,
                                               sort_keys, sort_dirs, filters,
-                                              offset)
+                                              offset, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.AlertGroup,
-                                  alert_groups)
+                                  alert_groups, expected_attrs=expected_attrs)
 
     @classmethod
     def get_count(cls, context, filters=None):
