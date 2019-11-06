@@ -18,8 +18,14 @@ class AlertRuleListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        alert_rules = yield client.alert_rule_get_all(ctxt, **page_args)
-        alert_rule_count = yield client.alert_rule_get_count(ctxt)
+        resource_type = self.get_argument('resource_type')
+        filters = {}
+        if resource_type:
+            filters = {'resource_type': resource_type}
+        alert_rules = yield client.alert_rule_get_all(ctxt, filters=filters,
+                                                      **page_args)
+        alert_rule_count = yield client.alert_rule_get_count(
+            ctxt, filters=filters)
         self.write(objects.json_encode({
             "alert_rules": alert_rules,
             "total": alert_rule_count
@@ -31,7 +37,8 @@ class AlertRuleHandler(ClusterAPIHandler):
     def get(self, alert_rule_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        rule = yield client.alert_rule_get(ctxt, alert_rule_id)
+        expected_attrs = ['alert_groups']
+        rule = yield client.alert_rule_get(ctxt, alert_rule_id, expected_attrs)
         self.write(objects.json_encode({
             "alert_rule": rule
         }))

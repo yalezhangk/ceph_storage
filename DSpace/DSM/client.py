@@ -113,9 +113,10 @@ class AdminClient(BaseClient):
             ctxt, "alert_rule_get_count", filters=filters)
         return response
 
-    def alert_rule_get(self, ctxt, alert_rule_id):
+    def alert_rule_get(self, ctxt, alert_rule_id, expected_attrs=None):
         response = self.call(ctxt, "alert_rule_get",
-                             alert_rule_id=alert_rule_id)
+                             alert_rule_id=alert_rule_id,
+                             expected_attrs=expected_attrs)
         return response
 
     def alert_rule_update(self, ctxt, alert_rule_id, data):
@@ -659,11 +660,6 @@ class AdminClient(BaseClient):
             ctxt, "alert_log_get_count", filters=filters)
         return response
 
-    def alert_log_create(self, ctxt, data):
-        response = self.call(
-            ctxt, "alert_log_create", data=data)
-        return response
-
     def alert_log_get(self, ctxt, alert_log_id):
         response = self.call(ctxt, "alert_log_get",
                              alert_log_id=alert_log_id)
@@ -688,6 +684,11 @@ class AdminClient(BaseClient):
     def resource_action(self, ctxt):
         response = self.call(
             ctxt, "resource_action")
+        return response
+
+    def send_alert_messages(self, ctxt, receive_datas):
+        response = self.call(
+            ctxt, "send_alert_messages", receive_datas=receive_datas)
         return response
 
     ###################

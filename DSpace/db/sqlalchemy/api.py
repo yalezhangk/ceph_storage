@@ -2219,9 +2219,21 @@ def _alert_rule_get(context, alert_rule_id, session=None):
     return result
 
 
+def _alert_rule_load_attr(ctxt, alert_rule, expected_attrs, session=None):
+    expected_attrs = expected_attrs or []
+    if 'alert_groups' in expected_attrs:
+        alert_rule.alert_groups = [
+            al_group for al_group in alert_rule.alert_groups]
+
+
 @require_context
-def alert_rule_get(context, volume_id, expected_attrs=None):
-    return _alert_rule_get(context, volume_id)
+def alert_rule_get(context, alert_rule_id, expected_attrs=None):
+
+    session = get_session()
+    with session.begin():
+        alert_rule = _alert_rule_get(context, alert_rule_id, session)
+        _alert_rule_load_attr(context, alert_rule, expected_attrs, session)
+    return alert_rule
 
 
 @require_context
@@ -2544,16 +2556,23 @@ def alert_group_update(context, alert_group_id, values):
         result = query.filter_by(id=alert_group_id).first()
         if not result:
             raise exception.AlertGroupNotFound(alert_group_id=alert_group_id)
-        alert_rule_ids = values.pop('alert_rule_ids')
-        db_rules = [_alert_rule_get(context, rule_id, session) for rule_id in
-                    alert_rule_ids]
+        name = values.pop('name', None)
+        if name:
+            result.name = name
         # update relations:alert_rules,email_groups
-        result.alert_rules = db_rules
-        email_group_ids = values.pop('email_group_ids')
-        db_emails = [_email_group_get(context, email_id, session)
-                     for email_id in email_group_ids]
-        result.email_groups = db_emails
-        result.update(values)
+        alert_rule_ids = values.pop('alert_rule_ids', None)
+        if alert_rule_ids:
+            db_rules = [
+                _alert_rule_get(context, rule_id, session) for rule_id in
+                alert_rule_ids
+            ]
+            result.alert_rules = db_rules
+        email_group_ids = values.pop('email_group_ids', None)
+        if email_group_ids:
+            db_emails = [_email_group_get(context, email_id, session)
+                         for email_id in email_group_ids]
+            result.email_groups = db_emails
+        result.save(session)
 
 
 def _alert_group_load_attr(ctxt, ale_group, expected_attrs, session=None):

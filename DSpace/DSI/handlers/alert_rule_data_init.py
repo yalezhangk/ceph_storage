@@ -5,7 +5,7 @@ from DSpace import objects
 
 init_datas = [
     {
-        'resource_type': 'sysconf',
+        'resource_type': 'cluster',
         'type': 'cluster_usage',
         'trigger_value': '> 80%',
         'level': 'WARN',

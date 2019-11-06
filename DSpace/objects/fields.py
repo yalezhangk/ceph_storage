@@ -263,17 +263,26 @@ class DictOfNullableField(fields.AutoTypedField):
 
 
 class AllResourceType(BaseStorEnum):
+    ALERT_GROUP = 'alert_group'
     ALERT_RULE = 'alert_rule'
     EMAIL_GROUP = 'email_group'
-    ALL = (ALERT_RULE, EMAIL_GROUP)
+    OSD = 'osd'
+    NODE = 'node'
+    POOL = 'pool'
+    CLUSTER = 'cluster'
+    ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER)
 
 
 class AllActionType(BaseStorEnum):
     CREATE = 'create'
     DELETE = 'delete'
-    OPEN_OR_CLOSE_RULE = 'open_or_close_alert_rule'
+    MODIFY_ALERT_RULES = 'modify_alert_rules'
+    MODIFY_EMAIL_GROUPS = 'modify_email_groups'
+    OPEN_ALERT_RULE = 'open_alert_rule'
+    CLOSE_ALERT_RULE = 'close_alert_rule'
     UPDATE = 'update'
-    ALL = (CREATE, DELETE, OPEN_OR_CLOSE_RULE, UPDATE)
+    ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
+           OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -296,10 +305,21 @@ class ResourceAction(object):
     @classmethod
     def relation_resource_action(cls):
         relation = {
+            AllResourceType.ALERT_GROUP: {
+                AllActionType.CREATE: AllActionType.CREATE,
+                AllActionType.UPDATE: AllActionType.UPDATE,
+                AllActionType.DELETE: AllActionType.DELETE,
+                AllActionType.MODIFY_ALERT_RULES:
+                    AllActionType.MODIFY_ALERT_RULES,
+                AllActionType.MODIFY_EMAIL_GROUPS:
+                    AllActionType.MODIFY_EMAIL_GROUPS
+            },
+
             AllResourceType.ALERT_RULE: {
                 AllActionType.OPEN_OR_CLOSE_RULE:
                     AllActionType.OPEN_OR_CLOSE_RULE
             },
+
             AllResourceType.EMAIL_GROUP: {
                 AllActionType.CREATE: AllActionType.CREATE,
                 AllActionType.UPDATE: AllActionType.UPDATE,

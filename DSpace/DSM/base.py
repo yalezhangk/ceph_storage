@@ -1,9 +1,12 @@
 from concurrent import futures
 
+from oslo_log import log as logging
 from oslo_utils import timeutils
 
 from DSpace import objects
 from DSpace.common.config import CONF
+
+logger = logging.getLogger(__name__)
 
 
 class AdminBaseHandler(object):
@@ -12,6 +15,7 @@ class AdminBaseHandler(object):
             max_workers=CONF.task_workers)
 
     def begin_action(self, ctxt, resource_type=None, action=None):
+        logger.debug('begin action:%s-%s', resource_type, action)
         action_data = {
             'begin_time': timeutils.utcnow(),
             'client_ip': ctxt.client_ip,
@@ -25,7 +29,8 @@ class AdminBaseHandler(object):
         return action_log
 
     def finish_action(self, begin_action=None, resource_id=None,
-                      resource_name=None, resource_data=None, status=None):
+                      resource_name=None, resource_data=None, status=None,
+                      action=None):
         finish_data = {
             'resource_id': resource_id,
             'resource_name': resource_name,
@@ -33,5 +38,8 @@ class AdminBaseHandler(object):
             'status': status if status else 'success',
             'finish_time': timeutils.utcnow()
         }
+        if action:
+            finish_data.update({'action': action})
         begin_action.update(finish_data)
+        logger.debug('finish action:%s-%s', resource_name, action)
         begin_action.save()

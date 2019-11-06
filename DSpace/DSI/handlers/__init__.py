@@ -7,6 +7,7 @@ from DSpace.DSI.handlers.alert_group import AlertGroupHandler
 from DSpace.DSI.handlers.alert_group import AlertGroupListHandler
 from DSpace.DSI.handlers.alert_log import AlertLogHandler
 from DSpace.DSI.handlers.alert_log import AlertLogListHandler
+from DSpace.DSI.handlers.alert_log import ReceiveAlertMessageHandler
 from DSpace.DSI.handlers.alert_rule import AlertRuleHandler
 from DSpace.DSI.handlers.alert_rule import AlertRuleListHandler
 from DSpace.DSI.handlers.ceph_config import CephConfigActionHandler
@@ -93,6 +94,7 @@ def get_routers():
         (r"/alert_groups/([0-9]*)/", AlertGroupHandler),
         (r"/alert_logs/", AlertLogListHandler),
         (r"/alert_logs/([0-9]*)/", AlertLogHandler),
+        (r"/alert_logs/messages/", ReceiveAlertMessageHandler),
         (r"/alert_rules/", AlertRuleListHandler),
         (r"/alert_rules/([0-9]*)/", AlertRuleHandler),
         (r"/ceph_configs/", CephConfigListHandler),
