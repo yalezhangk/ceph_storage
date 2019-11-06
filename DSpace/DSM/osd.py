@@ -40,11 +40,13 @@ class OsdHandler(AdminBaseHandler):
             msg = _("Osd created!")
             osd.status = s_fields.OsdStatus.UP
             osd.save()
+            logger.info("Osd %s create success.", osd.osd_id)
         except exception.StorException as e:
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             msg = _("Osd create error!")
+            logger.info("Osd %s create error.", osd.osd_id)
 
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=ctxt.cluster_id
@@ -80,16 +82,64 @@ class OsdHandler(AdminBaseHandler):
             )
             ceph_cfg.create()
 
-    def osd_create(self, ctxt, data):
-        disk_id = data.get('disk_id')
+    def _osd_create_disk_check(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
-        node_id = disk.node_id
+        if disk.status != s_fields.DiskStatus.AVAILABLE:
+            raise exception.InvalidInput(_("Disk %s not available") % disk_id)
+        if disk.role != s_fields.DiskRole.DATA:
+            raise exception.InvalidInput(_("Disk %s not for data") % disk_id)
+        return disk
+
+    def _osd_create_partition_check(self, ctxt, data, key, role, disk):
+        partition_id = data.get(key)
+        partition = objects.DiskPartition.get_by_id(ctxt, partition_id)
+        if partition.status != s_fields.DiskStatus.AVAILABLE:
+            raise exception.InvalidInput(
+                _("The partition %s not available") % partition_id)
+        if partition.role != role:
+            raise exception.InvalidInput(
+                _("The partition %s not for data") % partition_id)
+        if partition.node_id != disk.node_id:
+            raise exception.InvalidInput(
+                _("The partition is not on the same machine as the "
+                  "disk") % partition_id)
+
+    def osd_create(self, ctxt, data):
+        logger.info("Osd create with %s.", data)
+
+        # data check
+        disk_id = data.get('disk_id')
+        disk = self._osd_create_disk_check(ctxt, data)
+        # db
+        self._osd_create_partition_check(
+            ctxt, data, 'db_partition_id', s_fields.DiskPartitionRole.DB, disk)
+        # wal
+        self._osd_create_partition_check(
+            ctxt, data, 'wal_partition_id',
+            s_fields.DiskPartitionRole.WAL, disk)
+        # cache
+        self._osd_create_partition_check(
+            ctxt, data, 'cache_partition_id',
+            s_fields.DiskPartitionRole.CACHE, disk)
+        # journal
+        self._osd_create_partition_check(
+            ctxt, data, 'journal_partition_id',
+            s_fields.DiskPartitionRole.JOURNAL, disk)
+        logger.debug("Parameter check pass.")
+
+        # get osd id
         osd_fsid = str(uuid.uuid4())
+        osd_id = self._osd_get_free_id(ctxt, osd_fsid)
+        logger.info("Alloc osd id %s with osd fsid %s from ceph.",
+                    osd_id, osd_fsid)
+
+        # db create
+        node_id = disk.node_id
         node = objects.Node.get_by_id(ctxt, node_id)
         osd = objects.Osd(
             ctxt, node_id=node_id,
             fsid=osd_fsid,
-            osd_id=self._osd_get_free_id(ctxt, osd_fsid),
+            osd_id=osd_id,
             type=data.get('type'),
             db_partition_id=data.get('db_partition_id'),
             wal_partition_id=data.get('wal_partition_id'),
@@ -104,7 +154,9 @@ class OsdHandler(AdminBaseHandler):
         self._set_osd_partation_role(osd)
         self._osd_config_set(ctxt, osd)
 
+        # apply async
         self.executor.submit(self._osd_create, ctxt, node, osd)
+        logger.debug("Osd create task apply.")
 
         return osd
 
