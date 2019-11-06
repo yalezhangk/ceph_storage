@@ -15,7 +15,6 @@ class VolumeGateway(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'iqn': fields.StringField(nullable=True),
         'node_id': fields.IntegerField(),
         'volume_access_path_id': fields.IntegerField(),
         'cluster_id': fields.StringField(nullable=True),
