@@ -6,14 +6,19 @@ from DSpace.DSM.base import AdminBaseHandler
 logger = logging.getLogger(__name__)
 
 
-class VolumeClientHandler(AdminBaseHandler):
+class VolumeClientGroupHandler(AdminBaseHandler):
     def volume_client_group_get_all(self, ctxt, marker=None, limit=None,
                                     sort_keys=None, sort_dirs=None,
-                                    filters=None, offset=None):
-        filters = filters or {}
+                                    filters=None, offset=None,
+                                    expected_attrs=None):
         return objects.VolumeClientGroupList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
+
+    def volume_client_group_get_count(self, ctxt, filters=None):
+        return objects.VolumeClientGroupList.get_count(
+            ctxt, filters=filters)
 
     def volume_client_group_create(self, ctxt, data):
         data.update({
