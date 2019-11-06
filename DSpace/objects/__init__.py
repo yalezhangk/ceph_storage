@@ -39,5 +39,16 @@ def register_all():
     __import__('DSpace.objects.volume_snapshot')
 
 
+class _Json(object):
+    def dumps(self, obj, *args, **kwargs):
+        return json.dumps(obj, cls=JsonEncoder, *args, **kwargs)
+
+    def loads(self, obj, *args, **kwargs):
+        return json.loads(obj, *args, **kwargs)
+
+
+Json = _Json()
+
+
 def json_encode(obj):
-    return json.dumps(obj, cls=JsonEncoder)
+    return Json.dumps(obj)

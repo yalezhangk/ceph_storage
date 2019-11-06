@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
+import copy
 import logging
 
 import six
@@ -9,6 +9,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.utils.security import check_encrypted_password
@@ -21,7 +22,7 @@ fake = {
     "data": {
         "license": True,
         "ws_info": {
-            "url": "http://192.168.103.140:2080",
+            "url": "http://%s:%s" % (CONF.my_ip, CONF.api_port),
             "path": "/ws/",
             "token": ""
         },
@@ -31,15 +32,7 @@ fake = {
                 "current_app": True
             }
         ],
-        "user": {
-            "mobile_phone": "11111111111",
-            "name": "超级管理员",
-            "email": "admin",
-            "id": 1,
-            "type": "CLOUD_ADMIN",
-            "domain_id": 1,
-            "uuid": "263c16f15a7342879029aba6ace89847"
-        },
+        "user": None,
         "provider": [],
         "region": [],
         "permissions": {
@@ -149,7 +142,9 @@ class UserLoginHandler(BaseAPIHandler):
         if not r:
             raise exception.PasswordError()
         self.session['user'] = user
-        self.write(objects.json_encode(fake))
+        permission = copy.deepcopy(fake)
+        permission['data']['user'] = self.current_user
+        self.write(objects.json_encode(permission))
 
 
 class UserLogoutHandler(BaseAPIHandler):
@@ -164,4 +159,6 @@ class PermissionHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
         self.get_context()
-        self.write(json.dumps(fake))
+        permission = copy.deepcopy(fake)
+        permission['data']['user'] = self.current_user
+        self.write(objects.json_encode(permission))
