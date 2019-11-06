@@ -33,13 +33,30 @@ class NodeListHandler(ClusterAPIHandler):
     def post(self):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        data = data.get('node')
-        client = self.get_admin_client(ctxt)
-        node = yield client.node_create(ctxt, data)
+        if 'node' in data:
+            data = data.get('node')
+            client = self.get_admin_client(ctxt)
+            node = yield client.node_create(ctxt, data)
 
-        self.write(objects.json_encode({
-            "node": node
-        }))
+            self.write(objects.json_encode({
+                "node": node
+            }))
+        elif 'nodes' in data:
+            datas = data.get('nodes')
+            client = self.get_admin_client(ctxt)
+            nodes = []
+            for data in datas:
+                try:
+                    node = yield client.node_create(ctxt, data)
+                    nodes.append(node)
+                except Exception:
+                    pass
+
+            self.write(objects.json_encode({
+                "nodes": nodes
+            }))
+        else:
+            raise ValueError("data not accept: %s", data)
 
 
 class NodeHandler(ClusterAPIHandler):
@@ -171,12 +188,15 @@ class NodeInfoHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
         ctxt = self.get_context()
-        data = json_decode(self.request.body)
+        nodes_data = json_decode(self.request.body)
         client = self.get_admin_client(ctxt)
-        info = yield client.node_get_infos(ctxt, data)
+        res = []
+        for data in nodes_data:
+            info = yield client.node_get_infos(ctxt, data)
+            res.append(info)
 
         self.write(objects.json_encode({
-            "data": info
+            "data": res
         }))
 
 
@@ -184,10 +204,13 @@ class NodeCheckHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
         ctxt = self.get_context()
-        data = json_decode(self.request.body)
+        nodes_data = json_decode(self.request.body)
         client = self.get_admin_client(ctxt)
-        info = yield client.node_check(ctxt, data)
+        res = []
+        for data in nodes_data:
+            check_result = yield client.node_check(ctxt, data)
+            res.append(check_result)
 
         self.write(objects.json_encode({
-            "data": info
+            "data": res
         }))

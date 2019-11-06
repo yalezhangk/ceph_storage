@@ -327,6 +327,7 @@ class NodeHandler(AdminBaseHandler):
 
         node_task = NodeTask(ctxt, node)
         node_infos = node_task.node_get_infos()
+        node_infos['admin_ip'] = data.get('ip_address')
         return node_infos
 
     def _validate_ip(self, ip_str):
