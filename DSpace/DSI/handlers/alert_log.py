@@ -62,7 +62,7 @@ class AlertLogListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
         alert_logs = yield client.alert_log_get_all(ctxt, **page_args)
-        alert_log_count = yield client.osd_get_count(ctxt)
+        alert_log_count = yield client.alert_log_get_count(ctxt)
         self.write(objects.json_encode({
             "alert_logs": alert_logs,
             "total": alert_log_count
