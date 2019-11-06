@@ -44,7 +44,12 @@ class BaseAPIHandler(RequestHandler):
     def get_context(self):
         if not self.current_user:
             raise exception.NotAuthorized()
-        return RequestContext(user_id=self.current_user.id, is_admin=False)
+        ctxt = RequestContext(user_id=self.current_user.id, is_admin=False)
+        client_ip = (self.request.headers.get("X-Real-IP") or
+                     self.request.headers.get("X-Forwarded-For") or
+                     self.request.remote_ip)
+        ctxt.client_ip = client_ip
+        return ctxt
 
     def get_paginated_args(self):
         return {
@@ -104,6 +109,13 @@ class BaseAPIHandler(RequestHandler):
         else:
             super(BaseAPIHandler, self)._handle_request_exception(e)
 
+    def get_admin_client(self, ctxt):
+        client = AdminClientManager(
+            ctxt,
+            async_support=True
+        ).get_client()
+        return client
+
 
 class ClusterAPIHandler(BaseAPIHandler):
 
@@ -115,16 +127,4 @@ class ClusterAPIHandler(BaseAPIHandler):
         if not cluster_id:
             raise exception.ClusterIDNotFound()
         ctxt.cluster_id = cluster_id
-        client_ip = (self.request.headers.get("X-Real-IP") or
-                     self.request.headers.get("X-Forwarded-For") or
-                     self.request.remote_ip)
-        ctxt.client_ip = client_ip
         return ctxt
-
-    def get_admin_client(self, ctxt):
-        client = AdminClientManager(
-            ctxt,
-            cluster_id=ctxt.cluster_id,
-            async_support=True
-        ).get_client()
-        return client
