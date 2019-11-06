@@ -23,9 +23,9 @@ from DSpace import exception as exc
 
 logger = logging.getLogger(__name__)
 
-default_save_file = "/etc/target/saveconfig.json"
+DEFAULT_SAVE_FILE = "/etc/target/saveconfig.json"
 
-size_suffixes = ['M', 'G', 'T']
+SIZE_SUFFIXES = ['M', 'G', 'T']
 
 
 def convert_2_bytes(disk_size):
@@ -38,7 +38,7 @@ def convert_2_bytes(disk_size):
 
     power = [2, 3, 4]
     unit = disk_size[-1].upper()
-    offset = size_suffixes.index(unit)
+    offset = SIZE_SUFFIXES.index(unit)
     # already validated, so no need for try/except clause
     value = int(disk_size[:-1])
 
@@ -64,36 +64,36 @@ def create_target(iqn):
     """
     Creates new iscsi target with given iqn, unless it already exists.
     """
-    logger.info("trying to create target %s" % iqn)
+    logger.info("trying to create target %s", iqn)
     if iqn in current_targets():
-        logger.debug('iscsi-target {} already exists'.format(iqn))
+        logger.error('iscsi-target %s already exists', iqn)
         raise exc.IscsiTargetExists(iqn=iqn)
     else:
         try:
             Target(FabricModule("iscsi"), wwn=iqn)
-            logger.debug("Creating iscsi-target {}".format(iqn))
+            logger.debug("Creating iscsi-target %s", iqn)
         except RTSLibError as e:
-            logger.error("Creating iscsi-target {} error: {}".format(iqn, e))
+            logger.error("Creating iscsi-target %s error: %s", iqn, e)
             raise exc.IscsiTargetError(action="create")
+    logger.info("create target %s success", iqn)
     save_config()
-    return None
 
 
 def delete_target(iqn):
     """
     Recursively deletes all iscsi Target objects.
     """
-    logger.info("trying to delete target %s" % iqn)
+    logger.info("trying to delete target %s", iqn)
     if not iqn:
         return None
     if iqn not in current_targets():
         # Ignore non-exist iscsi target
-        logger.debug('iscsi-target {} not found'.format(iqn))
+        logger.error('iscsi-target %s not found', iqn)
         raise exc.IscsiTargetNotFound(iqn=iqn)
     else:
         Target(FabricModule('iscsi'), wwn=iqn).delete()
+    logger.info('delete target %s success', iqn)
     save_config()
-    return None
 
 
 def current_portals(iqn):
@@ -116,14 +116,13 @@ def create_portal(iqn, ip="0.0.0.0", port=3260):
     Creates portal on TPG with given iqn to destination with given
     ip and port (default 3260).
     """
-    logger.info("trying to create a portal for {}".format(iqn))
+    logger.info("trying to create a portal for %s", iqn)
     try:
         _get_single_tpg(iqn).network_portal(ip, port, mode='any')
     except RTSLibError as e:
-        logger.error("create portal error: {}".format(e))
+        logger.error("create portal error: %s", e)
         raise exc.IscsiTargetError(action="create portal")
     save_config()
-    return None
 
 
 def enable_tpg(iqn, status=True):
@@ -136,11 +135,13 @@ def enable_tpg(iqn, status=True):
         False - Disable this tpg
     """
     try:
+        logger.info("trying to enable tpg for target %s", iqn)
         _get_single_tpg(iqn)._set_enable(status)
     except RTSLibError as e:
-        logger.error("enable tpg error: {}".format(e))
+        logger.error("enable tpg error: %s", e)
         raise exc.IscsiTargetError(action="enable tpg")
-    return None
+    logger.info("enable tpg for target %s success", iqn)
+    save_config()
 
 
 def current_acls(iqn):
@@ -160,21 +161,20 @@ def create_acl(iqn, iqn_initiator):
     """
     Creates new acl with given iqn, unless it already exists.
     """
-    logger.info("trying to create new acl for %s" % iqn)
-
+    logger.info("create acl %s for target %s", iqn_initiator, iqn)
     tpg = _get_single_tpg(iqn)
 
     if iqn_initiator in current_acls(iqn):
-        logger.debug('acl with iqn %s already exists' % iqn)
+        logger.error('acl with iqn %s already exists' % iqn)
         raise exc.IscsiAclExists(iqn=iqn)
     else:
         try:
             tpg.node_acl(iqn_initiator, mode='create')
         except RTSLibError as e:
-            logger.error("create acl error: {}".format(e))
+            logger.error("create acl error: %s", e)
             raise exc.IscsiTargetError(action="create acl")
+    logger.info("create acl %s success", iqn_initiator)
     save_config()
-    return None
 
 
 def get_acl(iqn, iqn_initiator):
@@ -190,15 +190,19 @@ def delete_acl(iqn, iqn_initiator):
     acl = get_acl(iqn, iqn_initiator)
 
     # delete mapped tpg lun, acl and it's mapped lun
+    logger.info("delete acl %s for target %s", iqn_initiator, iqn)
     if not acl:
-        logger.debug('acl {} not found'.format(iqn_initiator))
+        logger.error('acl %s not found', iqn_initiator)
         raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
     else:
         mapped_luns = acl.mapped_luns
         for ml in mapped_luns:
             tpg_lun_obj = LUN(tpg, ml.tpg_lun.lun)
             tpg_lun_obj.delete()
+            logger.debug('delete tpg lun lun%s for acl %s',
+                         ml.tpg_lun.lun, iqn_initiator)
         acl.delete()
+    logger.info("delete acl %s success", iqn_initiator)
     save_config()
 
 
@@ -208,13 +212,15 @@ def create_user_backstore(pool_name, disk_name, disk_size, osd_op_timeout=30,
     Given an user backend block, only support ceph rbd now,
     checks if it already exists in the backstore or creates it.
     """
+    logger.info("crete user backstore %s/%s:%s, wwn: %s",
+                pool_name, disk_name, disk_size, disk_wwn)
     bs = list(filter(lambda x: x['name'] == disk_name,
                      current_user_backstores()))
     if bs:
-        logger.debug('backstore {} already exists'.format(disk_name))
+        logger.debug('backstore %s already exists', disk_name)
         raise exc.IscsiBackstoreExists(disk_name=disk_name)
-    logger.info("trying to create user backstore {}/{}".format(
-        pool_name, disk_name))
+    logger.info("trying to create user backstore %s/%s",
+                pool_name, disk_name)
     cfgstring = "rbd/{}/{};osd_op_timeout={}".format(
         pool_name, disk_name, osd_op_timeout)
     size = convert_2_bytes(disk_size)
@@ -222,19 +228,21 @@ def create_user_backstore(pool_name, disk_name, disk_size, osd_op_timeout=30,
         so = UserBackedStorageObject(
             name=disk_name, config=cfgstring, size=size, wwn=disk_wwn,
             hw_max_sectors=1024, control=control_string)
+        save_config()
         return so
     except RTSLibError as e:
-        logger.error("create user backstore error: {}".format(e))
+        logger.error("create user backstore error: %s", e)
         raise exc.IscsiTargetError(action="create backstore")
 
 
 def delete_user_backstore(disk_name):
     so = get_user_backstore(disk_name)
     if not so:
-        logger.debug('user backstore {} not found'.format(disk_name))
+        logger.debug('user backstore %s not found', disk_name)
         raise exc.IscsiBackstoreNotFound(disk_name=disk_name)
     else:
         so.delete()
+    save_config()
 
 
 def get_user_backstore(disk_name):
@@ -273,7 +281,7 @@ def current_mapped_luns(iqn, iqn_initiator):
     """
     acl = get_acl(iqn, iqn_initiator)
     if not acl:
-        logger.debug('acl {} not found'.format(iqn_initiator))
+        logger.debug('acl %s not found', iqn_initiator)
         raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
     mapped_luns = []
     for mapped_lun in acl.mapped_luns:
@@ -315,15 +323,38 @@ def create_mapped_lun(iqn, iqn_initiator, lun):
     """
     Map a lun to given acl.
     """
-    logger.info("trying to map LUN {} for {}".format(lun, iqn))
+    logger.info("trying to map LUN %s for %s", lun, iqn)
     tpg = _get_single_tpg(iqn)
     try:
         MappedLUN(tpg.node_acl(iqn_initiator, mode='lookup'),
                   _next_free_mapped_lun_index(iqn, iqn_initiator), lun)
     except RTSLibError as e:
-        logger.error("create mapped lun {} error: {}".format(lun, e))
+        logger.error("create mapped lun %s error: %s", lun, e)
         raise exc.IscsiTargetError(action="create mapped lun")
+    save_config()
+
+
+def set_tpg_attributes(iqn, key, value):
+    if _get_single_tpg(iqn).get_attribute(key) != value:
+        _get_single_tpg(iqn).set_attribute(key, value)
+        logger.debug('tpg key %s has been set to value %s', key, value)
+    save_config()
+
     return None
+
+
+def chap_disable(iqn):
+    set_tpg_attributes(iqn, "authentication", 0)
+    save_config()
+
+
+def chap_enable(iqn, username, password):
+    set_tpg_attributes(iqn, "authentication", 1)
+    tpg = _get_single_tpg(iqn)
+    for acl in tpg.node_acls:
+        acl.chap_userid = username
+        acl.chap_password = password
+    save_config()
 
 
 def _get_lun_id(iqn, disk_name):
@@ -357,17 +388,17 @@ def _get_single_tpg(iqn):
     return tpg
 
 
-def save_config(savefile=default_save_file):
+def save_config(savefile=DEFAULT_SAVE_FILE):
     '''
     Saves the current configuration to a file so that it can be restored
     on next boot.
     '''
     if not savefile:
-        savefile = default_save_file
+        savefile = DEFAULT_SAVE_FILE
     savefile = os.path.expanduser(savefile)
     _save_backups(savefile)
     RTSRoot().save_to_file(savefile)
-    logger.info("Configuration saved to {}".format(savefile))
+    logger.info("Configuration saved to %s", savefile)
 
 
 def _save_backups(savefile):
@@ -375,7 +406,7 @@ def _save_backups(savefile):
     Take backup of config-file if needed.
     '''
     # Only save backups if saving to default location
-    if savefile != default_save_file:
+    if savefile != DEFAULT_SAVE_FILE:
         return
 
     backup_dir = os.path.dirname(savefile) + "/backup/"
@@ -388,8 +419,8 @@ def _save_backups(savefile):
         try:
             os.makedirs(backup_dir)
         except OSError as exe:
-            logger.error("Cannot create backup directory {} {}".format(
-                backup_dir, exe.strerror))
+            logger.error("Cannot create backup directory %s: %s",
+                         backup_dir, exe.strerror)
             raise exc.IscsiTargetError(action="saveconfig")
 
     # Only save backups if savefile exits
@@ -418,11 +449,11 @@ def _save_backups(savefile):
                 with ignored(IOError):
                     os.unlink(f)
 
-            logger.info("Last {} configs saved in {}.".format(
-                max_backup_files, backup_dir))
+            logger.info("Last %s configs saved in %s.",
+                        max_backup_files, backup_dir)
         else:
-            logger.error("Could not create backup file {}: {}".format(
-                backupfile, backup_error))
+            logger.error("Could not create backup file %s: %s",
+                         backupfile, backup_error)
             raise exc.IscsiTargetError(action="create backup file")
 
 #############################################################################
@@ -440,6 +471,7 @@ def test_create():
         enable_tpg(iqn, True)
     create_acl(iqn, iqn_initiator1)
     create_acl(iqn, iqn_initiator2)
+    chap_enable(iqn, "username", "password")
     so = get_user_backstore(disk_name)
     lun = create_lun(iqn, so)
     create_mapped_lun(iqn, iqn_initiator1, lun)
