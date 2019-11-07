@@ -101,3 +101,8 @@ class VolumeSnapshotList(base.ObjectListBase, base.StorObject):
         return base.obj_make_list(context, cls(context),
                                   objects.VolumeSnapshot, volume_snapshot,
                                   expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.volume_snapshot_get_count(context, filters)
+        return count

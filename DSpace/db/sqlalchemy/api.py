@@ -424,6 +424,8 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
                     function for more information
     :returns: list of matching volumes
     """
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -438,6 +440,18 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
         for volume in volumes:
             _volume_load_attr(context, volume, expected_attrs, session)
         return volumes
+
+
+@require_context
+def volume_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _volume_get_query(context, session)
+        query = process_filters(models.Volume)(query, filters)
+        return query.count()
 
 
 def _generate_paginate_query(context, session, model, marker, limit, sort_keys,
@@ -1228,6 +1242,8 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
     session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -1243,6 +1259,18 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
         for pool in pools:
             _pool_load_attr(context, pool, expected_attrs)
         return pools
+
+
+@require_context
+def pool_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _pool_get_query(context, session)
+        query = process_filters(models.Pool)(query, filters)
+        return query.count()
 
 
 @require_context
@@ -2925,6 +2953,8 @@ def volume_snapshot_update(context, volume_snapshot_id, values):
 def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
                             sort_dirs=None, filters=None, offset=None,
                             expected_attrs=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2938,6 +2968,18 @@ def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
         for snapshot in volume_snapshots:
             _snap_load_attr(context, snapshot, expected_attrs, session)
         return volume_snapshots
+
+
+@require_context
+def volume_snapshot_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _volume_snapshot_get_query(context, session)
+        query = process_filters(models.VolumeSnapshot)(query, filters)
+        return query.count()
 
 
 def volume_snapshot_destroy(context, volume_snapshot_id):
@@ -3006,6 +3048,8 @@ def service_get(context, service_id, expected_attrs=None):
 @require_context
 def service_get_all(context, marker=None, limit=None, sort_keys=None,
                     sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -3017,6 +3061,18 @@ def service_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         return query.all()
+
+
+@require_context
+def service_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _service_get_query(context, session)
+        query = process_filters(models.Service)(query, filters)
+        return query.count()
 
 
 @require_context

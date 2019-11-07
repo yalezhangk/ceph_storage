@@ -21,11 +21,10 @@ class PoolListHandler(ClusterAPIHandler):
         expected_attrs = ['crush_rule', 'osds', 'volumes']
         pools = yield client.pool_get_all(ctxt, expected_attrs=expected_attrs,
                                           **page_args)
-        pools_all = yield client.pool_get_all(ctxt,
-                                              expected_attrs=expected_attrs)
+        pool_count = yield client.pool_get_count(ctxt)
         self.write(objects.json_encode({
             "pools": pools,
-            "total": len(pools_all)
+            "total": pool_count
         }))
 
     @gen.coroutine

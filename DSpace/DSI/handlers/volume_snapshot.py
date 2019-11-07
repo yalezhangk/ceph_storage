@@ -22,10 +22,10 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
         expected_attrs = ['volume', 'pool', 'child_volumes']
         volume_snapshots = yield client.volume_snapshot_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
-        volume_snapshots_all = yield client.volume_snapshot_get_all(ctxt)
+        volume_snapshot_count = yield client.volume_snapshot_get_count(ctxt)
         self.write(objects.json_encode({
             "volume_snapshots": volume_snapshots,
-            "total": len(volume_snapshots_all)
+            "total": volume_snapshot_count
         }))
 
     @gen.coroutine
