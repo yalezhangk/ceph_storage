@@ -27,7 +27,6 @@ class LicenseVerify(object):
     def get_admin_client(self, cluster_id):
         client = AdminClientManager(
             self.ctxt,
-            cluster_id=cluster_id,
             async_support=False
         ).get_client()
         return client
