@@ -1482,6 +1482,18 @@ def volume_access_path_get_all(context, marker=None,
         return vaps
 
 
+@require_context
+def volume_access_path_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _volume_access_path_get_query(context, session)
+        query = process_filters(models.VolumeAccessPath)(query, filters)
+        return query.count()
+
+
 @handle_db_data_error
 @require_context
 def volume_access_path_update(context, access_path_id, values):

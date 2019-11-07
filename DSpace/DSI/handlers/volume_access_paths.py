@@ -36,7 +36,7 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         expected_attrs = ['volume_gateways', 'volume_client_groups']
         volume_access_paths = yield client.volume_access_path_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
-        vap_count = yield client.volume_access_path_get_all(ctxt)
+        vap_count = yield client.volume_access_path_get_count(ctxt)
         self.write(objects.json_encode({
             "volume_access_paths": volume_access_paths,
             "total": vap_count
