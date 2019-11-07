@@ -84,6 +84,15 @@ class AdminClient(BaseClient):
                              ip_address=ip_address, password=password)
         return response
 
+    def cluster_metrics_get(self, ctxt):
+        response = self.call(ctxt, "cluster_metrics_get")
+        return response
+
+    def cluster_history_metrics_get(self, ctxt, start, end):
+        response = self.call(
+            ctxt, "cluster_history_metrics_get", start=start, end=end)
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
@@ -109,6 +118,8 @@ class AdminClient(BaseClient):
                              alert_rule_id=alert_rule_id,
                              data=data)
         return response
+
+    ###################
 
     def node_get_infos(self, ctxt, data):
         response = self.call(ctxt, "node_get_infos", data=data)
@@ -156,6 +167,29 @@ class AdminClient(BaseClient):
     def node_get_count(self, ctxt, filters=None):
         response = self.call(ctxt, "node_get_count", filters=filters)
         return response
+
+    def node_metrics_monitor_get(self, ctxt, node_id):
+        response = self.call(ctxt, "node_metrics_monitor_get", node_id=node_id)
+        return response
+
+    def node_metrics_histroy_monitor_get(self, ctxt, node_id, start, end):
+        response = self.call(ctxt, "node_metrics_histroy_monitor_get",
+                             node_id=node_id, start=start, end=end)
+        return response
+
+    def node_metrics_network_get(self, ctxt, node_id, net_name):
+        response = self.call(ctxt, "node_metrics_network_get", node_id=node_id,
+                             net_name=net_name)
+        return response
+
+    def node_metrics_histroy_network_get(
+            self, ctxt, node_id, net_name, start, end):
+        response = self.call(
+            ctxt, "node_metrics_histroy_network_get", node_id=node_id,
+            net_name=net_name, start=start, end=end)
+        return response
+
+    ###################
 
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None, **kwargs):
@@ -218,6 +252,16 @@ class AdminClient(BaseClient):
     def osd_get_count(self, ctxt, filters=None):
         response = self.call(
             ctxt, "osd_get_count", filters=filters)
+        return response
+
+    def osd_metrics_get(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_metrics_get", osd_id=osd_id)
+        return response
+
+    def osd_metrics_history_get(self, ctxt, osd_id, start, end):
+        response = self.call(
+            ctxt, "osd_metrics_history_get", osd_id=osd_id,
+            start=start, end=end)
         return response
 
     ###################
@@ -333,6 +377,15 @@ class AdminClient(BaseClient):
     def disk_partition_get_count(self, ctxt, filters=None):
         response = self.call(
             ctxt, "disk_partition_get_count", filters=filters)
+        return response
+
+    def disk_perf_get(self, ctxt, disk_id):
+        response = self.call(ctxt, "disk_perf_get", disk_id=disk_id)
+        return response
+
+    def disk_perf_history_get(self, ctxt, disk_id, start, end):
+        response = self.call(ctxt, "disk_perf_history_get", disk_id=disk_id,
+                             start=start, end=end)
         return response
 
     ###################
@@ -467,6 +520,16 @@ class AdminClient(BaseClient):
     def pool_update_policy(self, ctxt, pool_id, data):
         response = self.call(ctxt, "pool_update_policy",
                              id=pool_id, data=data)
+        return response
+
+    def pool_metrics_get(self, ctxt, pool_id):
+        response = self.call(ctxt, "pool_metrics_get", pool_id=pool_id)
+        return response
+
+    def pool_metrics_history_get(self, ctxt, pool_id, start, end):
+        response = self.call(
+            ctxt, "pool_metrics_history_get", pool_id=pool_id,
+            start=start, end=end)
         return response
 
     ##################
@@ -746,58 +809,6 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "action_log_update",
                              action_log_id=action_log_id,
                              data=data)
-        return response
-
-    ###################
-
-    def cluster_metrics_get(self, ctxt):
-        response = self.call(ctxt, "cluster_metrics_get")
-        return response
-
-    def cluster_history_metrics_get(self, ctxt, start, end):
-        response = self.call(
-            ctxt, "cluster_history_metrics_get", start=start, end=end)
-        return response
-
-    def node_metrics_monitor_get(self, ctxt, node_id):
-        response = self.call(ctxt, "node_metrics_monitor_get", node_id=node_id)
-        return response
-
-    def node_metrics_histroy_monitor_get(self, ctxt, node_id, start, end):
-        response = self.call(ctxt, "node_metrics_histroy_monitor_get",
-                             node_id=node_id, start=start, end=end)
-        return response
-
-    def node_metrics_network_get(self, ctxt, node_id, net_name):
-        response = self.call(ctxt, "node_metrics_network_get", node_id=node_id,
-                             net_name=net_name)
-        return response
-
-    def node_metrics_histroy_network_get(
-            self, ctxt, node_id, net_name, start, end):
-        response = self.call(
-            ctxt, "node_metrics_histroy_network_get", node_id=node_id,
-            net_name=net_name, start=start, end=end)
-        return response
-
-    def osd_metrics_get(self, ctxt, osd_id):
-        response = self.call(ctxt, "osd_metrics_get", osd_id=osd_id)
-        return response
-
-    def osd_metrics_history_get(self, ctxt, osd_id, start, end):
-        response = self.call(
-            ctxt, "osd_metrics_history_get", osd_id=osd_id,
-            start=start, end=end)
-        return response
-
-    def pool_metrics_get(self, ctxt, pool_id):
-        response = self.call(ctxt, "pool_metrics_get", pool_id=pool_id)
-        return response
-
-    def pool_metrics_history_get(self, ctxt, pool_id, start, end):
-        response = self.call(
-            ctxt, "pool_metrics_history_get", pool_id=pool_id,
-            start=start, end=end)
         return response
 
 

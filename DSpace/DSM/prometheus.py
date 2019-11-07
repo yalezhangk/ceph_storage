@@ -96,3 +96,17 @@ class PrometheusHandler(AdminBaseHandler):
         prometheus.pool_get_histroy_perf(pool, float(start), float(end),
                                          metrics)
         return metrics
+
+    def disk_perf_get(self, ctxt, disk_id):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        prometheus = PrometheusTool(ctxt)
+        data = prometheus.disk_get_perf(disk)
+        return data
+
+    def disk_perf_history_get(self, ctxt, disk_id, start, end):
+        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        prometheus = PrometheusTool(ctxt)
+        data = prometheus.disk_get_histroy_perf(disk,
+                                                float(start),
+                                                float(end))
+        return data
