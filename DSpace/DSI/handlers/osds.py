@@ -37,8 +37,13 @@ class OsdListHandler(ClusterAPIHandler):
                     f: value
                 })
 
+        tab = self.get_query_argument('tab', default="default")
+        if tab not in ["default", "io"]:
+            raise exception.InvalidInput(_("this tab not support"))
+
         osds = yield client.osd_get_all(
-            ctxt, filters=filters, expected_attrs=expected_attrs, **page_args)
+            ctxt, tab=tab, filters=filters, expected_attrs=expected_attrs,
+            **page_args)
 
         osd_count = yield client.osd_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({

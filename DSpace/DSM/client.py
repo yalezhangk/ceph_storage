@@ -241,10 +241,11 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "osd_delete", osd_id=osd_id)
         return response
 
-    def osd_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                    sort_dirs=None, filters=None, offset=None, **kwargs):
+    def osd_get_all(self, ctxt, tab=None, marker=None, limit=None,
+                    sort_keys=None, sort_dirs=None, filters=None, offset=None,
+                    **kwargs):
         response = self.call(
-            ctxt, "osd_get_all", marker=marker, limit=limit,
+            ctxt, "osd_get_all", tab=tab, marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
             offset=offset, **kwargs)
         return response
