@@ -13,14 +13,21 @@ logger = logging.getLogger(__name__)
 class VolumeAccessPathHandler(AdminBaseHandler):
     def volume_access_path_get_all(self, ctxt, marker=None, limit=None,
                                    sort_keys=None, sort_dirs=None,
-                                   filters=None, offset=None):
-        filters = filters or {}
+                                   filters=None, offset=None,
+                                   expected_attrs=None):
         return objects.VolumeAccessPathList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
 
-    def volume_access_path_get(self, ctxt, volume_access_path_id):
-        return objects.VolumeAccessPath.get_by_id(ctxt, volume_access_path_id)
+    def volume_access_path_get_count(self, ctxt, filters=None):
+        return objects.VolumeAccessPathList.get_count(
+            ctxt, filters=filters)
+
+    def volume_access_path_get(self, ctxt, volume_access_path_id,
+                               expected_attrs=None):
+        return objects.VolumeAccessPath.get_by_id(
+            ctxt, volume_access_path_id, expected_attrs=expected_attrs)
 
     def _gen_iqn(self):
         IQN_PREFIX = "iqn.%(date)s.dspace.net:%(uuid)s"

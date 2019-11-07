@@ -473,16 +473,24 @@ class AdminClient(BaseClient):
 
     def volume_access_path_get_all(self, ctxt, marker=None, limit=None,
                                    sort_keys=None, sort_dirs=None,
-                                   filters=None, offset=None):
+                                   filters=None, offset=None,
+                                   expected_attrs=None):
         response = self.call(
             ctxt, "volume_access_path_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return response
 
-    def volume_access_path_get(self, ctxt, volume_access_path_id):
+    def volume_access_path_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "volume_access_path_get_count", filters=filters)
+        return response
+
+    def volume_access_path_get(
+            self, ctxt, volume_access_path_id, expected_attrs=None):
         response = self.call(ctxt, "volume_access_path_get",
-                             volume_access_path_id=volume_access_path_id)
+                             volume_access_path_id=volume_access_path_id,
+                             expected_attrs=expected_attrs)
         return response
 
     def volume_access_path_create(self, ctxt, data):

@@ -21,12 +21,14 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
         'chap_password': fields.StringField(nullable=True),
         'volume_access_path_id': fields.IntegerField(),
         'cluster_id': fields.StringField(nullable=True),
-        'access_path': fields.ObjectField("VolumeAccessPath", nullable=True),
+        'volume_access_path': fields.ObjectField(
+            "VolumeAccessPath", nullable=True),
         'volumes': fields.ListOfObjectsField('Volume', nullable=True),
-        'clients': fields.ListOfObjectsField('VolumeClient', nullable=True),
+        'volume_clients': fields.ListOfObjectsField(
+            'VolumeClient', nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('access_path', 'volumes', 'clients')
+    OPTIONAL_FIELDS = ('volume_access_path', 'volumes', 'volume_clients')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -53,16 +55,16 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         expected_attrs = expected_attrs or []
-        if 'access_path' in expected_attrs:
-            access_path = db_obj.get('access_path', None)
-            obj.access_path = objects.VolumeAccessPath._from_db_object(
-                context, objects.VolumeAccessPath(context), access_path
+        if 'volume_access_path' in expected_attrs:
+            vap = db_obj.get('volume_access_path', None)
+            obj.volume_access_path = objects.VolumeAccessPath._from_db_object(
+                context, objects.VolumeAccessPath(context), vap
             )
-        if 'clients' in expected_attrs:
-            clients = db_obj.get('clients', [])
-            obj.clients = [objects.VolumeClient._from_db_object(
-                context, objects.VolumeClient(context), client
-            ) for client in clients]
+        if 'volume_clients' in expected_attrs:
+            volume_clients = db_obj.get('volume_clients', [])
+            obj.volume_clients = [objects.VolumeClient._from_db_object(
+                context, objects.VolumeClient(context), volume_client
+            ) for volume_client in volume_clients]
         if 'volumes' in expected_attrs:
             volumes = db_obj.get('volumes', [])
             obj.volumes = [objects.Volume._from_db_object(

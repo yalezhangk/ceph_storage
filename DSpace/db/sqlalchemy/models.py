@@ -304,10 +304,10 @@ class VolumeAccessPath(BASE, StorBase):
     chap_username = Column(String(32))
     chap_password = Column(String(32))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    volume_gateways = relationship(
+    _volume_gateways = relationship(
         'VolumeGateway',
         secondary=volume_access_path_gateways,
-        back_populates='volume_access_paths')
+        back_populates='_volume_access_paths')
 
 
 class VolumeGateway(BASE, StorBase):
@@ -316,10 +316,10 @@ class VolumeGateway(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    volume_access_paths = relationship(
+    _volume_access_paths = relationship(
         'VolumeAccessPath',
         secondary=volume_access_path_gateways,
-        back_populates='volume_gateways')
+        back_populates='_volume_gateways')
 
 
 class VolumeClient(BASE, StorBase):
