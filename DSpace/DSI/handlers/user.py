@@ -147,7 +147,7 @@ class UserLoginHandler(BaseAPIHandler):
             raise exception.PasswordError()
         self.session['user'] = user
         permission = copy.deepcopy(fake)
-        permission['data']['user'] = self.current_user
+        permission['data']['user'] = user
         self.write(objects.json_encode(permission))
 
 
