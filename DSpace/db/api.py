@@ -324,20 +324,26 @@ def volume_access_path_destroy(context, access_path_id):
     return IMPL.volume_access_path_destroy(context, access_path_id)
 
 
-def volume_access_path_get(context, access_path_id):
+def volume_access_path_get(context, access_path_id, expected_attrs=None):
     """Get a volume or raise if it does not exist."""
-    return IMPL.volume_access_path_get(context, access_path_id)
+    return IMPL.volume_access_path_get(
+        context, access_path_id, expected_attrs=expected_attrs)
 
 
 def volume_access_path_get_all(context, marker=None, limit=None,
                                sort_keys=None, sort_dirs=None,
-                               filters=None, offset=None):
+                               filters=None, offset=None,
+                               expected_attrs=None):
     """Get all volumes."""
     return IMPL.volume_access_path_get_all(
         context, marker=marker, limit=limit,
         sort_keys=sort_keys,
         sort_dirs=sort_dirs, filters=filters,
-        offset=offset)
+        offset=offset, expected_attrs=expected_attrs)
+
+
+def volume_access_path_get_count(context, filters):
+    return IMPL.volume_access_path_get_count(context, filters=filters)
 
 
 def volume_access_path_update(context, access_path_id, values):

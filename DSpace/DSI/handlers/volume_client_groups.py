@@ -44,7 +44,7 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        expected_attrs = ['access_path', 'volumes', 'clients']
+        expected_attrs = ['volume_access_path', 'volumes', 'volume_clients']
         volume_client_groups = yield client.volume_client_group_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
         volume_client_group_count = \
@@ -82,7 +82,7 @@ class VolumeClientGroupHandler(ClusterAPIHandler):
     def get(self, group_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        expected_attrs = ['access_path', 'volumes', 'clients']
+        expected_attrs = ['volume_access_path', 'volumes', 'volume_clients']
         volume_client_group = yield client.volume_client_group_get(
             ctxt, group_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode(

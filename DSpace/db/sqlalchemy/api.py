@@ -1416,15 +1416,31 @@ def _volume_access_path_get(context, access_path_id, session=None,
     return result
 
 
+def _volume_access_path_load_attr(ctxt, vap, session, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'volume_gateways' in expected_attrs:
+        vap.volume_gateways = vap._volume_gateways
+    if 'volume_client_groups' in expected_attrs:
+        cgs = _volume_client_group_get_query(
+            ctxt, session).filter_by(volume_access_path_id=vap.id)
+        vap.volume_client_groups = [cg for cg in cgs]
+
+
 @require_context
 def volume_access_path_get(context, access_path_id, expected_attrs=None):
-    return _volume_access_path_get(context, access_path_id)
+    session = get_session()
+    with session.begin():
+        vap = _volume_access_path_get(context, access_path_id, session)
+        _volume_access_path_load_attr(
+            context, vap, session, expected_attrs=expected_attrs)
+        return vap
 
 
 @require_context
 def volume_access_path_get_all(context, marker=None,
                                limit=None, sort_keys=None,
-                               sort_dirs=None, filters=None, offset=None):
+                               sort_dirs=None, filters=None, offset=None,
+                               expected_attrs=None):
     """Retrieves all volumes.
 
     If no sort parameters are specified then the returned volumes are sorted
@@ -1445,6 +1461,8 @@ def volume_access_path_get_all(context, marker=None,
                     function for more information
     :returns: list of matching volumes
     """
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1455,7 +1473,13 @@ def volume_access_path_get_all(context, marker=None,
         # No volumes would match, return empty list
         if query is None:
             return []
-        return query.all()
+        vaps = query.all()
+        if not expected_attrs:
+            return vaps
+        for vap in vaps:
+            _volume_access_path_load_attr(context, vap, session,
+                                          expected_attrs=expected_attrs)
+        return vaps
 
 
 @handle_db_data_error
@@ -1838,6 +1862,21 @@ def _volume_client_group_get(context, client_group_id, session=None,
     return result
 
 
+def _volume_client_group_load_attr(ctxt, vcg, session, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'volume_access_path' in expected_attrs:
+        vap_id = vcg.volume_access_path_id
+        vcg.volume_access_path = _volume_access_path_get(ctxt, vap_id, session)
+    if 'volume_clients' in expected_attrs:
+        volume_clients = _volume_client_get_query(ctxt, session).filter_by(
+            volume_client_group_id=vcg.id)
+        vcg.volume_clients = [client for client in volume_clients]
+    if 'volumes' in expected_attrs:
+        volumes = _volume_get_query(ctxt, session).filter_by(
+            volume_client_group_id=vcg.id)
+        vcg.volumes = [volume for volume in volumes]
+
+
 @require_context
 def volume_client_group_get(context, client_group_id, expected_attrs=None):
     session = get_session()
@@ -1859,21 +1898,6 @@ def volume_client_group_get_count(context, filters=None):
         query = _volume_client_group_get_query(context, session)
         query = process_filters(models.VolumeClientGroup)(query, filters)
         return query.count()
-
-
-def _volume_client_group_load_attr(ctxt, vcg, expected_attrs=None):
-    expected_attrs = expected_attrs or []
-    if 'access_path' in expected_attrs:
-        vcg.access_path = volume_access_path_get(
-            ctxt, vcg.volume_access_path_id)
-    if 'clients' in expected_attrs:
-        filters = {"volume_client_group_id": vcg.id}
-        clients = volume_client_get_all(ctxt, filters=filters)
-        vcg.clients = [client for client in clients]
-    if 'volumes' in expected_attrs:
-        filters = {"volume_client_group_id": vcg.id}
-        volumes = volume_get_all(ctxt, filters=filters)
-        vcg.volumes = [volume for volume in volumes]
 
 
 @require_context
@@ -1917,7 +1941,8 @@ def volume_client_group_get_all(context, marker=None,
         if not expected_attrs:
             return vcgs
         for vcg in vcgs:
-            _volume_client_group_load_attr(context, vcg, expected_attrs)
+            _volume_client_group_load_attr(
+                context, vcg, session, expected_attrs)
         return vcgs
 
 
