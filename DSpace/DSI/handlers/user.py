@@ -87,6 +87,9 @@ fake = {
                 "server": {
                     "collect": True
                 },
+                "cluster-plan": {
+                    "collect": True
+                },
                 "pools": {
                     "collect": True
                 }
