@@ -23,6 +23,8 @@ from DSpace.DSI.handlers.disk_partitions import DiskPartitionListHandler
 from DSpace.DSI.handlers.disks import DiskActionHandler
 from DSpace.DSI.handlers.disks import DiskHandler
 from DSpace.DSI.handlers.disks import DiskListHandler
+from DSpace.DSI.handlers.disks import DiskPerfHandler
+from DSpace.DSI.handlers.disks import DiskPerfHistoryHandler
 from DSpace.DSI.handlers.disks import DiskSmartHandler
 from DSpace.DSI.handlers.email_group import EmailGroupHandler
 from DSpace.DSI.handlers.email_group import EmailGroupListHandler
@@ -104,6 +106,8 @@ def get_routers():
         (r"/disks/", DiskListHandler),
         (r"/disks/([0-9]*)/", DiskHandler),
         (r"/disks/([0-9]*)/action/", DiskActionHandler),
+        (r"/disks/([0-9]*)/perf/", DiskPerfHandler),
+        (r"/disks/([0-9]*)/history_perf/", DiskPerfHistoryHandler),
         (r"/disks/([0-9]*)/smart/", DiskSmartHandler),
         (r"/disk_partitions/", DiskPartitionListHandler),
         (r"/email_groups/", EmailGroupListHandler),

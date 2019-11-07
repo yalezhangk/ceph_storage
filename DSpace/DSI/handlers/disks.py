@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 
 from tornado import gen
@@ -125,4 +126,29 @@ class DiskSmartHandler(ClusterAPIHandler):
         smart = yield client.disk_smart_get(ctxt, disk_id)
         self.write(objects.json_encode({
             "disk_smart": smart
+        }))
+
+
+class DiskPerfHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, disk_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.disk_perf_get(ctxt, disk_id)
+        self.write(json.dumps({
+            "disk_perf": data
+        }))
+
+
+class DiskPerfHistoryHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, disk_id):
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        client = self.get_admin_client(ctxt)
+        data = yield client.disk_perf_history_get(
+            ctxt, disk_id=disk_id, start=his_args['start'],
+            end=his_args['end'])
+        self.write(json.dumps({
+            "disk_history_perf": data
         }))
