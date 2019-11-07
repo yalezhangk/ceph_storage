@@ -442,7 +442,7 @@ class PrometheusTool(object):
                         'device': osd.cache_partition})
                 osd.metrics.update({"cache_{}".format(m): data})
 
-    def osd_disk_histroy_perf(self, osd, start, end):
+    def osd_disk_histroy_metircs(self, osd, start, end, metrics):
         disk_metrics = ['write_iops_rate', 'read_iops_rate',
                         'write_bytes_rate', 'read_bytes_rate',
                         'write_lat_rate', 'read_lat_rate',
@@ -455,7 +455,7 @@ class PrometheusTool(object):
                 metric_method,
                 filter={'hostname': node.hostname, 'device': disk.name},
                 graph=True, start=start, end=end)
-            osd.metrics.update({m: data})
+            metrics.update({m: data})
             if osd.cache_partition:
                 data = self.get_node_exporter_metric(
                     metric_method,
@@ -465,7 +465,7 @@ class PrometheusTool(object):
                     graph=True,
                     start=start,
                     end=end)
-                osd.metrics.update({"cache_{}".format(m): data})
+                metrics.update({"cache_{}".format(m): data})
 
     def osd_get_pg_state(self, osd):
         prometheus = PrometheusClient(url=self.prometheus_url)

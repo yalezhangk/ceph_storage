@@ -265,6 +265,16 @@ class AdminClient(BaseClient):
             start=start, end=end)
         return response
 
+    def osd_disk_metrics_get(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_disk_metrics_get", osd_id=osd_id)
+        return response
+
+    def osd_history_disk_metrics_get(self, ctxt, osd_id, start, end):
+        response = self.call(
+            ctxt, "osd_history_disk_metrics_get", osd_id=osd_id,
+            start=start, end=end)
+        return response
+
     ###################
 
     def datacenter_create(self, ctxt):
