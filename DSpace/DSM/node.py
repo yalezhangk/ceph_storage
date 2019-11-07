@@ -9,6 +9,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.node import NodeMixin
 from DSpace.taskflows.node import NodeTask
+from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config as ClusterConfg
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,12 @@ class NodeHandler(AdminBaseHandler):
         self.executor.submit(self._node_delete, ctxt, node)
         return node
 
+    def _node_get_metrics_overall(self, ctxt, nodes):
+        # TODO get all data at once
+        prometheus = PrometheusTool(ctxt)
+        for node in nodes:
+            prometheus.node_get_metrics_overall(node)
+
     def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None,
                      expected_attrs=None):
@@ -77,6 +84,7 @@ class NodeHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+        self._node_get_metrics_overall(ctxt, nodes)
         return nodes
 
     def node_get_count(self, ctxt, filters=None):

@@ -1,10 +1,13 @@
 import json
+import logging
 
 from prometheus_http_client import NodeExporter
 from prometheus_http_client import Prometheus as PrometheusClient
 
 from DSpace import exception
 from DSpace import objects
+
+logger = logging.getLogger(__name__)
 
 cpu_attrs = ['cpu_rate', 'intr_rate', 'context_switches_rate',
              'vmstat_pgfault_rate', 'load5']
@@ -63,18 +66,31 @@ class PrometheusTool(object):
                                                         endpoint['port'])
 
     def _get_sys_disk(self, node_id):
-        disk = objects.DiskList.get_all(
+        disks = objects.DiskList.get_all(
             self.ctxt, filters={"node_id": node_id, "role": "system",
-                                "cluster_id": self.ctxt.cluster_id})[0]
-        return disk.name
+                                "cluster_id": self.ctxt.cluster_id})
+        if len(disks) == 0:
+            logger.error("prometheus: cannot find sys disk: %s", node_id)
+            return None
+        disk_name = disks[0].name
+        logger.debug("prometheus: get sys disk name for node %s: %s",
+                     node_id, disk_name)
+        return disk_name
 
     def _get_net_name(self, node_id, ipaddr):
         network = objects.NetworkList.get_all(self.ctxt, filters={
             'node_id': node_id,
             'ip_address': str(ipaddr),
             'cluster_id': self.ctxt.cluster_id,
-        })[0]
-        return network.name
+        })
+        if len(network) == 0:
+            logger.error("prometheus: cannot find network: node %s ip %s",
+                         node_id, ipaddr)
+            return None
+        net_name = network[0].name
+        logger.debug("prometheus: get network name for node %s and ip %s: %s",
+                     node_id, ipaddr, net_name)
+        return net_name
 
     def prometheus_get_metric(self, metric, filter=None):
         """Get metrics from prometheus
@@ -202,7 +218,9 @@ class PrometheusTool(object):
     def node_get_metrics_overall(self, node):
         net_name = self._get_net_name(node.id, node.ip_address)
         sys_disk_name = self._get_sys_disk(node.id)
-
+        if not net_name or not sys_disk_name:
+            return
+        node.metrics = {}
         for metric in prometheus_attrs:
             metric_method = 'node_{}'.format(metric)
             if metric in network_attrs:
