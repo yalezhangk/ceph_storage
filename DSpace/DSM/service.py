@@ -16,6 +16,9 @@ class ServiceHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset)
         return services
 
+    def service_get_count(self, ctxt, filters=None):
+        return objects.ServiceList.get_count(ctxt, filters=filters)
+
     def service_update(self, ctxt, services):
         services = json.loads(services)
         logger.debug('Update service status')

@@ -24,10 +24,10 @@ class VolumeListHandler(ClusterAPIHandler):
                           'volume_clients']
         volumes = yield client.volume_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
-        volumes_all = yield client.volume_get_all(ctxt)
+        volume_count = yield client.volume_get_count(ctxt)
         self.write(objects.json_encode({
             "volumes": volumes,
-            "total": len(volumes_all)
+            "total": volume_count
         }))
 
     @gen.coroutine

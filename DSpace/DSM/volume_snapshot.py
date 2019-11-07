@@ -18,12 +18,13 @@ class VolumeSnapshotHandler(AdminBaseHandler):
     def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,
                                 sort_keys=None, sort_dirs=None, filters=None,
                                 offset=None, expected_attrs=None):
-        filters = filters or {}
-        filters['cluster_id'] = ctxt.cluster_id
         return objects.VolumeSnapshotList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+
+    def volume_snapshot_get_count(self, ctxt, filters=None):
+        return objects.VolumeSnapshotList.get_count(ctxt, filters=filters)
 
     def volume_snapshot_create(self, ctxt, data):
         volume_id = data.get('volume_id')

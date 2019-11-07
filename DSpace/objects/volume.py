@@ -139,3 +139,8 @@ class VolumeList(base.ObjectListBase, base.StorObject):
             offset=offset, expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Volume,
                                   volumes, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.volume_get_count(context, filters)
+        return count

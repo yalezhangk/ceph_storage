@@ -109,7 +109,7 @@ class UserListHandler(BaseAPIHandler):
         user_count = objects.UserList.get_count(ctxt)
         self.write(objects.json_encode({
             "users": users,
-            "total": len(user_count)
+            "total": user_count
         }))
 
 

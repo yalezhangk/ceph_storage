@@ -23,6 +23,11 @@ class AdminClient(BaseClient):
             offset=offset, expected_attrs=expected_attrs)
         return response
 
+    def volume_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "volume_get_count", filters=filters)
+        return response
+
     def email_group_get_count(self, ctxt, filters=None):
         response = self.call(
             ctxt, "email_group_get_count", filters=filters)
@@ -479,6 +484,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def service_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "service_get_count", filters=filters)
+        return response
+
     def service_update(self, ctxt, services):
         response = self.call(ctxt, "service_update", services=services)
         return response
@@ -492,6 +502,11 @@ class AdminClient(BaseClient):
             ctxt, "pool_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
             offset=offset, expected_attrs=expected_attrs)
+        return response
+
+    def pool_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "pool_get_count", filters=filters)
         return response
 
     def pool_get(self, ctxt, pool_id, expected_attrs=None):
@@ -722,6 +737,11 @@ class AdminClient(BaseClient):
             ctxt, "volume_snapshot_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
             offset=offset, expected_attrs=expected_attrs)
+        return response
+
+    def volume_snapshot_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "volume_snapshot_get_count", filters=filters)
         return response
 
     def volume_snapshot_create(self, ctxt, data):

@@ -58,3 +58,8 @@ class ServiceList(base.ObjectListBase, base.StorObject):
                                       sort_keys, sort_dirs)
         return base.obj_make_list(context, cls(context), objects.Service,
                                   services)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.service_get_count(context, filters)
+        return count

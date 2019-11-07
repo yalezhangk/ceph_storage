@@ -95,3 +95,8 @@ class PoolList(base.ObjectListBase, base.StorObject):
                                 sort_keys, sort_dirs, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.Pool,
                                   pools, expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.pool_get_count(context, filters)
+        return count

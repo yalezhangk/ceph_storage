@@ -92,6 +92,10 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
         offset=offset, expected_attrs=expected_attrs)
 
 
+def volume_get_count(context, filters):
+    return IMPL.volume_get_count(context, filters=filters)
+
+
 def volume_update(context, volume_id, values):
     """Set the given properties on a volume and update it.
 
@@ -215,6 +219,10 @@ def pool_get_all(context, filters, marker, limit,
         context, marker=marker, limit=limit, sort_keys=sort_keys,
         sort_dirs=sort_dirs, filters=filters, offset=offset,
         expected_attrs=expected_attrs)
+
+
+def pool_get_count(context, filters):
+    return IMPL.pool_get_count(context, filters=filters)
 
 
 def pool_update(context, pool_id, values):
@@ -732,6 +740,10 @@ def volume_snapshot_get_all(context, *args, **kwargs):
     return IMPL.volume_snapshot_get_all(context, *args, **kwargs)
 
 
+def volume_snapshot_get_count(context, filters):
+    return IMPL.volume_snapshot_get_count(context, filters=filters)
+
+
 def volume_snapshot_destroy(context, volume_snapshot_id):
     return IMPL.volume_snapshot_destroy(context, volume_snapshot_id)
 
@@ -756,6 +768,10 @@ def service_get_all(context, filters, marker, limit,
     return IMPL.service_get_all(
         context, marker=marker, limit=limit, sort_keys=sort_keys,
         sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def service_get_count(context, filters):
+    return IMPL.service_get_count(context, filters=filters)
 
 
 def service_update(context, service_id, values):
