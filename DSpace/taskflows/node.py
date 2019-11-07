@@ -232,6 +232,16 @@ class NodeTask(object):
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
         agent.ceph_mon_remove(self.ctxt, last_mon=last_mon)
 
+    def ceph_osd_package_install(self):
+        logger.debug("install ceph-osd package on node")
+        agent = self.get_agent()
+        agent.ceph_osd_package_install(self.ctxt)
+
+    def ceph_osd_package_uninstall(self):
+        logger.debug("uninstall ceph-osd package on node")
+        agent = self.get_agent()
+        agent.ceph_osd_package_uninstall(self.ctxt)
+
     def ceph_osd_install(self, osd):
         # write ceph.conf
         logger.debug("write config")
@@ -281,7 +291,6 @@ class NodeTask(object):
         # install docker
         package_tool = PackageTool(ssh)
         package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
-        package_tool.install(["ceph", "ceph-common"])
         # start docker
         service_tool = ServiceTool(ssh)
         service_tool.start('docker')

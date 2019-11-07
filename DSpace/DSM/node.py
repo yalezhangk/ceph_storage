@@ -180,12 +180,18 @@ class NodeHandler(AdminBaseHandler):
 
     def _storage_install(self, ctxt, node):
         node.status = s_fields.NodeStatus.DEPLOYING
+        node_task = NodeTask(ctxt, node)
+        node_task.ceph_osd_package_install()
+
         node.role_storage = True
         node.save()
         return node
 
     def _storage_uninstall(self, ctxt, node):
         node.status = s_fields.NodeStatus.DEPLOYING
+        node_task = NodeTask(ctxt, node)
+        node_task.ceph_osd_package_uninstall()
+
         node.role_storage = False
         node.save()
         return node
