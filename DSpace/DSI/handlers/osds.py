@@ -157,3 +157,27 @@ class OsdMetricsHistoryHandler(ClusterAPIHandler):
         self.write(json.dumps({
             "osd_metrics_history": data
         }))
+
+
+class OsdDiskMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, osd_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.osd_disk_metrics_get(ctxt, osd_id=osd_id)
+        self.write(json.dumps({
+            "osd_disk_metrics": data
+        }))
+
+
+class OsdHistoryDiskMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, osd_id):
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        client = self.get_admin_client(ctxt)
+        data = yield client.osd_history_disk_metrics_get(
+            ctxt, osd_id=osd_id, start=his_args['start'], end=his_args['end'])
+        self.write(json.dumps({
+            "osd_history_disk_metrics": data
+        }))

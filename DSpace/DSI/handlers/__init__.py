@@ -43,7 +43,9 @@ from DSpace.DSI.handlers.nodes import NodeMetricsHistroyNetworkHandler
 from DSpace.DSI.handlers.nodes import NodeMetricsMonitorHandler
 from DSpace.DSI.handlers.nodes import NodeMetricsNetworkHandler
 from DSpace.DSI.handlers.nodes import NodeRoleHandler
+from DSpace.DSI.handlers.osds import OsdDiskMetricsHandler
 from DSpace.DSI.handlers.osds import OsdHandler
+from DSpace.DSI.handlers.osds import OsdHistoryDiskMetricsHandler
 from DSpace.DSI.handlers.osds import OsdListHandler
 from DSpace.DSI.handlers.osds import OsdMetricsHandler
 from DSpace.DSI.handlers.osds import OsdMetricsHistoryHandler
@@ -133,6 +135,10 @@ def get_routers():
         (r"/nodes/([0-9]*)/metrics/network/", NodeMetricsNetworkHandler),
         (r"/osds/", OsdListHandler),
         (r"/osds/([0-9]*)/", OsdHandler),
+        (r"/osds/([0-9]*)/disk_metrics/",
+            OsdDiskMetricsHandler),
+        (r"/osds/([0-9]*)/history_disk_metrics/",
+            OsdHistoryDiskMetricsHandler),
         (r"/osds/([0-9]*)/history_metrics/", OsdMetricsHistoryHandler),
         (r"/osds/([0-9]*)/metrics/", OsdMetricsHandler),
         (r"/pools/", PoolListHandler),
