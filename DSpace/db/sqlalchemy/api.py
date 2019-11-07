@@ -1866,7 +1866,8 @@ def _volume_client_group_load_attr(ctxt, vcg, session, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'volume_access_path' in expected_attrs:
         vap_id = vcg.volume_access_path_id
-        vcg.volume_access_path = _volume_access_path_get(ctxt, vap_id, session)
+        vcg.volume_access_path = _volume_access_path_get(
+            ctxt, vap_id, session) if vap_id else None
     if 'volume_clients' in expected_attrs:
         volume_clients = _volume_client_get_query(ctxt, session).filter_by(
             volume_client_group_id=vcg.id)
@@ -1940,8 +1941,8 @@ def volume_client_group_get_all(context, marker=None,
         if not expected_attrs:
             return vcgs
         for vcg in vcgs:
-            _volume_client_group_load_attr(
-                context, vcg, session, expected_attrs)
+            _volume_client_group_load_attr(context, vcg, session,
+                                           expected_attrs)
         return vcgs
 
 

@@ -59,7 +59,7 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
             vap = db_obj.get('volume_access_path', None)
             obj.volume_access_path = objects.VolumeAccessPath._from_db_object(
                 context, objects.VolumeAccessPath(context), vap
-            )
+            ) if vap else None
         if 'volume_clients' in expected_attrs:
             volume_clients = db_obj.get('volume_clients', [])
             obj.volume_clients = [objects.VolumeClient._from_db_object(
