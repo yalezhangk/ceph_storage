@@ -46,14 +46,6 @@ class VolumeAccessPath(base.StorPersistentObject, base.StorObject,
         db.volume_access_path_append_gateway(self._context, self.id,
                                              volume_gateway_id)
 
-    @property
-    def volume_gateways(self):
-        db_ap_gateways = db.volume_access_path_get_gateways(
-            self._context, self.id)
-        return base.obj_make_list(
-            self._context, objects.VolumeGatewayList(self._context),
-            objects.VolumeGateway, db_ap_gateways)
-
     def save(self):
         updates = self.stor_obj_get_changes()
         if updates:
