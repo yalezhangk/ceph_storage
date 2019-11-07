@@ -21,13 +21,13 @@ class AgentBaseHandler(object):
         super(AgentBaseHandler, self).__init__(*args, **kwargs)
         self.executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
-        self.ctxt = RequestContext(user_id="xxx", project_id="stor",
+        self.ctxt = RequestContext(user_id="xxx",
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
 
     def _get_node(self):
         client = AdminClientManager(
-            self.ctxt, CONF.cluster_id, async_support=False
+            self.ctxt, async_support=False
         ).get_client()
         self.node = client.node_get(self.ctxt, node_id=CONF.node_id)
 
