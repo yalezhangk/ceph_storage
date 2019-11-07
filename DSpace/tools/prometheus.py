@@ -425,6 +425,7 @@ class PrometheusTool(object):
                         'write_bytes_rate', 'read_bytes_rate',
                         'write_lat_rate', 'read_lat_rate',
                         'io_rate']
+        osd.metrics = {}
         disk = objects.Disk.get_by_id(self.ctxt, osd.disk_id)
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
         for m in disk_metrics:
@@ -497,5 +498,6 @@ class PrometheusTool(object):
                                     3) if pg_total else 0,
                 'degraded': round(degraded / pg_total, 3) if pg_total else 0,
                 'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
-        except BaseException:
+        except exception.StorException as e:
+            logger.error(e)
             pass

@@ -11,19 +11,47 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
+from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
 
 
 class OsdHandler(AdminBaseHandler):
 
-    def osd_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                    sort_dirs=None, filters=None, offset=None,
+    def osd_get_all(self, ctxt, tab=None, marker=None, limit=None,
+                    sort_keys=None, sort_dirs=None, filters=None, offset=None,
                     expected_attrs=None):
-        return objects.OsdList.get_all(
+        osds = objects.OsdList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+
+        if tab == "default":
+            logger.debug("Get osd metrics: tab=default")
+            ceph_client = CephTask(ctxt)
+            capacity = ceph_client.get_osd_df()
+            mapping = {}
+            if capacity:
+                osd_capacity = capacity.get('nodes') + capacity.get('stray')
+                for c in osd_capacity:
+                    mapping[str(c['id'])] = c
+            for osd in osds:
+                size = mapping.get(osd.osd_id)
+                osd.metrics = {}
+                if size:
+                    osd.metrics.update({'kb': [0, size['kb']]})
+                    osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
+                    osd.metrics.update({'kb_used': [0, size['kb_used']]})
+                prometheus = PrometheusTool(ctxt)
+                prometheus.osd_get_pg_state(osd)
+
+        if tab == "io":
+            logger.debug("Get osd metrics: tab=io")
+            prometheus = PrometheusTool(ctxt)
+            for osd in osds:
+                prometheus.osd_disk_perf(osd)
+
+        return osds
 
     def osd_get_count(self, ctxt, filters=None):
         return objects.OsdList.get_count(

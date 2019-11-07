@@ -43,10 +43,12 @@ class Osd(base.StorPersistentObject, base.StorObject,
         'wal_partition': fields.ObjectField("DiskPartition", nullable=True),
         'journal_partition': fields.ObjectField("DiskPartition",
                                                 nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
     OPTIONAL_FIELDS = ('node', 'disk', 'pools', 'cache_partition',
-                       'db_partition', 'wal_partition', 'journal_partition')
+                       'db_partition', 'wal_partition', 'journal_partition',
+                       'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):

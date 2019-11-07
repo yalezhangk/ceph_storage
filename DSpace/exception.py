@@ -245,7 +245,7 @@ class CephConfigNotFound(NotFound):
 
 
 class CephConfigKeyNotFound(NotFound):
-    message = _("CephConfig %(group):s%(key)s could not be found.")
+    message = _("CephConfig %(group)s: %(key)s could not be found.")
 
 
 class AlertGroupNotFound(NotFound):
