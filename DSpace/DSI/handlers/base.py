@@ -28,7 +28,7 @@ class BaseAPIHandler(RequestHandler):
         self.set_header("Access-Control-Allow-Origin", origin)
         self.set_header("Access-Control-Allow-Credentials", "true")
         self.set_header("Access-Control-Allow-Headers",
-                        "x-requested-with, Content-Type, Cluster-Id, "
+                        "x-requested-with, Content-Type, X-Cluster-Id, "
                         "x-access-module")
         self.set_header('Access-Control-Allow-Methods',
                         'POST, GET, OPTIONS, PUT, DELETE')
@@ -42,9 +42,12 @@ class BaseAPIHandler(RequestHandler):
         self.write({"error": msg})
 
     def get_context(self):
-        if not self.current_user:
+        fake_user = self.request.headers.get("X-Fake-User", None)
+        if not self.current_user and not fake_user:
             raise exception.NotAuthorized()
-        ctxt = RequestContext(user_id=self.current_user.id, is_admin=False)
+        user_id = fake_user or self.current_user.id
+        ctxt = RequestContext(user_id=user_id, is_admin=False)
+        logger.debug("Context: %s", ctxt.to_dict())
         client_ip = (self.request.headers.get("X-Real-IP") or
                      self.request.headers.get("X-Forwarded-For") or
                      self.request.remote_ip)
@@ -123,7 +126,7 @@ class ClusterAPIHandler(BaseAPIHandler):
         ctxt = super(ClusterAPIHandler, self).get_context()
         cluster_id = self.get_query_argument('cluster_id', default=None)
         if not cluster_id:
-            cluster_id = self.request.headers.get('Cluster-Id')
+            cluster_id = self.request.headers.get('X-Cluster-Id')
         if not cluster_id:
             raise exception.ClusterIDNotFound()
         ctxt.cluster_id = cluster_id
