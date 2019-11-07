@@ -1883,9 +1883,8 @@ def volume_client_group_get(context, client_group_id, expected_attrs=None):
     with session.begin():
         vcg = _volume_client_group_get(
             context, client_group_id, session)
-        _volume_client_group_load_attr(context, vcg, expected_attrs)
+        _volume_client_group_load_attr(context, vcg, session, expected_attrs)
         return vcg
-    return vcg
 
 
 @require_context
