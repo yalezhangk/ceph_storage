@@ -283,6 +283,14 @@ class AllActionStatus(BaseStorEnum):
     ALL = (SUCCESS, UNDER_WAY, FAIL)
 
 
+class CephVersion(BaseStorEnum):
+    JEWEL = 'Jewel'
+    KRAKEN = 'Kraken'
+    LUMINOUS = 'Luminous'
+    MIMIC = 'Mimic'
+    Nautilus = 'Nautilus'
+
+
 class ResourceAction(object):
 
     @classmethod
