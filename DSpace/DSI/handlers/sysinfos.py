@@ -22,14 +22,7 @@ class SysInfoHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         sysconfs = yield client.sysconf_get_all(ctxt)
         self.write(json.dumps({
-            "sysconf": {
-                "cluster_name": sysconfs['cluster_name'],
-                "admin_cidr": sysconfs['admin_cidr'],
-                "public_cidr": sysconfs['public_cidr'],
-                "cluster_cidr": sysconfs['cluster_cidr'],
-                "gateway_cidr": sysconfs['gateway_cidr'],
-                "chrony_server": sysconfs['chrony_server']
-            }
+            "sysconf": sysconfs
         }))
 
     @gen.coroutine
