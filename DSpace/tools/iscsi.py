@@ -197,10 +197,10 @@ def delete_acl(iqn, iqn_initiator):
     else:
         mapped_luns = acl.mapped_luns
         for ml in mapped_luns:
-            tpg_lun_obj = LUN(tpg, ml.tpg_lun.lun)
-            tpg_lun_obj.delete()
             logger.debug('delete tpg lun lun%s for acl %s',
                          ml.tpg_lun.lun, iqn_initiator)
+            tpg_lun_obj = LUN(tpg, ml.tpg_lun.lun)
+            tpg_lun_obj.delete()
         acl.delete()
     logger.info("delete acl %s success", iqn_initiator)
     save_config()
@@ -212,7 +212,7 @@ def create_user_backstore(pool_name, disk_name, disk_size, osd_op_timeout=30,
     Given an user backend block, only support ceph rbd now,
     checks if it already exists in the backstore or creates it.
     """
-    logger.info("crete user backstore %s/%s:%s, wwn: %s",
+    logger.info("create user backstore %s/%s:%s, wwn: %s",
                 pool_name, disk_name, disk_size, disk_wwn)
     bs = list(filter(lambda x: x['name'] == disk_name,
                      current_user_backstores()))
@@ -238,11 +238,11 @@ def create_user_backstore(pool_name, disk_name, disk_size, osd_op_timeout=30,
 def delete_user_backstore(disk_name):
     so = get_user_backstore(disk_name)
     if not so:
-        logger.debug('user backstore %s not found', disk_name)
-        raise exc.IscsiBackstoreNotFound(disk_name=disk_name)
+        logger.debug('user backstore %s not found, maybe delete it already',
+                     disk_name)
     else:
         so.delete()
-    save_config()
+        save_config()
 
 
 def get_user_backstore(disk_name):
@@ -348,6 +348,15 @@ def chap_disable(iqn):
     save_config()
 
 
+def mutual_chap_enable(iqn, mutual_username, mutual_password):
+    set_tpg_attributes(iqn, "authentication", 1)
+    tpg = _get_single_tpg(iqn)
+    for acl in tpg.node_acls:
+        acl.chap_mutual_userid = mutual_username
+        acl.chap_mutual_password = mutual_password
+    save_config()
+
+
 def chap_enable(iqn, username, password):
     set_tpg_attributes(iqn, "authentication", 1)
     tpg = _get_single_tpg(iqn)
@@ -357,10 +366,10 @@ def chap_enable(iqn, username, password):
     save_config()
 
 
-def _get_lun_id(iqn, disk_name):
+def get_lun_id(iqn, disk_name):
     for curlun in current_attached_luns(iqn):
         if disk_name == curlun['disk_name']:
-            return curlun['lun_id']
+            return curlun.get('lun_id')
 
 
 def _next_free_mapped_lun_index(iqn, iqn_initiator):
@@ -461,25 +470,25 @@ def _save_backups(savefile):
 
 def test_create():
     iqn = "iqn.2003-01.org.linux-iscsi.ceph-3.x8664:sn.5dff8f6e764b"
-    iqn_initiator1 = "iqn.2019-09.dspacee.net:0008"
-    iqn_initiator2 = "iqn.2019-09.dspacee.net:0009"
-    disk_name = "test.img"
-    create_user_backstore("rbd", disk_name, "100G")
+    clients = ["iqn.2019-09.dspacee.net:0008",
+               "iqn.2019-09.dspacee.net:0009"]
+    disk_name = ["rbd-002"]
     if iqn not in current_targets():
         create_target(iqn)
         create_portal(iqn, "192.168.17.54")
         enable_tpg(iqn, True)
-    create_acl(iqn, iqn_initiator1)
-    create_acl(iqn, iqn_initiator2)
+    for iqn_initiator in clients:
+        create_acl(iqn, iqn_initiator)
+        for vol in disk_name:
+            so = None
+            so = get_user_backstore(vol)
+            if not so:
+                so = create_user_backstore("rbd", vol, "2G")
+            lun = create_lun(iqn, so)
+            create_mapped_lun(iqn, iqn_initiator, lun)
     chap_enable(iqn, "username", "password")
-    so = get_user_backstore(disk_name)
-    lun = create_lun(iqn, so)
-    create_mapped_lun(iqn, iqn_initiator1, lun)
-    lun = create_lun(iqn, so)
-    create_mapped_lun(iqn, iqn_initiator2, lun)
-
-    mapped_luns = current_mapped_luns(iqn, iqn_initiator1)
     cur_attached_luns = current_attached_luns(iqn)
+    mapped_luns = current_mapped_luns(iqn, iqn_initiator)
     print("mapped_luns: {}".format(json.dumps(mapped_luns)))
     print("cur_attached_luns: {}".format(json.dumps(cur_attached_luns)))
 
