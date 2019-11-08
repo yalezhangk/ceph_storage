@@ -35,11 +35,17 @@ class AdminBaseHandler(object):
             'resource_id': resource_id,
             'resource_name': resource_name,
             'resource_data': resource_data,
-            'status': status if status else 'success',
+            'status': 'success',
             'finish_time': timeutils.utcnow()
         }
         if action:
             finish_data.update({'action': action})
+        if status:
+            if status in ['active', 'success']:
+                finish_data.update({'status': 'success'})
+            else:
+                finish_data.update({'status': 'fail'})
         begin_action.update(finish_data)
-        logger.debug('finish action:%s-%s', resource_name, action)
+        logger.debug('finish action:%s-%s,status:%s', resource_name, action,
+                     finish_data['status'])
         begin_action.save()
