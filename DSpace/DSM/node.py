@@ -44,6 +44,16 @@ class NodeHandler(AdminBaseHandler):
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
+            rpc_services = objects.RPCServiceList.get_all(
+                ctxt,
+                filters={
+                    "cluster_id": node.cluster_id,
+                    "service_name": "agent",
+                    "node_id": node.id
+                }
+            )
+            for rpc_service in rpc_services:
+                rpc_service.destroy()
             node.destroy()
             msg = _("Node removed!")
         except Exception as e:
@@ -295,6 +305,17 @@ class NodeHandler(AdminBaseHandler):
             node_task.dspace_agent_install()
             node_task.chrony_install()
             node_task.node_exporter_install()
+            # add agent rpc service
+            agent_port = objects.sysconfig.sys_config_get(
+                ctxt, "agent_port")
+            endpoint = {"ip": str(node.ip_address), "port": agent_port}
+            rpc_service = objects.RPCService(
+                ctxt, service_name='agent',
+                hostname=node.hostname,
+                endpoint=str(endpoint),
+                cluster_id=node.cluster_id,
+                node_id=node.id)
+            rpc_service.create()
 
             roles = data.get('roles', "").split(',')
             role_monitor = "monitor" in roles
