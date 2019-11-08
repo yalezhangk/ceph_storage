@@ -30,10 +30,12 @@ class VolumeAccessPath(base.StorPersistentObject, base.StorObject,
             'VolumeClientGroup', nullable=True),
         'nodes': fields.ListOfObjectsField('Node', nullable=True),
         'volumes': fields.ListOfObjectsField('Volume', nullable=True),
+        'volume_clients': fields.ListOfObjectsField(
+            'VolumeClient', nullable=True),
     }
 
     OPTIONAL_FIELDS = ('volume_gateways', 'volume_client_groups', 'nodes',
-                       'volumes')
+                       'volumes', 'volume_clients')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -86,6 +88,11 @@ class VolumeAccessPath(base.StorPersistentObject, base.StorObject,
             obj.nodes = [objects.Node._from_db_object(
                 context, objects.Node(context),
                 node) for node in nodes]
+        if 'volume_clients' in expected_attrs:
+            volume_clients = db_obj.get('volume_clients', [])
+            obj.volume_clients = [objects.VolumeClient._from_db_object(
+                context, objects.VolumeClient(context),
+                volume_client) for volume_client in volume_clients]
         return super(VolumeAccessPath, cls)._from_db_object(
             context, obj, db_obj)
 
