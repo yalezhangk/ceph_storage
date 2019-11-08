@@ -1,4 +1,3 @@
-import six
 from oslo_log import log as logging
 
 from DSpace import objects
@@ -16,23 +15,27 @@ class AlertRuleHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
-    def alert_rule_get(self, ctxt, alert_rule_id):
-        return objects.AlertRule.get_by_id(ctxt, alert_rule_id)
+    def alert_rule_get(self, ctxt, alert_rule_id, expected_attrs=None):
+        return objects.AlertRule.get_by_id(ctxt, alert_rule_id, expected_attrs)
 
     def alert_rule_update(self, ctxt, alert_rule_id, data):
         rule = self.alert_rule_get(ctxt, alert_rule_id)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.ALERT_RULE,
-            action=AllActionType.OPEN_OR_CLOSE_RULE)
+            action=AllActionType.OPEN_ALERT_RULE)
         rule_data = {
             'enabled': data.get('enabled')
         }
-        for k, v in six.iteritems(rule_data):
-            setattr(rule, k, v)
+        rule.update(rule_data)
         rule.save()
+        if rule_data['enabled']:
+            action = AllActionType.OPEN_ALERT_RULE
+        else:
+            action = AllActionType.CLOSE_ALERT_RULE
         self.finish_action(begin_action, resource_id=rule.id,
                            resource_name=rule.type,
-                           resource_data=objects.json_encode(rule))
+                           resource_data=objects.json_encode(rule),
+                           action=action)
         return rule
 
     def alert_rule_get_count(self, ctxt, filters=None):

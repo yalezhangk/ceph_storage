@@ -19,7 +19,10 @@ class AlertRule(base.StorPersistentObject, base.StorObject,
         'trigger_period': fields.StringField(),
         'enabled': fields.BooleanField(),
         'cluster_id': fields.UUIDField(),
+        'alert_groups': fields.ListOfObjectsField('AlertGroup', nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('alert_groups',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -36,6 +39,18 @@ class AlertRule(base.StorPersistentObject, base.StorObject,
             db.alert_rule_update(self._context, self.id, updates)
 
         self.obj_reset_changes()
+
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+
+        if 'alert_groups' in expected_attrs:
+            alert_groups = db_obj.get('alert_groups', [])
+            obj.alert_groups = [objects.AlertGroup._from_db_object(
+                context, objects.AlertGroup(context), alert_group
+            ) for alert_group in alert_groups]
+
+        return super(AlertRule, cls)._from_db_object(context, obj, db_obj)
 
 
 @base.StorObjectRegistry.register
