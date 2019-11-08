@@ -71,8 +71,10 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     def get(self, voluem_access_path_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['volume_gateways', 'volume_client_groups',
+                          'nodes', 'volumes']
         volume_access_path = yield client.volume_access_path_get(
-            ctxt, voluem_access_path_id)
+            ctxt, voluem_access_path_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode({
             "volume_access_path": volume_access_path
         }))
