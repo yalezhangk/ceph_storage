@@ -8,7 +8,6 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
-from DSpace.DSI.handlers.alert_rule_data_init import init_alert_rule
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
@@ -33,8 +32,6 @@ class ClusterHandler(BaseAPIHandler):
         client = self.get_admin_client(ctxt)
 
         cluster = yield client.cluster_create(ctxt, cluster_data)
-        # init alert_rule
-        init_alert_rule(ctxt, cluster.id)
         self.write(objects.json_encode({
             "cluster": cluster
         }))

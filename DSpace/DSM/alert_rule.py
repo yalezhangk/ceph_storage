@@ -41,3 +41,57 @@ class AlertRuleHandler(AdminBaseHandler):
     def alert_rule_get_count(self, ctxt, filters=None):
         return objects.AlertRuleList.get_count(
             ctxt, filters=filters)
+
+
+class AlertRuleInitMixin(object):
+
+    def init_alert_rule(self, ctxt, cluster_id):
+        init_datas = [
+            {
+                'resource_type': 'cluster',
+                'type': 'cluster_usage',
+                'trigger_value': '> 80%',
+                'level': 'WARN',
+                'trigger_period': '1440'
+            },
+            {
+                'resource_type': 'node',
+                'type': 'cpu_usage',
+                'trigger_value': '> 80%',
+                'level': 'WARN',
+                'trigger_period': '1440'
+            },
+            {
+                'resource_type': 'node',
+                'type': 'memory_usage',
+                'trigger_value': '> 85%',
+                'level': 'WARN',
+                'trigger_period': '1440'
+            },
+            {
+                'resource_type': 'node',
+                'type': 'sys_disk_usage',
+                'trigger_value': '> 80%',
+                'level': 'WARN',
+                'trigger_period': '1440'
+            },
+            {
+                'resource_type': 'osd',
+                'type': 'osd_usage',
+                'trigger_value': '> 80%',
+                'level': 'WARN',
+                'trigger_period': '1440'
+            },
+            {
+                'resource_type': 'pool',
+                'type': 'pool_usage',
+                'trigger_value': '> 80%',
+                'level': 'WARN',
+                'trigger_period': '1440'
+            },
+        ]
+
+        for init_data in init_datas:
+            init_data.update({'cluster_id': cluster_id})
+            alert_rule = objects.AlertRule(ctxt, **init_data)
+            alert_rule.create()
