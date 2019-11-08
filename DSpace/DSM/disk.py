@@ -7,6 +7,7 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,17 @@ class DiskHandler(AdminBaseHandler):
                                       expected_attrs=['partition_used'])
         return disk
 
-    def disk_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                     sort_dirs=None, filters=None, offset=None):
+    def disk_get_all(self, ctxt, tab=None, marker=None, limit=None,
+                     sort_keys=None, sort_dirs=None, filters=None,
+                     offset=None):
         disks = objects.DiskList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=['node', 'partition_used'])
+        if tab == "io":
+            prometheus = PrometheusTool(ctxt)
+            for disk in disks:
+                prometheus.disk_get_perf(disk)
         return disks
 
     def disk_get_count(self, ctxt, filters=None):

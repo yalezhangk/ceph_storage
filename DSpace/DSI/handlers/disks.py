@@ -22,7 +22,7 @@ class DiskListHandler(ClusterAPIHandler):
         page_args = self.get_paginated_args()
 
         filters = {}
-        supported_filters = ['node', 'role', 'status']
+        supported_filters = ['node_id', 'role', 'status']
         for f in supported_filters:
             value = self.get_query_argument(f, default=None)
             if value:
@@ -30,9 +30,14 @@ class DiskListHandler(ClusterAPIHandler):
                     f: value
                 })
 
+        tab = self.get_query_argument('tab', default="default")
+        if tab not in ["default", "io"]:
+            raise exception.InvalidInput(_("this tab not support"))
+
         client = self.get_admin_client(ctxt)
-        disks = yield client.disk_get_all(ctxt, filters=filters, **page_args)
-        disk_count = yield client.ceph_config_get_count(ctxt, filters=filters)
+        disks = yield client.disk_get_all(ctxt, tab=tab, filters=filters,
+                                          **page_args)
+        disk_count = yield client.disk_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "disks": disks,
             "total": disk_count

@@ -119,8 +119,8 @@ class PrometheusHandler(AdminBaseHandler):
     def disk_perf_get(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         prometheus = PrometheusTool(ctxt)
-        data = prometheus.disk_get_perf(disk)
-        return data
+        prometheus.disk_get_perf(disk)
+        return disk.metrics
 
     def disk_perf_history_get(self, ctxt, disk_id, start, end):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
