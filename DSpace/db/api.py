@@ -49,8 +49,8 @@ def sys_config_get(context, sys_config_id):
     return IMPL.sys_config_get(context, sys_config_id)
 
 
-def sys_config_get_by_key(context, key):
-    return IMPL.sys_config_get_by_key(context, key)
+def sys_config_get_by_key(context, key, cluster_id):
+    return IMPL.sys_config_get_by_key(context, key, cluster_id)
 
 
 def sys_config_get_all(context, filters, marker, limit,

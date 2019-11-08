@@ -298,7 +298,7 @@ class NodeTask(object):
         repo_url = objects.sysconfig.sys_config_get(self.ctxt, "repo_url")
         # pull images from repo
         tmp_image = '/tmp/{}'.format(image_name)
-        fetch_url = '{}/repo/images/{}'.format(repo_url, image_name)
+        fetch_url = '{}/images/{}'.format(repo_url, image_name)
         file_tool.fetch_from_url(tmp_image, fetch_url)
         docker_tool.image_load(tmp_image)
         # run container

@@ -1336,10 +1336,7 @@ def osd_get_by_pool(context, pool_id, expected_attrs=None):
 
 def _sys_config_get_query(context, session=None):
     # TODO  filter_by cluster id
-    return model_query(
-        context,
-        models.SysConfig,
-        session=session).filter_by(cluster_id=context.cluster_id)
+    return model_query(context, models.SysConfig, session=session)
 
 
 def _sys_config_get(context, sys_config_id, session=None):
@@ -1352,8 +1349,10 @@ def _sys_config_get(context, sys_config_id, session=None):
     return result
 
 
-def sys_config_get_by_key(context, key, session=None):
-    result = _sys_config_get_query(context, session).filter_by(key=key).first()
+def sys_config_get_by_key(context, key, cluster_id, session=None):
+    result = _sys_config_get_query(
+        context,
+        session).filter_by(key=key, cluster_id=cluster_id).first()
 
     if not result:
         return None
@@ -1398,6 +1397,8 @@ def sys_config_get(context, sys_config_id, expected_attrs=None):
 def sys_config_get_all(context, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
     session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
