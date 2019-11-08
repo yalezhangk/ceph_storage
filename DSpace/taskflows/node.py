@@ -290,23 +290,17 @@ class NodeTask(object):
         service_tool.start('docker')
         # load image
         docker_tool = DockerTool(ssh)
-        image_path = objects.sysconfig.sys_config_get(self.ctxt, "image_path")
         image_name = objects.sysconfig.sys_config_get(self.ctxt, "image_name")
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
-        file_tool.mkdir(image_path)
-        try:
-            sftp_client, transport = self.get_sftp_client()
-            sftp_client.put('{}/{}'.format(image_path, image_name),
-                            '{}/{}'.format(image_path, image_name))
-            transport.close()
-        except Exception as e:
-            logger.error('push image error,error:{}'.format(e))
-            raise exc.CephException(message='push image error,reason:'
-                                            '{}'.format(str(e)))
-        docker_tool.image_load('{}/{}'.format(image_path, image_name))
+        repo_url = objects.sysconfig.sys_config_get(self.ctxt, "repo_url")
+        # pull images from repo
+        tmp_image = '/tmp/{}'.format(image_name)
+        fetch_url = '{}/repo/images/{}'.format(repo_url, image_name)
+        file_tool.fetch_from_url(tmp_image, fetch_url)
+        docker_tool.image_load(tmp_image)
         # run container
         docker_tool.run(
             image="{}/dspace:{}".format(image_namespace, dspace_version),
