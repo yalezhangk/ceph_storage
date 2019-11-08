@@ -1,6 +1,5 @@
 import uuid
 
-import six
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -9,6 +8,8 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType
+from DSpace.objects.fields import AllResourceType
 from DSpace.taskflows.ceph import CephTask
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
+                                         AllActionType.CREATE)
         snap_data = {
             'cluster_id': ctxt.cluster_id,
             'uuid': str(uuid.uuid4()),
@@ -44,10 +47,13 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         snap.create()
         extra_data = {'volume_name': volume.volume_name,
                       'pool_name': pool.pool_name}
-        self.executor.submit(self._snap_create, ctxt, snap, extra_data)
+        self.executor.submit(self._snap_create, ctxt, snap, extra_data,
+                             begin_action)
+        logger.info('snap create task has begin,snap_name=%s',
+                    snap_data['display_name'])
         return snap
 
-    def _snap_create(self, ctxt, snap, extra_data):
+    def _snap_create(self, ctxt, snap, extra_data, begin_action):
         pool_name = extra_data['pool_name']
         volume_name = extra_data['volume_name']
         snap_name = snap.uuid
@@ -57,16 +63,18 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             # 新创建的快照均开启快照保护
             ceph_client.rbd_protect_snap(pool_name, volume_name, snap_name)
             status = s_fields.VolumeSnapshotStatus.ACTIVE
-            logger.info('create snapshot success,{}/{}@{}'.format(
-                pool_name, volume_name, snap_name))
+            logger.info('create snapshot success,%s/%s@%s',
+                        pool_name, volume_name, snap_name)
             msg = 'volume_snapshot create success'
         except exception.StorException as e:
             status = s_fields.VolumeSnapshotStatus.ERROR
-            logger.error('create snapshot error,{}/{}@{},reason:{}'.format(
-                pool_name, volume_name, snap_name, str(e)))
+            logger.error('create snapshot error,%s/%s@%s,reason:%s',
+                         pool_name, volume_name, snap_name, str(e))
             msg = 'volume_snapshot create error'
         snap.status = status
         snap.save()
+        self.finish_action(begin_action, snap.id, snap.display_name,
+                           objects.json_encode(snap), status)
         # send ws message
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=snap.cluster_id
@@ -80,12 +88,19 @@ class VolumeSnapshotHandler(AdminBaseHandler):
 
     def volume_snapshot_update(self, ctxt, volume_snapshot_id, data):
         volume_snapshot = self.volume_snapshot_get(ctxt, volume_snapshot_id)
-        for k, v in six.iteritems(data):
-            setattr(volume_snapshot, k, v)
+        begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
+                                         AllActionType.UPDATE)
+        display_name = data.get('display_name')
+        display_description = data.get('display_description')
+        volume_snapshot.display_name = display_name
+        volume_snapshot.display_description = display_description
         volume_snapshot.save()
+        logger.info('snapshot update success,snapshot_name=%s', display_name)
+        self.finish_action(begin_action, volume_snapshot_id, display_name,
+                           objects.json_encode(volume_snapshot))
         return volume_snapshot
 
-    def _snap_delete(self, ctxt, snap, extra_data):
+    def _snap_delete(self, ctxt, snap, extra_data, begin_action):
         pool_name = extra_data['pool_name']
         volume_name = extra_data['volume_name']
         snap_name = snap.uuid
@@ -95,16 +110,18 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             ceph_client.rbd_unprotect_snap(pool_name, volume_name, snap_name)
             ceph_client.rbd_snap_delete(pool_name, volume_name, snap_name)
             snap.destroy()
-            logger.info('snapshot_delete success,snap_name={}'.format(
-                snap_name))
+            status = 'success'
+            logger.info('snapshot_delete success,snap_name=%s', snap_name)
             msg = _("delete snapshot success")
         except exception.StorException as e:
             status = s_fields.VolumeSnapshotStatus.ERROR
             snap.status = status
             snap.save()
-            logger.error('snapshot_delete error,{}/{}@{},reason:{}'.format(
-                pool_name, volume_name, snap_name, str(e)))
+            logger.error('snapshot_delete error,%s/%s@%s,reason:%s',
+                         pool_name, volume_name, snap_name, str(e))
             msg = _('delete snapshot error')
+        self.finish_action(begin_action, snap.id, snap.display_name,
+                           objects.json_encode(snap), status)
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=snap.cluster_id
         ).get_client()
@@ -119,11 +136,16 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         if not volume:
             raise exception.VolumeNotFound(volume_id=snap.volume_id)
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        begin_action = self.begin_action(
+            ctxt, AllResourceType.SNAPSHOT, AllActionType.DELETE)
         snap_data = {'volume_name': volume.volume_name,
                      'pool_name': pool.pool_name,
                      'snap': snap}
         snap = snap_data['snap']
         snap.status = s_fields.VolumeSnapshotStatus.DELETING
         snap.save()
-        self.executor.submit(self._snap_delete, ctxt, snap, snap_data)
+        self.executor.submit(self._snap_delete, ctxt, snap, snap_data,
+                             begin_action)
+        logger.info('snap delete task has begin,snap_name=%s',
+                    snap.display_name)
         return snap
