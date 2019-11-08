@@ -271,8 +271,9 @@ class AllResourceType(BaseStorEnum):
     POOL = 'pool'
     CLUSTER = 'cluster'
     VOLUME = 'volume'
+    SNAPSHOT = 'snapshot'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME)
+           VOLUME, SNAPSHOT)
 
 
 class AllActionType(BaseStorEnum):
@@ -287,9 +288,10 @@ class AllActionType(BaseStorEnum):
     VOLUME_SHRINK = 'volume_shrink'
     VOLUME_ROLLBACK = 'volume_rollback'
     VOLUME_UNLINK = 'volume_unlink'
+    CLONE = 'clone'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
-           VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK)
+           VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -331,6 +333,13 @@ class ResourceAction(object):
                 AllActionType.CREATE: AllActionType.CREATE,
                 AllActionType.UPDATE: AllActionType.UPDATE,
                 AllActionType.DELETE: AllActionType.DELETE,
+            },
+
+            AllResourceType.SNAPSHOT: {
+                AllActionType.CREATE: AllActionType.CREATE,
+                AllActionType.UPDATE: AllActionType.UPDATE,
+                AllActionType.DELETE: AllActionType.DELETE,
+                AllActionType.CLONE: AllActionType.CLONE,
             },
 
             AllResourceType.VOLUME: {

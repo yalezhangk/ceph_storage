@@ -318,7 +318,7 @@ class VolumeHandler(AdminBaseHandler):
             cluster_id=volume.cluster_id).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_UNLINK', msg)
 
-    def _volume_create_from_snapshot(self, ctxt, verify_data):
+    def _volume_create_from_snapshot(self, ctxt, verify_data, begin_action):
         p_pool_name = verify_data['p_pool_name']
         p_volume_name = verify_data['p_volume_name']
         p_snap_name = verify_data['p_snap_name']
@@ -334,16 +334,18 @@ class VolumeHandler(AdminBaseHandler):
             if not is_link_clone:  # 独立克隆，断开关系链
                 ceph_client.rbd_flatten(c_pool_name, c_volume_name)
             status = s_fields.VolumeStatus.ACTIVE
-            logger.info('volume clone success, volume_name={}'.format(
-                c_volume_name))
+            logger.info('volume clone success, volume_name=%s', c_volume_name)
             msg = 'volume clone success'
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
-            logger.error('volume clone error, volume_name={},reason:{}'.format(
-                c_volume_name, str(e)))
+            logger.error('volume clone error, volume_name=%s,reason:%s',
+                         c_volume_name, str(e))
             msg = 'volume clone error'
         new_volume.status = status
         new_volume.save()
+        self.finish_action(begin_action, new_volume.id,
+                           new_volume.display_name,
+                           objects.json_encode(new_volume), status)
         # send msg
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=new_volume.cluster_id
@@ -400,15 +402,21 @@ class VolumeHandler(AdminBaseHandler):
                     'is_link_clone': verify_data['is_link_clone'],
                     'pool_id': verify_data['pool_id']
                 }
+                begin_action = self.begin_action(ctxt, AllResourceType.VOLUME,
+                                                 AllActionType.CLONE)
                 new_volume = objects.Volume(ctxt, **volume_data)
                 new_volume.create()
                 verify_data.update({'new_volume': new_volume})
                 # put into thread pool
                 self.executor.submit(self._volume_create_from_snapshot, ctxt,
-                                     verify_data)
+                                     verify_data, begin_action)
+                logger.info('volume clone task has begin,volume_name=%s',
+                            volume_data['display_name'])
                 new_volumes.append(new_volume)
             return new_volumes
         else:
+            begin_action = self.begin_action(ctxt, AllResourceType.VOLUME,
+                                             AllActionType.CLONE)
             uid = str(uuid.uuid4())
             volume_name = "volume-{}".format(uid)
             volume_data = {
@@ -427,5 +435,7 @@ class VolumeHandler(AdminBaseHandler):
             verify_data.update({'new_volume': new_volume})
             # put into thread pool
             self.executor.submit(self._volume_create_from_snapshot, ctxt,
-                                 verify_data)
+                                 verify_data, begin_action)
+            logger.info('volume clone task has begin,volume_name=%s',
+                        volume_data['display_name'])
             return new_volume
