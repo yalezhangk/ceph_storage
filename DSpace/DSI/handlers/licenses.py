@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import json
+import os
 
 from tornado import gen
 
@@ -86,6 +87,9 @@ class DownloadlicenseHandler(BaseAPIHandler):
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
                         'attachment; filename={}'.format(file_name))
+        if not os.path.exists(file[file_name]):
+            raise InvalidInput(reason=_('file not yet generate or '
+                                        'file path is error'))
         with open(file[file_name], 'r') as f:
             file_content = f.read()
             self.write(file_content)
