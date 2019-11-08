@@ -152,10 +152,6 @@ class NodeTask(object):
     def get_dsa_conf(self):
         admin_ip_address = objects.sysconfig.sys_config_get(
             self.ctxt, "admin_ip_address")
-        api_port = objects.sysconfig.sys_config_get(
-            self.ctxt, "api_port")
-        websocket_port = objects.sysconfig.sys_config_get(
-            self.ctxt, "websocket_port")
         admin_port = objects.sysconfig.sys_config_get(
             self.ctxt, "admin_port")
         agent_port = objects.sysconfig.sys_config_get(
@@ -165,8 +161,6 @@ class NodeTask(object):
         dsa_conf = tpl.render(
             ip_address=str(self.node.ip_address),
             admin_ip_address=str(admin_ip_address),
-            api_port=api_port,
-            websocket_port=websocket_port,
             admin_port=admin_port,
             agent_port=agent_port,
             node_id=self.node.id,
