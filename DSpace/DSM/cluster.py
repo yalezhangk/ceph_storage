@@ -135,7 +135,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 value_type=s_fields.SysConfigType.STRING)
             sysconf.create()
 
-        # self.executor.submit(self.init_alert_rule, ctxt, cluster.id)
+        self.executor.submit(self.init_alert_rule, ctxt, cluster.id)
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
 
         if admin_cluster:
