@@ -67,8 +67,13 @@ class PoolHandler(AdminBaseHandler):
             ctxt, pool_id, expected_attrs=expected_attrs)
 
     def pool_osds_get(self, ctxt, pool_id, expected_attrs=None):
-        return objects.OsdList.get_by_pool(
+        osds = objects.OsdList.get_by_pool(
             ctxt, pool_id, expected_attrs=expected_attrs)
+        prometheus = PrometheusTool(ctxt)
+        for osd in osds:
+            osd.metrics = {}
+            prometheus.osd_get_capacity(osd)
+        return osds
 
     def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
         for osd_id in osds:

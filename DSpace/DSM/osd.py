@@ -49,6 +49,7 @@ class OsdHandler(AdminBaseHandler):
             logger.debug("Get osd metrics: tab=io")
             prometheus = PrometheusTool(ctxt)
             for osd in osds:
+                osd.metrics = {}
                 prometheus.osd_disk_perf(osd)
 
         return osds

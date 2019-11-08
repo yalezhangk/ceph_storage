@@ -375,12 +375,12 @@ class PrometheusTool(object):
         except BaseException:
             pass
 
-    def osd_get_capacity(self, osd, metrics):
+    def osd_get_capacity(self, osd):
         for m in osd_capacity:
             metric = "ceph_osd_capacity_" + m
             value = self.prometheus_get_metric(metric, filter={
                 "osd_id": int(osd.osd_id or '-1')})
-            metrics.update({m: value})
+            osd.metrics.update({m: value})
 
     def osd_get_bluefs_capacity(self, osd):
         for m in osd.bluefs_capacity:
@@ -399,14 +399,13 @@ class PrometheusTool(object):
             metrics.update({m: value})
 
     def osd_get_realtime_metrics(self, osd):
-        metrics = {}
         for m in osd_rate:
             metric = "ceph_osd_rate_" + m
             value = self.prometheus_get_metric(metric, filter={
                 "osd_id": int(osd.osd_id or '-1')})
-            metrics.update({m: value})
-        self.osd_get_capacity(osd, metrics)
-        return metrics
+            osd.metrics.update({m: value})
+        self.osd_get_capacity(osd)
+        return osd.metrics
 
     def osd_get_histroy_metrics(self, osd, start, end):
         metrics = {}
@@ -424,7 +423,6 @@ class PrometheusTool(object):
                         'write_bytes_rate', 'read_bytes_rate',
                         'write_lat_rate', 'read_lat_rate',
                         'io_rate']
-        osd.metrics = {}
         disk = objects.Disk.get_by_id(self.ctxt, osd.disk_id)
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
         for m in disk_metrics:
