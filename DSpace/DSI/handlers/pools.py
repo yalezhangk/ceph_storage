@@ -112,9 +112,13 @@ class PoolOsdsHandler(ClusterAPIHandler):
 
 class PoolCapacityHandler(ClusterAPIHandler):
     @gen.coroutine
-    def get(self):
-        """TODO 存储池容量"""
-        self.write(objects.json_encode({}))
+    def get(self, pool_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.pool_capacity_get(ctxt, pool_id)
+        self.write(objects.json_encode({
+            "pool_capacity": data
+        }))
 
 
 class PoolIncreaseDiskHandler(ClusterAPIHandler):
