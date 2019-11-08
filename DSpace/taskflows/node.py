@@ -133,10 +133,6 @@ class NodeTask(object):
             self.ctxt, "admin_port")
         agent_port = objects.sysconfig.sys_config_get(
             self.ctxt, "agent_port")
-        database_user = objects.sysconfig.sys_config_get(
-            self.ctxt, "database_user")
-        database_password = objects.sysconfig.sys_config_get(
-            self.ctxt, "database_password")
 
         tpl = template.get('agent.conf.j2')
         agent_conf = tpl.render(
@@ -147,9 +143,7 @@ class NodeTask(object):
             admin_port=admin_port,
             agent_port=agent_port,
             node_id=self.node.id,
-            cluster_id=self.node.cluster_id,
-            database_user=database_user,
-            database_password=database_password
+            cluster_id=self.node.cluster_id
         )
         return agent_conf
 
