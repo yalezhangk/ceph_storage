@@ -7,6 +7,7 @@ from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -23,7 +24,7 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'coding_chunk_num': fields.IntegerField(nullable=True),
         'replicate_size': fields.IntegerField(nullable=True),
         'role': fields.StringField(nullable=True),
-        'status': fields.StringField(nullable=True),
+        'status': s_fields.PoolStatusField(nullable=True),
         'size': fields.IntegerField(nullable=True),
         'used': fields.IntegerField(nullable=True),
         'osd_num': fields.IntegerField(nullable=True),
@@ -34,9 +35,10 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'osds': fields.ListOfObjectsField('Osd', nullable=True),
         'crush_rule': fields.ObjectField("CrushRule", nullable=True),
         'volumes': fields.ListOfObjectsField('Volume', nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes')
+    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):

@@ -18,9 +18,14 @@ class PoolListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
+
+        tab = self.get_query_argument('tab', default="default")
+        if tab not in ["default", "io"]:
+            raise InvalidInput(_("this tab is not supported"))
+
         expected_attrs = ['crush_rule', 'osds', 'volumes']
         pools = yield client.pool_get_all(ctxt, expected_attrs=expected_attrs,
-                                          **page_args)
+                                          tab=tab, **page_args)
         pool_count = yield client.pool_get_count(ctxt)
         self.write(objects.json_encode({
             "pools": pools,
