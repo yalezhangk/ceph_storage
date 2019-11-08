@@ -141,7 +141,7 @@ class NodeTask(object):
         tpl = template.get('agent.conf.j2')
         agent_conf = tpl.render(
             ip_address=str(self.node.ip_address),
-            admin_ip_address=admin_ip_address,
+            admin_ip_address=str(admin_ip_address),
             api_port=api_port,
             websocket_port=websocket_port,
             admin_port=admin_port,
