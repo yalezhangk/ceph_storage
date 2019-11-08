@@ -67,6 +67,25 @@ class NodeMixin(object):
             raise exc.Invalid("public ip not in public cidr ({})"
                               "".format(public_cidr))
 
+    @classmethod
+    def _collect_node_ip_address(cls, ctxt, node_info):
+        admin_ip = node_info.get('admin_ip')
+        node_data = {
+            'hostname': node_info.get('hostname'),
+            'ip_address': admin_ip
+        }
+        public_cidr = objects.sysconfig.sys_config_get(ctxt, key="public_cidr")
+        cluster_cidr = objects.sysconfig.sys_config_get(ctxt,
+                                                        key="cluster_cidr")
+        for network in node_info.get("networks"):
+            ip_addr = network.get("ip_address")
+            if (IPAddress(ip_addr) in IPNetwork(public_cidr)):
+                node_data['public_ip_address'] = ip_addr
+            if (IPAddress(ip_addr) in IPNetwork(cluster_cidr)):
+                node_data['cluster_ip_address'] = ip_addr
+
+        return node_data
+
 
 class NodeTask(object):
     ctxt = None
@@ -308,7 +327,7 @@ class NodeTask(object):
         log_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
         log_dir_container = objects.sysconfig.sys_config_get(
             self.ctxt, "log_dir_container")
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
         config_dir_container = objects.sysconfig.sys_config_get(
             self.ctxt, "config_dir_container")
         image_name = objects.sysconfig.sys_config_get(self.ctxt, "image_name")
