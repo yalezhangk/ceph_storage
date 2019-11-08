@@ -1452,6 +1452,16 @@ def _volume_access_path_load_attr(ctxt, vap, session, expected_attrs=None):
         cgs = _volume_client_group_get_query(
             ctxt, session).filter_by(volume_access_path_id=vap.id)
         vap.volume_client_groups = [cg for cg in cgs]
+    if 'nodes' in expected_attrs and vap.volume_gateways:
+        vap.nodes = []
+        for vg in vap.volume_gateways:
+            vap.nodes.append(_node_get(ctxt, vg.node_id, session))
+    if 'volumes' in expected_attrs and vap.volume_client_groups:
+        vap.volumes = []
+        for vcg in vap.volume_client_groups:
+            volumes = _volume_get_query(ctxt, session).filter_by(
+                volume_client_group_id=vcg.id)
+            vap.volumes.extend(volumes)
 
 
 @require_context
