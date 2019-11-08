@@ -271,7 +271,8 @@ class AllResourceType(BaseStorEnum):
     POOL = 'pool'
     CLUSTER = 'cluster'
     VOLUME = 'volume'
-    ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER)
+    ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
+           VOLUME)
 
 
 class AllActionType(BaseStorEnum):
@@ -322,8 +323,8 @@ class ResourceAction(object):
             },
 
             AllResourceType.ALERT_RULE: {
-                AllActionType.OPEN_OR_CLOSE_RULE:
-                    AllActionType.OPEN_OR_CLOSE_RULE
+                AllActionType.OPEN_ALERT_RULE: AllActionType.OPEN_ALERT_RULE,
+                AllActionType.CLOSE_ALERT_RULE: AllActionType.CLOSE_ALERT_RULE,
             },
 
             AllResourceType.EMAIL_GROUP: {
