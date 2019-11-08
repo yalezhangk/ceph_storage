@@ -18,7 +18,7 @@ class AlertRuleListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        resource_type = self.get_argument('resource_type')
+        resource_type = self.get_argument('resource_type', default=None)
         filters = {}
         if resource_type:
             filters = {'resource_type': resource_type}

@@ -77,15 +77,15 @@ class DownloadlicenseHandler(BaseAPIHandler):
 
     def get(self):
         file_name = self.get_argument('file_name')
-        if file_name == 'certificate_file':
+        if file_name == 'certificate.pem':
             file = {file_name: CA_FILE_PATH}
-        elif file_name == 'private_file':
+        elif file_name == 'private-key.pem':
             file = {file_name: PRIVATE_FILE}
         else:
             raise InvalidInput(reason=_('file_name not exist'))
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
-                        'attachment; filename={}.pem'.format(file_name))
+                        'attachment; filename={}'.format(file_name))
         with open(file[file_name], 'r') as f:
             file_content = f.read()
             self.write(file_content)

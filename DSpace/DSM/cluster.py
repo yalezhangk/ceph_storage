@@ -2,6 +2,7 @@ import six
 from oslo_log import log as logging
 
 from DSpace import objects
+from DSpace.DSM.alert_rule import AlertRuleInitMixin
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
@@ -12,7 +13,7 @@ from DSpace.tools.ceph import CephTool
 logger = logging.getLogger(__name__)
 
 
-class ClusterHandler(AdminBaseHandler):
+class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def ceph_cluster_info(self, ctxt):
         try:
             ceph_client = CephTask(ctxt)
@@ -39,7 +40,9 @@ class ClusterHandler(AdminBaseHandler):
         cluster = objects.Cluster(
             ctxt, display_name=data.get('cluster_name'))
         cluster.create()
-
+        # init alert_rule
+        self.executor.submit(self.init_alert_rule, ctxt, cluster.id)
+        logger.info('cluster %s init alert_rule task has begin', cluster.id)
         ctxt.cluster_id = cluster.id
         # TODO check key value
         for key, value in six.iteritems(data):
