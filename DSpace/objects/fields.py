@@ -270,6 +270,7 @@ class AllResourceType(BaseStorEnum):
     NODE = 'node'
     POOL = 'pool'
     CLUSTER = 'cluster'
+    VOLUME = 'volume'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER)
 
 
@@ -281,8 +282,13 @@ class AllActionType(BaseStorEnum):
     OPEN_ALERT_RULE = 'open_alert_rule'
     CLOSE_ALERT_RULE = 'close_alert_rule'
     UPDATE = 'update'
+    VOLUME_EXTEND = 'volume_extend'
+    VOLUME_SHRINK = 'volume_shrink'
+    VOLUME_ROLLBACK = 'volume_rollback'
+    VOLUME_UNLINK = 'volume_unlink'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
-           OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE)
+           OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
+           VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -324,6 +330,16 @@ class ResourceAction(object):
                 AllActionType.CREATE: AllActionType.CREATE,
                 AllActionType.UPDATE: AllActionType.UPDATE,
                 AllActionType.DELETE: AllActionType.DELETE,
-            }
+            },
+
+            AllResourceType.VOLUME: {
+                AllActionType.CREATE: AllActionType.CREATE,
+                AllActionType.UPDATE: AllActionType.UPDATE,
+                AllActionType.DELETE: AllActionType.DELETE,
+                AllActionType.VOLUME_EXTEND: AllActionType.VOLUME_EXTEND,
+                AllActionType.VOLUME_SHRINK: AllActionType.VOLUME_SHRINK,
+                AllActionType.VOLUME_ROLLBACK: AllActionType.VOLUME_ROLLBACK,
+                AllActionType.VOLUME_UNLINK: AllActionType.VOLUME_UNLINK,
+            },
         }
         return relation
