@@ -247,14 +247,13 @@ class PrometheusTool(object):
                         'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
                         'io_rate']
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
-        metrics = {}
+        disk.metrics = {}
         for m in disk_metrics:
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(
                 metric_method, filter={'hostname': node.hostname,
                                        'device': disk.name})
-            metrics.update({m: data})
-        return metrics
+            disk.metrics.update({m: data})
 
     def disk_get_histroy_perf(self, disk, start, end):
         disk_metrics = ['write_iops_rate', 'read_iops_rate',

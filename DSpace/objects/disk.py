@@ -35,9 +35,10 @@ class Disk(base.StorPersistentObject, base.StorObject,
         'cluster_id': fields.StringField(),
         'node': fields.ObjectField("Node", nullable=True),
         'partition_used': fields.IntegerField(nullable=True),
+        'metrics': s_field.DictOfNullableField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('node', 'partition_used', )
+    OPTIONAL_FIELDS = ('node', 'partition_used', 'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):
