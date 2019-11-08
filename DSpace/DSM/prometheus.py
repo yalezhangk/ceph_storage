@@ -69,6 +69,7 @@ class PrometheusHandler(AdminBaseHandler):
     def osd_metrics_get(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id)
         prometheus = PrometheusTool(ctxt)
+        osd.metrics = {}
         data = prometheus.osd_get_realtime_metrics(osd)
         return data
 
@@ -82,11 +83,10 @@ class PrometheusHandler(AdminBaseHandler):
     def osd_disk_metrics_get(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id)
         prometheus = PrometheusTool(ctxt)
-        data = {}
-        prometheus.osd_get_capacity(osd, data)
+        osd.metrics = {}
+        prometheus.osd_get_capacity(osd)
         prometheus.osd_disk_perf(osd)
-        data.update(osd.metrics)
-        return data
+        return osd.metrics
 
     def osd_history_disk_metrics_get(self, ctxt, osd_id, start, end):
         osd = objects.Osd.get_by_id(ctxt, osd_id)
