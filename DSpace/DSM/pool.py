@@ -3,6 +3,7 @@ import uuid
 
 import six
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from DSpace import exception
 from DSpace import objects
@@ -11,6 +12,7 @@ from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
+from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +20,44 @@ logger = logging.getLogger(__name__)
 class PoolHandler(AdminBaseHandler):
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None,
-                     expected_attrs=None):
-        return objects.PoolList.get_all(
+                     expected_attrs=None, tab=None):
+        pools = objects.PoolList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+
+        if tab == 'default':
+            for pool in pools:
+                prometheus = PrometheusTool(ctxt)
+                metrics = {}
+                prometheus.pool_get_capacity(pool, metrics)
+                pool.metrics = metrics
+                prometheus.pool_get_pg_state(pool)
+                pg_state = pool.metrics.get("pg_state")
+                time_now = timeutils.utcnow()
+                if pool.updated_at:
+                    time_diff = time_now - pool.created_at
+                    if time_diff.total_seconds() <= 60:
+                        continue
+                    if pool.status not in [s_fields.PoolStatus.CREATING,
+                                           s_fields.PoolStatus.DELETING,
+                                           s_fields.PoolStatus.ERROR,
+                                           s_fields.PoolStatus.DELETED]:
+                        if (pg_state and pg_state.get("healthy") < 1.0 and
+                                pool.status != s_fields.PoolStatus.INACTIVE):
+                            pool.status = s_fields.PoolStatus.INACTIVE
+                            pool.save()
+                        if (pg_state and pg_state.get("healthy") >= 1.0 and
+                                pool.status != s_fields.PoolStatus.ACTIVE):
+                            pool.status = s_fields.PoolStatus.ACTIVE
+                            pool.save()
+        if tab == 'io':
+            prometheus = PrometheusTool(ctxt)
+            for pool in pools:
+                pool.metrics = {}
+                prometheus.pool_get_perf(pool, pool.metrics)
+
+        return pools
 
     def pool_get_count(self, ctxt, filters=None):
         return objects.PoolList.get_count(ctxt, filters=filters)
