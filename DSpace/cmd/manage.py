@@ -159,9 +159,10 @@ class DbCommands(object):
     def sys_config(self, data):
         configs = data.split(',')
         ctxt = context.get_context()
-        allowed = ['image_path', 'image_name', 'image_namespace',
-                   'dspace_version', 'admin_ip_address', 'admin_port',
-                   'agent_port']
+        allowed = ['image_name', 'image_namespace', 'dspace_version',
+                   'admin_ip_address', 'admin_port', 'agent_port',
+                   'dspace_repo', 'config_dir', 'config_dir_container',
+                   'log_dir', 'log_dir_container', 'admin_ips']
         for c in configs:
             key, value = c.split("=", 1)
             if key not in allowed:
