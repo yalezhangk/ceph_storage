@@ -162,9 +162,13 @@ class NodeTask(object):
                         self.get_chrony_conf())
 
         # run container
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
         docker_tool = DockerTool(ssh)
         docker_tool.run(
-            image="dspace/chrony:v2.3",
+            image="{}/chrony:{}".format(image_namespace, dspace_version),
             privileged=True,
             name="dspace_chrony",
             volumes=[("/etc/dspace", "/etc/dspace"),
@@ -178,7 +182,13 @@ class NodeTask(object):
         docker_tool = DockerTool(ssh)
         docker_tool.stop('dspace_chrony')
         docker_tool.rm('dspace_chrony')
-        docker_tool.image_rm('dspace_chrony', force=True)
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
+        docker_tool.image_rm(
+            "{}/chrony:{}".format(image_namespace, dspace_version),
+            force=True)
         # rm config file
         file_tool = FileTool(ssh)
         file_tool.rm("/etc/dspace/chrony.conf")
@@ -198,8 +208,13 @@ class NodeTask(object):
         ssh = self.get_ssh_executor()
         # run container
         docker_tool = DockerTool(ssh)
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
         docker_tool.run(
-            image="dspace/node_exporter:v2.3",
+            image="{}/node_exporter:{}".format(image_namespace,
+                                               dspace_version),
             privileged=True,
             name="dspace_node_exporter",
             volumes=[("/etc/dspace", "/etc/dspace"),
@@ -213,7 +228,13 @@ class NodeTask(object):
         docker_tool = DockerTool(ssh)
         docker_tool.stop('dspace_node_exporter')
         docker_tool.rm('dspace_node_exporter')
-        docker_tool.image_rm('dspace_node_exporter', force=True)
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
+        docker_tool.image_rm(
+            "{}/node_exporter:{}".format(image_namespace, dspace_version),
+            force=True)
 
     def ceph_mon_install(self):
         logger.debug("install ceph mon")

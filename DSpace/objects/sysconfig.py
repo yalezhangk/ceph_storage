@@ -48,6 +48,8 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
     @classmethod
     def get_by_key(cls, context, key, cluster_id=None):
         orm_obj = db.sys_config_get_by_key(context, key, cluster_id)
+        if not orm_obj:
+            return None
         return cls._from_db_object(context, cls(context), orm_obj)
 
 
