@@ -1580,19 +1580,9 @@ def volume_access_path_append_gateway(context, access_path_id,
             context, access_path_id, session=session)
         volume_gateway_ref = _volume_gateway_get(
             context, volume_gateway_id, session=session)
-        volume_access_path_ref.volume_gateways.append(volume_gateway_ref)
+        volume_access_path_ref._volume_gateways.append(volume_gateway_ref)
         volume_access_path_ref.save(session)
     return volume_access_path_ref
-
-
-@handle_db_data_error
-@require_context
-def volume_access_path_get_gateways(context, access_path_id):
-    session = get_session()
-    with session.begin():
-        volume_access_path_ref = _volume_access_path_get(
-            context, access_path_id, session=session)
-        return volume_access_path_ref.volume_gateways
 
 ###############################
 
@@ -2008,7 +1998,7 @@ def volume_client_group_update(context, client_group_id, values):
     session = get_session()
     with session.begin():
         query = _volume_client_group_get_query(
-            context, session, joined_load=False)
+            context, session)
         result = query.filter_by(id=client_group_id).update(values)
         if not result:
             raise exception.VolumeClientGroupNotFound(
