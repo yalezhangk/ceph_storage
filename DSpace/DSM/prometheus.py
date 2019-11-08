@@ -101,10 +101,10 @@ class PrometheusHandler(AdminBaseHandler):
     def pool_metrics_get(self, ctxt, pool_id):
         pool = objects.Pool.get_by_id(ctxt, pool_id)
         prometheus = PrometheusTool(ctxt)
-        metrics = {}
-        prometheus.pool_get_capacity(pool, metrics)
-        prometheus.pool_get_perf(pool, metrics)
-        return metrics
+        pool.metrics = {}
+        prometheus.pool_get_capacity(pool)
+        prometheus.pool_get_perf(pool)
+        return pool.metrics
 
     def pool_metrics_history_get(self, ctxt, pool_id, start, end):
         pool = objects.Pool.get_by_id(ctxt, pool_id)
@@ -115,6 +115,14 @@ class PrometheusHandler(AdminBaseHandler):
         prometheus.pool_get_histroy_perf(pool, float(start), float(end),
                                          metrics)
         return metrics
+
+    def pool_capacity_get(self, ctxt, pool_id):
+        pool = objects.Pool.get_by_id(ctxt, pool_id)
+        prometheus = PrometheusTool(ctxt)
+        pool.metrics = {}
+        prometheus.pool_get_capacity(pool)
+        prometheus.pool_get_pg_state(pool)
+        return pool.metrics
 
     def disk_perf_get(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)

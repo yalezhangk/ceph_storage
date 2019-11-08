@@ -560,6 +560,11 @@ class AdminClient(BaseClient):
             start=start, end=end)
         return response
 
+    def pool_capacity_get(self, ctxt, pool_id):
+        response = self.call(
+            ctxt, "pool_capacity_get", pool_id=pool_id)
+        return response
+
     ##################
 
     def volume_access_path_get_all(self, ctxt, marker=None, limit=None,

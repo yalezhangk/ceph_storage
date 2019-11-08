@@ -29,9 +29,8 @@ class PoolHandler(AdminBaseHandler):
         if tab == 'default':
             for pool in pools:
                 prometheus = PrometheusTool(ctxt)
-                metrics = {}
-                prometheus.pool_get_capacity(pool, metrics)
-                pool.metrics = metrics
+                pool.metrics = {}
+                prometheus.pool_get_capacity(pool)
                 prometheus.pool_get_pg_state(pool)
                 pg_state = pool.metrics.get("pg_state")
                 time_now = timeutils.utcnow()
@@ -55,7 +54,7 @@ class PoolHandler(AdminBaseHandler):
             prometheus = PrometheusTool(ctxt)
             for pool in pools:
                 pool.metrics = {}
-                prometheus.pool_get_perf(pool, pool.metrics)
+                prometheus.pool_get_perf(pool)
 
         return pools
 

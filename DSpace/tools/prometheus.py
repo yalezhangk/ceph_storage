@@ -305,12 +305,12 @@ class PrometheusTool(object):
         except BaseException:
             cluster_metrics.update({'cluster_pg_state': None})
 
-    def pool_get_perf(self, pool, metrics):
+    def pool_get_perf(self, pool):
         for m in pool_perf:
             metric = "ceph_pool_" + m
             value = self.prometheus_get_metric(
                 metric, filter={"pool_id": pool.pool_id})
-            metrics.update({m: value})
+            pool.metrics.update({m: value})
 
     def pool_get_histroy_perf(self, pool, start, end, metrics):
         for m in pool_perf:
@@ -320,17 +320,17 @@ class PrometheusTool(object):
                     "pool_id": pool.pool_id})
             metrics.update({m: value})
 
-    def pool_get_capacity(self, pool, metrics):
+    def pool_get_capacity(self, pool):
         for m in pool_capacity:
             metric = "ceph_pool_" + m
             value = self.prometheus_get_metric(
                 metric, filter={"pool_id": pool.pool_id})
-            metrics.update({m: value})
+            pool.metrics.update({m: value})
         total_map = pool_total_perf_map
         for pool_key in total_map:
             value = self.prometheus_get_metric(
                 total_map[pool_key], filter={'pool_id': pool.pool_id})
-            metrics.update({pool_key: value})
+            pool.metrics.update({pool_key: value})
 
     def pool_get_histroy_capacity(self, pool, start, end, metrics):
         for m in pool_capacity:
@@ -372,8 +372,8 @@ class PrometheusTool(object):
                                     3) if pg_total else 0,
                 'degraded': round(degraded / pg_total, 3) if pg_total else 0,
                 'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
-        except BaseException:
-            pass
+        except exception.StorException as e:
+            logger.error(e)
 
     def osd_get_capacity(self, osd):
         for m in osd_capacity:
