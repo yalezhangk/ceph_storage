@@ -69,11 +69,11 @@ class CephTool(ToolBase):
     def disk_prepare(self, backend, diskname, db_partition=None,
                      wal_partition=None, cache_partition=None,
                      journal_partition=None, fsid=None, osd_id=None):
-        # ceph-disk --setuser root --setgroup root prepare
+        # dspace-disk --setuser root --setgroup root prepare
         # --osd-uuid {{ osd_fsid }} --osd-id {{ osd_id}}
         # --cluster {{ cluster }} --{{ store_backend }}
         # --block.db {{ item.0 }} --block.t2ce {{ item.1 }} {{ item.2 }}"
-        cmd = ["ceph-disk", "--setuser", "ceph", "--setgroup", "ceph",
+        cmd = ["dspace-disk", "--setuser", "ceph", "--setgroup", "ceph",
                "prepare", ]
         if fsid and osd_id:
             cmd.extend(['--osd-uuid', fsid, "--osd-id", osd_id])
@@ -93,21 +93,21 @@ class CephTool(ToolBase):
                                   stdout=stdout, stderr=stderr)
 
     def disk_active(self, diskname):
-        cmd = ["ceph-disk", "activate", "/dev/%s1" % diskname]
+        cmd = ["dspace-disk", "activate", "/dev/%s1" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
     def osd_deactivate(self, diskname):
-        cmd = ["ceph-disk", "deactivate", "/dev/%s1" % diskname]
+        cmd = ["dspace-disk", "deactivate", "/dev/%s1" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
     def osd_zap(self, diskname):
-        cmd = ["ceph-disk", "zap", "/dev/%s" % diskname]
+        cmd = ["dspace-disk", "zap", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
