@@ -171,57 +171,70 @@ class NodeTask(object):
     def chrony_install(self):
         ssh = self.get_ssh_executor()
         # install package
-        file_tool = FileTool(ssh)
-        file_tool.write("/etc/dspace/chrony.conf",
-                        self.get_chrony_conf())
-
-        # run container
+        log_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
+        log_dir_container = objects.sysconfig.sys_config_get(
+            self.ctxt, "log_dir_container")
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
+        config_dir_container = objects.sysconfig.sys_config_get(
+            self.ctxt, "config_dir_container")
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
+        file_tool = FileTool(ssh)
+        file_tool.write("{}/chrony.conf".format(config_dir),
+                        self.get_chrony_conf())
+
+        # run container
         docker_tool = DockerTool(ssh)
         docker_tool.run(
             image="{}/chrony:{}".format(image_namespace, dspace_version),
             privileged=True,
-            name="dspace_chrony",
-            volumes=[("/etc/dspace", "/etc/dspace"),
-                     ("/var/log/dspace", "/var/log/dspace")]
+            name="{}_chrony".format(image_namespace),
+            volumes=[(config_dir, config_dir_container),
+                     (log_dir, log_dir_container)]
         )
 
     def chrony_uninstall(self):
         logger.debug("uninstall chrony")
         ssh = self.get_ssh_executor()
         # remove container and image
-        docker_tool = DockerTool(ssh)
-        docker_tool.stop('dspace_chrony')
-        docker_tool.rm('dspace_chrony')
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
+        docker_tool = DockerTool(ssh)
+        docker_tool.stop('{}_chrony'.format(image_namespace))
+        docker_tool.rm('{}_chrony'.format(image_namespace))
         docker_tool.image_rm(
             "{}/chrony:{}".format(image_namespace, dspace_version),
             force=True)
         # rm config file
         file_tool = FileTool(ssh)
-        file_tool.rm("/etc/dspace/chrony.conf")
+        file_tool.rm("{}/chrony.conf".format(config_dir))
 
     def chrony_update(self):
         ssh = self.get_ssh_executor()
         # install package
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
         file_tool = FileTool(ssh)
-        file_tool.write("/etc/dspace/chrony.conf",
+        file_tool.write("{}/chrony.conf".format(config_dir),
                         self.get_chrony_conf())
 
         # restart container
         docker_tool = DockerTool(ssh)
-        docker_tool.restart('dspace_chrony')
+        docker_tool.restart('{}_chrony'.format(image_namespace))
 
     def node_exporter_install(self):
         ssh = self.get_ssh_executor()
         # run container
         docker_tool = DockerTool(ssh)
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
+        config_dir_container = objects.sysconfig.sys_config_get(
+            self.ctxt, "config_dir_container")
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
@@ -230,8 +243,8 @@ class NodeTask(object):
             image="{}/node_exporter:{}".format(image_namespace,
                                                dspace_version),
             privileged=True,
-            name="dspace_node_exporter",
-            volumes=[("/etc/dspace", "/etc/dspace"),
+            name="{}_node_exporter".format(image_namespace),
+            volumes=[(config_dir, config_dir_container),
                      ("/", "/host", "ro,rslave")]
         )
 
@@ -239,13 +252,13 @@ class NodeTask(object):
         logger.debug("uninstall node exporter")
         ssh = self.get_ssh_executor()
         # remove container and image
-        docker_tool = DockerTool(ssh)
-        docker_tool.stop('dspace_node_exporter')
-        docker_tool.rm('dspace_node_exporter')
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
+        docker_tool = DockerTool(ssh)
+        docker_tool.stop('{}_node_exporter'.format(image_namespace))
+        docker_tool.rm('{}_node_exporter'.format(image_namespace))
         docker_tool.image_rm(
             "{}/node_exporter:{}".format(image_namespace, dspace_version),
             force=True)
@@ -358,9 +371,10 @@ class NodeTask(object):
         # TODO: remove code_dir
         code_dir = "/root/.local/lib/python3.6/site-packages/DSpace/"
         docker_tool.run(
+            name="{}_dsa".format(image_namespace),
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
-            name="dsa",
+            privileged=True,
             volumes=[
                 (config_dir, config_dir_container),
                 (log_dir, log_dir_container),
@@ -373,20 +387,21 @@ class NodeTask(object):
     def dspace_agent_uninstall(self):
         logger.debug("uninstall chrony")
         ssh = self.get_ssh_executor()
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
         # remove container and image
         docker_tool = DockerTool(ssh)
-        docker_tool.stop('dsa')
-        docker_tool.rm('dsa')
+        docker_tool.stop('{}_dsa'.format(image_namespace))
+        docker_tool.rm('{}_dsa'.format(image_namespace))
         docker_tool.image_rm(
             "{}/dspace:{}".format(image_namespace, dspace_version),
             force=True)
         # rm config file
         file_tool = FileTool(ssh)
-        file_tool.rm("/etc/dspace")
+        file_tool.rm(config_dir)
 
     def ceph_config_update(self, values):
         path = self._wapper('/etc/ceph/ceph.conf')
