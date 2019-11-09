@@ -27,17 +27,17 @@ class NodeMixin(object):
     @classmethod
     def _check_node_ip_address(cls, ctxt, data):
         ip_address = data.get('ip_address')
-        storage_cluster_ip_address = data.get('storage_cluster_ip_address')
-        storage_public_ip_address = data.get('storage_public_ip_address')
+        cluster_ip = data.get('cluster_ip')
+        public_ip = data.get('public_ip')
         admin_cidr = objects.sysconfig.sys_config_get(ctxt, key="admin_cidr")
         public_cidr = objects.sysconfig.sys_config_get(ctxt, key="public_cidr")
         cluster_cidr = objects.sysconfig.sys_config_get(ctxt,
                                                         key="cluster_cidr")
         if not all([ip_address,
-                    storage_cluster_ip_address,
-                    storage_public_ip_address]):
-            raise exc.Invalid('ip_address,storage_cluster_ip_address,'
-                              'storage_public_ip_address is required')
+                    cluster_ip,
+                    public_ip]):
+            raise exc.Invalid('ip_address,cluster_ip,'
+                              'public_ip is required')
 
         if objects.NodeList.get_all(ctxt, filters={"ip_address": ip_address}):
             raise exc.Invalid("ip_address already exists!")
@@ -47,22 +47,22 @@ class NodeMixin(object):
         if objects.NodeList.get_all(
             ctxt,
             filters={
-                "storage_cluster_ip_address": storage_cluster_ip_address
+                "cluster_ip": cluster_ip
             }
         ):
-            raise exc.Invalid("storage_cluster_ip_address already exists!")
-        if (IPAddress(storage_cluster_ip_address) not in
+            raise exc.Invalid("cluster_ip already exists!")
+        if (IPAddress(cluster_ip) not in
                 IPNetwork(cluster_cidr)):
             raise exc.Invalid("cluster ip not in cluster cidr ({})"
                               "".format(cluster_cidr))
         if objects.NodeList.get_all(
             ctxt,
             filters={
-                "storage_public_ip_address": storage_public_ip_address
+                "public_ip": public_ip
             }
         ):
-            raise exc.Invalid("storage_public_ip_address already exists!")
-        if (IPAddress(storage_public_ip_address) not in
+            raise exc.Invalid("public_ip already exists!")
+        if (IPAddress(public_ip) not in
                 IPNetwork(public_cidr)):
             raise exc.Invalid("public ip not in public cidr ({})"
                               "".format(public_cidr))
@@ -80,9 +80,9 @@ class NodeMixin(object):
         for network in node_info.get("networks"):
             ip_addr = network.get("ip_address")
             if (IPAddress(ip_addr) in IPNetwork(public_cidr)):
-                node_data['public_ip_address'] = ip_addr
+                node_data['public_ip'] = ip_addr
             if (IPAddress(ip_addr) in IPNetwork(cluster_cidr)):
-                node_data['cluster_ip_address'] = ip_addr
+                node_data['cluster_ip'] = ip_addr
 
         return node_data
 

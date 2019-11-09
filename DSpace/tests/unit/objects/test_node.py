@@ -18,8 +18,8 @@ fake_node = {
     'cluster_id': "3fc66dde-6c6b-42d2-983b-930198d0c2f5",
     'ip_address': "192.168.0.1",
     'gateway_ip_address': "192.168.0.1",
-    'storage_cluster_ip_address': "192.168.0.1",
-    'storage_public_ip_address': "192.168.0.1",
+    'cluster_ip': "192.168.0.1",
+    'public_ip': "192.168.0.1",
     'status': "creating",
     'role_base': False,
     'role_admin': False,
@@ -36,8 +36,8 @@ class NodeCompareTestCase(test_objects.BaseObjectsTestCase):
     def _compare(self, fake_node, node):
         ins_node = copy.deepcopy(fake_node)
         for attr in ['ip_address', 'gateway_ip_address',
-                     'storage_cluster_ip_address',
-                     'storage_public_ip_address']:
+                     'cluster_ip',
+                     'public_ip']:
             ins_node[attr] = IPAddress(fake_node[attr])
         super(NodeCompareTestCase, self)._compare(self, ins_node, node)
 

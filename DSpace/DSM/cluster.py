@@ -23,14 +23,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             ceph_client = CephTask(ctxt)
             cluster_info = ceph_client.cluster_info()
         except Exception as e:
-            logger.error('get cluster info error:%s', str(e))
+            logger.exception('get cluster info error: %s', e)
             return {}
         fsid = cluster_info.get('fsid')
         total_cluster_byte = cluster_info.get('cluster_data', {}).get(
             'stats', {}).get('total_bytes')
         pool_list = cluster_info.get('cluster_data', {}).get('pools')
-        logger.debug('total_cluster_byte:%s', total_cluster_byte)
-        logger.debug('pool_list:%s', pool_list)
+        logger.debug('total_cluster_byte: %s', total_cluster_byte)
+        logger.debug('pool_list: %s', pool_list)
         return {
             'fsid': fsid,
             'total_cluster_byte': total_cluster_byte,
@@ -60,13 +60,12 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             rpc_service.create()
 
             status = s_fields.NodeStatus.ACTIVE
-            logger.info('create node success, node ip: {}'.format(
-                        node.ip_address))
+            logger.info('create node success, node ip: %s', node.ip_address)
             msg = _("node create success")
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
-            logger.error('create node error, node ip: {}, reason: {}'.format(
-                         node.ip_address, str(e)))
+            logger.exception('create node error, node ip: '
+                             '%s, reason: %s', node.ip_address, e)
             msg = _("node create error, reason: {}".format(str(e)))
         node.status = status
         node.save()
@@ -79,40 +78,44 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return node
 
     def _add_admin_nodes(self, ctxt):
-        admin_ips = objects.sysconfig.sys_config_get(
-            ctxt, key="admin_ips"
-        )
-        if not admin_ips:
-            raise exc.CephException(message='admin_ips not found')
-        admin_ips = admin_ips.split(',')
-        nodes_data = []
-        for ip_address in admin_ips:
-            node = objects.Node(
-                ctxt, ip_address=ip_address,
-                password=None)
+        try:
+            admin_ips = objects.sysconfig.sys_config_get(
+                ctxt, key="admin_ips"
+            )
+            if not admin_ips:
+                raise exc.CephException(message='admin_ips not found')
+            admin_ips = admin_ips.split(',')
+            nodes_data = []
+            for ip_address in admin_ips:
+                node = objects.Node(
+                    ctxt, ip_address=ip_address,
+                    password=None)
 
-            node_task = NodeTask(ctxt, node)
-            node_infos = node_task.node_get_infos()
-            node_infos['admin_ip'] = ip_address
-            node_data = NodeMixin._collect_node_ip_address(ctxt, node_infos)
-            nodes_data.append(node_data)
+                node_task = NodeTask(ctxt, node)
+                node_infos = node_task.node_get_infos()
+                node_infos['admin_ip'] = ip_address
+                node_data = NodeMixin._collect_node_ip_address(ctxt,
+                                                               node_infos)
+                nodes_data.append(node_data)
 
-        for data in nodes_data:
-            logger.debug("add admin node to cluster "
-                         "{}".format(data.get('ip_address')))
-            NodeMixin._check_node_ip_address(ctxt, data)
+            for data in nodes_data:
+                logger.debug("add admin node to cluster %s",
+                             data.get('ip_address'))
+                NodeMixin._check_node_ip_address(ctxt, data)
 
-            node = objects.Node(
-                ctxt, ip_address=data.get('ip_address'),
-                hostname=data.get('hostname'),
-                password=data.get('password'),
-                gateway_ip_address=data.get('gateway_ip_address'),
-                storage_cluster_ip_address=data.get('cluster_ip_address'),
-                storage_public_ip_address=data.get('public_ip_address'),
-                role_admin=True,
-                status=s_fields.NodeStatus.CREATING)
-            node.create()
-            self._admin_node_create(ctxt, node, data)
+                node = objects.Node(
+                    ctxt, ip_address=data.get('ip_address'),
+                    hostname=data.get('hostname'),
+                    password=data.get('password'),
+                    gateway_ip_address=data.get('gateway_ip_address'),
+                    cluster_ip=data.get('cluster_ip'),
+                    public_ip=data.get('public_ip'),
+                    role_admin=True,
+                    status=s_fields.NodeStatus.CREATING)
+                node.create()
+                self._admin_node_create(ctxt, node, data)
+        except Exception as e:
+            logger.exception('add admin nodes error, reason: %s', e)
 
     def cluster_create(self, ctxt, data):
         """Deploy a new cluster"""
@@ -150,7 +153,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return True
 
     def cluster_get_info(self, ctxt, ip_address, password=None):
-        logger.debug("detect an exist cluster from {}".format(ip_address))
+        logger.debug("detect an exist cluster from %s", ip_address)
         ssh_client = SSHExecutor()
         ssh_client.connect(hostname=ip_address, password=password)
         tool = CephTool(ssh_client)
