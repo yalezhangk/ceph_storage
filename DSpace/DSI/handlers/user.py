@@ -173,6 +173,8 @@ class UserLoginHandler(BaseAPIHandler, PermissionMixin):
         if not r:
             raise exception.PasswordError()
         self.session['user'] = user
+        self.current_user = user
+        ctxt.user_id = user.id
         permission = self.get_permission(ctxt, user)
         self.write(objects.json_encode(permission))
 
