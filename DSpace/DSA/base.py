@@ -26,8 +26,12 @@ class AgentBaseHandler(object):
         self._get_node()
 
     def _get_node(self):
+        endpoint = {
+            "ip": CONF.admin_ip,
+            "port": CONF.admin_port,
+        }
         client = AdminClientManager(
-            self.ctxt, async_support=False
+            self.ctxt, async_support=False, endpoint=endpoint
         ).get_client()
         self.node = client.node_get(self.ctxt, node_id=CONF.node_id)
 

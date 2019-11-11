@@ -60,7 +60,6 @@ def service():
     routers = get_routers()
     routers += [(r"/ws/", socketio.get_tornado_handler(sio))]
     routers = wapper_api_route(routers)
-    logger.error(routers)
     setup_swagger(routers)
     settings = {
         "cookie_secret": CONF.cookie_secret,
