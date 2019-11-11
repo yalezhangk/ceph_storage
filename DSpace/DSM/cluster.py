@@ -75,3 +75,6 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                              'public_network': str(public_network),
                              'cluster_network': str(cluster_network)})
         return cluster_info
+
+    def service_status_get(self, ctxt, names):
+        return objects.ServiceList.service_status_get(ctxt, names=names)

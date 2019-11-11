@@ -155,6 +155,10 @@ def rpc_service_get(context, rpc_service_id):
     return IMPL.rpc_service_get(context, rpc_service_id)
 
 
+def service_status_get(context, names):
+    return IMPL.service_status_get(context, names=names)
+
+
 def rpc_service_get_all(context, filters, marker, limit,
                         offset, sort_keys, sort_dirs):
     return IMPL.rpc_service_get_all(

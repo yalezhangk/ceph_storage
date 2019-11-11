@@ -3101,6 +3101,34 @@ def service_get_count(context, filters=None):
 
 
 @require_context
+def service_status_get(context, names, filters=None):
+    """
+    传入一个服务名称列表，返回各个服务所有的状态的数量统计
+    :param context:
+    :param names: []
+    :param filters: {}
+    :return: {}
+    """
+    session = get_session()
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        all_status = status = {}
+        for name in names:
+            filters["name"] = name
+            query = _service_get_query(context, session)
+            query = process_filters(models.Service)(query, filters)
+            if query:
+                active = query.filter_by(status="active").count()
+                failed = query.filter_by(status="failed").count()
+                inactive = query.filter_by(status="inactive").count()
+            status = {name: {"active": active,
+                             "failed": failed, "inactive": inactive}}
+            all_status.update(status)
+        return all_status
+
+
+@require_context
 def service_update(context, service_id, values):
     session = get_session()
     with session.begin():
