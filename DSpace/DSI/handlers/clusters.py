@@ -73,3 +73,13 @@ class ClusterHistoryMetricsHandler(ClusterMetricsHandler):
         self.write(json.dumps({
             "cluster_history_metrics": data
         }))
+
+
+class ClusterServiceStatus(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        names = ["NODE_EXPORTER", "PROMETHEUS", "MON"]
+        service_status = yield client.service_status_get(ctxt, names=names)
+        self.write(json.dumps(service_status))

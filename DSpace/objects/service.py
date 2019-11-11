@@ -63,3 +63,8 @@ class ServiceList(base.ObjectListBase, base.StorObject):
     def get_count(cls, context, filters=None):
         count = db.service_get_count(context, filters)
         return count
+
+    @classmethod
+    def service_status_get(cls, context, names):
+        status = db.service_status_get(context, names=names)
+        return status

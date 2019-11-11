@@ -17,6 +17,7 @@ from DSpace.DSI.handlers.clusters import ClusterDetectHandler
 from DSpace.DSI.handlers.clusters import ClusterHandler
 from DSpace.DSI.handlers.clusters import ClusterHistoryMetricsHandler
 from DSpace.DSI.handlers.clusters import ClusterMetricsHandler
+from DSpace.DSI.handlers.clusters import ClusterServiceStatus
 from DSpace.DSI.handlers.datacenters import DataCenterHandler
 from DSpace.DSI.handlers.datacenters import DataCenterListHandler
 from DSpace.DSI.handlers.datacenters import DataCenterTreeHandler
@@ -104,6 +105,7 @@ def get_routers():
         (r"/cluster_detect/", ClusterDetectHandler),
         (r"/clusters/metrics/", ClusterMetricsHandler),
         (r"/clusters/history_metrics/", ClusterHistoryMetricsHandler),
+        (r"/clusters/services_status/", ClusterServiceStatus),
         (r"/datacenters/", DataCenterListHandler),
         (r"/datacenters/tree/", DataCenterTreeHandler),
         (r"/datacenters/([0-9]*)/", DataCenterHandler),
