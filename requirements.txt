@@ -17,3 +17,4 @@ six
 prometheus_http_client
 passlib
 python-socketio
+tornado-swagger

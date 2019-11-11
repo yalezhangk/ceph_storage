@@ -19,7 +19,47 @@ logger = logging.getLogger(__name__)
 class OsdListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
-        """osd 列表
+        """List osds
+
+        ---
+        tags:
+        - OSD
+        summary: Create osd
+        description: Create osd or osds.
+        operationId: osds.api.listOsd
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: node_id
+          description: Created osd object
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
@@ -70,6 +110,73 @@ class OsdListHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """Create osd
+
+        ---
+        tags:
+        - OSD
+        summary: Create osd
+        description: Create osd or osds.
+        operationId: osds.api.createOsd
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: osd
+          description: Created osd object
+          required: false
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                description: bluestore or filestore
+              disk_id:
+                type: integer
+                format: int32
+              cache_partition_id:
+                type: integer
+                format: int32
+              db_partition_id:
+                type: integer
+                format: int32
+              wal_partition_id:
+                type: integer
+                format: int32
+              jounal_partition_id:
+                type: integer
+                format: int32
+        - in: body
+          name: osds
+          description: Created multiple osd object
+          required: false
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: bluestore or filestore
+                disk_id:
+                  type: integer
+                  format: int32
+                cache_partition_id:
+                  type: integer
+                  format: int32
+                db_partition_id:
+                  type: integer
+                  format: int32
+                wal_partition_id:
+                  type: integer
+                  format: int32
+                jounal_partition_id:
+                  type: integer
+                  format: int32
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         if 'osd' in data:

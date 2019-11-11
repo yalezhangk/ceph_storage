@@ -50,6 +50,9 @@ global_opts = [
     cfg.StrOpt('cookie_secret',
                default="_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
                help="Cookie secret"),
+    cfg.StrOpt('api_prefix',
+               default="/api",
+               help="API prefix"),
     cfg.IntOpt('task_workers',
                default=50,
                help='Task worker number.')
