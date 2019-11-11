@@ -296,10 +296,26 @@ class NodeTask(object):
         service_tool.start('docker')
         # load image
         docker_tool = DockerTool(ssh)
-        docker_tool.image_load("/opt/dspace/repo/images/dspace-base-v2.3.tar")
+        image_path = objects.sysconfig.sys_config_get(self.ctxt, "image_path")
+        image_name = objects.sysconfig.sys_config_get(self.ctxt, "image_name")
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
+        file_tool.mkdir(image_path)
+        try:
+            sftp_client, transport = self.get_sftp_client()
+            sftp_client.put('{}/{}'.format(image_path, image_name),
+                            '{}/{}'.format(image_path, image_name))
+            transport.close()
+        except Exception as e:
+            logger.error('push image error,error:{}'.format(e))
+            raise exc.CephException(message='push image error,reason:'
+                                            '{}'.format(str(e)))
+        docker_tool.image_load('{}/{}'.format(image_path, image_name))
         # run container
         docker_tool.run(
-            image="dspace/dspace:v2.3",
+            image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="agent",
             name="dsa",
             volumes=[("/etc/dspace", "/etc/dspace")]
