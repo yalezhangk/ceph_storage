@@ -83,3 +83,30 @@ class ClusterServiceStatus(ClusterAPIHandler):
         names = ["NODE_EXPORTER", "PROMETHEUS", "MON"]
         service_status = yield client.service_status_get(ctxt, names=names)
         self.write(json.dumps(service_status))
+
+
+class ClusterHostStatus(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        host_status = yield client.cluster_host_status_get(ctxt)
+        self.write(json.dumps({"host_status": host_status}))
+
+
+class ClusterPoolStatus(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        pool_status = yield client.cluster_pool_status_get(ctxt)
+        self.write(json.dumps({"pool_status": pool_status}))
+
+
+class ClusterOsdStatus(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd_status = yield client.cluster_osd_status_get(ctxt)
+        self.write(json.dumps({"osd_status": osd_status}))

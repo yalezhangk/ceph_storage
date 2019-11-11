@@ -98,6 +98,18 @@ class AdminClient(BaseClient):
             ctxt, "cluster_history_metrics_get", start=start, end=end)
         return response
 
+    def cluster_host_status_get(self, ctxt):
+        response = self.call(ctxt, "cluster_host_status_get")
+        return response
+
+    def cluster_pool_status_get(self, ctxt):
+        response = self.call(ctxt, "cluster_pool_status_get")
+        return response
+
+    def cluster_osd_status_get(self, ctxt):
+        response = self.call(ctxt, "cluster_osd_status_get")
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,

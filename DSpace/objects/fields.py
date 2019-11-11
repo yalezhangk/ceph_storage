@@ -58,7 +58,10 @@ class NodeStatus(BaseStorEnum):
     ERROR = 'error'
     DEPLOYING = 'deploying'
 
-    ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING)
+    # TODO
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING, INACTIVE)
 
 
 class NodeStatusField(BaseEnumField):
@@ -237,7 +240,12 @@ class OsdStatus(BaseStorEnum):
     DELETING = 'deleting'
     ERROR = 'error'
 
-    ALL = (UP, DOWN, CREATING, DELETING, ERROR)
+    # TODO remove up/down or active/inactive
+    INUSE = 'inuse'
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (UP, DOWN, CREATING, DELETING, ERROR, INUSE, ACTIVE, INACTIVE)
 
 
 class OsdStatusField(BaseEnumField):

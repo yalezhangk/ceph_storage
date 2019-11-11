@@ -140,6 +140,17 @@ def clusters_update(context, values_list):
     return IMPL.clusters_update(context, values_list)
 
 
+def node_status_get(context):
+    return IMPL.node_status_get(context)
+
+
+def pool_status_get(context):
+    return IMPL.pool_status_get(context)
+
+
+def osd_status_get(context):
+    return IMPL.osd_status_get(context)
+
 ##################
 
 

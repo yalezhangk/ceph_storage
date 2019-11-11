@@ -102,3 +102,7 @@ class PoolList(base.ObjectListBase, base.StorObject):
     def get_count(cls, context, filters=None):
         count = db.pool_get_count(context, filters)
         return count
+
+    @classmethod
+    def get_status(cls, context):
+        return db.pool_status_get(context)

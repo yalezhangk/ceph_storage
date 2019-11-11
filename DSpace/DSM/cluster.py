@@ -78,3 +78,56 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def service_status_get(self, ctxt, names):
         return objects.ServiceList.service_status_get(ctxt, names=names)
+
+    def cluster_host_status_get(self, ctxt):
+        query_all = objects.NodeList.get_status(ctxt)
+        num = 0
+        status = {s_fields.NodeStatus.ACTIVE: 0,
+                  s_fields.NodeStatus.ERROR: 0,
+                  s_fields.NodeStatus.INACTIVE: 0}
+        for [k, v] in query_all:
+            if k in [s_fields.NodeStatus.ACTIVE,
+                     s_fields.NodeStatus.ERROR,
+                     s_fields.NodeStatus.INACTIVE]:
+                status[k] = v
+            else:
+                num += v
+        status["progress"] = num
+        return status
+
+    def cluster_pool_status_get(self, ctxt):
+        query_all = objects.PoolList.get_status(ctxt)
+        num = 0
+        status = {s_fields.PoolStatus.ACTIVE: 0,
+                  s_fields.PoolStatus.INACTIVE: 0,
+                  s_fields.PoolStatus.ERROR: 0}
+        for [k, v] in query_all:
+            if k in [s_fields.PoolStatus.ACTIVE,
+                     s_fields.PoolStatus.ERROR,
+                     s_fields.PoolStatus.INACTIVE]:
+                status[k] = v
+            elif k != s_fields.PoolStatus.DELETED:
+                num += v
+        status["progress"] = num
+        return status
+
+    def cluster_osd_status_get(self, ctxt):
+        query_all = objects.OsdList.get_status(ctxt)
+        num = 0
+        status = {s_fields.OsdStatus.ACTIVE: 0,
+                  s_fields.OsdStatus.ERROR: 0,
+                  s_fields.OsdStatus.INACTIVE: 0,
+                  s_fields.OsdStatus.INUSE: 0}
+        for [k, v] in query_all:
+            if k == s_fields.OsdStatus.UP:
+                status[s_fields.OsdStatus.ACTIVE] = v
+            elif k == s_fields.OsdStatus.DOWN:
+                status[s_fields.OsdStatus.INACTIVE] = v
+            elif k == s_fields.OsdStatus.ERROR:
+                status[s_fields.OsdStatus.ERROR] = v
+            elif k == s_fields.OsdStatus.INUSE:
+                status[s_fields.OsdStatus.INUSE] = v
+            else:
+                num += v
+        status["progress"] = num
+        return status
