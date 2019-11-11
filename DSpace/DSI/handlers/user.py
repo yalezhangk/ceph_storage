@@ -17,86 +17,113 @@ from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
 
-fake = {
-    "message": "ok",
-    "code": 0,
-    "data": {
-        "license": True,
-        "ws_info": {
-            "url": "http://%s:%s" % (CONF.my_ip, CONF.api_port),
-            "path": "/ws/",
-            "token": ""
-        },
-        "app": [
-            {
-                "app": "stor",
-                "current_app": True
-            }
-        ],
-        "user": None,
-        "provider": [],
-        "region": [],
-        "permissions": {
-            "stor": {
-                "cluster": {
-                    "collect": True
-                },
-                "manage-cluster": {
-                    "collect": True
-                },
-                "object-storage": {
-                    "collect": True
-                },
-                "download": {
-                    "collect": True
-                },
-                "block_client": {
-                    "collect": True
-                },
-                "object-router": {
-                    "collect": True
-                },
-                "block_path": {
-                    "collect": True
-                },
-                "cache": True,
-                "storage": {
-                    "collect": True
-                },
-                "alarm_center": {
-                    "collect": True
-                },
-                "block_roll": {
-                    "collect": True
-                },
-                "event_center": {
-                    "collect": True
-                },
-                "settopology": {
-                    "collect": True
-                },
-                "topology": {
-                    "collect": True
-                },
-                "email_groups": {
-                    "collect": True
-                },
-                "license": {
-                    "collect": True
-                },
-                "server": {
-                    "collect": True
-                },
-                "cluster-plan": {
-                    "collect": True
-                },
-                "pools": {
-                    "collect": True
-                }
+default_permission = {
+    "license": True,
+    "ws_info": {
+        "url": "http://%s:%s" % (CONF.my_ip, CONF.api_port),
+        "path": "/api/ws/",
+        "token": ""
+    },
+    "app": [
+        {
+            "app": "stor",
+            "current_app": True
+        }
+    ],
+    "user": None,
+    "provider": [],
+    "region": [],
+    "permissions": {
+        "stor": {
+            "cluster": {
+                "collect": True
+            },
+            "manage-cluster": {
+                "collect": True
+            },
+            "object-storage": {
+                "collect": True
+            },
+            "download": {
+                "collect": True
+            },
+            "block_client": {
+                "collect": True
+            },
+            "object-router": {
+                "collect": True
+            },
+            "block_path": {
+                "collect": True
+            },
+            "cache": True,
+            "storage": {
+                "collect": True
+            },
+            "alarm_center": {
+                "collect": True
+            },
+            "block_roll": {
+                "collect": True
+            },
+            "event_center": {
+                "collect": True
+            },
+            "settopology": {
+                "collect": True
+            },
+            "topology": {
+                "collect": True
+            },
+            "email_groups": {
+                "collect": True
+            },
+            "license": {
+                "collect": True
+            },
+            "server": {
+                "collect": True
+            },
+            "cluster-plan": {
+                "collect": True
+            },
+            "pools": {
+                "collect": True
             }
         }
     }
 }
+
+
+class PermissionMixin(object):
+    @staticmethod
+    def license_verify(ctxt):
+        # license校验
+        licenses = objects.LicenseList.get_latest_valid(ctxt)
+        if not licenses:
+            is_available = False
+        else:
+            v = LicenseVerify(licenses[0].content, ctxt)
+            if not v.licenses_data:
+                is_available = False
+            else:
+                is_available = v.is_available()
+        return is_available
+
+    def add_page(self, permission, page):
+        permission['permissions']['stor'][page] = True
+
+    def get_permission(self, ctxt, user):
+        permission = copy.deepcopy(default_permission)
+        license = self.license_verify(ctxt)
+        permission['license'] = license
+        permission['user'] = user
+        # TODO: change permission for manage cluster
+        return {
+            "message": "ok",
+            "code": 0,
+            "data": permission
+        }
 
 
 class UserListHandler(BaseAPIHandler):
@@ -128,7 +155,7 @@ class UserHandler(BaseAPIHandler):
         }))
 
 
-class UserLoginHandler(BaseAPIHandler):
+class UserLoginHandler(BaseAPIHandler, PermissionMixin):
     def get_context(self):
         return RequestContext(user_id=None, is_admin=False)
 
@@ -146,8 +173,7 @@ class UserLoginHandler(BaseAPIHandler):
         if not r:
             raise exception.PasswordError()
         self.session['user'] = user
-        permission = copy.deepcopy(fake)
-        permission['data']['user'] = user
+        permission = self.get_permission(ctxt, user)
         self.write(objects.json_encode(permission))
 
 
@@ -159,27 +185,10 @@ class UserLogoutHandler(BaseAPIHandler):
         self.write(objects.json_encode({}))
 
 
-class PermissionHandler(BaseAPIHandler):
-
-    @staticmethod
-    def license_verify(ctxt):
-        # license校验
-        licenses = objects.LicenseList.get_latest_valid(ctxt)
-        if not licenses:
-            is_available = False
-        else:
-            v = LicenseVerify(licenses[0].content, ctxt)
-            if not v.licenses_data:
-                is_available = False
-            else:
-                is_available = v.is_available()
-        return is_available
+class PermissionHandler(BaseAPIHandler, PermissionMixin):
 
     @gen.coroutine
     def get(self):
         ctxt = self.get_context()
-        permission = copy.deepcopy(fake)
-        permission['data']['user'] = self.current_user
-        license = self.license_verify(ctxt)
-        permission['data']['license'] = license
+        permission = self.get_permission(ctxt, self.current_user)
         self.write(objects.json_encode(permission))

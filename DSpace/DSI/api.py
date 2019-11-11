@@ -4,6 +4,7 @@ import socketio
 import tornado.ioloop
 import tornado.web
 from oslo_log import log as logging
+from tornado_swagger.setup import setup_swagger
 
 from DSpace import objects
 from DSpace.common.config import CONF
@@ -11,6 +12,12 @@ from DSpace.DSI.handlers import get_routers
 from DSpace.service import ServiceBase
 
 logger = logging.getLogger(__name__)
+
+
+def wapper_api_route(routes):
+    api_prefix = CONF.api_prefix
+    return [tornado.web.url(api_prefix + path, handler)
+            for path, handler in routes]
 
 
 class WebSocketHandler(object):
@@ -52,6 +59,9 @@ def service():
                                json=objects.Json)
     routers = get_routers()
     routers += [(r"/ws/", socketio.get_tornado_handler(sio))]
+    routers = wapper_api_route(routers)
+    logger.error(routers)
+    setup_swagger(routers)
     settings = {
         "cookie_secret": CONF.cookie_secret,
         "debug": CONF.debug,
