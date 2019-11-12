@@ -133,6 +133,15 @@ class OsdHandler(AdminBaseHandler):
                 _("The partition is not on the same machine as the "
                   "disk") % partition_id)
 
+    def _osd_create_check_store(self, ctxt, data):
+        store = data.get('type')
+        if store == s_fields.OsdType.BLUESTORE:
+            return
+        if (objects.sysconfig.sys_config_get(ctxt, 'ceph_version') ==
+                s_fields.CephVersion.T2STOR):
+            raise exception.InvalidInput(
+                _("%s not support filestore") % s_fields.CephVersion.T2STOR)
+
     def osd_create(self, ctxt, data):
         logger.info("Osd create with %s.", data)
 
