@@ -27,10 +27,10 @@ cluster_configs = {
 }
 
 default_cluster_configs = {
-    'mon_allow_pool_delete': 'true',
-    'backend_type': 'kernel',
-    'auth_cluster_required': 'none',
-    'auth_service_required': 'none',
-    'auth_client_required': 'none',
-    'osd_crush_update_on_start': 'false',
+    'mon_allow_pool_delete': {'type': 'bool', 'value': True},
+    'backend_type': {'type': 'string', 'value': 'kernel'},
+    'auth_cluster_required': {'type': 'string', 'value': 'none'},
+    'auth_service_required': {'type': 'string', 'value': 'none'},
+    'auth_client_required': {'type': 'string', 'value': 'none'},
+    'osd_crush_update_on_start': {'type': 'string', 'value': 'none'},
 }

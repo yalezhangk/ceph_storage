@@ -129,7 +129,7 @@ class NodeTask(object):
                                  ip_address=str(self.node.ip_address))
         return chrony_conf
 
-    def get_agent_conf(self):
+    def get_dsa_conf(self):
         admin_ip_address = objects.sysconfig.sys_config_get(
             self.ctxt, "admin_ip_address")
         api_port = objects.sysconfig.sys_config_get(
@@ -141,8 +141,8 @@ class NodeTask(object):
         agent_port = objects.sysconfig.sys_config_get(
             self.ctxt, "agent_port")
 
-        tpl = template.get('agent.conf.j2')
-        agent_conf = tpl.render(
+        tpl = template.get('dsa.conf.j2')
+        dsa_conf = tpl.render(
             ip_address=str(self.node.ip_address),
             admin_ip_address=str(admin_ip_address),
             api_port=api_port,
@@ -152,7 +152,7 @@ class NodeTask(object):
             node_id=self.node.id,
             cluster_id=self.node.cluster_id
         )
-        return agent_conf
+        return dsa_conf
 
     def chrony_install(self):
         ssh = self.get_ssh_executor()
@@ -306,8 +306,8 @@ class NodeTask(object):
         # create config
         file_tool = FileTool(ssh)
         file_tool.mkdir("/etc/dspace")
-        file_tool.write("/etc/dspace/agent.conf",
-                        self.get_agent_conf())
+        file_tool.write("/etc/dspace/dsa.conf",
+                        self.get_dsa_conf())
         file_tool.write("/etc/yum.repos.d/dspace.repo",
                         self.get_dspace_repo())
         file_tool.write("/etc/yum.repos.d/ceph.repo",
@@ -337,7 +337,8 @@ class NodeTask(object):
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
             name="dsa",
-            volumes=[("/etc/dspace", "/etc/dspace")]
+            volumes=[("/etc/dspace", "/etc/dspace"),
+                     ("/var/log/dspace", "/var/log/dspace")]
         )
 
     def dspace_agent_uninstall(self):

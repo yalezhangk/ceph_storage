@@ -90,7 +90,7 @@ class NodeHandler(AdminBaseHandler):
     def node_get_count(self, ctxt, filters=None):
         return objects.NodeList.get_count(ctxt, filters=filters)
 
-    def _set_ceph_conf(self, ctxt, key, value, group="global",
+    def _set_ceph_conf(self, ctxt, key, value, value_type, group="global",
                        display_description=None):
         filters = {
             "group": group,
@@ -101,6 +101,7 @@ class NodeHandler(AdminBaseHandler):
             cephconf = objects.CephConfig(
                 ctxt, group=group, key=key,
                 value=value,
+                value_type=value_type,
                 display_description=display_description,
                 cluster_id=ctxt.cluster_id
             )
@@ -123,32 +124,41 @@ class NodeHandler(AdminBaseHandler):
         if len(mon_nodes) == 1:
             # init ceph config
             public_network = objects.sysconfig.sys_config_get(
-                ctxt, key="admin_cidr"
+                ctxt, key="public_cidr"
             )
             cluster_network = objects.sysconfig.sys_config_get(
-                ctxt, key="admin_cidr"
+                ctxt, key="cluster_cidr"
             )
             new_cluster_config = {
-                'fsid': ctxt.cluster_id,
-                'mon_host': str(node.storage_public_ip_address),
-                'mon_initial_members': node.hostname,
-                'public_network': public_network,
-                'cluster_network': cluster_network
+                'fsid': {'type': 'string', 'value': ctxt.cluster_id},
+                'mon_host': {'type': 'string',
+                             'value': str(node.storage_public_ip_address)},
+                'mon_initial_members': {'type': 'string',
+                                        'value': node.hostname},
+                'public_network': {'type': 'string', 'value': public_network},
+                'cluster_network': {'type': 'string', 'value': cluster_network}
             }
             configs = {}
             configs.update(ClusterConfg.default_cluster_configs)
             configs.update(new_cluster_config)
             for key, value in configs.items():
-                self._set_ceph_conf(ctxt, key=key, value=value)
+                self._set_ceph_conf(ctxt,
+                                    key=key,
+                                    value=value.get('value'),
+                                    value_type=value.get('type'))
         else:
             mon_host = ",".join(
                 [n.storage_public_ip_address for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
-            self._set_ceph_conf(ctxt, key="mon_host", value=mon_host)
+            self._set_ceph_conf(ctxt,
+                                key="mon_host",
+                                value=mon_host,
+                                value_type='string')
             self._set_ceph_conf(ctxt,
                                 key="mon_initial_members",
-                                value=mon_initial_members)
+                                value=mon_initial_members,
+                                value_type='string')
         node_task = NodeTask(ctxt, node)
         node_task.ceph_mon_install()
         return node
@@ -169,10 +179,14 @@ class NodeHandler(AdminBaseHandler):
                 [n.storage_public_ip_address for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
-            self._set_ceph_conf(ctxt, key="mon_host", value=mon_host)
+            self._set_ceph_conf(ctxt,
+                                key="mon_host",
+                                value=mon_host,
+                                value_type='string')
             self._set_ceph_conf(ctxt,
                                 key="mon_initial_members",
-                                value=mon_initial_members)
+                                value=mon_initial_members,
+                                value_type='string')
             task.ceph_mon_uninstall(last_mon=False)
         else:
             task.ceph_mon_uninstall(last_mon=True)
