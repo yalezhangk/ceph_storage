@@ -132,3 +132,7 @@ class OsdList(base.ObjectListBase, base.StorObject):
         return base.obj_make_list(
             context, cls(context), objects.Osd, db_osds,
             expected_attrs=expected_attrs)
+
+    @classmethod
+    def get_status(cls, context):
+        return db.osd_status_get(context)

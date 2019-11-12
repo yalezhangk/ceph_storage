@@ -31,6 +31,7 @@ from DSpace import exception
 from DSpace.common import sqlalchemyutils
 from DSpace.db.sqlalchemy import models
 from DSpace.i18n import _
+from DSpace.objects.fields import ServiceStatus
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -669,6 +670,39 @@ def cluster_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         return query.all()
+
+
+@require_context
+def node_status_get(context):
+    session = get_session()
+    filters = {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        query = session.query(models.Node.status, func.count(
+            models.Node.id)).group_by(models.Node.status)
+    return query.all()
+
+
+@require_context
+def pool_status_get(context):
+    session = get_session()
+    filters = {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        query = session.query(models.Pool.status, func.count(
+            models.Pool.id)).group_by(models.Pool.status)
+    return query.all()
+
+
+@require_context
+def osd_status_get(context):
+    session = get_session()
+    filters = {}
+    filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        query = session.query(models.Osd.status, func.count(
+            models.Osd.id)).group_by(models.Osd.status)
+    return query.all()
 
 
 @handle_db_data_error
@@ -3113,17 +3147,21 @@ def service_status_get(context, names, filters=None):
     filters = filters or {}
     filters['cluster_id'] = context.cluster_id
     with session.begin():
-        all_status = status = {}
+        all_status = {}
         for name in names:
             filters["name"] = name
             query = _service_get_query(context, session)
             query = process_filters(models.Service)(query, filters)
             if query:
-                active = query.filter_by(status="active").count()
-                failed = query.filter_by(status="failed").count()
-                inactive = query.filter_by(status="inactive").count()
-            status = {name: {"active": active,
-                             "failed": failed, "inactive": inactive}}
+                active = query.filter_by(status=ServiceStatus.ACTIVE).count()
+                failed = query.filter_by(status=ServiceStatus.FAILD).count()
+                inactive = query.filter_by(
+                    status=ServiceStatus.INACTIVE).count()
+            status = {name: {
+                ServiceStatus.ACTIVE: active,
+                ServiceStatus.FAILD: failed,
+                ServiceStatus.INACTIVE: inactive
+            }}
             all_status.update(status)
         return all_status
 

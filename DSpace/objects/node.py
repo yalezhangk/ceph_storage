@@ -116,3 +116,7 @@ class NodeList(base.ObjectListBase, base.StorObject):
     def get_count(cls, context, filters=None):
         count = db.node_get_count(context, filters)
         return count
+
+    @classmethod
+    def get_status(cls, context):
+        return db.node_status_get(context)
