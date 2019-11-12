@@ -44,3 +44,13 @@ class RequestContext(object):
 
     read_deleted = property(_get_read_deleted, _set_read_deleted,
                             _del_read_deleted)
+
+
+def get_context():
+    ctxt = RequestContext(user_id='admin', is_admin=False, cluster_id=None)
+    return ctxt
+
+
+def get_admin_context():
+    ctxt = RequestContext(user_id='admin', is_admin=True, cluster_id=None)
+    return ctxt
