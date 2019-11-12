@@ -2,30 +2,53 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
 
 
 class File(ToolBase):
-    def write_from(self, filename, url):
-        """Create file from url"""
-        raise NotImplementedError("Method Not ImplementedError")
+    def fetch_from_url(self, filename, url):
+        """fetch file from url"""
+        cmd = ["curl", "-o", filename, url]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
 
     def write(self, filename, content):
         self.executor.write(filename, content)
 
     def mkdir(self, dirname):
-        self.executor.run_command(["mkdir", "-p", dirname])
+        cmd = ["mkdir", "-p", dirname]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
 
     def rm(self, path):
-        self.executor.run_command(["rm", "-rf", path])
+        cmd = ["rm", "-f", path]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
 
     def chown(self, path, user='root', group='root'):
-        self.executor.run_command(["chown",
-                                   "-R",
-                                   "{}:{}".format(user, group),
-                                   path])
+        cmd = ["chown", "-R", "{}:{}".format(user, group), path]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
 
     def chmod(self, path, mode='0644'):
-        self.executor.run_command(["chmod", "-R", mode, path])
+        cmd = ["chmod", "-R", mode, path]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
