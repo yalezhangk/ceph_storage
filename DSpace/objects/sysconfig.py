@@ -46,8 +46,8 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
         self.obj_reset_changes(updated_values.keys())
 
     @classmethod
-    def get_by_key(cls, context, key):
-        orm_obj = db.sys_config_get_by_key(context, key)
+    def get_by_key(cls, context, key, cluster_id=None):
+        orm_obj = db.sys_config_get_by_key(context, key, cluster_id)
         return cls._from_db_object(context, cls(context), orm_obj)
 
 
@@ -69,7 +69,9 @@ class SysConfigList(base.ObjectListBase, base.StorObject):
 
 
 def sys_config_get(ctxt, key, default=None):
-    obj = SysConfig.get_by_key(ctxt, key)
+    obj = SysConfig.get_by_key(ctxt, key, cluster_id=ctxt.cluster_id)
+    if not obj:
+        obj = SysConfig.get_by_key(ctxt, key, cluster_id=None)
     if not obj:
         return default
     if obj.value_type == s_fields.SysConfigType.STRING:
