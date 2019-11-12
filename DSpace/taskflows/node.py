@@ -108,10 +108,17 @@ class NodeTask(object):
         ).get_client(self.node.id)
         return client
 
-    def get_yum_repo(self):
-        repo_url = objects.sysconfig.sys_config_get(self.ctxt, "repo_url")
-        tpl = template.get('yum.repo.j2')
-        repo = tpl.render(repo_baseurl=repo_url)
+    def get_dspace_repo(self):
+        dspace_repo = objects.sysconfig.sys_config_get(
+            self.ctxt, "dspace_repo")
+        tpl = template.get('dspace.repo.j2')
+        repo = tpl.render(dspace_repo=dspace_repo)
+        return repo
+
+    def get_ceph_repo(self):
+        ceph_repo = objects.sysconfig.sys_config_get(self.ctxt, "ceph_repo")
+        tpl = template.get('ceph.repo.j2')
+        repo = tpl.render(ceph_repo=ceph_repo)
         return repo
 
     def get_chrony_conf(self):
@@ -280,8 +287,10 @@ class NodeTask(object):
         file_tool.mkdir("/etc/dspace")
         file_tool.write("/etc/dspace/agent.conf",
                         self.get_agent_conf())
-        file_tool.write("/etc/yum.repos.d/yum.repo",
-                        self.get_yum_repo())
+        file_tool.write("/etc/yum.repos.d/dspace.repo",
+                        self.get_dspace_repo())
+        file_tool.write("/etc/yum.repos.d/ceph.repo",
+                        self.get_ceph_repo())
         # install docker
         package_tool = PackageTool(ssh)
         package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
@@ -295,10 +304,11 @@ class NodeTask(object):
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
-        repo_url = objects.sysconfig.sys_config_get(self.ctxt, "repo_url")
+        dspace_repo = objects.sysconfig.sys_config_get(
+            self.ctxt, "dspace_repo")
         # pull images from repo
         tmp_image = '/tmp/{}'.format(image_name)
-        fetch_url = '{}/images/{}'.format(repo_url, image_name)
+        fetch_url = '{}/images/{}'.format(dspace_repo, image_name)
         file_tool.fetch_from_url(tmp_image, fetch_url)
         docker_tool.image_load(tmp_image)
         # run container
