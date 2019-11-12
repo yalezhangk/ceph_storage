@@ -1,29 +1,23 @@
 [dspace-base]
 name=Base packages and requirements
-baseurl={{ repo_baseurl }}/repo/base
+baseurl={{ ceph_repo }}/rpm/x86/base
 enabled=1
 gpgcheck=0
 
 [dspace-ceph]
 name=Ceph packages
-baseurl={{ repo_baseurl }}/repo/ceph-rpms
+baseurl={{ ceph_repo }}/rpm/x86/ceph-rpms
 enabled=1
 gpgcheck=0
 
 [dspace-tools]
 name=Some useful tools
-baseurl={{ repo_baseurl }}/repo/tools
+baseurl={{ ceph_repo }}/rpm/x86/tools
 enabled=1
 gpgcheck=0
 
 [dspace-elasticsearch]
 name=Elasticsearch and java packages
-baseurl={{ repo_baseurl }}/repo/elasticsearch
-enabled=1
-gpgcheck=0
-
-[dspace-portal]
-name=portal
-baseurl={{ repo_baseurl }}/repo/portal
+baseurl={{ ceph_repo }}/rpm/x86/elasticsearch
 enabled=1
 gpgcheck=0
