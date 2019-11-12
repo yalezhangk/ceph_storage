@@ -9,6 +9,7 @@ from tornado.escape import json_decode
 from DSpace import objects
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.objects.fields import AlertLogLevel
 
 logger = logging.getLogger(__name__)
 
@@ -83,3 +84,44 @@ class ReceiveAlertMessageHandler(BaseAPIHandler):
         alert_messages = yield client.send_alert_messages(ctxt, receive_datas)
         self.write(objects.json_encode({
             "alert_messages": alert_messages}))
+
+
+class AlertTpyeCountHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self):
+        """get alert_log level type and number
+
+        ---
+        tags:
+        - alert_log
+        summary:
+        produces:
+        - application/json
+        parameters:
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        all_level = AlertLogLevel.ALL
+        INFO = AlertLogLevel.INFO
+        WARN = AlertLogLevel.WARN
+        ERROR = AlertLogLevel.ERROR
+        FATAL = AlertLogLevel.FATAL
+        map_querys = {
+            'unread': {'readed': False},
+            INFO: {'level': INFO},
+            WARN: {'level': WARN},
+            ERROR: {'level': ERROR},
+            FATAL: {'level': FATAL}
+        }
+        result_data = {}
+        result_data.update({'level_type': all_level})
+        for k, v in map_querys.items():
+            count = yield client.alert_log_get_count(ctxt, filters=v)
+            result_data.update({k: count})
+        self.write(objects.json_encode({
+            "alert_logs": result_data
+        }))
