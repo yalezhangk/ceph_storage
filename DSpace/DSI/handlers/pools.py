@@ -15,6 +15,46 @@ logger = logging.getLogger(__name__)
 class PoolListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool List
+        description: Return a list of pools
+        operationId: pools.api.listPool
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: tab
+          description: Different tab page, it can be default or io
+          schema:
+            type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
@@ -61,6 +101,33 @@ class PoolListHandler(ClusterAPIHandler):
 class PoolHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
+        """
+        ---
+        tags:
+        - pool
+        summary: Detail of the pool
+        description: Return detail infomation of pool by id
+        operationId: pools.api.poolDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: id
+          description: Pool ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['crush_rule', 'osds', 'volumes']
@@ -102,6 +169,33 @@ class PoolHandler(ClusterAPIHandler):
 class PoolOsdsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
+        """
+        ---
+        tags:
+        - pool
+        summary: Osds of the pool
+        description: Return osd infomation of pool by id
+        operationId: pools.api.poolOsds
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: id
+          description: Pool ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['disk', 'node']
