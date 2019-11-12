@@ -30,6 +30,40 @@ class CheckVolumeAccessPath():
 class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - volume_access_path
+        summary: Volume Access Path List
+        description: Return a list of Volume Access Path
+        operationId: volume_access_paths.api.listVolumeAccessPath
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
@@ -48,6 +82,35 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         """创建访问路径
 
         {"access_path":{"name":"iscsi-t1","type":"iscsi"}}
+
+        ---
+        tags:
+        - volume_access_path
+        summary: Create volume_access_path
+        description: Create volume_access_path.
+        operationId: volume_access_paths.api.createVolumeAccessPath
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: access_path
+          description: Created volume_access_path object
+          required: true
+          schema:
+            type: object
+            properties:
+              access_path:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: volume_access_path's name
+                  type:
+                    type: string
+                    description: volume_access_path's type, it can be iSCSI
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -69,6 +132,33 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
 class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
     def get(self, voluem_access_path_id):
+        """
+        ---
+        tags:
+        - volume_access_path
+        summary: Detail of the volume_access_path
+        description: Return detail infomation of volume_access_path by id
+        operationId: volume_access_path.api.volumeAccessPathDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: id
+          description: VolumeAccessPath's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['volume_gateways', 'volume_client_groups',
@@ -84,6 +174,33 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         """编辑访问路径
 
         {"access_path":{"name":"iscsi-t2"}
+
+        ---
+        tags:
+        - volume_access_path
+        summary: Update volume_access_path
+        description: update volume_access_path.
+        operationId: volume_access_paths.api.updateVolumeAccessPath
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: access_path
+          description: updated volume_access_path object
+          required: true
+          schema:
+            type: object
+            properties:
+              access_path:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: volume_access_path's name
+        responses:
+        "200":
+          description: successful operation
+
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -105,6 +222,31 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
     def delete(self, id):
         """删除访问路径
+        ---
+        tags:
+        - volume_access_path
+        summary: Delete the volume_access_path by id
+        description: delete volume_access_path by id
+        operationId: volume_access_path.api.deleteVolumeAccessPath
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: id
+          description: VolumeAccessPath's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
