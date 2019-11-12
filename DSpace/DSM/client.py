@@ -418,6 +418,11 @@ class AdminClient(BaseClient):
                              start=start, end=end)
         return response
 
+    def disk_reporter(self, ctxt, disks, node_id):
+        response = self.call(ctxt, "disk_reporter", disks=disks,
+                             node_id=node_id)
+        return response
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,

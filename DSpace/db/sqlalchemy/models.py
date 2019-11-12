@@ -151,7 +151,7 @@ class DiskPartition(BASE, StorBase):
     size = Column(BigInteger)  # bytes
     status = Column(String(32))
     type = Column(String(32))
-    role = Column(String(32), default='cache', index=True)
+    role = Column(String(32), index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))

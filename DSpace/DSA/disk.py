@@ -129,3 +129,9 @@ class DiskHandler(AgentBaseHandler):
             logger.error("Create partitions error: {}".format(e))
             _success = False
         return _success
+
+    def disk_get_all(self, ctxt, node):
+        executor = self._get_executor()
+        disk_tool = DiskTool(executor)
+        disks = disk_tool.all()
+        return disks

@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class DiskTool(ToolBase):
     host_prefix = None
 
-    def __init__(self, *args, host_prefix=None, **kwargs):
-        self.host_prefix = host_prefix
+    def __init__(self, *args, **kwargs):
+        self.host_prefix = kwargs.pop("host_prefix", None)
         super(DiskTool, self).__init__(*args, **kwargs)
 
     def _wapper(self, path):
@@ -99,5 +99,6 @@ class DiskTool(ToolBase):
 
 
 if __name__ == '__main__':
-    t = DiskTool()
+    from DSpace.tools.base import Executor
+    t = DiskTool(Executor())
     print(t.all())
