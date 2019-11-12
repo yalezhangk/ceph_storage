@@ -5,7 +5,7 @@ import logging
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
 from DSpace.objects import fields as s_fields
-from DSpace.tools.disk import DiskTool as DiskTool
+from DSpace.tools.disk import DiskTool
 from DSpace.tools.pysmart import Device as DeviceTool
 from DSpace.tools.storcli import StorCli as StorCliTool
 

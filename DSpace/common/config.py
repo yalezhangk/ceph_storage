@@ -59,7 +59,10 @@ global_opts = [
                help="API prefix"),
     cfg.IntOpt('task_workers',
                default=50,
-               help='Task worker number.')
+               help='Task worker number.'),
+    cfg.StrOpt('host_prefix',
+               default="/host",
+               help="Host prefix"),
 ]
 
 CONF.register_cli_opts(core_opts)

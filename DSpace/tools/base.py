@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import os
 import subprocess
 
 import paramiko
 import six
 
+from DSpace.common.config import CONF
 from DSpace.exception import RunCommandArgsError
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,8 @@ class Executor(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         stdout, stderr = cmd.communicate()
+        stdout = stdout.decode('utf-8') if stdout else stdout
+        stderr = stderr.decode('utf-8') if stderr else stderr
         rc = cmd.returncode
         return (rc, stdout, stderr)
 
@@ -98,8 +102,21 @@ class SSHExecutor(Executor):
 
 
 class ToolBase(object):
-    def __init__(self, executor):
+    host_prefix = None
+
+    def __init__(self, executor, host_prefix=None):
         self.executor = executor
+        if host_prefix is None:
+            self.host_prefix = CONF.host_prefix
+        else:
+            self.host_prefix = host_prefix
+
+    def _wapper(self, path):
+        if not self.host_prefix:
+            return path
+        if path[0] == os.path.sep:
+            path = path[1:]
+        return os.path.join(self.host_prefix, path)
 
     def run_command(self, args, **kwargs):
         return self.executor.run_command(args, **kwargs)
