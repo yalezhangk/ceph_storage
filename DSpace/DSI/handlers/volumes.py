@@ -164,13 +164,11 @@ class VolumeActionHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def _extend(self, client, ctxt, volume_id, volume_data):
-        # todo check_size, can not over pool_size
         extend = yield client.volume_extend(ctxt, volume_id, volume_data)
         return extend
 
     @gen.coroutine
     def _shrink(self, client, ctxt, volume_id, volume_data):
-        # todo check_size, can not over pool_size
         shrink = yield client.volume_shrink(ctxt, volume_id, volume_data)
         return shrink
 
@@ -186,6 +184,26 @@ class VolumeActionHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, volume_id):
+        """volume action
+
+        ---
+        tags:
+        - volume
+        summary: action:extend(扩容)、shrink(缩容)、rollback(回滚)、
+                 unlink(断开关系链)
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: action
+          description: action type
+          required: true
+          schema:
+            type: str
+        responses:
+        "200":
+          description: successful operation
+        """
         # action:扩容、缩容、回滚、断开关系链
         ctxt = self.get_context()
         data = json_decode(self.request.body)
