@@ -32,6 +32,46 @@ class VolumeListHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """Create volume
+
+        ---
+        tags:
+        - volume
+        summary: Create osd
+        description: Create osd or osds.
+        operationId: osds.api.createOsd
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: volume
+          description: Created volume or volumes object
+          required: true
+          schema:
+            type: object
+            properties:
+              batch_create:
+                type: bool
+                description: is or not batch_create
+              number:
+                type: integer
+                description: batch_create number
+              display_name:
+                type: string
+                description: display_name
+              display_description:
+                type: string
+                description: display_description
+              pool_id:
+                type: integer
+                format: int32
+              size:
+                type: integer
+                format: int32
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         data = data.get("volume")

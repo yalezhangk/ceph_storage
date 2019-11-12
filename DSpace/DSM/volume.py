@@ -31,7 +31,28 @@ class VolumeHandler(AdminBaseHandler):
         return objects.Volume.get_by_id(ctxt, volume_id,
                                         expected_attrs=expected_attrs)
 
+    def _check_volume_size(self, ctxt, data):
+        pool_id = data.get('pool_id')
+        pool_size = self.pool_fact_total_size_bytes(ctxt, pool_id)
+        size = data.get('size')
+        if not pool_size.get('is_avaible'):
+            raise exception.InvalidInput(reason='current pool size is fulled')
+        if size > pool_size.get('size'):
+            raise exception.InvalidInput(
+                reason='size can not over current pool_total_size')
+
+    def _check_name_exist(self, ctxt, data):
+        display_name = data.get('display_name')
+        is_exist = objects.VolumeList.get_all(
+            ctxt, filters={'display_name': display_name})
+        if is_exist:
+            raise exception.InvalidInput(
+                reason=_('Volume name {} already exists!').format(
+                    display_name))
+
     def volume_create(self, ctxt, data):
+        self._check_volume_size(ctxt, data)
+        self._check_name_exist(ctxt, data)
         batch_create = data.get('batch_create')
         if batch_create:
             # 批量创建
