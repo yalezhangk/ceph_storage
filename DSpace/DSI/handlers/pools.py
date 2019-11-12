@@ -117,7 +117,7 @@ class PoolHandler(ClusterAPIHandler):
           schema:
             type: string
           required: true
-        - in: request
+        - in: url
           name: id
           description: Pool ID
           schema:
@@ -185,7 +185,7 @@ class PoolOsdsHandler(ClusterAPIHandler):
           schema:
             type: string
           required: true
-        - in: request
+        - in: url
           name: id
           description: Pool ID
           schema:

@@ -92,6 +92,12 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         produces:
         - application/json
         parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
         - in: body
           name: access_path
           description: Created volume_access_path object
@@ -148,7 +154,7 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
           schema:
             type: string
           required: true
-        - in: request
+        - in: url
           name: id
           description: VolumeAccessPath's id
           schema:
@@ -184,6 +190,19 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         produces:
         - application/json
         parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: VolumeAccessPath's id
+          schema:
+            type: integer
+            format: int32
+          required: true
         - in: body
           name: access_path
           description: updated volume_access_path object
@@ -237,7 +256,7 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
           schema:
             type: string
           required: true
-        - in: request
+        - in: url
           name: id
           description: VolumeAccessPath's id
           schema:
