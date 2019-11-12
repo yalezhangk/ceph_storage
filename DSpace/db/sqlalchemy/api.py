@@ -3331,6 +3331,30 @@ def crush_rule_update(context, crush_rule_id, values):
 ###############################
 
 
+def _process_action_log_filters(query, filters):
+    filters = filters.copy()
+    # Holds the simple exact matches
+    filter_dict = {}
+
+    # Iterate over all filters, special case the filter if necessary
+    for key, value in filters.items():
+        if isinstance(value, (tuple, set, frozenset)):
+            # Looking for values in a list; apply to query directly
+            column_attr = getattr(models.ActionLog, key)
+            query = query.filter(column_attr.in_(value))
+        elif key == 'begin_time':
+            query = query.filter(models.ActionLog.begin_time.between(
+                value[0], value[1]))
+        else:
+            # OK, simple exact match; save for later
+            filter_dict[key] = value
+
+    # Apply simple exact matches
+    if filter_dict:
+        query = query.filter_by(**filter_dict)
+    return query
+
+
 @require_context
 def _action_log_get_query(context, session=None):
     return model_query(context, models.ActionLog, session=session)
@@ -3575,7 +3599,7 @@ PAGINATION_HELPERS = {
                         process_filters(models.CephConfig),
                         _ceph_config_get),
     models.ActionLog: (_action_log_get_query,
-                       process_filters(models.ActionLog),
+                       _process_action_log_filters,
                        _action_log_get),
     models.User: (_user_get_query,
                   process_filters(models.User),
