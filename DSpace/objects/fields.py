@@ -365,3 +365,11 @@ class ResourceAction(object):
             },
         }
         return relation
+
+
+class AlertLogLevel(BaseStorEnum):
+    INFO = 'INFO'
+    WARN = 'WARN'
+    ERROR = 'ERROR'
+    FATAL = 'FATAL'
+    ALL = (INFO, WARN, ERROR, FATAL)
