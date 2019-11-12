@@ -200,10 +200,13 @@ class VolumeHandler(AdminBaseHandler):
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         self._check_volume_status(volume)
+        data.update({'pool_id': volume.pool_id})
+        self._check_volume_size(ctxt, data)
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_EXTEND)
         extra_data = {'old_size': volume.size}
         volume.size = data.get('size')
+        volume.status = s_fields.VolumeStatus.EXTENDING
         volume.save()
         self.executor.submit(self._volume_resize, ctxt, volume, extra_data,
                              begin_action)
@@ -247,10 +250,14 @@ class VolumeHandler(AdminBaseHandler):
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         self._check_volume_status(volume)
+        data.update({'pool_id': volume.pool_id})
+        # size can not more than pool size
+        self._check_volume_size(ctxt, data)
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_SHRINK)
         extra_data = {'old_size': volume.size}
         volume.size = data.get('size')
+        volume.status = s_fields.VolumeStatus.SHRINK
         volume.save()
         self.executor.submit(self._volume_resize, ctxt, volume, extra_data,
                              begin_action)
