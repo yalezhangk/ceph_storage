@@ -363,3 +363,20 @@ class PoolHandler(AdminBaseHandler):
             context=ctxt, cluster_id=pool.cluster_id).get_client()
         wb_client.send_message(ctxt, pool, "UPDATE_POLICY", msg)
         return pool
+
+    def pool_fact_total_size_bytes(self, ctxt, pool_id):
+        pool = objects.Pool.get_by_id(ctxt, pool_id)
+        pool_name = pool.pool_name
+        # get_fact_pool_size
+        cluster_info = self.ceph_cluster_info(ctxt)
+        pool_list = cluster_info.get('pool_list', [])
+        for p_pool in pool_list:
+            if p_pool['name'] == pool_name:
+                is_avaible = p_pool['stats']['max_avail']
+                size = (p_pool['stats']['bytes_used'] +
+                        p_pool['stats']['max_avail'])
+                return {
+                    'is_avaible': True if is_avaible > 0 else False,
+                    'size': size
+                }
+        return {}

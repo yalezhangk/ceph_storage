@@ -77,7 +77,7 @@ class ReceiveAlertMessageHandler(BaseAPIHandler):
     def post(self):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        receive_datas = data.get("alert_messages")
+        receive_datas = data.get("alerts")
         logger.debug('receive_datas:%s', receive_datas)
         client = self.get_admin_client(ctxt)
         alert_messages = yield client.send_alert_messages(ctxt, receive_datas)
