@@ -126,9 +126,13 @@ class VolumeHandler(AdminBaseHandler):
 
     def volume_update(self, ctxt, volume_id, data):
         volume = self.volume_get(ctxt, volume_id)
+        display_name = data.get('display_name')
+        if volume.display_name == display_name:
+            pass
+        else:
+            self._check_name_exist(ctxt, data)
         begin_action = self.begin_action(ctxt, AllResourceType.VOLUME,
                                          AllActionType.UPDATE)
-        display_name = data.get('display_name')
         volume.display_name = display_name
         volume.save()
         logger.info('volume update success,volume_name=%s', display_name)
@@ -136,8 +140,26 @@ class VolumeHandler(AdminBaseHandler):
                            objects.json_encode(volume))
         return volume
 
+    def _check_volume_status(self, volume):
+        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
+                                 s_fields.VolumeStatus.ERROR]:
+            raise exception.VolumeStatusNotAllowAction()
+
+    def _verify_volume_del(self, ctxt, volume):
+        self._check_volume_status(volume)
+        has_snap = objects.VolumeSnapshot.get_all(ctxt, filters={
+            'volume_id': volume.id})
+        if has_snap:
+            raise exception.InvalidInput(
+                reason=_('The volume {} has snapshot').format(volume.name))
+        if volume.access_path_id:
+            raise exception.InvalidInput(
+                reason=_('The volume {} has related access_path').format(
+                    volume.name))
+
     def volume_delete(self, ctxt, volume_id):
         volume = self.volume_get(ctxt, volume_id)
+        self._verify_volume_del(ctxt, volume)
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.DELETE)
         volume.status = s_fields.VolumeStatus.DELETING
@@ -177,9 +199,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
-        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
-                                 s_fields.VolumeStatus.ERROR]:
-            raise exception.VolumeStatusNotAllowAction()
+        self._check_volume_status(volume)
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_EXTEND)
         extra_data = {'old_size': volume.size}
@@ -226,9 +246,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
-        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
-                                 s_fields.VolumeStatus.ERROR]:
-            raise exception.VolumeStatusNotAllowAction()
+        self._check_volume_status(volume)
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_SHRINK)
         extra_data = {'old_size': volume.size}
@@ -244,9 +262,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
-        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
-                                 s_fields.VolumeStatus.ERROR]:
-            raise exception.VolumeStatusNotAllowAction()
+        self._check_volume_status(volume)
         snap_id = data.get('volume_snapshot_id')
         snap = objects.VolumeSnapshot.get_by_id(ctxt, snap_id)
         if not snap:
@@ -296,9 +312,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
-        if volume.status not in [s_fields.VolumeStatus.ACTIVE,
-                                 s_fields.VolumeStatus.ERROR]:
-            raise exception.VolumeStatusNotAllowAction()
+        self._check_volume_status(volume)
         if not volume.is_link_clone:
             raise exception.Invalid(
                 msg=_('the volume_name {} has not relate_snap').format(

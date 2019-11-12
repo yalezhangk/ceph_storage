@@ -96,6 +96,30 @@ class VolumeHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, volume_id):
+        """Update volume
+
+        ---
+        tags:
+        - volume
+        summary: update volume
+        description: volume rename
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: volume
+          description: volume rename
+          required: true
+          schema:
+            type: object
+            properties:
+              display_name:
+                type: string
+                description: new display_name
+        responses:
+        "200":
+          description: successful operation
+        """
         # 编辑:改名
         ctxt = self.get_context()
         data = json_decode(self.request.body)
@@ -109,6 +133,25 @@ class VolumeHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def delete(self, volume_id):
+        """Delete volume
+
+        ---
+        tags:
+        - volume
+        summary: delete volume
+        produces:
+        - application/json
+        parameters:
+        - in: URL
+          name: id
+          description: volume id
+          required: true
+          schema:
+            type: int
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         volume = yield client.volume_delete(ctxt, volume_id)
