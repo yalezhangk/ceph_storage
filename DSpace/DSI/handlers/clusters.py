@@ -78,6 +78,26 @@ class ClusterHistoryMetricsHandler(ClusterMetricsHandler):
 class ClusterServiceStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster service status overview
+        description: Lists the total number of each state of services
+        operationId: cluster.api.serviceStatus
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         names = ["NODE_EXPORTER", "PROMETHEUS", "MON"]
@@ -88,6 +108,26 @@ class ClusterServiceStatus(ClusterAPIHandler):
 class ClusterHostStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster host status overview
+        description: Lists the total number of each state of hosts
+        operationId: cluster.api.hostStatus
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         host_status = yield client.cluster_host_status_get(ctxt)
@@ -97,6 +137,26 @@ class ClusterHostStatus(ClusterAPIHandler):
 class ClusterPoolStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster pool status overview
+        description: Lists the total number of each state of pools
+        operationId: cluster.api.poolStatus
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         pool_status = yield client.cluster_pool_status_get(ctxt)
@@ -106,6 +166,26 @@ class ClusterPoolStatus(ClusterAPIHandler):
 class ClusterOsdStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster osd status overview
+        description: Lists the total number of each state of osds
+        operationId: cluster.api.osdStatus
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         osd_status = yield client.cluster_osd_status_get(ctxt)

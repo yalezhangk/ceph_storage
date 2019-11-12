@@ -202,7 +202,10 @@ class ServiceStatus(BaseStorEnum):
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
-    ALL = (ACTIVE, INACTIVE)
+    # TODO
+    FAILED = 'failed'
+
+    ALL = (ACTIVE, INACTIVE, FAILED)
 
 
 class ServiceStatusField(BaseEnumField):
