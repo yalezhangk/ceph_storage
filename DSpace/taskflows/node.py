@@ -335,7 +335,7 @@ class NodeTask(object):
         # run container
         docker_tool.run(
             image="{}/dspace:{}".format(image_namespace, dspace_version),
-            command="agent",
+            command="dsa",
             name="dsa",
             volumes=[("/etc/dspace", "/etc/dspace")]
         )
