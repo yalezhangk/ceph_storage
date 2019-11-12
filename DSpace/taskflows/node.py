@@ -338,7 +338,8 @@ class NodeTask(object):
             command="dsa",
             name="dsa",
             volumes=[("/etc/dspace", "/etc/dspace"),
-                     ("/var/log/dspace", "/var/log/dspace")]
+                     ("/var/log/dspace", "/var/log/dspace"),
+                     ("/", "/host")]
         )
 
     def dspace_agent_uninstall(self):
