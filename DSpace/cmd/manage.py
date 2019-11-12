@@ -16,6 +16,7 @@ from oslo_utils import timeutils
 
 from DSpace import context
 from DSpace import db
+from DSpace import exception
 from DSpace import objects
 # Need to register global_opts
 from DSpace.common import config  # noqa
@@ -188,6 +189,29 @@ class DbCommands(object):
             sys.exit(1)
 
         return result
+
+    @args('data', type=str, help='Init data')
+    def sys_config(self, data):
+        configs = data.split(',')
+        ctxt = context.get_context()
+        allowed = ['image_path', 'image_name', 'image_namespace',
+                   'dspace_version', 'admin_ip_address', 'admin_port',
+                   'agent_port']
+        for c in configs:
+            key, value = c.split("=", 1)
+            if key not in allowed:
+                raise exception.InvalidInput("key %s not support" % key)
+            sys_configs = objects.SysConfigList.get_all(
+                ctxt, filters={'key': key})
+            if not sys_configs:
+                objects.SysConfig(
+                    ctxt, key=key, value=value,
+                    value_type=objects.fields.SysConfigType.STRING,
+                ).create()
+            else:
+                sys_config = sys_configs[0]
+                sys_config.value = value
+                sys_config.save()
 
     def version(self):
         """Print the current database version."""

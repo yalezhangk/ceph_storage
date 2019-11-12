@@ -21,7 +21,7 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
         'value': fields.StringField(),
         'value_type': s_fields.SysConfigTypeField(),
         'display_description': fields.StringField(nullable=True),
-        'cluster_id': fields.StringField()
+        'cluster_id': fields.UUIDField(nullable=True),
     }
 
     def create(self):
