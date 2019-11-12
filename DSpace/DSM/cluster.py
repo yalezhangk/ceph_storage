@@ -19,12 +19,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             ceph_client = CephTask(ctxt)
             cluster_info = ceph_client.cluster_info()
         except Exception as e:
-            logger.error(e)
+            logger.error('get cluster info error:%s', str(e))
             return {}
         fsid = cluster_info.get('fsid')
         total_cluster_byte = cluster_info.get('cluster_data', {}).get(
             'stats', {}).get('total_bytes')
         pool_list = cluster_info.get('cluster_data', {}).get('pools')
+        logger.debug('total_cluster_byte:%s', total_cluster_byte)
+        logger.debug('pool_list:%s', pool_list)
         return {
             'fsid': fsid,
             'total_cluster_byte': total_cluster_byte,

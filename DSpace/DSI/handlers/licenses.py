@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import json
+import logging
 import os
 
 from tornado import gen
@@ -16,6 +17,7 @@ from DSpace.utils.license_verify import PRIVATE_FILE
 from DSpace.utils.license_verify import LicenseVerify
 
 FILE_LEN = 2048
+logger = logging.getLogger(__name__)
 
 
 class LicenseHandler(ClusterAPIHandler):
@@ -26,14 +28,17 @@ class LicenseHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         licenses = objects.LicenseList.get_latest_valid(ctxt)
         admin = self.get_admin_client(ctxt)
+        logging.info('try get cluster size, cluster_id:%s', ctxt.cluster_id)
         cluster_info = yield admin.ceph_cluster_info(ctxt)
         size = int(cluster_info.get('total_cluster_byte', 0))
-        nodes = yield admin.node_get_all(ctxt)
+        logger.info('try get current cluster:%s node_num', ctxt.cluster_id)
+        node_num = yield admin.node_get_count(ctxt)
         result = {'license': []}
         if licenses:
             for per_license in licenses:
                 v = LicenseVerify(per_license.content, ctxt)
                 if not v.licenses_data:
+                    logger.error('load license data error')
                     result['license'].append({'status': 'unauthorized'})
                 else:
                     is_available = v.is_available()
@@ -45,7 +50,7 @@ class LicenseHandler(ClusterAPIHandler):
                         'product': 'T2STOR',
                         'fact_size': size,
                         'size': v.license_cluster_size,
-                        'fact_node_num': len(nodes),
+                        'fact_node_num': node_num,
                         'node_num': v.licenses_node_number
                     }
                     result['license'].append(up_data)
