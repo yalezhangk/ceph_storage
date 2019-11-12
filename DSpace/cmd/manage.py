@@ -116,41 +116,6 @@ class ShellCommands(object):
         exec(compile(open(path).read(), path, 'exec'), locals(), globals())
 
 
-def _db_error(caught_exception):
-    print('%s' % caught_exception)
-    print(_("The above error may show that the database has not "
-            "been created.\nPlease create a database using "
-            "'stor-manage db sync' before running this command."))
-    sys.exit(1)
-
-
-class HostCommands(object):
-    """List hosts."""
-
-    @args('zone', nargs='?', default=None,
-          help='Availability Zone (default: %(default)s)')
-    def list(self, zone=None):
-        """Show a list of all physical hosts.
-
-        Can be filtered by zone.
-        args: [zone]
-        """
-        print(_("%(host)-25s\t%(zone)-15s") % {'host': 'host', 'zone': 'zone'})
-        ctxt = context.get_admin_context()
-        services = objects.ServiceList.get_all(ctxt)
-        if zone:
-            services = [s for s in services if s.availability_zone == zone]
-        hosts = []
-        for srv in services:
-            if not [h for h in hosts if h['host'] == srv['host']]:
-                hosts.append(srv)
-
-        for h in hosts:
-            print(_("%(host)-25s\t%(availability_zone)-15s")
-                  % {'host': h['host'],
-                     'availability_zone': h['availability_zone']})
-
-
 class DbCommands(object):
     """Class for managing the database."""
 
@@ -380,7 +345,6 @@ class BaseCommand(object):
 CATEGORIES = {
     'config': ConfigCommands,
     'db': DbCommands,
-    'host': HostCommands,
     'shell': ShellCommands,
 }
 

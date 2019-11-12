@@ -2360,6 +2360,7 @@ def _disk_get(context, disk_id, session=None):
 @require_context
 def disk_create(context, values):
     disk_ref = models.Disk()
+    disk_ref.cluster_id = context.cluster_id
     disk_ref.update(values)
     session = get_session()
     with session.begin():
@@ -2457,6 +2458,7 @@ def _disk_partition_get(context, disk_part_id, session=None):
 @require_context
 def disk_partition_create(context, values):
     disk_part_ref = models.DiskPartition()
+    disk_part_ref.cluster_id = context.cluster_id
     disk_part_ref.update(values)
     session = get_session()
     with session.begin():

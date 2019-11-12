@@ -1,3 +1,4 @@
+import six
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -154,3 +155,63 @@ class DiskHandler(AdminBaseHandler):
     def disk_partition_get_count(self, ctxt, filters=None):
         return objects.DiskPartitionList.get_count(
             ctxt, filters=filters)
+
+    def disk_partitions_reporter(self, ctxt, partitions, disk):
+        all_partition_objs = objects.DiskPartitionList.get_all(
+            ctxt, filters={'disk_id': disk.id})
+        all_partitions = {
+            partition.name: partition for partition in all_partition_objs
+        }
+        for name, data in six.iteritems(partitions):
+            if name in all_partitions:
+                partition = all_partitions.pop(name)
+                partition.size = data.get('size')
+                partition.save()
+            else:
+                partition = objects.DiskPartition(
+                    ctxt,
+                    name=name,
+                    size=data.get('size'),
+                    status=s_fields.DiskStatus.AVAILABLE,
+                    type=data.get('type', s_fields.DiskType.HDD),
+                    node_id=disk.node_id,
+                    disk_id=disk.id,
+                )
+                partition.create()
+        for name, partition in six.iteritems(all_partitions):
+            logger.warning("Remove partition %s", name)
+            partition.destroy()
+
+    def disk_reporter(self, ctxt, disks, node_id):
+        all_disk_objs = objects.DiskList.get_all(
+            ctxt, filters={'node_id': node_id})
+        all_disks = {
+            disk.name: disk for disk in all_disk_objs
+        }
+        for name, data in six.iteritems(disks):
+            logger.info("Check disk %s: %s", name, data)
+            partitions = data.get("partitions")
+            if name in all_disks:
+                disk = all_disks.pop(name)
+                disk.disk_size = int(data.get('size'))
+                disk.partition_num = len(partitions)
+                disk.save()
+                logger.info("Update disk %s: %s", name, data)
+            else:
+                disk = objects.Disk(
+                    ctxt,
+                    name=name,
+                    status=s_fields.DiskStatus.AVAILABLE,
+                    type=data.get('type', s_fields.DiskType.HDD),
+                    disk_size=data.get('size'),
+                    rotate_speed=data.get('rotate_speed'),
+                    slot=data.get('slot'),
+                    node_id=node_id,
+                    partition_num=len(partitions),
+                )
+                disk.create()
+                logger.info("Create disk %s: %s", name, data)
+            self.disk_partitions_reporter(ctxt, partitions, disk)
+        for name, disk in six.iteritems(all_disks):
+            logger.warning("Remove disk %s", name)
+            disk.destroy()

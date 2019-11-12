@@ -49,6 +49,7 @@ class CronHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
         self.executor.submit(self._cron)
+        self.executor.submit(self._setup)
 
     def _cron(self):
         logger.debug("Start crontab")
@@ -57,14 +58,24 @@ class CronHandler(AgentBaseHandler):
         ]
         while True:
             for fun in crons:
-                fun()
+                try:
+                    fun()
+                except Exception as e:
+                    logger.exception("Cron Exception: %s", e)
             time.sleep(60)
+
+    def _setup(self):
+        logger.debug("Start setup")
+        try:
+            self.disks_reporter()
+        except Exception as e:
+            logger.exception("Setup Exception: %s", e)
 
     def service_check(self):
         logger.debug("Get services status")
 
         node = self.node
-        ssh_client = self._get_ssh_client()
+        ssh_client = self._get_ssh_executor()
         if not ssh_client:
             return False
         docker_tool = DockerTool(ssh_client)
@@ -90,9 +101,14 @@ class CronHandler(AgentBaseHandler):
                     "node_id": CONF.node_id
                 })
         logger.debug(services)
-        response = self.node.service_update(self.ctxt, json.dumps(services))
+        response = self.admin.service_update(self.ctxt, json.dumps(services))
         if not response:
             logger.debug('Update service status failed!')
             return False
         logger.debug('Update service status success!')
         return True
+
+    def disks_reporter(self):
+        disks = self.disk_get_all(self.ctxt, self.node)
+        logger.info("Reporter disk info: %s", disks)
+        self.admin.disk_reporter(self.ctxt, disks, self.node.id)

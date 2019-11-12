@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class AgentBaseHandler(object):
-    Node = None
+    node = None
     ctxt = None
+    admin = None
 
     def __init__(self, *args, **kwargs):
         super(AgentBaseHandler, self).__init__(*args, **kwargs)
@@ -30,10 +31,10 @@ class AgentBaseHandler(object):
             "ip": CONF.admin_ip,
             "port": CONF.admin_port,
         }
-        client = AdminClientManager(
+        self.admin = AdminClientManager(
             self.ctxt, async_support=False, endpoint=endpoint
         ).get_client()
-        self.node = client.node_get(self.ctxt, node_id=CONF.node_id)
+        self.node = self.admin.node_get(self.ctxt, node_id=CONF.node_id)
 
     def _get_executor(self):
         return Executor()
