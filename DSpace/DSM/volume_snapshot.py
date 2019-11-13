@@ -47,8 +47,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         snap.create()
         extra_data = {'volume_name': volume.volume_name,
                       'pool_name': pool.pool_name}
-        self.executor.submit(self._snap_create, ctxt, snap, extra_data,
-                             begin_action)
+        self.task_submit(self._snap_create, ctxt, snap, extra_data,
+                         begin_action)
         logger.info('snap create task has begin,snap_name=%s',
                     snap_data['display_name'])
         return snap
@@ -144,8 +144,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         snap = snap_data['snap']
         snap.status = s_fields.VolumeSnapshotStatus.DELETING
         snap.save()
-        self.executor.submit(self._snap_delete, ctxt, snap, snap_data,
-                             begin_action)
+        self.task_submit(self._snap_delete, ctxt, snap, snap_data,
+                         begin_action)
         logger.info('snap delete task has begin,snap_name=%s',
                     snap.display_name)
         return snap

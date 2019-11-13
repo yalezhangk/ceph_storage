@@ -192,7 +192,7 @@ class OsdHandler(AdminBaseHandler):
         self._osd_config_set(ctxt, osd)
 
         # apply async
-        self.executor.submit(self._osd_create, ctxt, node, osd)
+        self.task_submit(self._osd_create, ctxt, node, osd)
         logger.debug("Osd create task apply.")
 
         return osd
@@ -248,7 +248,7 @@ class OsdHandler(AdminBaseHandler):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
         osd.status = s_fields.OsdStatus.DELETING
         osd.save()
-        self.executor.submit(self._osd_delete, ctxt, osd.node, osd)
+        self.task_submit(self._osd_delete, ctxt, osd.node, osd)
         return osd
 
     def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):

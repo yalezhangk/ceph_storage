@@ -20,11 +20,20 @@ class AgentBaseHandler(object):
 
     def __init__(self, *args, **kwargs):
         super(AgentBaseHandler, self).__init__(*args, **kwargs)
-        self.executor = futures.ThreadPoolExecutor(
+        self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
         self.ctxt = RequestContext(user_id="xxx",
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
+
+    def _wapper(self, fun, *args, **kwargs):
+        try:
+            fun(*args, **kwargs)
+        except Exception as e:
+            logger.exception("Unexpected exception: %s", e)
+
+    def task_submit(self, fun, *args, **kwargs):
+        self._executor.submit(self._wapper, fun, *args, **kwargs)
 
     def _get_node(self):
         endpoint = {

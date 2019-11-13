@@ -100,8 +100,8 @@ class DiskHandler(AdminBaseHandler):
     def disk_partitions_create(self, ctxt, disk_id, values):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
-        self.executor.submit(
-            self._disk_partitions_create(ctxt, node, disk, values))
+        self.task_submit(self._disk_partitions_create, ctxt, node, disk,
+                         values)
         return disk
 
     def _disk_partitions_remove(self, ctxt, node, disk, values):
@@ -131,8 +131,8 @@ class DiskHandler(AdminBaseHandler):
     def disk_partitions_remove(self, ctxt, disk_id, values):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
-        self.executor.submit(
-            self._disk_partitions_remove(ctxt, node, disk, values))
+        self.task_submit(self._disk_partitions_remove, ctxt, node, disk,
+                         values)
         return disk
 
     def disk_smart_get(self, ctxt, disk_id):

@@ -74,8 +74,8 @@ class VolumeHandler(AdminBaseHandler):
                 volume = objects.Volume(ctxt, **volume_data)
                 volume.create()
                 volumes.append(volume)
-                self.executor.submit(self._volume_create, ctxt, volume,
-                                     begin_action)
+                self.task_submit(self._volume_create, ctxt, volume,
+                                 begin_action)
                 logger.info('volume create task has begin,volume_name=%s',
                             volume_data['display_name'])
             return volumes
@@ -94,8 +94,7 @@ class VolumeHandler(AdminBaseHandler):
             volume = objects.Volume(ctxt, **volume_data)
             volume.create()
             # put into thread pool
-            self.executor.submit(self._volume_create, ctxt, volume,
-                                 begin_action)
+            self.task_submit(self._volume_create, ctxt, volume, begin_action)
             logger.info('volume create task has begin,volume_name=%s',
                         volume_data['display_name'])
             return volume
@@ -164,7 +163,7 @@ class VolumeHandler(AdminBaseHandler):
             ctxt, AllResourceType.VOLUME, AllActionType.DELETE)
         volume.status = s_fields.VolumeStatus.DELETING
         volume.save()
-        self.executor.submit(self._volume_delete, ctxt, volume, begin_action)
+        self.task_submit(self._volume_delete, ctxt, volume, begin_action)
         logger.info('volume delete task has begin,volume_name=%s',
                     volume.display_name)
         return volume
@@ -208,8 +207,8 @@ class VolumeHandler(AdminBaseHandler):
         volume.size = data.get('size')
         volume.status = s_fields.VolumeStatus.EXTENDING
         volume.save()
-        self.executor.submit(self._volume_resize, ctxt, volume, extra_data,
-                             begin_action)
+        self.task_submit(self._volume_resize, ctxt, volume, extra_data,
+                         begin_action)
         logger.info('volume extend task has begin,volume_name=%s',
                     volume.display_name)
         return volume
@@ -259,8 +258,8 @@ class VolumeHandler(AdminBaseHandler):
         volume.size = data.get('size')
         volume.status = s_fields.VolumeStatus.SHRINK
         volume.save()
-        self.executor.submit(self._volume_resize, ctxt, volume, extra_data,
-                             begin_action)
+        self.task_submit(self._volume_resize, ctxt, volume, extra_data,
+                         begin_action)
         logger.info('volume shrink task has begin,volume_name=%s',
                     volume.display_name)
         return volume
@@ -282,8 +281,8 @@ class VolumeHandler(AdminBaseHandler):
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_ROLLBACK)
         extra_data = {'snap_name': snap.uuid}
-        self.executor.submit(self._volume_rollback, ctxt, volume, extra_data,
-                             begin_action)
+        self.task_submit(self._volume_rollback, ctxt, volume, extra_data,
+                         begin_action)
         logger.info('volume rollback task has begin,volume_name=%s',
                     volume.display_name)
         return volume
@@ -326,7 +325,7 @@ class VolumeHandler(AdminBaseHandler):
                     volume.volume_name))
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_UNLINK)
-        self.executor.submit(self._volume_unlink, ctxt, volume, begin_action)
+        self.task_submit(self._volume_unlink, ctxt, volume, begin_action)
         logger.info('volume unlink task has begin,volume_name=%s',
                     volume.display_name)
         return volume
@@ -450,8 +449,8 @@ class VolumeHandler(AdminBaseHandler):
                 new_volume.create()
                 verify_data.update({'new_volume': new_volume})
                 # put into thread pool
-                self.executor.submit(self._volume_create_from_snapshot, ctxt,
-                                     verify_data, begin_action)
+                self.task_submit(self._volume_create_from_snapshot, ctxt,
+                                 verify_data, begin_action)
                 logger.info('volume clone task has begin,volume_name=%s',
                             volume_data['display_name'])
                 new_volumes.append(new_volume)
@@ -476,8 +475,8 @@ class VolumeHandler(AdminBaseHandler):
             new_volume.create()
             verify_data.update({'new_volume': new_volume})
             # put into thread pool
-            self.executor.submit(self._volume_create_from_snapshot, ctxt,
-                                 verify_data, begin_action)
+            self.task_submit(self._volume_create_from_snapshot, ctxt,
+                             verify_data, begin_action)
             logger.info('volume clone task has begin,volume_name=%s',
                         volume_data['display_name'])
             return new_volume

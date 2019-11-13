@@ -180,7 +180,7 @@ class AlertLogHandler(AdminBaseHandler):
         # 1. receive_datas
         to_datas = self._receive_datas(ctxt, receive_datas)
         # 2. send_email
-        self.executor.submit(self._send_alert_email, ctxt, to_datas)
+        self.task_submit(self._send_alert_email, ctxt, to_datas)
         logger.info('send_email tasks has begin')
         return True
 
