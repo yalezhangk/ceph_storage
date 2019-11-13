@@ -17,6 +17,26 @@ logger = logging.getLogger(__name__)
 class RpcServiceListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - rpc_service
+        summary: rpc_service List
+        description: Return a list of rpc_services
+        operationId: rpc_services.api.listRpc_service
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         rpc_service = objects.RPCServiceList.get_all(ctxt)
         self.write(objects.json_encode({
@@ -25,6 +45,50 @@ class RpcServiceListHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - rpc_service
+        summary: Create rpc_service
+        description: Create rpc_service.
+        operationId: rpc_services.api.createRpc_service
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: rpc_service
+          description: Created rpc_service object
+          required: true
+          schema:
+            type: object
+            properties:
+              rpc_service:
+                type: object
+                description: rpc_service object
+                properties:
+                  hostname:
+                    type: string
+                  cluster_id:
+                    type: string
+                  service_name:
+                    type: string
+                  endpoint:
+                    type: object
+                    properties:
+                      ip:
+                        type: string
+                      prot:
+                        type: string
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         data = data.get("rpc_service")
