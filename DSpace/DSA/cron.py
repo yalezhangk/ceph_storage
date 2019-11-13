@@ -68,6 +68,7 @@ class CronHandler(AgentBaseHandler):
         logger.debug("Start setup")
         try:
             self.disks_reporter()
+            self.network_reporter()
         except Exception as e:
             logger.exception("Setup Exception: %s", e)
 
@@ -112,3 +113,8 @@ class CronHandler(AgentBaseHandler):
         disks = self.disk_get_all(self.ctxt, self.node)
         logger.info("Reporter disk info: %s", disks)
         self.admin.disk_reporter(self.ctxt, disks, self.node.id)
+
+    def network_reporter(self):
+        networks = self.network_get_all(self.ctxt, self.node)
+        logger.info("Reporter network info: %s", networks)
+        self.admin.network_reporter(self.ctxt, networks, self.node.id)

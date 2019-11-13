@@ -2169,6 +2169,7 @@ def _network_get(context, net_id, session=None):
 @require_context
 def network_create(context, values):
     net_ref = models.Network()
+    net_ref.cluster_id = context.cluster_id
     net_ref.update(values)
     session = get_session()
     with session.begin():

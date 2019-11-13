@@ -242,6 +242,11 @@ class AdminClient(BaseClient):
             cluster_cidr=cluster_cidr, gateway_cidr=gateway_cidr)
         return response
 
+    def network_reporter(self, ctxt, networks, node_id):
+        response = self.call(ctxt, "network_reporter",
+                             networks=networks, node_id=node_id)
+        return response
+
     ###################
     def osd_get(self, ctxt, osd_id, **kwargs):
         response = self.call(ctxt, "osd_get", osd_id=osd_id, **kwargs)
