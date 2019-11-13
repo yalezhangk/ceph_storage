@@ -303,10 +303,25 @@ class NodeTask(object):
 
     def dspace_agent_install(self):
         ssh = self.get_ssh_executor()
-        # create config
+        # get global config
+        log_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
+        log_dir_container = objects.sysconfig.sys_config_get(
+            self.ctxt, "log_dir_container")
+        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
+        config_dir_container = objects.sysconfig.sys_config_get(
+            self.ctxt, "config_dir_container")
+        image_name = objects.sysconfig.sys_config_get(self.ctxt, "image_name")
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
+        dspace_repo = objects.sysconfig.sys_config_get(
+            self.ctxt, "dspace_repo")
+
+        # write config
         file_tool = FileTool(ssh)
-        file_tool.mkdir("/etc/dspace")
-        file_tool.write("/etc/dspace/dsa.conf",
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/dsa.conf".format(config_dir),
                         self.get_dsa_conf())
         file_tool.write("/etc/yum.repos.d/dspace.repo",
                         self.get_dspace_repo())
@@ -320,13 +335,6 @@ class NodeTask(object):
         service_tool.start('docker')
         # load image
         docker_tool = DockerTool(ssh)
-        image_name = objects.sysconfig.sys_config_get(self.ctxt, "image_name")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        dspace_repo = objects.sysconfig.sys_config_get(
-            self.ctxt, "dspace_repo")
         # pull images from repo
         tmp_image = '/tmp/{}'.format(image_name)
         fetch_url = '{}/images/{}'.format(dspace_repo, image_name)
@@ -337,9 +345,10 @@ class NodeTask(object):
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
             name="dsa",
-            volumes=[("/etc/dspace", "/etc/dspace"),
-                     ("/var/log/dspace", "/var/log/dspace"),
-                     ("/", "/host")]
+            volumes=[(config_dir, config_dir_container),
+                     (log_dir, log_dir_container),
+                     ("/", "/host"),
+                     ("/root/.ssh/", "/root/.ssh", "ro,rslave")]
         )
 
     def dspace_agent_uninstall(self):
