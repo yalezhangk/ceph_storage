@@ -1,6 +1,5 @@
 import uuid
 
-import six
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -196,13 +195,6 @@ class OsdHandler(AdminBaseHandler):
         self.executor.submit(self._osd_create, ctxt, node, osd)
         logger.debug("Osd create task apply.")
 
-        return osd
-
-    def osd_update(self, ctxt, osd_id, data):
-        osd = objects.Osd.get_by_id(ctxt, osd_id)
-        for k, v in six.iteritems(data):
-            setattr(osd, k, v)
-        osd.save()
         return osd
 
     def _osd_config_remove(self, ctxt, osd):

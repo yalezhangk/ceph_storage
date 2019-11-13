@@ -23,9 +23,9 @@ class OsdListHandler(ClusterAPIHandler):
 
         ---
         tags:
-        - OSD
-        summary: Create osd
-        description: Create osd or osds.
+        - osd
+        summary: List osds
+        description: Return a list of osds.
         operationId: osds.api.listOsd
         produces:
         - application/json
@@ -38,7 +38,7 @@ class OsdListHandler(ClusterAPIHandler):
           required: true
         - in: request
           name: node_id
-          description: Created osd object
+          description: Filter the list of osds by node ID
           schema:
             type: integer
             format: int32
@@ -114,7 +114,7 @@ class OsdListHandler(ClusterAPIHandler):
 
         ---
         tags:
-        - OSD
+        - osd
         summary: Create osd
         description: Create osd or osds.
         operationId: osds.api.createOsd
@@ -211,23 +211,39 @@ class OsdListHandler(ClusterAPIHandler):
 class OsdHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: Detail of the osd
+        description: Return detail infomation of osd by id
+        operationId: osds.api.osdDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['node', 'disk', 'db_partition', 'wal_partition',
                           'cache_partition', 'journal_partition']
         osd = yield client.osd_get(
             ctxt, osd_id, expected_attrs=expected_attrs)
-        self.write(objects.json_encode({
-            "osd": osd
-        }))
-
-    @gen.coroutine
-    def put(self, osd_id):
-        ctxt = self.get_context()
-        data = json_decode(self.request.body)
-        client = self.get_admin_client(ctxt)
-        osd = data.get("osd")
-        osd = yield client.osd_update(ctxt, osd_id, osd)
         self.write(objects.json_encode({
             "osd": osd
         }))
