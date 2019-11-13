@@ -816,15 +816,9 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "smtp_get")
         return response
 
-    def update_smtp(self, ctxt, smtp_enabled, smtp_user,
-                    smtp_password, smtp_host, smtp_port,
-                    smtp_enable_ssl, smtp_enable_tls):
+    def update_smtp(self, ctxt, data):
         response = self.call(
-            ctxt, "update_smtp", smtp_enabled=smtp_enabled,
-            smtp_user=smtp_user, smtp_password=smtp_password,
-            smtp_host=smtp_host, smtp_port=smtp_port,
-            smtp_enable_ssl=smtp_enable_ssl,
-            smtp_enable_tls=smtp_enable_tls)
+            ctxt, "update_smtp", data=data)
         return response
 
     def ceph_config_get_all(

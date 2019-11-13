@@ -78,18 +78,10 @@ class SmtpHandler(ClusterAPIHandler):
         logger.error(data)
         if not data:
             raise InvalidInput(reason=_("smtp: post data is none"))
-        smtp_enabled = data.get('smtp_enabled')
-        smtp_user = data.get('smtp_user')
-        smtp_password = data.get('smtp_password')
-        smtp_host = data.get('smtp_host')
-        smtp_port = data.get('smtp_port')
-        smtp_enable_ssl = data.get('smtp_enable_ssl')
-        smtp_enable_tls = data.get('smtp_enable_tls')
         client = self.get_admin_client(ctxt)
         yield client.update_smtp(
-            ctxt, smtp_enabled, smtp_user, smtp_password,
-            smtp_host, smtp_port, smtp_enable_ssl, smtp_enable_tls)
-        self.write(json.dumps({'a': 'a'}))
+            ctxt, data)
+        self.write(json.dumps({'smtp_sysconfs': data}))
 
 
 class SmtpTestHandler(ClusterAPIHandler):
