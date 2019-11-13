@@ -36,6 +36,7 @@ def define_tables(meta):
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
+        Column('is_admin', Boolean),
         Column('id', String(36), primary_key=True, nullable=False),
         Column('display_name', String(255)),
         Column('display_description', String(255)),

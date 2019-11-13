@@ -4,7 +4,6 @@ import copy
 import logging
 
 import six
-from oslo_utils import strutils
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -87,11 +86,12 @@ class PermissionMixin(object):
         permission['license'] = license
         permission['user'] = user
         if cluster_id:
+            cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+            if cluster.is_admin:
+                self.add_page(permission, "manage-cluster")
             for p in self.default_page():
                 self.add_page(permission, p)
-        is_admin = objects.sysconfig.sys_config_get(ctxt, 'is_admin')
-        is_admin = strutils.bool_from_string(is_admin)
-        if is_admin or not cluster_id:
+        else:
             self.add_page(permission, "manage-cluster")
         # TODO: cache permission
         return {
