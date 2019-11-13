@@ -2960,7 +2960,11 @@ def _alert_log_get(context, alert_log_id, session=None):
 
 @require_context
 def alert_log_get(context, alert_log_id, expected_attrs=None):
-    return _alert_log_get(context, alert_log_id)
+    session = get_session()
+    with session.begin():
+        alert_log = _alert_log_get(context, alert_log_id, session)
+        _alert_log_load_attr(context, alert_log, expected_attrs, session)
+    return alert_log
 
 
 @require_context
@@ -2985,9 +2989,17 @@ def alert_log_update(context, alert_log_id, values):
             raise exception.AlertLogNotFound(alert_log_id=alert_log_id)
 
 
+def _alert_log_load_attr(ctxt, alert_log, expected_attrs=None, session=None):
+    expected_attrs = expected_attrs or []
+    if 'alert_rule' in expected_attrs:
+        alert_rule = _alert_rule_get(ctxt, alert_log.alert_rule_id, session)
+        alert_log.alert_rule = alert_rule
+
+
 @require_context
 def alert_log_get_all(context, marker=None, limit=None, sort_keys=None,
-                      sort_dirs=None, filters=None, offset=None):
+                      sort_dirs=None, filters=None, offset=None,
+                      expected_attrs=None):
     filters = filters or {}
     filters['cluster_id'] = context.cluster_id
     session = get_session()
@@ -2999,7 +3011,10 @@ def alert_log_get_all(context, marker=None, limit=None, sort_keys=None,
             sort_keys, sort_dirs, filters, offset)
         if query is None:
             return []
-        return query.all()
+        alert_logs = query.all()
+        for ale_log in alert_logs:
+            _alert_log_load_attr(context, ale_log, expected_attrs, session)
+        return alert_logs
 
 
 @require_context

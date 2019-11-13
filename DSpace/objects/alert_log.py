@@ -20,7 +20,10 @@ class AlertLog(base.StorPersistentObject, base.StorObject,
         'resource_name': fields.StringField(),
         'alert_role_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
+        'alert_rule': fields.ObjectField("AlertRule", nullable=True),
     }
+
+    OPTIONAL_FIELDS = ('alert_rule',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -43,6 +46,20 @@ class AlertLog(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+
+        if 'alert_rule' in expected_attrs:
+            alert_rule = db_obj.get('alert_rule', None)
+            if alert_rule:
+                obj.alert_rule = objects.AlertRule._from_db_object(
+                    context, objects.AlertRule(context), alert_rule)
+            else:
+                obj.alert_rule = None
+
+        return super(AlertLog, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class AlertLogList(base.ObjectListBase, base.StorObject):
@@ -53,12 +70,13 @@ class AlertLogList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         alert_logs = db.alert_log_get_all(context, marker, limit,
                                           sort_keys, sort_dirs, filters,
-                                          offset)
+                                          offset, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.AlertLog,
-                                  alert_logs)
+                                  alert_logs, expected_attrs=expected_attrs)
 
     @classmethod
     def get_count(cls, context, filters=None):
