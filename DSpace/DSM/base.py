@@ -11,8 +11,17 @@ logger = logging.getLogger(__name__)
 
 class AdminBaseHandler(object):
     def __init__(self):
-        self.executor = futures.ThreadPoolExecutor(
+        self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
+
+    def _wapper(self, fun, *args, **kwargs):
+        try:
+            fun(*args, **kwargs)
+        except Exception as e:
+            logger.exception("Unexpected exception: %s", e)
+
+    def task_submit(self, fun, *args, **kwargs):
+        self._executor.submit(self._wapper, fun, *args, **kwargs)
 
     def begin_action(self, ctxt, resource_type=None, action=None):
         logger.debug('begin action:%s-%s', resource_type, action)

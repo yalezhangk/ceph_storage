@@ -48,8 +48,8 @@ service_map = {
 class CronHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
-        self.executor.submit(self._cron)
-        self.executor.submit(self._setup)
+        self.task_submit(self._setup)
+        self.task_submit(self._cron)
 
     def _cron(self):
         logger.debug("Start crontab")

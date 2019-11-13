@@ -181,5 +181,5 @@ class CephConfigHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, values, "UPDATED", msg)
 
     def ceph_config_set(self, ctxt, values):
-        self.executor.submit(self._ceph_config_set(ctxt, values))
+        self.task_submit(self._ceph_config_set, ctxt, values)
         return values

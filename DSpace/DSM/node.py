@@ -78,7 +78,7 @@ class NodeHandler(AdminBaseHandler):
         node = objects.Node.get_by_id(ctxt, node_id)
         node.status = s_fields.NodeStatus.DELETING
         node.save()
-        self.executor.submit(self._node_delete, ctxt, node)
+        self.task_submit(self._node_delete, ctxt, node)
         return node
 
     def _node_get_metrics_overall(self, ctxt, nodes):
@@ -296,7 +296,7 @@ class NodeHandler(AdminBaseHandler):
         node.status = s_fields.NodeStatus.DEPLOYING
         node.save()
 
-        self.executor.submit(self._node_roles_set, ctxt, node, data)
+        self.task_submit(self._node_roles_set, ctxt, node, data)
         return node
 
     def _node_create(self, ctxt, node, data):
@@ -364,7 +364,7 @@ class NodeHandler(AdminBaseHandler):
             status=s_fields.NodeStatus.CREATING)
         node.create()
 
-        self.executor.submit(self._node_create, ctxt, node, data)
+        self.task_submit(self._node_create, ctxt, node, data)
         return node
 
     def node_get_infos(self, ctxt, data):
