@@ -79,7 +79,7 @@ class PoolListHandler(ClusterAPIHandler):
         {
             "name": string,
             "type": string[replicated,erasure],
-            "speed_type": string[HDD,SSD],
+            "speed_type": string[hdd,ssd],
             "role": string[data,metadata],
             "data_chunk_num": number,
             "coding_chunk_num": number,
@@ -121,7 +121,7 @@ class PoolListHandler(ClusterAPIHandler):
                     description: pool's type, it can be replicated/erasure
                   speed_type:
                     type: string
-                    description: pool's speed type, it can be HDD/SSD
+                    description: pool's speed type, it can be hdd/ssd
                   role:
                     type: string
                     description: pool's role, it can be data/metadata
