@@ -52,6 +52,7 @@ class BaseAPIHandler(RequestHandler):
                      self.request.headers.get("X-Forwarded-For") or
                      self.request.remote_ip)
         ctxt.client_ip = client_ip
+        ctxt.cluster_id = self.get_cluster_id()
         return ctxt
 
     def get_paginated_args(self):
@@ -130,8 +131,6 @@ class ClusterAPIHandler(BaseAPIHandler):
 
     def get_context(self):
         ctxt = super(ClusterAPIHandler, self).get_context()
-        cluster_id = self.get_cluster_id()
-        if not cluster_id:
+        if not ctxt.cluster_id:
             raise exception.ClusterIDNotFound()
-        ctxt.cluster_id = cluster_id
         return ctxt
