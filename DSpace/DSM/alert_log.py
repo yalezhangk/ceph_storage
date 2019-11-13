@@ -1,4 +1,3 @@
-import six
 from oslo_log import log as logging
 
 from DSpace import exception as exc
@@ -164,8 +163,10 @@ class AlertLogHandler(AdminBaseHandler):
 
     def alert_log_update(self, ctxt, alert_log_id, data):
         alert_log = self.alert_log_get(ctxt, alert_log_id)
-        for k, v in six.iteritems(data):
-            setattr(alert_log, k, v)
+        readed = data.get('readed')
+        if readed is not True:
+            raise exc.InvalidInput(message="param 'readed' must be True")
+        alert_log.readed = readed
         alert_log.save()
         return alert_log
 
@@ -181,3 +182,12 @@ class AlertLogHandler(AdminBaseHandler):
         self.executor.submit(self._send_alert_email, ctxt, to_datas)
         logger.info('send_email tasks has begin')
         return True
+
+    def alert_log_all_readed(self, ctxt, alert_log_data):
+        filters = None
+        readed = alert_log_data.get('readed')
+        if readed is not True:
+            raise exc.InvalidInput(message="param 'readed' must be True")
+        result = objects.AlertLogList.update(
+            ctxt, filters, {'readed': True})
+        return result

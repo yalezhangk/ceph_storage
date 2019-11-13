@@ -2857,6 +2857,15 @@ def alert_log_destroy(context, alert_log_id):
     return updated_values
 
 
+def alert_log_batch_update(context, filters, updates):
+    session = get_session()
+    with session.begin():
+        # todo filters update
+        model_query(context, models.AlertLog, session=session).\
+            update(updates)
+        return True
+
+
 ###############################
 
 
