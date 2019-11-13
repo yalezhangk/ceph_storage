@@ -16,6 +16,38 @@ class RackListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
         """获取机架列表信息
+        ---
+        tags:
+        - rack
+        summary: rack List
+        description: Return a list of racks
+        operationId: racks.api.listRack
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -29,6 +61,33 @@ class RackListHandler(ClusterAPIHandler):
         """创建机架
 
         {"datacenter_id": 1}
+
+        ---
+        tags:
+        - rack
+        summary: Create rack
+        description: create rack.
+        operationId: racks.api.createRack
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: rack
+          description: create rack object
+          required: true
+          schema:
+            type: object
+            properties:
+              datacenter:
+                type: integer
+                format: int32
+                description: ID of the datacenter to which the rack belongs
         """
         datacenter_id = json_decode(self.request.body).get('datacenter_id')
         ctxt = self.get_context()
@@ -46,6 +105,31 @@ class RackHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, rack_id):
         """获取机架信息
+        ---
+        tags:
+        - rack
+        summary: Detail of the rack
+        description: Return detail infomation of rack by id
+        operationId: racks.api.rackDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: rack ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -60,6 +144,59 @@ class RackHandler(ClusterAPIHandler):
 
         {"rack": {"name":"rack-name"}}
         {"rack": {"datacenter_id": 1}}
+
+        ---
+        tags:
+        - rack
+        summary: Update rack
+        description: update rack.
+        operationId: racks.api.updateRack
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: rack ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: rack(update name)
+          description: updated rack object's name
+          required: false
+          schema:
+            type: object
+            properties:
+              rack:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: rack's name
+        - in: body
+          name: rack(update datacenter)
+          description: move rack to another datacenter
+          required: false
+          schema:
+            type: object
+            properties:
+              rack:
+                type: object
+                properties:
+                  datacenter:
+                    type: integer
+                    format: int32
+                    description: the datacenter's id
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -82,6 +219,31 @@ class RackHandler(ClusterAPIHandler):
     @gen.coroutine
     def delete(self, rack_id):
         """删除机架
+        ---
+        tags:
+        - rack
+        summary: Delete the rack by id
+        description: delete rack by id
+        operationId: racks.api.deleteRack
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: rack's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -92,7 +254,34 @@ class RackHandler(ClusterAPIHandler):
 
 
 class RackHostsHandler(ClusterAPIHandler):
-    # TODO 获取机架下的虚拟host
     @gen.coroutine
     def get(self, rack_id):
+        """
+        ---
+        tags:
+        - rack
+        summary: Get the virtual host
+        description: Get the virtual host for the rack
+        operationId: racks.api.getHost
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: rack's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        # TODO 获取机架下的虚拟host
         pass
