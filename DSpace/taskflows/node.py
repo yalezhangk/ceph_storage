@@ -341,14 +341,19 @@ class NodeTask(object):
         file_tool.fetch_from_url(tmp_image, fetch_url)
         docker_tool.image_load(tmp_image)
         # run container
+        # TODO: remove code_dir
+        code_dir = "/root/.local/lib/python3.6/site-packages/DSpace/"
         docker_tool.run(
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
             name="dsa",
-            volumes=[(config_dir, config_dir_container),
-                     (log_dir, log_dir_container),
-                     ("/", "/host"),
-                     ("/root/.ssh/", "/root/.ssh", "ro,rslave")]
+            volumes=[
+                (config_dir, config_dir_container),
+                (log_dir, log_dir_container),
+                ("/", "/host"),
+                ("/root/.ssh/", "/root/.ssh", "ro,rslave"),
+                ("/opt/t2stor/DSpace/", code_dir)
+            ]
         )
 
     def dspace_agent_uninstall(self):
