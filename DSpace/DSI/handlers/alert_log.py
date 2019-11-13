@@ -9,28 +9,79 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
-from DSpace.objects.fields import AlertLogLevel
+from DSpace.i18n import _
+from DSpace.objects.fields import AlertLogLevel as Level
+from DSpace.objects.fields import AllResourceType as Resource
 
 logger = logging.getLogger(__name__)
 
 
 class AlertLogListHandler(ClusterAPIHandler):
 
-    @gen.coroutine
-    def get(self):
-        ctxt = self.get_context()
-        client = self.get_admin_client(ctxt)
-        page_args = self.get_paginated_args()
+    def _filter_query(self):
         resource_type = self.get_query_argument('resource_type', default=None)
         readed = self.get_query_argument('readed', default=None)
         level = self.get_query_argument('level', default=None)
         filters = {}
         if resource_type:
-            filters['resource_type'] = resource_type
+            if resource_type == 'all':
+                pass
+            else:
+                if resource_type not in Resource.ALL:
+                    raise exception.InvalidInput(_(
+                        'resource_type:{} not exist').format(resource_type))
+
+                filters['resource_type'] = resource_type
         if readed:
-            filters['readed'] = readed
+            if readed == 'all':
+                pass
+            else:
+                filters['readed'] = False
         if level:
-            filters['level'] = level
+            if level == 'all':
+                pass
+            else:
+                if level not in Level.ALL:
+                    raise exception.InvalidInput(_(
+                        'level:{} not exist').format(level))
+                filters['level'] = level
+        return filters
+
+    @gen.coroutine
+    def get(self):
+        """alert_log list
+
+        ---
+        tags:
+        - alert_log
+        summary: get all alert_logs or filters get alert_logs
+        produces:
+        - application/json
+        parameters:
+        - in: URL
+          name: resource_type
+          description: all or one resource
+          required: false
+          schema:
+            type: str
+          name: level
+          description: one or all alert_log level
+          required: false
+          schema:
+            type: str
+          name: readed
+          description: all or unread alert_log
+          required: false
+          schema:
+            type: str
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        page_args = self.get_paginated_args()
+        filters = self._filter_query()
         alert_logs = yield client.alert_log_get_all(ctxt, filters=filters,
                                                     **page_args)
         alert_log_count = yield client.alert_log_get_count(ctxt,
@@ -105,11 +156,11 @@ class AlertTpyeCountHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        all_level = AlertLogLevel.ALL
-        INFO = AlertLogLevel.INFO
-        WARN = AlertLogLevel.WARN
-        ERROR = AlertLogLevel.ERROR
-        FATAL = AlertLogLevel.FATAL
+        all_level = Level.ALL
+        INFO = Level.INFO
+        WARN = Level.WARN
+        ERROR = Level.ERROR
+        FATAL = Level.FATAL
         map_querys = {
             'unread': {'readed': False},
             INFO: {'level': INFO},
