@@ -5,6 +5,7 @@ from DSpace.DSI.handlers.action_log import ActionLogListHandler
 from DSpace.DSI.handlers.action_log import ResourceActionHandler
 from DSpace.DSI.handlers.alert_group import AlertGroupHandler
 from DSpace.DSI.handlers.alert_group import AlertGroupListHandler
+from DSpace.DSI.handlers.alert_log import AlertLogActionHandler
 from DSpace.DSI.handlers.alert_log import AlertLogHandler
 from DSpace.DSI.handlers.alert_log import AlertLogListHandler
 from DSpace.DSI.handlers.alert_log import AlertTpyeCountHandler
@@ -99,6 +100,7 @@ def get_routers():
         (r"/alert_groups/([0-9]*)/", AlertGroupHandler),
         (r"/alert_logs/", AlertLogListHandler),
         (r"/alert_logs/([0-9]*)/", AlertLogHandler),
+        (r"/alert_logs/action/", AlertLogActionHandler),
         (r"/alert_logs/messages/", ReceiveAlertMessageHandler),
         (r"/alert_logs/type_count/", AlertTpyeCountHandler),
         (r"/alert_rules/", AlertRuleListHandler),

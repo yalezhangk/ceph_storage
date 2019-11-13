@@ -336,3 +336,8 @@ class IscsiBackstoreNotFound(NotFound):
 
 class IscsiAclNotFound(NotFound):
     message = _("iscsi acl %(iqn_initiator)s not found.")
+
+
+class AlertLogActionNotFound(NotFound):
+    message = _("AlertLog Action %(action)s must in"
+                "'all_readed,del_alert_logs'")

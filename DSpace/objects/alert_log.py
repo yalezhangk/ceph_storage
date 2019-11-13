@@ -64,3 +64,8 @@ class AlertLogList(base.ObjectListBase, base.StorObject):
     def get_count(cls, context, filters=None):
         count = db.alert_log_get_count(context, filters)
         return count
+
+    @classmethod
+    def update(cls, context, filters=None, updates=None):
+        result = db.alert_log_batch_update(context, filters, updates)
+        return result
