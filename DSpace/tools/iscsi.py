@@ -157,16 +157,16 @@ def current_acls(iqn):
     return existing_acls
 
 
-def create_acl(iqn, iqn_initiator):
+def create_acl(iqn_target, iqn_initiator):
     """
     Creates new acl with given iqn, unless it already exists.
     """
-    logger.info("create acl %s for target %s", iqn_initiator, iqn)
-    tpg = _get_single_tpg(iqn)
+    logger.info("create acl %s for target %s", iqn_initiator, iqn_target)
+    tpg = _get_single_tpg(iqn_target)
 
-    if iqn_initiator in current_acls(iqn):
-        logger.error('acl with iqn %s already exists' % iqn)
-        raise exc.IscsiAclExists(iqn=iqn)
+    if iqn_initiator in current_acls(iqn_target):
+        logger.error('acl with iqn %s already exists' % iqn_target)
+        raise exc.IscsiAclExists(iqn=iqn_initiator)
     else:
         try:
             tpg.node_acl(iqn_initiator, mode='create')
@@ -348,13 +348,33 @@ def chap_disable(iqn):
     save_config()
 
 
-def mutual_chap_enable(iqn, mutual_username, mutual_password):
-    set_tpg_attributes(iqn, "authentication", 1)
-    tpg = _get_single_tpg(iqn)
+def mutual_chap_enable(iqn_target, mutual_username, mutual_password):
+    """
+    Set mutual chap for all acls in a iscsi target
+    """
+    set_tpg_attributes(iqn_target, "authentication", 1)
+    tpg = _get_single_tpg(iqn_target)
     for acl in tpg.node_acls:
         acl.chap_mutual_userid = mutual_username
         acl.chap_mutual_password = mutual_password
     save_config()
+
+
+def set_acl_mutual_chap(iqn_target, iqn_initiator, mutual_username,
+                        mutual_password):
+    """
+    Set mutual chap for a specified acl in a iscsi target
+    If mutual_username and mutual_password is "", will disable
+    """
+    logger.debug("%s: trying to set mutual chap for acl: %s",
+                 iqn_target, iqn_initiator)
+    set_tpg_attributes(iqn_target, "authentication", 1)
+    acl = get_acl(iqn_target, iqn_initiator)
+    if not acl:
+        logger.error("can't find the specified acl: %s", iqn_initiator)
+        raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
+    acl.chap_mutual_userid = mutual_username
+    acl.chap_mutual_password = mutual_password
 
 
 def chap_enable(iqn, username, password):
