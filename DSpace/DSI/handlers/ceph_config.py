@@ -18,6 +18,44 @@ logger = logging.getLogger(__name__)
 class CephConfigListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - ceph_config
+        summary: ceph_config List
+        description: Return a list of ceph_config
+        operationId: ceph_config.api.listceph_config
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: group
+          type: string
+          description: ceph config file [group]
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
 
@@ -76,6 +114,48 @@ class CephConfigActionHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - ceph_config
+        summary: Create ceph_config
+        description: Create ceph_config.
+        operationId: ceph_configs.api.createCeph_config
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: ceph_config
+          description: Created ceph_config object
+          required: true
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                description: ceph_config's action, it can be
+                             config_reset/config_update
+              ceph_config:
+                type: object
+                description: ceph_config object
+                properties:
+                  group:
+                    type: string
+                    description: ceph config file [group]
+                  key:
+                    type: string
+                    description: cluster_configs key, it can be
+                                 debug_osd/debug_mon/debug_rgw/osd_pool_default_type.
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         body = json_decode(self.request.body)
         action = body.get('action')
@@ -104,6 +184,26 @@ class CephConfigActionHandler(ClusterAPIHandler):
 class CephConfigContentHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - ceph_config
+        summary: Download the ceph_config file
+        description: Return the ceph_config file and you can download it.
+        operationId: ceph_configs.api.getCeph_configFile
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         content = yield client.ceph_config_content(ctxt)
