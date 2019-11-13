@@ -254,10 +254,6 @@ class Volume(BASE, StorBase):
     status = Column(String(64))  # TODO(vish): enum?
     display_name = Column(String(255))
     display_description = Column(String(255))
-    volume_access_path_id = Column(Integer,
-                                   ForeignKey('volume_access_paths.id'))
-    volume_client_group_id = Column(Integer,
-                                    ForeignKey('volume_client_groups.id'))
     pool_id = Column(Integer, ForeignKey('pools.id'))
     snapshot_id = Column(Integer)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
@@ -290,6 +286,18 @@ volume_access_path_gateways = Table(
            ForeignKey("volume_gateways.id")),
     Column('cluster_id', String(36), ForeignKey('clusters.id'))
 )
+
+
+class VolumeMapping(BASE, StorBase):
+    __tablename__ = "volume_mappings"
+
+    id = Column(Integer, primary_key=True)
+    volume_id = Column(Integer, ForeignKey("volumes.id"))
+    volume_access_path_id = Column(
+        Integer, ForeignKey("volume_access_paths.id"))
+    volume_client_group_id = Column(
+        Integer, ForeignKey("volume_client_groups.id"))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
 class VolumeAccessPath(BASE, StorBase):
@@ -342,8 +350,6 @@ class VolumeClientGroup(BASE, StorBase):
     chap_enable = Column(Boolean, default=False)  # 客户端对服务端的认证
     chap_username = Column(String(32))
     chap_password = Column(String(32))
-    volume_access_path_id = Column(Integer,
-                                   ForeignKey('volume_access_paths.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 

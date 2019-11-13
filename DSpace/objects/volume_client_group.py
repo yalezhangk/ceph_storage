@@ -19,16 +19,15 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
         'chap_enable': fields.BooleanField(default=False),
         'chap_username': fields.StringField(nullable=True),
         'chap_password': fields.StringField(nullable=True),
-        'volume_access_path_id': fields.IntegerField(),
         'cluster_id': fields.StringField(nullable=True),
-        'volume_access_path': fields.ObjectField(
+        'volume_access_paths': fields.ListOfObjectsField(
             "VolumeAccessPath", nullable=True),
         'volumes': fields.ListOfObjectsField('Volume', nullable=True),
         'volume_clients': fields.ListOfObjectsField(
             'VolumeClient', nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('volume_access_path', 'volumes', 'volume_clients')
+    OPTIONAL_FIELDS = ('volume_access_paths', 'volumes', 'volume_clients')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -55,11 +54,12 @@ class VolumeClientGroup(base.StorPersistentObject, base.StorObject,
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         expected_attrs = expected_attrs or []
-        if 'volume_access_path' in expected_attrs:
-            vap = db_obj.get('volume_access_path', None)
-            obj.volume_access_path = objects.VolumeAccessPath._from_db_object(
-                context, objects.VolumeAccessPath(context), vap
-            ) if vap else None
+        if 'volume_access_paths' in expected_attrs:
+            vaps = db_obj.get('volume_access_paths', [])
+            obj.volume_access_paths = (
+                [objects.VolumeAccessPath._from_db_object(
+                    context, objects.VolumeAccessPath(context), vap
+                ) for vap in vaps])
         if 'volume_clients' in expected_attrs:
             volume_clients = db_obj.get('volume_clients', [])
             obj.volume_clients = [objects.VolumeClient._from_db_object(
