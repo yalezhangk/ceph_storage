@@ -319,6 +319,7 @@ class CephVersion(BaseStorEnum):
     LUMINOUS = 'Luminous'
     MIMIC = 'Mimic'
     Nautilus = 'Nautilus'
+    T2STOR = 'T2stor'
 
 
 class ResourceAction(object):
