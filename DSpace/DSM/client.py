@@ -724,6 +724,11 @@ class AdminClient(BaseClient):
             ctxt, "alert_log_all_readed", alert_log_data=alert_log_data)
         return response
 
+    def alert_logs_set_deleted(self, ctxt, alert_log_data):
+        response = self.call(
+            ctxt, "alert_logs_set_deleted", alert_log_data=alert_log_data)
+        return response
+
     ###################
 
     def log_file_get_all(self, ctxt, node_id, service_type, marker=None,
