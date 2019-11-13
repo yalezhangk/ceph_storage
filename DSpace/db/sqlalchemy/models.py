@@ -54,6 +54,7 @@ class Cluster(BASE, StorBase):
 
     display_name = Column(String(255))
     display_description = Column(String(255))
+    is_admin = Column(Boolean, default=False)
 
 
 class RPCService(BASE, StorBase):
