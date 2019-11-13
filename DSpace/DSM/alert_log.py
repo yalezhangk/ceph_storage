@@ -189,6 +189,7 @@ class AlertLogHandler(AdminBaseHandler):
         readed = alert_log_data.get('readed')
         if readed is not True:
             raise exc.InvalidInput(message="param 'readed' must be True")
+        logger.info('begin alert_log set all_readed')
         result = objects.AlertLogList.update(
             ctxt, filters, {'readed': True})
         return result
@@ -197,6 +198,7 @@ class AlertLogHandler(AdminBaseHandler):
         before_time = alert_log_data.get('before_time')
         if not before_time:
             raise exc.InvalidInput(message="param 'before_time' is required")
+        logger.info('begin alert_log set deleted')
         filters = {'created_at': before_time}
         now = timeutils.utcnow()
         updates = {'deleted': True, 'deleted_at': now}
