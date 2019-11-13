@@ -4,6 +4,7 @@ import copy
 import logging
 
 import six
+from oslo_utils import strutils
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -35,61 +36,6 @@ default_permission = {
     "region": [],
     "permissions": {
         "stor": {
-            "cluster": {
-                "collect": True
-            },
-            "manage-cluster": {
-                "collect": True
-            },
-            "object-storage": {
-                "collect": True
-            },
-            "download": {
-                "collect": True
-            },
-            "block_client": {
-                "collect": True
-            },
-            "object-router": {
-                "collect": True
-            },
-            "block_path": {
-                "collect": True
-            },
-            "cache": True,
-            "storage": {
-                "collect": True
-            },
-            "alarm_center": {
-                "collect": True
-            },
-            "block_roll": {
-                "collect": True
-            },
-            "event_center": {
-                "collect": True
-            },
-            "settopology": {
-                "collect": True
-            },
-            "topology": {
-                "collect": True
-            },
-            "email_groups": {
-                "collect": True
-            },
-            "license": {
-                "collect": True
-            },
-            "server": {
-                "collect": True
-            },
-            "cluster-plan": {
-                "collect": True
-            },
-            "pools": {
-                "collect": True
-            }
         }
     }
 }
@@ -110,15 +56,44 @@ class PermissionMixin(object):
                 is_available = v.is_available()
         return is_available
 
+    def default_page(self):
+        return [
+            "cluster",
+            "object-storage",
+            "download",
+            "block_client",
+            "object-router",
+            "block_path",
+            "cache",
+            "storage",
+            "alarm_center",
+            "block_roll",
+            "event_center",
+            "settopology",
+            "topology",
+            "email_groups",
+            "license",
+            "server",
+            "cluster-plan",
+            "pools",
+        ]
+
     def add_page(self, permission, page):
         permission['permissions']['stor'][page] = True
 
-    def get_permission(self, ctxt, user):
+    def get_permission(self, ctxt, user, cluster_id=None):
         permission = copy.deepcopy(default_permission)
         license = self.license_verify(ctxt)
         permission['license'] = license
         permission['user'] = user
-        # TODO: change permission for manage cluster
+        if cluster_id:
+            for p in self.default_page():
+                self.add_page(permission, p)
+        is_admin = objects.sysconfig.sys_config_get(ctxt, 'is_admin')
+        is_admin = strutils.bool_from_string(is_admin)
+        if is_admin or not cluster_id:
+            self.add_page(permission, "manage-cluster")
+        # TODO: cache permission
         return {
             "message": "ok",
             "code": 0,
@@ -192,5 +167,6 @@ class PermissionHandler(BaseAPIHandler, PermissionMixin):
     @gen.coroutine
     def get(self):
         ctxt = self.get_context()
-        permission = self.get_permission(ctxt, self.current_user)
+        permission = self.get_permission(ctxt, self.current_user,
+                                         cluster_id=self.get_cluster_id())
         self.write(objects.json_encode(permission))

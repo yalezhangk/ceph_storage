@@ -119,14 +119,18 @@ class BaseAPIHandler(RequestHandler):
         ).get_client()
         return client
 
+    def get_cluster_id(self):
+        cluster_id = self.get_query_argument('cluster_id', default=None)
+        if not cluster_id:
+            cluster_id = self.request.headers.get('X-Cluster-Id')
+        return cluster_id
+
 
 class ClusterAPIHandler(BaseAPIHandler):
 
     def get_context(self):
         ctxt = super(ClusterAPIHandler, self).get_context()
-        cluster_id = self.get_query_argument('cluster_id', default=None)
-        if not cluster_id:
-            cluster_id = self.request.headers.get('X-Cluster-Id')
+        cluster_id = self.get_cluster_id()
         if not cluster_id:
             raise exception.ClusterIDNotFound()
         ctxt.cluster_id = cluster_id
