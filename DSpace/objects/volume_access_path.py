@@ -23,7 +23,7 @@ class VolumeAccessPath(base.StorPersistentObject, base.StorObject,
         'chap_enable': fields.BooleanField(default=False),
         'chap_username': fields.StringField(nullable=True),
         'chap_password': fields.StringField(nullable=True),
-        'cluster_id': fields.StringField(nullable=True),
+        'cluster_id': fields.UUIDField(nullable=True),
         'volume_gateways': fields.ListOfObjectsField(
             'VolumeGateway', nullable=True),
         'volume_client_groups': fields.ListOfObjectsField(
@@ -49,6 +49,10 @@ class VolumeAccessPath(base.StorPersistentObject, base.StorObject,
 
     def volume_gateway_append(self, volume_gateway_id):
         db.volume_access_path_append_gateway(self._context, self.id,
+                                             volume_gateway_id)
+
+    def volume_gateway_remove(self, volume_gateway_id):
+        db.volume_access_path_remove_gateway(self._context, self.id,
                                              volume_gateway_id)
 
     def save(self):

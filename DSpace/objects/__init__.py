@@ -36,6 +36,7 @@ def register_all():
     __import__('DSpace.objects.volume_client')
     __import__('DSpace.objects.volume_client_group')
     __import__('DSpace.objects.volume_gateway')
+    __import__('DSpace.objects.volume_mapping')
     __import__('DSpace.objects.volume_snapshot')
 
 

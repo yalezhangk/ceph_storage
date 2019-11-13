@@ -391,6 +391,11 @@ def volume_access_path_append_gateway(context, access_path_id,
     return IMPL.volume_access_path_append_gateway(
         context, access_path_id, volume_gateway_id)
 
+
+def volume_access_path_remove_gateway(context, access_path_id,
+                                      volume_gateway_id):
+    return IMPL.volume_access_path_remove_gateway(
+        context, access_path_id, volume_gateway_id)
 ###############
 
 
@@ -516,6 +521,52 @@ def volume_client_group_update(context, client_group_id, values):
 
     """
     return IMPL.volume_client_group_update(context, client_group_id, values)
+
+###############
+# Volume Mappings
+
+
+def volume_mapping_create(context, values):
+    """Create a volume from the values dictionary."""
+    return IMPL.volume_mapping_create(context, values)
+
+
+def volume_mapping_destroy(context, mapping_id):
+    """Destroy the volume or raise if it does not exist."""
+    return IMPL.volume_mapping_destroy(context, mapping_id)
+
+
+def volume_mapping_get(context, mapping_id):
+    """Get a volume or raise if it does not exist."""
+    return IMPL.volume_mapping_get(context, mapping_id)
+
+
+def volume_mapping_get_all(context, marker=None, limit=None,
+                           sort_keys=None, sort_dirs=None,
+                           filters=None, offset=None):
+    """Get all volume mappings."""
+    return IMPL.volume_mapping_get_all(
+        context, marker=marker, limit=limit,
+        sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters,
+        offset=offset)
+
+
+def volume_mapping_update(context, mapping_id, values):
+    """Set the given properties on a volume and update it.
+
+    Raises NotFound if volume does not exist.
+
+    """
+    return IMPL.volume_mapping_update(context, mapping_id, values)
+
+
+def volume_mappings_update(context, values_list):
+    """Set the given properties on a list of volumes and update them.
+
+    Raises NotFound if a volume does not exist.
+    """
+    return IMPL.volume_mappings_update(context, values_list)
 
 ###############
 

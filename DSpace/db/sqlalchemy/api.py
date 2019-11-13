@@ -1444,8 +1444,7 @@ def volume_access_path_destroy(context, access_path_id):
     session = get_session()
     now = timeutils.utcnow()
     with session.begin():
-        updated_values = {'status': 'deleted',
-                          'deleted': True,
+        updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
         model_query(context, models.VolumeAccessPath, session=session).\
@@ -1481,22 +1480,33 @@ def _volume_access_path_get(context, access_path_id, session=None,
 
 def _volume_access_path_load_attr(ctxt, vap, session, expected_attrs=None):
     expected_attrs = expected_attrs or []
+    cg_ids = []
+    vol_ids = []
+    mappings = _volume_mapping_get_query(
+        ctxt, session).filter_by(volume_access_path_id=vap.id)
+    for mapping in mappings:
+        cg_id = mapping.volume_client_group_id
+        vol_id = mapping.volume_id
+        if cg_id not in cg_ids:
+            cg_ids.append(cg_id)
+        if vol_id not in vol_ids:
+            vol_ids.append(vol_id)
     if 'volume_gateways' in expected_attrs:
         vap.volume_gateways = vap._volume_gateways
     if 'volume_client_groups' in expected_attrs:
+        column_attr = getattr(models.VolumeClientGroup, "id")
         cgs = _volume_client_group_get_query(
-            ctxt, session).filter_by(volume_access_path_id=vap.id)
+            ctxt, session).filter(column_attr.in_(cg_ids))
         vap.volume_client_groups = [cg for cg in cgs]
     if 'nodes' in expected_attrs and vap.volume_gateways:
         vap.nodes = []
         for vg in vap.volume_gateways:
             vap.nodes.append(_node_get(ctxt, vg.node_id, session))
     if 'volumes' in expected_attrs and vap.volume_client_groups:
-        vap.volumes = []
-        for vcg in vap.volume_client_groups:
-            volumes = _volume_get_query(ctxt, session).filter_by(
-                volume_client_group_id=vcg.id)
-            vap.volumes.extend(volumes)
+        column_attr = getattr(models.Volume, "id")
+        vols = _volume_get_query(ctxt, session).filter(
+            column_attr.in_(vol_ids))
+        vap.volumes = [vol for vol in vols]
     if 'volume_clients' in expected_attrs and vap.volume_client_groups:
         vap.volume_clients = []
         for vcg in vap.volume_client_groups:
@@ -1619,6 +1629,20 @@ def volume_access_path_append_gateway(context, access_path_id,
         volume_access_path_ref.save(session)
     return volume_access_path_ref
 
+
+@handle_db_data_error
+@require_context
+def volume_access_path_remove_gateway(context, access_path_id,
+                                      volume_gateway_id):
+    session = get_session()
+    with session.begin():
+        volume_access_path_ref = _volume_access_path_get(
+            context, access_path_id, session=session)
+        volume_gateway_ref = _volume_gateway_get(
+            context, volume_gateway_id, session=session)
+        volume_access_path_ref._volume_gateways.remove(volume_gateway_ref)
+        volume_access_path_ref.save(session)
+    return volume_access_path_ref
 ###############################
 
 
@@ -1643,8 +1667,7 @@ def volume_gateway_destroy(context, ap_gateway_id):
     session = get_session()
     now = timeutils.utcnow()
     with session.begin():
-        updated_values = {'status': 'deleted',
-                          'deleted': True,
+        updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
         model_query(context, models.VolumeGateway, session=session).\
@@ -1752,6 +1775,137 @@ def volume_gateways_update(context, values_list):
 
         return volume_gateways_ref
 
+
+###############################
+@handle_db_data_error
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_mapping_create(context, values):
+
+    volume_mapping_ref = models.VolumeMapping()
+    volume_mapping_ref.update(values)
+
+    session = get_session()
+    with session.begin():
+        volume_mapping_ref.save(session)
+
+    return volume_mapping_ref
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_mapping_destroy(context, volume_mapping_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.VolumeMapping, session=session).\
+            filter_by(id=volume_mapping_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def _volume_mapping_get_query(context, session=None):
+    """Get the query to retrieve the volume.
+
+    :param context: the context used to run _volume_mapping_get_query
+    :param session: the session to use
+    :returns: updated query or None
+    """
+    return model_query(context, models.VolumeMapping, session=session)
+
+
+@require_context
+def _volume_mapping_get(context, volume_mapping_id, session=None):
+    result = _volume_mapping_get_query(
+        context, session=session)
+    result = result.filter_by(id=volume_mapping_id).first()
+
+    if not result:
+        raise exception.VolumeMappingNotFound(
+            volume_mapping_id=volume_mapping_id)
+
+    return result
+
+
+@require_context
+def volume_mapping_get(context, volume_mapping_id, expected_attrs=None):
+    return _volume_mapping_get(context, volume_mapping_id)
+
+
+@require_context
+def volume_mapping_get_all(context, marker=None,
+                           limit=None, sort_keys=None,
+                           sort_dirs=None, filters=None, offset=None):
+    """Retrieves all volumes.
+
+    If no sort parameters are specified then the returned volumes are sorted
+    first by the 'created_at' key and then by the 'id' key in descending
+    order.
+
+    :param context: context to query under
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+    :param limit: maximum number of items to return
+    :param sort_keys: list of attributes by which results should be sorted,
+                      paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                      paired with corresponding item in sort_keys
+    :param filters: dictionary of filters; values that are in lists, tuples,
+                    or sets cause an 'IN' operation, while exact matching
+                    is used for other values, see _process_volume_filters
+                    function for more information
+    :returns: list of matching volumes
+    """
+    filters = filters or {}
+    filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.VolumeMapping,
+            marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No volumes would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@handle_db_data_error
+@require_context
+def volume_mapping_update(context, volume_mapping_id, values):
+    session = get_session()
+    with session.begin():
+        query = _volume_mapping_get_query(
+            context, session)
+        result = query.filter_by(id=volume_mapping_id).update(values)
+        if not result:
+            raise exception.VolumeMappingNotFound(
+                volume_mapping_id=volume_mapping_id)
+
+
+@handle_db_data_error
+@require_context
+def volume_mappings_update(context, values_list):
+    session = get_session()
+    with session.begin():
+        volume_mappings_ref = []
+        for values in values_list:
+            volume_mapping_id = values['id']
+            values.pop('id')
+            volume_mapping_ref = _volume_mapping_get(
+                context,
+                volume_mapping_id,
+                session=session)
+            volume_mapping_ref.update(values)
+            volume_mappings_ref.append(volume_mapping_ref)
+
+        return volume_mappings_ref
 
 ###############################
 
@@ -1945,18 +2099,34 @@ def _volume_client_group_get(context, client_group_id, session=None,
 
 def _volume_client_group_load_attr(ctxt, vcg, session, expected_attrs=None):
     expected_attrs = expected_attrs or []
-    if 'volume_access_path' in expected_attrs:
-        vap_id = vcg.volume_access_path_id
-        vcg.volume_access_path = _volume_access_path_get(
-            ctxt, vap_id, session) if vap_id else None
+    vap_ids = []
+    vol_ids = []
+    mappings = _volume_mapping_get_query(
+        ctxt, session).filter_by(volume_client_group_id=vcg.id)
+    for mapping in mappings:
+        vap_id = mapping.volume_access_path_id
+        vol_id = mapping.volume_id
+        if vap_id not in vap_ids:
+            vap_ids.append(vap_id)
+        if vol_id not in vol_ids:
+            vol_ids.append(vol_id)
+    if 'volume_access_paths' in expected_attrs:
+        column_attr = getattr(models.VolumeAccessPath, "id")
+        vaps = _volume_access_path_get_query(
+            ctxt, session).filter(column_attr.in_(vap_ids))
+        if vaps:
+            vcg.volume_access_paths = [vap for vap in vaps]
+        else:
+            vcg.volume_access_paths = None
     if 'volume_clients' in expected_attrs:
         volume_clients = _volume_client_get_query(ctxt, session).filter_by(
             volume_client_group_id=vcg.id)
         vcg.volume_clients = [client for client in volume_clients]
     if 'volumes' in expected_attrs:
-        volumes = _volume_get_query(ctxt, session).filter_by(
-            volume_client_group_id=vcg.id)
-        vcg.volumes = [volume for volume in volumes]
+        column_attr = getattr(models.Volume, "id")
+        vols = _volume_get_query(ctxt, session).filter(
+            column_attr.in_(vol_ids))
+        vcg.volumes = [vol for vol in vols]
 
 
 @require_context
@@ -3607,6 +3777,9 @@ PAGINATION_HELPERS = {
     models.VolumeClientGroup: (_volume_client_group_get_query,
                                process_filters(models.VolumeClientGroup),
                                _volume_client_group_get),
+    models.VolumeMapping: (_volume_mapping_get_query,
+                           process_filters(models.VolumeMapping),
+                           _volume_mapping_get),
     models.LicenseFile: (_license_get_query, _process_license_filters,
                          _license_get),
     models.AlertRule: (_alert_rule_get_query,
