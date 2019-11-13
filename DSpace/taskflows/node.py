@@ -11,6 +11,7 @@ from netaddr import IPNetwork
 from DSpace import exception as exc
 from DSpace import objects
 from DSpace.DSA.client import AgentClientManager
+from DSpace.i18n import _
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.docker import Docker as DockerTool
 from DSpace.tools.file import File as FileTool
@@ -396,7 +397,10 @@ class NodeTask(object):
                                             '{}'.format(str(e)))
 
     def node_get_infos(self):
-        ssh = self.get_ssh_executor()
+        try:
+            ssh = self.get_ssh_executor()
+        except paramiko.ssh_exception.SSHException:
+            raise exc.InvalidInput(_('SSH Error'))
         sys_tool = SystemTool(ssh)
         node_infos = sys_tool.get_node_baseinfo()
         return node_infos
