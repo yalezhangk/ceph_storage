@@ -14,6 +14,58 @@ logger = logging.getLogger(__name__)
 class DiskPartitionListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - disk_partition
+        summary: disk_partition List
+        description: Return a list of disk partitions
+        operationId: disk_partitions.api.listDiskPartition
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: disk_id
+          description: get the disk's partition by disk id
+          type: integer
+          format: int32
+          required: false
+        - in: request
+          name: role
+          description: filter by the disk partition role,
+                       it can be cache/db/wal/journal/mix
+          type: string
+          required: false
+        - in: request
+          name: status
+          description: filter by the disk partition status,
+                       it can be available/inuse
+          type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
 
