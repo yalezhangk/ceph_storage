@@ -87,6 +87,65 @@ class PoolListHandler(ClusterAPIHandler):
             "failure_domain_type": string[host,rack,datacenter],
             'osds', [1,3]
         }
+        ---
+        tags:
+        - pool
+        summary: Create pool
+        description: Create pool.
+        operationId: pools.api.createPool
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: pool
+          description: Created pool object
+          required: true
+          schema:
+            type: object
+            properties:
+              pool:
+                type: object
+                description: pool object
+                properties:
+                  name:
+                    type: string
+                    description: pool's name
+                  type:
+                    type: string
+                    description: pool's type, it can be replicated/erasure
+                  speed_type:
+                    type: string
+                    description: pool's speed type, it can be HDD/SSD
+                  role:
+                    type: string
+                    description: pool's role, it can be data/metadata
+                  data_chunk_num:
+                    type: integer
+                    format: int32
+                  coding_chunk_num:
+                    type: integer
+                    format: int32
+                  replicated_size:
+                    type: integer
+                    format: int32
+                  failure_domain_type:
+                    type: string
+                    description: pool's failure_domain_type,
+                                 it can be host/rack/datacenter
+                  osds:
+                    type: array
+                    items:
+                      type: integer
+                      format: int32
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('pool')
@@ -140,6 +199,45 @@ class PoolHandler(ClusterAPIHandler):
         """编辑存储池
 
         {"pool": {"name":"pool-name"}}
+
+        ---
+        tags:
+        - pool
+        summary: Update pool
+        description: update pool.
+        operationId: pools.api.updatePool
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: pool
+          description: updated pool object
+          required: true
+          schema:
+            type: object
+            properties:
+              pool:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: pool's name
+        responses:
+        "200":
+          description: successful operation
         """
         data = json_decode(self.request.body).get('pool')
         pool_name = data.get('name')
@@ -156,6 +254,31 @@ class PoolHandler(ClusterAPIHandler):
     @gen.coroutine
     def delete(self, pool_id):
         """删除存储池
+        ---
+        tags:
+        - pool
+        summary: Delete the pool by id
+        description: delete pool by id
+        operationId: pools.api.deletePool
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -207,6 +330,33 @@ class PoolOsdsHandler(ClusterAPIHandler):
 class PoolCapacityHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool's Capacity
+        description: return the Capacity of pool by id
+        operationId: pools.api.getCapacity
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.pool_capacity_get(ctxt, pool_id)
@@ -221,6 +371,48 @@ class PoolIncreaseDiskHandler(ClusterAPIHandler):
         """添加磁盘
 
         {"pool":{"osds":[1,2,3]}}
+
+        ---
+        tags:
+        - pool
+        summary: add osd to pool
+        description: add osd to pool by id.
+        operationId: pools.api.addOSD
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: pool
+          description: updated pool object
+          required: true
+          schema:
+            type: object
+            properties:
+              pool:
+                type: object
+                properties:
+                  osds:
+                    type: array
+                    items:
+                      type: integer
+                      format: int32
+                      description: osd's ID
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('pool')
@@ -239,6 +431,48 @@ class PoolDecreaseDiskHandler(ClusterAPIHandler):
         """移除磁盘
 
         {"pool":{"osds":[1,2,3]}}
+
+        ---
+        tags:
+        - pool
+        summary: remove pool's osd
+        description: remove the pool's osd by id.
+        operationId: pools.api.removeOSD
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: pool
+          description: updated pool object
+          required: true
+          schema:
+            type: object
+            properties:
+              pool:
+                type: object
+                properties:
+                  osds:
+                    type: array
+                    items:
+                      type: integer
+                      format: int32
+                      description: osd's ID
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('pool')
@@ -257,6 +491,48 @@ class PoolPolicyHandler(ClusterAPIHandler):
         """修改存储池安全策略
 
         {"pool":{"rep_size":3,"fault_domain":"rack"}}
+
+        ---
+        tags:
+        - pool
+        summary: Modify pool's security policy
+        description: Modify Apple's security policy.
+        operationId: pools.api.addOSD
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: pool
+          description: updated pool object
+          required: true
+          schema:
+            type: object
+            properties:
+              pool:
+                type: object
+                properties:
+                  rep_size:
+                    type: integer
+                    format: int32
+                  fault_domain:
+                    type: string
+                    description: fault domain's Level
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('pool')
@@ -272,6 +548,34 @@ class PoolPolicyHandler(ClusterAPIHandler):
 class PoolMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool's Metrics
+        description: return the Metrics of pool by id
+        operationId: pools.api.getMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.pool_metrics_get(ctxt, pool_id=pool_id)
@@ -283,6 +587,49 @@ class PoolMetricsHandler(ClusterAPIHandler):
 class PoolMetricsHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool's History Metrics
+        description: return the History Metrics of pool by id
+        operationId: pools.api.getHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         client = self.get_admin_client(ctxt)
