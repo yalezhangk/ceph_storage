@@ -30,7 +30,7 @@ class File(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def rm(self, path):
-        cmd = ["rm", "-f", path]
+        cmd = ["rm", "-rf", path]
         rc, stdout, stderr = self.executor.run_command(cmd)
         if not rc:
             return True
