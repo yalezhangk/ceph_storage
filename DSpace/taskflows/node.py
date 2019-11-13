@@ -354,11 +354,17 @@ class NodeTask(object):
     def dspace_agent_uninstall(self):
         logger.debug("uninstall chrony")
         ssh = self.get_ssh_executor()
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
         # remove container and image
         docker_tool = DockerTool(ssh)
         docker_tool.stop('dsa')
         docker_tool.rm('dsa')
-        docker_tool.image_rm('dsa', force=True)
+        docker_tool.image_rm(
+            "{}/dspace:{}".format(image_namespace, dspace_version),
+            force=True)
         # rm config file
         file_tool = FileTool(ssh)
         file_tool.rm("/etc/dspace")
