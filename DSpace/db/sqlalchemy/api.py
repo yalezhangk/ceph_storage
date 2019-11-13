@@ -3036,9 +3036,12 @@ def alert_log_batch_update(context, filters=None, updates=None):
             model_query(context, models.AlertLog, session=session).filter(
                 models.ActionLog.created_at <= before_time
             ).update(updates, synchronize_session=False)
+            LOG.info('alert_log set_deleted success,filters:<=%s', before_time)
         else:
+
             model_query(context, models.AlertLog,
                         session=session).update(updates)
+            LOG.info('alert_log set all_read success')
         return True
 
 
