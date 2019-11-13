@@ -224,6 +224,17 @@ class VolumeClientGroupExists(Duplicate):
                 "already exists.")
 
 
+class VolumeClientGroupNoMapping(NotFound):
+    message = _("no mapping attached to this client group: "
+                "%(volume_client_group)s")
+
+
+class VolumeClientGroupEnableChapError(Invalid):
+    message = _("access path %(access_path)s don't enable chap, "
+                "can't enable mutual chap for client group "
+                "%(volume_client_group)s")
+
+
 class LicenseNotFound(NotFound):
     message = _("License %(license_id)s could not be found.")
 
@@ -310,6 +321,10 @@ class ActionLogNotFound(NotFound):
     message = _("ActionLog %(action_log_id)s could not be found.")
 
 
+class AccessPathExists(Duplicate):
+    message = _("%(access_path)s could not be found.")
+
+
 class IscsiTargetError(StorException):
     message = _('iscsi target operation error: %(action)s')
 
@@ -341,3 +356,36 @@ class IscsiAclNotFound(NotFound):
 class AlertLogActionNotFound(NotFound):
     message = _("AlertLog Action %(action)s must in"
                 "'all_readed,del_alert_logs'")
+
+
+class VolumeGatewayExists(Duplicate):
+    message = _("a volume gateway already mount in node %(node)s.")
+
+
+class AccessPathVolumeExists(Duplicate):
+    message = _("access path already has volume %(volume)s.")
+
+
+class AccessPathNoGateway(NotFound):
+    message = _("access path %(access_path)s no volume gateway.")
+
+
+class AccessPathNoMapping(NotFound):
+    message = _("access path %(access_path)s no such mapping.")
+
+
+class AccessPathNoVolmues(NotFound):
+    message = _("access path %(access_path)s no more volumes, can't remove.")
+
+
+class AccessPathNoSuchVolume(NotFound):
+    message = _("access path %(access_path)s no such volume: %(volume)s.")
+
+
+class VolumeMappingNotFound(NotFound):
+    message = _("volume mapping %(volume_mapping_id)s not exists.")
+
+
+class AccessPathMappingVolumeExists(Duplicate):
+    message = _("access path mapping %(access_path)s:%(client_group)s "
+                "already has volume %(volume)s.")
