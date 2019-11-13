@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 
+import json
 import logging as python_logging
 import sys
 import time
@@ -178,6 +179,30 @@ class DbCommands(object):
                 sys_config = sys_configs[0]
                 sys_config.value = value
                 sys_config.save()
+
+    @args('data', type=str, help='Init data')
+    def rpc_service(self, data):
+        configs = data.split(',')
+        ctxt = context.get_context()
+        rpc_service = objects.RPCService(
+            ctxt
+        )
+        endpint = {}
+        allowed = ["ip", "port", "hostname", "service"]
+        for c in configs:
+            key, value = c.split("=", 1)
+            if key not in allowed:
+                raise exception.InvalidInput("key %s not support" % key)
+            if key == 'ip':
+                endpint['ip'] = value
+            if key == 'port':
+                endpint['port'] = value
+            if key == 'hostname':
+                rpc_service.hostname = value
+            if key == 'service':
+                rpc_service.service = value
+        rpc_service.endpoint = json.dumps(endpint)
+        rpc_service.create()
 
     def version(self):
         """Print the current database version."""
