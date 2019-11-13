@@ -138,6 +138,26 @@ class ActionLogHandler(ClusterAPIHandler):
 class ResourceActionHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - action_log
+        summary: all of the resource type & action type
+        description: Return all of the resource type & action type
+        operationId: resource_actions.api.getResourceAction
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         resource_action = yield client.resource_action(ctxt)
