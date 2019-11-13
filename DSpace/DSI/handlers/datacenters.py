@@ -19,6 +19,38 @@ class DataCenterListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
         """数据中心列表
+        ---
+        tags:
+        - datacenter
+        summary: Datacenter List
+        description: Return a list of datacenters
+        operationId: datacenters.api.listDatacenter
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -30,6 +62,24 @@ class DataCenterListHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
         """创建数据中心
+        ---
+        tags:
+        - datacenter
+        summary: Create datacenter
+        description: Create datacenter.
+        operationId: datacenters.api.createDatacenter
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -46,6 +96,31 @@ class DataCenterHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, datacenter_id):
         """获取数据中心详情
+        ---
+        tags:
+        - datacenter
+        summary: Detail of the datacenter
+        description: Return detail infomation of datacenter by id
+        operationId: datacenters.api.datacenterDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Datacenter ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -59,6 +134,45 @@ class DataCenterHandler(ClusterAPIHandler):
         """修改数据中心名称
 
         {"datacenter": {"name":"datacenter-name"}}
+
+        ---
+        tags:
+        - datacenter
+        summary: Update datacenter
+        description: update datacenter.
+        operationId: datacenters.api.updateDatacenter
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Datacenter ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: datacenter
+          description: updated datacenter object
+          required: true
+          schema:
+            type: object
+            properties:
+              datacenter:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: datacenter's name
+        responses:
+        "200":
+          description: successful operation
         """
         data = json_decode(self.request.body).get('datacenter')
         datacenter_name = data.get('name')
@@ -78,6 +192,31 @@ class DataCenterHandler(ClusterAPIHandler):
     @gen.coroutine
     def delete(self, datacenter_id):
         """删除数据中心
+        ---
+        tags:
+        - datacenter
+        summary: Delete the datacenter by id
+        description: delete datacenter by id
+        operationId: datacenters.api.deleteDatacenter
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Datacenter's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -90,6 +229,27 @@ class DataCenterHandler(ClusterAPIHandler):
 class DataCenterTreeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - datacenter
+        summary: Return datacenter tree
+        description: return the tree of datacenter,
+                     which have all of the datacenters, racks and nodes
+        operationId: datacenters.api.getDatacenterTree
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         dc_tree = yield client.datacenter_tree(ctxt)

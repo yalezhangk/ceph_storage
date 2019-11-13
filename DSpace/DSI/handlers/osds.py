@@ -250,6 +250,33 @@ class OsdHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def delete(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: Delete the osd by id
+        description: delete osd by id
+        operationId: osds.api.deleteOsd
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         osd = yield client.osd_delete(ctxt, osd_id)
@@ -261,6 +288,33 @@ class OsdHandler(ClusterAPIHandler):
 class OsdMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: Osd's Metrics
+        description: return the Metrics of osd by id
+        operationId: osds.api.getMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.osd_metrics_get(ctxt, osd_id=osd_id)
@@ -272,6 +326,49 @@ class OsdMetricsHandler(ClusterAPIHandler):
 class OsdMetricsHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: Osd's History Metrics
+        description: return the History Metrics of osd by id
+        operationId: pools.api.getHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         client = self.get_admin_client(ctxt)
@@ -285,6 +382,33 @@ class OsdMetricsHistoryHandler(ClusterAPIHandler):
 class OsdDiskMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: Osd's Disk Metrics
+        description: return the Metrics of osd's disk by id
+        operationId: osds.api.getDiskMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.osd_disk_metrics_get(ctxt, osd_id=osd_id)
@@ -296,6 +420,49 @@ class OsdDiskMetricsHandler(ClusterAPIHandler):
 class OsdHistoryDiskMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: Osd's disk History Metrics
+        description: return the History Metrics of osd's disk by id
+        operationId: pools.api.getDiskHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         client = self.get_admin_client(ctxt)
