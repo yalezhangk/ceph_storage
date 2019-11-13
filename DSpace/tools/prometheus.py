@@ -54,7 +54,6 @@ class PrometheusTool(object):
             endpoints = objects.RPCServiceList.get_all(
                 self.ctxt,
                 filters={
-                    "cluster_id": self.ctxt.cluster_id,
                     "service_name": 'prometheus'
                 }
             )

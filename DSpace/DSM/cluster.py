@@ -1,3 +1,5 @@
+import json
+
 import six
 from oslo_log import log as logging
 
@@ -54,7 +56,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             rpc_service = objects.RPCService(
                 ctxt, service_name='agent',
                 hostname=node.hostname,
-                endpoint=str(endpoint),
+                endpoint=json.dumps(endpoint),
                 cluster_id=node.cluster_id,
                 node_id=node.id)
             rpc_service.create()
