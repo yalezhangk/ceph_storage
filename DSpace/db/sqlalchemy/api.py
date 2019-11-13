@@ -2858,12 +2858,17 @@ def alert_log_destroy(context, alert_log_id):
     return updated_values
 
 
-def alert_log_batch_update(context, filters, updates):
+def alert_log_batch_update(context, filters=None, updates=None):
     session = get_session()
     with session.begin():
-        # todo filters update
-        model_query(context, models.AlertLog, session=session).\
-            update(updates)
+        if filters:
+            before_time = filters.get('created_at')
+            model_query(context, models.AlertLog, session=session).filter(
+                models.ActionLog.created_at >= before_time
+            ).update(updates, synchronize_session=False)
+        else:
+            model_query(context, models.AlertLog,
+                        session=session).update(updates)
         return True
 
 

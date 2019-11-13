@@ -1,4 +1,5 @@
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from DSpace import exception as exc
 from DSpace import objects
@@ -190,4 +191,15 @@ class AlertLogHandler(AdminBaseHandler):
             raise exc.InvalidInput(message="param 'readed' must be True")
         result = objects.AlertLogList.update(
             ctxt, filters, {'readed': True})
+        return result
+
+    def alert_logs_set_deleted(self, ctxt, alert_log_data):
+        before_time = alert_log_data.get('before_time')
+        if not before_time:
+            raise exc.InvalidInput(message="param 'before_time' is required")
+        filters = {'created_at': before_time}
+        now = timeutils.utcnow()
+        updates = {'deleted': True, 'deleted_at': now}
+        result = objects.AlertLogList.update(
+            ctxt, filters, updates)
         return result

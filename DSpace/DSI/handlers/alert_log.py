@@ -136,8 +136,8 @@ class AlertLogActionHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def _del_alert_logs(self, client, ctxt, alert_log_data):
-        # todo
-        pass
+        result = yield client.alert_logs_set_deleted(ctxt, alert_log_data)
+        return result
 
     @gen.coroutine
     def put(self):
