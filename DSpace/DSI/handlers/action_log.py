@@ -95,7 +95,8 @@ class ActionLogListHandler(ClusterAPIHandler):
         page_args = self.get_paginated_args()
         action_logs = yield client.action_log_get_all(ctxt, filters=filters,
                                                       **page_args)
-        action_log_count = yield client.action_log_get_count(ctxt)
+        action_log_count = yield client.action_log_get_count(ctxt,
+                                                             filters=filters)
         self.write(objects.json_encode({
             "action_logs": action_logs,
             "total": action_log_count
