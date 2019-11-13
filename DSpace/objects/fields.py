@@ -327,43 +327,28 @@ class ResourceAction(object):
     @classmethod
     def relation_resource_action(cls):
         relation = {
-            AllResourceType.ALERT_GROUP: {
-                AllActionType.CREATE: AllActionType.CREATE,
-                AllActionType.UPDATE: AllActionType.UPDATE,
-                AllActionType.DELETE: AllActionType.DELETE,
-                AllActionType.MODIFY_ALERT_RULES:
-                    AllActionType.MODIFY_ALERT_RULES,
-                AllActionType.MODIFY_EMAIL_GROUPS:
-                    AllActionType.MODIFY_EMAIL_GROUPS
-            },
+            AllResourceType.ALERT_GROUP:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.MODIFY_ALERT_RULES,
+                 AllActionType.MODIFY_EMAIL_GROUPS],
 
-            AllResourceType.ALERT_RULE: {
-                AllActionType.OPEN_ALERT_RULE: AllActionType.OPEN_ALERT_RULE,
-                AllActionType.CLOSE_ALERT_RULE: AllActionType.CLOSE_ALERT_RULE,
-            },
+            AllResourceType.ALERT_RULE:
+                [AllActionType.OPEN_ALERT_RULE,
+                 AllActionType.CLOSE_ALERT_RULE],
 
-            AllResourceType.EMAIL_GROUP: {
-                AllActionType.CREATE: AllActionType.CREATE,
-                AllActionType.UPDATE: AllActionType.UPDATE,
-                AllActionType.DELETE: AllActionType.DELETE,
-            },
+            AllResourceType.EMAIL_GROUP:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE],
 
-            AllResourceType.SNAPSHOT: {
-                AllActionType.CREATE: AllActionType.CREATE,
-                AllActionType.UPDATE: AllActionType.UPDATE,
-                AllActionType.DELETE: AllActionType.DELETE,
-                AllActionType.CLONE: AllActionType.CLONE,
-            },
+            AllResourceType.SNAPSHOT:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.CLONE],
 
-            AllResourceType.VOLUME: {
-                AllActionType.CREATE: AllActionType.CREATE,
-                AllActionType.UPDATE: AllActionType.UPDATE,
-                AllActionType.DELETE: AllActionType.DELETE,
-                AllActionType.VOLUME_EXTEND: AllActionType.VOLUME_EXTEND,
-                AllActionType.VOLUME_SHRINK: AllActionType.VOLUME_SHRINK,
-                AllActionType.VOLUME_ROLLBACK: AllActionType.VOLUME_ROLLBACK,
-                AllActionType.VOLUME_UNLINK: AllActionType.VOLUME_UNLINK,
-            },
+            AllResourceType.VOLUME:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.VOLUME_EXTEND,
+                 AllActionType.VOLUME_SHRINK, AllActionType.VOLUME_ROLLBACK,
+                 AllActionType.VOLUME_UNLINK]
         }
         return relation
 
