@@ -13,10 +13,11 @@ logger = logging.getLogger(__name__)
 class AlertLogHandler(AdminBaseHandler):
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
                           sort_keys=None, sort_dirs=None, filters=None,
-                          offset=None):
+                          offset=None, expected_attrs=None):
         return objects.AlertLogList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
 
     def alert_log_get_count(self, ctxt, filters=None):
         return objects.AlertLogList.get_count(
@@ -159,8 +160,8 @@ class AlertLogHandler(AdminBaseHandler):
                 to_datas.append(per_data)
         return to_datas
 
-    def alert_log_get(self, ctxt, alert_log_id):
-        return objects.AlertLog.get_by_id(ctxt, alert_log_id)
+    def alert_log_get(self, ctxt, alert_log_id, expected_attrs=None):
+        return objects.AlertLog.get_by_id(ctxt, alert_log_id, expected_attrs)
 
     def alert_log_update(self, ctxt, alert_log_id, data):
         alert_log = self.alert_log_get(ctxt, alert_log_id)

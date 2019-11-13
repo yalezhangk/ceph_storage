@@ -676,11 +676,11 @@ class AdminClient(BaseClient):
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
                           sort_keys=None, sort_dirs=None, filters=None,
-                          offset=None):
+                          offset=None, expected_attrs=None):
         response = self.call(
             ctxt, "alert_log_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return response
 
     def alert_log_get_count(self, ctxt, filters=None):
@@ -688,9 +688,10 @@ class AdminClient(BaseClient):
             ctxt, "alert_log_get_count", filters=filters)
         return response
 
-    def alert_log_get(self, ctxt, alert_log_id):
+    def alert_log_get(self, ctxt, alert_log_id, expected_attrs):
         response = self.call(ctxt, "alert_log_get",
-                             alert_log_id=alert_log_id)
+                             alert_log_id=alert_log_id,
+                             expected_attrs=expected_attrs)
         return response
 
     def alert_log_update(self, ctxt, alert_log_id, data):
