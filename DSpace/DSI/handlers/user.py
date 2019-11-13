@@ -80,10 +80,16 @@ class PermissionMixin(object):
     def add_page(self, permission, page):
         permission['permissions']['stor'][page] = True
 
+    def check_init_page(self, ctxt):
+        value = objects.sysconfig.sys_config_get(
+            ctxt, "platform_init", default=False)
+        return value
+
     def get_permission(self, ctxt, user, cluster_id=None):
         permission = copy.deepcopy(default_permission)
         license = self.license_verify(ctxt)
         permission['license'] = license
+        permission['platform_init'] = self.check_init_page(ctxt)
         permission['user'] = user
         if cluster_id:
             cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
