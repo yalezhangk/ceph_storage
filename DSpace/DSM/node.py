@@ -142,7 +142,7 @@ class NodeHandler(AdminBaseHandler):
             new_cluster_config = {
                 'fsid': {'type': 'string', 'value': ctxt.cluster_id},
                 'mon_host': {'type': 'string',
-                             'value': str(node.storage_public_ip_address)},
+                             'value': str(node.public_ip)},
                 'mon_initial_members': {'type': 'string',
                                         'value': node.hostname},
                 'public_network': {'type': 'string', 'value': public_network},
@@ -158,7 +158,7 @@ class NodeHandler(AdminBaseHandler):
                                     value_type=value.get('type'))
         else:
             mon_host = ",".join(
-                [n.storage_public_ip_address for n in mon_nodes]
+                [n.public_ip for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
             self._set_ceph_conf(ctxt,
@@ -186,7 +186,7 @@ class NodeHandler(AdminBaseHandler):
         if len(mon_nodes):
             # update ceph config
             mon_host = ",".join(
-                [n.storage_public_ip_address for n in mon_nodes]
+                [n.public_ip for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
             self._set_ceph_conf(ctxt,
@@ -359,8 +359,8 @@ class NodeHandler(AdminBaseHandler):
             hostname=data.get('hostname'),
             password=data.get('password'),
             gateway_ip_address=data.get('gateway_ip_address'),
-            storage_cluster_ip_address=data.get('storage_cluster_ip_address'),
-            storage_public_ip_address=data.get('storage_public_ip_address'),
+            cluster_ip=data.get('cluster_ip'),
+            public_ip=data.get('public_ip'),
             status=s_fields.NodeStatus.CREATING)
         node.create()
 
@@ -425,14 +425,14 @@ class NodeHandler(AdminBaseHandler):
         if objects.NodeList.get_all(
             ctxt,
             filters={
-                "storage_cluster_ip_address": cluster_ip
+                "cluster_ip": cluster_ip
             }
         ):
             ip_dict['check_cluster_ip'] = False
         if objects.NodeList.get_all(
             ctxt,
             filters={
-                "storage_public_ip_address": public_ip
+                "public_ip": public_ip
             }
         ):
             ip_dict['check_public_ip'] = False
