@@ -251,10 +251,6 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "osd_create", data=data)
         return response
 
-    def osd_update(self, ctxt, osd_id, data):
-        response = self.call(ctxt, "osd_update", osd_id=osd_id, data=data)
-        return response
-
     def osd_delete(self, ctxt, osd_id):
         response = self.call(ctxt, "osd_delete", osd_id=osd_id)
         return response
