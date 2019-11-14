@@ -60,9 +60,6 @@ class IscsiHandler(AgentBaseHandler):
                      "volumes: %s", access_path.iqn, volume_client.iqn,
                      volumes)
         iscsi.delete_acl(iqn_target, iqn_initiator)
-        for vol in volumes:
-            iscsi.delete_user_backstore(vol.volume_name)
-        # TODO 根据ACL自动查找backstore，然后删除backstore
 
     def _create_acl_mapped_lun(self, iqn_target, iqn_initiator, volume):
         so = None
@@ -106,9 +103,9 @@ class IscsiHandler(AgentBaseHandler):
         if not iscsi.get_acl(iqn_target, iqn_initiator):
             raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
 
-        # TODO 不能直接删除backstore，不然其它客户端组就不能用了
-        # for vol in volumes:
-        #     iscsi.delete_user_backstore(vol.volume_name)
+        for vol in volumes:
+            iscsi.remove_acl_mapped_lun(iqn_target, iqn_initiator,
+                                        vol.volume_name)
 
     def bgw_change_client_group(self, context, access_path, volumes,
                                 volume_clients, new_volume_clients):
