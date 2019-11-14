@@ -16,6 +16,40 @@ logger = logging.getLogger(__name__)
 class VolumeListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - volume
+        summary: volume List
+        description: Return a list of volumes
+        operationId: volumes.api.listVolume
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
@@ -85,6 +119,33 @@ class VolumeListHandler(ClusterAPIHandler):
 class VolumeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, volume_id):
+        """
+        ---
+        tags:
+        - volume
+        summary: Detail of the volume
+        description: Return detail infomation of volume by id
+        operationId: volumegs.api.volumeDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Volume ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['snapshots', 'pool', 'volume_access_path',
