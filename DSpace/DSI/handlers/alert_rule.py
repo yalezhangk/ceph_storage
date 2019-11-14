@@ -15,6 +15,45 @@ logger = logging.getLogger(__name__)
 class AlertRuleListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - alert_rule
+        summary: alert_rule List
+        description: Return a list of alert_rules
+        operationId: alertules.api.listAlertRule
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: resource_type
+          description: Filters all of the alert rule by resource_type
+          type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
@@ -35,6 +74,33 @@ class AlertRuleListHandler(ClusterAPIHandler):
 class AlertRuleHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, alert_rule_id):
+        """
+        ---
+        tags:
+        - alert_rule
+        summary: Detail of the alert_rule
+        description: Return detail infomation of alert_rule by id
+        operationId: alertrules.api.alertRuleDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Alert_rule ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['alert_groups']
@@ -45,6 +111,46 @@ class AlertRuleHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, alert_rule_id):
+        """
+        ---
+        tags:
+        - alert_rule
+        summary: Update alert_rule
+        description: update alert_rule.
+        operationId: alertrules.api.updateAlertRule
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Alert_rule ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: alert_rule
+          description: updated alert_rule object
+          required: true
+          schema:
+            type: object
+            properties:
+              alert_rule:
+                type: object
+                properties:
+                  enabled:
+                    type: string
+                    description: Enable alert rule or not
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         alert_rule_data = data.get('alert_rule')

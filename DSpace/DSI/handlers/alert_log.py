@@ -96,6 +96,33 @@ class AlertLogListHandler(ClusterAPIHandler):
 class AlertLogHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, alert_log_id):
+        """
+        ---
+        tags:
+        - alert_log
+        summary: Detail of the alert_log
+        description: Return detail infomation of alert_log by id
+        operationId: alertlogs.api.alertLogDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Alert_log ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['alert_rule']
@@ -107,6 +134,47 @@ class AlertLogHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, alert_log_id):
+        """
+        ---
+        tags:
+        - alert_log
+        summary: Update alert_log
+        description: update alert_log.
+        operationId: alertlogs.api.updateAlertLog
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Alert_log ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: alert_log
+          description: updated alert_log object
+          required: true
+          schema:
+            type: object
+            properties:
+              alert_log:
+                type: object
+                properties:
+                  readed:
+                    type: boolean
+                    description: It only can be true that
+                                 means you had read it.
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         alert_log_data = data.get('alert_log')
@@ -119,6 +187,33 @@ class AlertLogHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def delete(self, alert_log_id):
+        """
+        ---
+        tags:
+        - alert_log
+        summary: Delete the alert_log by id
+        description: delete alert_log by id
+        operationId: alertlogs.api.deleteAlertLog
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Alert_log's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         alert_log = yield client.alert_log_delete(ctxt, alert_log_id)
