@@ -448,11 +448,10 @@ class NodeHandler(AdminBaseHandler):
             else:
                 ip_dict['check_port'].append({"port": po, "status": True})
         ip_dict['check_SELinux'] = node_task.check_selinux()
-        pkg_name = 'ceph'
-        if node_task.check_package(pkg_name):
-            ip_dict['check_Installation_package'] = True
-        else:
+        if node_task.check_ceph_is_installed():
             ip_dict['check_Installation_package'] = False
+        else:
+            ip_dict['check_Installation_package'] = True
         if (node_task.check_network(public_ip) and
                 node_task.check_network(cluster_ip)):
             ip_dict['check_network'] = True

@@ -85,6 +85,18 @@ class ClusterHandler(BaseAPIHandler):
         }))
 
 
+class ClusterAdminNodesHandler(BaseAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        admin_nodes = yield client.cluster_admin_nodes_get(ctxt)
+
+        self.write(objects.json_encode({
+            "admin_nodes": admin_nodes
+        }))
+
+
 class ClusterDetectHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

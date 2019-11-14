@@ -78,6 +78,10 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def cluster_create(self, ctxt, data):
+        response = self.call(ctxt, "cluster_create", data=data)
+        return response
+
     def cluster_get_info(self, ctxt, ip_address, password=None):
         response = self.call(
             ctxt, "cluster_get_info", ip_address=ip_address,
@@ -87,6 +91,10 @@ class AdminClient(BaseClient):
     def cluster_install_agent(self, ctxt, ip_address, password=None):
         response = self.call(ctxt, "cluster_install_agent",
                              ip_address=ip_address, password=password)
+        return response
+
+    def cluster_admin_nodes_get(self, ctxt):
+        response = self.call(ctxt, "cluster_admin_nodes_get")
         return response
 
     def cluster_metrics_get(self, ctxt):
@@ -228,10 +236,6 @@ class AdminClient(BaseClient):
     def update_chrony(self, ctxt, chrony_server):
         response = self.call(ctxt, "update_chrony",
                              chrony_server=chrony_server)
-        return response
-
-    def cluster_create(self, ctxt, data):
-        response = self.call(ctxt, "cluster_create", data=data)
         return response
 
     def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,

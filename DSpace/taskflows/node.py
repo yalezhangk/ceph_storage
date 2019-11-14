@@ -13,6 +13,7 @@ from DSpace import objects
 from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
 from DSpace.tools.base import SSHExecutor
+from DSpace.tools.ceph import CephTool
 from DSpace.tools.docker import Docker as DockerTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
@@ -510,4 +511,10 @@ class NodeTask(object):
         ssh = self.get_ssh_executor()
         sys_tool = SystemTool(ssh)
         result = sys_tool.check_package(pkg_name)
+        return result
+
+    def check_ceph_is_installed(self):
+        ssh = self.get_ssh_executor()
+        ceph_tool = CephTool(ssh)
+        result = ceph_tool.check_ceph_is_installed()
         return result

@@ -128,8 +128,11 @@ def cluster_get(context, cluster_id):
     return IMPL.cluster_get(context, cluster_id)
 
 
-def cluster_get_all(context, *args, **kwargs):
-    return IMPL.cluster_get_all(context, *args, **kwargs)
+def cluster_get_all(context, filters, marker, limit,
+                    offset, sort_keys, sort_dirs):
+    return IMPL.cluster_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
 
 
 def cluster_update(context, cluster_id, values):
