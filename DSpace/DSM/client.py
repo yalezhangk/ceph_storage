@@ -93,6 +93,10 @@ class AdminClient(BaseClient):
                              ip_address=ip_address, password=password)
         return response
 
+    def cluster_platform_check(self, ctxt):
+        response = self.call(ctxt, "cluster_platform_check")
+        return response
+
     def cluster_admin_nodes_get(self, ctxt):
         response = self.call(ctxt, "cluster_admin_nodes_get")
         return response
