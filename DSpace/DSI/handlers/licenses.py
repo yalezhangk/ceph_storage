@@ -9,7 +9,6 @@ from tornado import gen
 
 from DSpace import objects
 from DSpace.DSI.handlers.base import BaseAPIHandler
-from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 from DSpace.utils.license_verify import CA_FILE_PATH
@@ -20,7 +19,7 @@ FILE_LEN = 2048
 logger = logging.getLogger(__name__)
 
 
-class LicenseHandler(ClusterAPIHandler):
+class LicenseHandler(BaseAPIHandler):
 
     @gen.coroutine
     def get(self):
@@ -28,11 +27,19 @@ class LicenseHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         licenses = objects.LicenseList.get_latest_valid(ctxt)
         admin = self.get_admin_client(ctxt)
-        logging.info('try get cluster size, cluster_id:%s', ctxt.cluster_id)
-        cluster_info = yield admin.ceph_cluster_info(ctxt)
-        size = int(cluster_info.get('total_cluster_byte', 0))
-        logger.info('try get current cluster:%s node_num', ctxt.cluster_id)
-        node_num = yield admin.node_get_count(ctxt)
+        has_cluster = objects.ClusterList.get_all(ctxt)
+        if has_cluster:
+            logging.info('try get cluster size, cluster_id:%s',
+                         ctxt.cluster_id)
+            cluster_info = yield admin.ceph_cluster_info(ctxt)
+            size = int(cluster_info.get('total_cluster_byte', 0))
+            logger.info('try get current cluster:%s node_num', ctxt.cluster_id)
+            node_num = yield admin.node_get_count(ctxt)
+        else:
+            logger.info('not yet cluster_id,'
+                        'cluser_size and node_num default is 0')
+            size = 0
+            node_num = 0
         result = {'license': []}
         if licenses:
             for per_license in licenses:
