@@ -17,6 +17,20 @@ logger = logging.getLogger(__name__)
 class ClusterHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - liences
+        summary: return the liences information
+        description: return the liences information
+        operationId: liences.api.getLiences
+        produces:
+        - application/json
+        responses:
+        "200":
+          description: successful operation
+
+        """
         ctxt = self.get_context()
         clusters = objects.ClusterList.get_all(ctxt)
         self.write(objects.json_encode({
@@ -25,6 +39,40 @@ class ClusterHandler(BaseAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Create cluster
+        description: Create cluster.
+        operationId: clusters.api.createCluster
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: cluster
+          description: Created cluster object
+          required: true
+          schema:
+            type: object
+            properties:
+              cluster:
+                type: object
+                description: cluster object
+                properties:
+                  name:
+                    type: string
+                    description: cluster's name
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         cluster_data = data.get("cluster")
@@ -40,6 +88,36 @@ class ClusterHandler(BaseAPIHandler):
 class ClusterDetectHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Detect an existing cluster
+        description: Detect an existing cluster
+        operationId: clusters.api.cetectCluster
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: ip_address
+          description: ip address where the cluster is.
+          type: string
+          required: true
+        - in: request
+          name: password
+          description: the ip address' password
+          type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         ip_address = self.get_argument('ip_address')
         password = self.get_argument('password')
@@ -54,6 +132,26 @@ class ClusterDetectHandler(ClusterAPIHandler):
 class ClusterMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster's Metrics
+        description: return the Metrics of cluster
+        operationId: clusters.api.getMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.cluster_metrics_get(ctxt)
@@ -65,6 +163,42 @@ class ClusterMetricsHandler(ClusterAPIHandler):
 class ClusterHistoryMetricsHandler(ClusterMetricsHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster's History Metrics
+        description: return the History Metrics of cluster
+        operationId: clusters.api.getHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         client = self.get_admin_client(ctxt)

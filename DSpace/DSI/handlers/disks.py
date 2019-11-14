@@ -18,6 +18,60 @@ logger = logging.getLogger(__name__)
 class DiskListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - disk
+        summary: disk List
+        description: Return a list of disks
+        operationId: disks.api.listDisk
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: tab
+          description: Different tab page, it can be default or io
+          type: string
+          required: false
+        - in: request
+          name: node_id
+          description: Node ID
+          type: string
+          required: false
+        - in: request
+          name: role
+          description: disk role, it can be system/data/accelerate
+          type: string
+          required: false
+        - in: request
+          name: status
+          description: disk status, it can be available/inuse
+          type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
 
@@ -47,6 +101,33 @@ class DiskListHandler(ClusterAPIHandler):
 class DiskHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
+        """
+        ---
+        tags:
+        - disk
+        summary: Detail of the disk
+        description: Return detail infomation of disk by id
+        operationId: disks.api.diskDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Disk ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         disk = yield client.disk_get(ctxt, disk_id)
@@ -56,6 +137,9 @@ class DiskHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, disk_id):
+        """
+
+        """
         ctxt = self.get_context()
         disk = json_decode(self.request.body).get('disk')
         disk_type = disk.get('type')
@@ -126,6 +210,34 @@ class DiskActionHandler(ClusterAPIHandler):
 class DiskSmartHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
+        """
+        ---
+        tags:
+        - disk
+        summary: smart infomation of the disk
+        description: Return smart infomation of disk by id
+        operationId: disks.api.diskSmartInfo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Disk ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         smart = yield client.disk_smart_get(ctxt, disk_id)
@@ -137,6 +249,9 @@ class DiskSmartHandler(ClusterAPIHandler):
 class DiskPerfHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
+        """
+
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.disk_perf_get(ctxt, disk_id)
@@ -148,6 +263,9 @@ class DiskPerfHandler(ClusterAPIHandler):
 class DiskPerfHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
+        """
+
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         client = self.get_admin_client(ctxt)

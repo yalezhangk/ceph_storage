@@ -18,6 +18,40 @@ logger = logging.getLogger(__name__)
 class NodeListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - node
+        summary: node List
+        description: Return a list of nodes
+        operationId: nodes.api.listNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
         client = self.get_admin_client(ctxt)
@@ -62,6 +96,33 @@ class NodeListHandler(ClusterAPIHandler):
 class NodeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: Detail of the node
+        description: Return detail infomation of node by id
+        operationId: nodes.api.nodeDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Node ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         node = yield client.node_get(
@@ -89,6 +150,33 @@ class NodeHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def delete(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: Delete the node by id
+        description: delete node by id
+        operationId: nodes.api.deleteNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Node's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         node = yield client.node_delete(ctxt, node_id)
