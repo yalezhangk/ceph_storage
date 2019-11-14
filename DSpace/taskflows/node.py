@@ -320,13 +320,55 @@ class NodeTask(object):
         # stop service
         pass
 
-    def ceph_igw_install(self):
-        """Ceph ISCSI gateway install"""
-        pass
+    def mount_bgw(self, ctxt, access_path, node):
+        """mount ISCSI gateway"""
+        agent = self.get_agent()
+        agent.mount_bgw(ctxt, access_path, node)
 
-    def ceph_igw_uninstall(self):
-        """Ceph ISCSI gateway uninstall"""
-        pass
+    def unmount_bgw(self, ctxt, access_path):
+        """unmount ISCSI gateway"""
+        agent = self.get_agent()
+        agent.unmount_bgw(ctxt, access_path)
+
+    def bgw_set_chap(self, ctxt, access_path, chap_enable,
+                     username, password):
+        agent = self.get_agent()
+        agent.bgw_set_chap(ctxt, self.node, access_path,
+                           chap_enable, username, password)
+
+    def bgw_create_mapping(self, ctxt, access_path, volume_client, volumes):
+        agent = self.get_agent()
+        agent.bgw_create_mapping(
+            ctxt, self.node, access_path, volume_client, volumes)
+
+    def bgw_remove_mapping(self, ctxt, access_path, volume_client, volumes):
+        agent = self.get_agent()
+        agent.bgw_remove_mapping(
+            ctxt, self.node, access_path, volume_client, volumes)
+
+    def bgw_add_volume(self, ctxt, access_path, volume_client, volumes):
+        agent = self.get_agent()
+        agent.bgw_add_volume(
+            ctxt, self.node, access_path, volume_client, volumes)
+
+    def bgw_remove_volume(self, ctxt, access_path, volume_client, volumes):
+        agent = self.get_agent()
+        agent.bgw_remove_volume(
+            ctxt, self.node, access_path, volume_client, volumes)
+
+    def bgw_change_client_group(self, ctxt, access_path, volumes,
+                                volume_clients, new_volume_clients):
+        agent = self.get_agent()
+        agent.bgw_change_client_group(ctxt, access_path, volumes,
+                                      volume_clients, new_volume_clients)
+
+    def bgw_set_mutual_chap(self, ctxt, access_path, volume_clients,
+                            mutual_chap_enable, mutual_username,
+                            mutual_password):
+        agent = self.get_agent()
+        agent.bgw_set_mutual_chap(
+            ctxt, access_path, volume_clients, mutual_chap_enable,
+            mutual_username, mutual_password)
 
     def dspace_agent_install(self):
         ssh = self.get_ssh_executor()
