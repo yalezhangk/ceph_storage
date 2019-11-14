@@ -1,11 +1,8 @@
-import json
 import time
 
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from DSpace import context
-from DSpace import objects
 from DSpace.DSM.action_log import ActionLogHandler
 from DSpace.DSM.alert_group import AlertGroupHandler
 from DSpace.DSM.alert_log import AlertLogHandler
@@ -70,23 +67,7 @@ class AdminService(ServiceBase):
 
     def __init__(self):
         self.handler = AdminHandler()
-        self.check_admin_rpc()
         super(AdminService, self).__init__()
-
-    def check_admin_rpc(self):
-        ctxt = context.get_context()
-        admin_rpc = objects.RPCServiceList.get_all(
-            context=ctxt, filters={
-                "service_name": "admin",
-                "hostname": CONF.hostname
-            }
-        )
-        if not admin_rpc:
-            endpoint = {'ip': CONF.my_ip, 'port': CONF.admin_port}
-            rpc = objects.RPCService(
-                ctxt, service_name="admin", hostname=CONF.hostname,
-                endpoint=json.dumps(endpoint))
-            rpc.create()
 
 
 def run_loop():
