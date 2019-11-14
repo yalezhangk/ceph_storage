@@ -138,7 +138,44 @@ class DiskHandler(ClusterAPIHandler):
     @gen.coroutine
     def put(self, disk_id):
         """
-
+        ---
+        tags:
+        - disk
+        summary: Update disk
+        description: update disk.
+        operationId: disks.api.updateDisk
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Disk ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: disk
+          description: updated disk object
+          required: true
+          schema:
+            type: object
+            properties:
+              disk:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: disk's type, it must be hdd/ssd.
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         disk = json_decode(self.request.body).get('disk')
@@ -184,6 +221,91 @@ class DiskActionHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self, disk_id):
+        """
+        ---
+        tags:
+        - disk
+        summary: Action of disk
+        description: update disk. By this api, you can ligt the disk led,
+                     create partition or remove partition.
+                     But you can only do one thing at a time.
+        operationId: disks.api.diskAction
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Disk ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: disk(light disk)
+          description: open the disk's light
+          required: true
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                description: it must be light
+              disk:
+                type: object
+                properties:
+                  led:
+                    type: string
+                    description: disk led's status, it must be on/off.
+        - in: body
+          name: disk(partition create)
+          description: create the disk's partition
+          required: true
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                description: it must be partition_create
+              disk:
+                type: object
+                properties:
+                  partition_num:
+                    type: integer
+                    format: int32
+                    description: how much you partition want to create.
+                  role:
+                    type: string
+                    description: disk role, it must be system/data/accelerate.
+                  partition_role:
+                    type: string
+                    description: disk partition role,
+                                 it must be cache/db/wal/journal/mix.
+        - in: body
+          name: disk(partition remove)
+          description: remove the disk's partition
+          required: true
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                description: it must be partition_remove
+              disk:
+                type: object
+                properties:
+                  role:
+                    type: string
+                    description: disk role, it must be system/data/accelerate.
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         body = json_decode(self.request.body)
         action = body.get('action')
@@ -250,7 +372,31 @@ class DiskPerfHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
         """
-
+        ---
+        tags:
+        - disk
+        summary: Disk's Performance
+        description: return the performance of disk by id
+        operationId: disks.api.getPerformance
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: disk's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -264,7 +410,47 @@ class DiskPerfHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
         """
-
+        ---
+        tags:
+        - disk
+        summary: disk's History Performance
+        description: return the History Performance of disk by id
+        operationId: disks.api.getHistoryPerformance
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: disk's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()

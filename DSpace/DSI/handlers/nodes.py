@@ -203,6 +203,33 @@ class NodeRoleHandler(ClusterAPIHandler):
 class NodeMetricsMonitorHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: node's Moniter Metrics
+        description: return the Moniter Metrics of node by id
+        operationId: nodes.api.getMoniterMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         data = yield client.node_metrics_monitor_get(ctxt, node_id=node_id)
@@ -214,6 +241,50 @@ class NodeMetricsMonitorHandler(ClusterAPIHandler):
 class NodeMetricsHistroyMonitorHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: node's Monitor History Metrics
+        description: return the Monitor History Metrics of node by id
+        operationId: nodes.api.getMonitorHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         client = self.get_admin_client(ctxt)
@@ -228,6 +299,33 @@ class NodeMetricsHistroyMonitorHandler(ClusterAPIHandler):
 class NodeMetricsNetworkHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: node's Network Metrics
+        description: return the Network Metrics of node by id
+        operationId: nodes.api.getNetworkMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         net_name = self.get_query_argument('net_name', default=None)
         if not net_name:
@@ -244,6 +342,50 @@ class NodeMetricsNetworkHandler(ClusterAPIHandler):
 class NodeMetricsHistroyNetworkHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: node's Monitor History Metrics
+        description: return the Monitor History Metrics of node by id
+        operationId: nodes.api.getMonitorHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
         ctxt = self.get_context()
         his_args = self.get_metrics_history_args()
         net_name = self.get_query_argument('net_name', default=None)
@@ -262,6 +404,26 @@ class NodeMetricsHistroyNetworkHandler(ClusterAPIHandler):
 class NodeListBareNodeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Returns a list of nodes that are not in the rack
+        description: Returns a list of nodes that are not in the rack
+        operationId: nodes.api.getBareNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         filters = {}
