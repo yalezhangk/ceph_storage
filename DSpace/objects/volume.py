@@ -32,15 +32,15 @@ class Volume(base.StorPersistentObject, base.StorObject,
         'pool': fields.ObjectField("Pool", nullable=True),
         'volume_access_path': fields.ObjectField("VolumeAccessPath",
                                                  nullable=True),
-        'volume_client_group': fields.ObjectField("VolumeClientGroup",
-                                                  nullable=True),
+        'volume_client_groups': fields.ListOfObjectsField(
+            "VolumeClientGroup", nullable=True),
         'parent_snap': fields.ObjectField("VolumeSnapshot", nullable=True),
         'volume_clients': fields.ListOfObjectsField('VolumeClient',
                                                     nullable=True)
     }
 
     OPTIONAL_FIELDS = ('snapshots', 'pool', 'volume_access_path',
-                       'volume_client_group', 'parent_snap', 'volume_clients')
+                       'volume_client_groups', 'parent_snap', 'volume_clients')
 
     @property
     def name(self):
@@ -93,15 +93,12 @@ class Volume(base.StorPersistentObject, base.StorObject,
                         volume_access_path))
             else:
                 obj.volume_access_path = None
-        if 'volume_client_group' in expected_attrs:
-            volume_client_group = db_obj.get('volume_client_group', None)
-            if volume_client_group:
-                obj.volume_client_group = (
-                    objects.VolumeClientGroup._from_db_object(
-                        context, objects.VolumeClientGroup(context),
-                        volume_client_group))
-            else:
-                obj.volume_client_group = None
+        if 'volume_client_groups' in expected_attrs:
+            v_groups = db_obj.get('volume_client_groups', [])
+            obj.volume_client_groups = [
+                objects.VolumeClientGroup._from_db_object(
+                    context, objects.VolumeClientGroup(context), v_group)
+                for v_group in v_groups]
 
         if 'parent_snap' in expected_attrs:
             parent_snap = db_obj.get('parent_snap', None)

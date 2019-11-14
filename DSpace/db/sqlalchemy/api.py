@@ -360,20 +360,6 @@ def _volume_load_attr(ctxt, volume, expected_attrs=None, session=None):
         volume.snapshots = [snapshot for snapshot in volume._snapshots]
     if 'pool' in expected_attrs:
         volume.pool = _pool_get(ctxt, volume.pool_id, session)
-    if 'volume_access_path' in expected_attrs:
-        ac_path_id = volume.volume_access_path_id
-        if ac_path_id:
-            volume.volume_access_path = _volume_access_path_get(
-                ctxt, ac_path_id, session)
-        else:
-            volume.volume_access_path = None
-    if 'volume_client_group' in expected_attrs:
-        cli_group_id = volume.volume_client_group_id
-        if cli_group_id:
-            volume.volume_client_group = _volume_client_group_get(
-                ctxt, cli_group_id, session)
-        else:
-            volume.volume_client_group = None
     if 'parent_snap' in expected_attrs:
         parent_snap_id = volume.snapshot_id
         if parent_snap_id and volume.is_link_clone:
@@ -381,15 +367,37 @@ def _volume_load_attr(ctxt, volume, expected_attrs=None, session=None):
                                                       session)
         else:
             volume.parent_snap = None
-    if 'volume_clients' in expected_attrs:
-        cli_group_id = volume.volume_client_group_id
-        if cli_group_id:
-            v_clients = model_query(
-                ctxt, models.VolumeClient, session=session).filter_by(
-                volume_client_group_id=cli_group_id)
-            volume.volume_clients = [v_client for v_client in v_clients]
+
+    ac_path_id = None
+    cli_group_ids = []
+    mappings = _volume_mapping_get_query(
+        ctxt, session).filter_by(volume_id=volume.id).all()
+    if mappings:
+        ac_path_id = mappings[0].volume_access_path_id
+    for mapping in mappings:
+        cli_group_id = mapping.volume_client_group_id
+        if cli_group_id not in cli_group_ids:
+            cli_group_ids.append(cli_group_id)
+
+    if 'volume_client_groups' in expected_attrs:
+        column_attr = getattr(models.VolumeClientGroup, "id")
+        cgs = _volume_client_group_get_query(
+            ctxt, session).filter(column_attr.in_(cli_group_ids))
+        volume.volume_client_groups = [cg for cg in cgs]
+
+    if 'volume_access_path' in expected_attrs:
+        if ac_path_id:
+            volume.volume_access_path = _volume_access_path_get(
+                ctxt, ac_path_id, session)
         else:
-            volume.volume_clients = []
+            volume.volume_access_path = None
+
+    if 'volume_clients' in expected_attrs:
+        volume.volume_clients = []
+        for vcg in volume.volume_client_groups:
+            volume_clients = _volume_client_get_query(
+                ctxt, session).filter_by(volume_client_group_id=vcg.id)
+            volume.volume_clients.extend(volume_clients)
 
 
 @require_context
