@@ -28,7 +28,7 @@ class Executor(object):
         cmd = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+            stderr=subprocess.PIPE)
         stdout, stderr = cmd.communicate()
         stdout = stdout.decode('utf-8') if stdout else stdout
         stderr = stderr.decode('utf-8') if stderr else stderr
