@@ -24,6 +24,19 @@ class LicenseHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - liences
+        summary: return the liences information
+        description: return the liences information
+        operationId: liences.api.getLiences
+        produces:
+        - application/json
+        responses:
+        "200":
+          description: successful operation
+        """
         # unauthorized:未授权，authorized:已授权， lapsed:已失效
         ctxt = self.get_context()
         licenses = objects.LicenseList.get_latest_valid(ctxt)
@@ -57,6 +70,25 @@ class LicenseHandler(ClusterAPIHandler):
         self.write(json.dumps(result))
 
     def post(self):
+        """
+        ---
+        tags:
+        - liences
+        summary: upload the liences file
+        description: upload liences file
+        operationId: liences.api.uploadLiences
+        produces:
+        - application/json
+        parameters:
+        - in: request
+          name: liences file
+          description: liences file
+          type: file
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         result = {'license': {'result': False, 'msg': None}}
         file_metas = self.request.files.get('file', None)
@@ -82,6 +114,26 @@ class LicenseHandler(ClusterAPIHandler):
 class DownloadlicenseHandler(BaseAPIHandler):
 
     def get(self):
+        """
+        ---
+        tags:
+        - liences
+        summary: download the liences file
+        description: download liences file by file name
+        operationId: liences.api.downloadLiences
+        produces:
+        - application/json
+        parameters:
+        - in: request
+          name: file_name
+          description: liences file's name, it can be
+                       certificate.pem/private-key.pem
+          type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         file_name = self.get_argument('file_name')
         if file_name == 'certificate.pem':
             file = {file_name: CA_FILE_PATH}
