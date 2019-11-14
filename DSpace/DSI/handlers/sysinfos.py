@@ -18,6 +18,40 @@ logger = logging.getLogger(__name__)
 class SysInfoHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - sysinfo
+        summary: sysinfos List
+        description: Return a list of sysinfos
+        operationId: sysinfos.api.listSysinfo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         sysconfs = yield client.sysconf_get_all(ctxt)
@@ -27,6 +61,53 @@ class SysInfoHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - sysinfo
+        summary: Create sysinfo
+        description: Create sysinfo.
+        operationId: nodes.api.createSysinfo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: sysinfo
+          description: sysinfo's information
+          required: true
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  gateway_cidr:
+                    type: string
+                    description: gateway cidr
+                  cluster_cidr:
+                    type: string
+                    description: cluster cidr
+                  public_cidr:
+                    type: string
+                    description: public cidr
+                  admin_cidr:
+                    type: string
+                    description: admin cidr
+                  chrony_server:
+                    type: string
+                    description: chrony server
+                  cluster_name:
+                    type: string
+                    description: cluster name
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('data')
         logger.error(data)

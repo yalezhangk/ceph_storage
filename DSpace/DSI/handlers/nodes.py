@@ -65,6 +65,91 @@ class NodeListHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Create node
+        description: Create node or nodes.
+        operationId: nodes.api.createNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: node
+          description: Created node object
+          required: true
+          schema:
+            type: object
+            properties:
+              node:
+                type: object
+                description: node object
+                properties:
+                  hostname:
+                    type: string
+                    description: node's hostname
+                  cluster_id:
+                    type: string
+                    description: node's cluster id
+                  ip_address:
+                    type: string
+                    description: node's ip address
+                  password:
+                    type: string
+                    description: node's password, it can be null
+                  gateway_ip_address:
+                    type: string
+                    description: node's gateway ip address
+                  cluster_ip:
+                    type: string
+                    description: node's cluster ip
+                  public_ip:
+                    type: string
+                    description: node's public ip
+        - in: body
+          name: nodes
+          description: Created lots of node object
+          required: true
+          schema:
+            type: object
+            properties:
+              nodes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    hostname:
+                      type: string
+                      description: node's hostname
+                    cluster_id:
+                      type: string
+                      description: node's cluster id
+                    ip_address:
+                      type: string
+                      description: node's ip address
+                    password:
+                      type: string
+                      description: node's password, it can be null
+                    gateway_ip_address:
+                      type: string
+                      description: node's gateway ip address
+                    cluster_ip:
+                      type: string
+                      description: node's cluster ip
+                    public_ip:
+                      type: string
+                      description: node's public ip
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         if 'node' in data:
@@ -134,6 +219,58 @@ class NodeHandler(ClusterAPIHandler):
     @gen.coroutine
     def put(self, node_id):
         """修改节点信息
+        ---
+        tags:
+        - node
+        summary: Update node
+        description: update node's rack or hostname.
+        operationId: nodes.api.updateNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: node(update rack)
+          description: move node to another rack
+          required: true
+          schema:
+            type: object
+            properties:
+              node:
+                type: object
+                properties:
+                  rack:
+                    type: integer
+                    format: int32
+                    description: node's rack id
+        - in: body
+          name: node(update name)
+          description: updated node's name
+          required: true
+          schema:
+            type: object
+            properties:
+              node:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: node's name
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
@@ -188,6 +325,55 @@ class NodeHandler(ClusterAPIHandler):
 class NodeRoleHandler(ClusterAPIHandler):
     @gen.coroutine
     def put(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: Update node
+        description: update node's role
+        operationId: nodes.api.updateNodeRole
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: node
+          description: updated node's role
+          required: true
+          schema:
+            type: object
+            properties:
+              node:
+                type: object
+                properties:
+                  install_roles:
+                    type: array
+                    items:
+                      type: string
+                      description: node's role, it can be
+                                   monitor/storage/mds/radosgw/blockgw.
+                  uninstall_roles:
+                    type: array
+                    items:
+                      type: string
+                      description: node's role, it can be
+                                   monitor/storage/mds/radosgw/blockgw.
+        responses:
+        "200":
+          description: successful operation
+        """
         # monitor, mds, rgw, bgw role
         ctxt = self.get_context()
         data = json_decode(self.request.body)
@@ -346,9 +532,9 @@ class NodeMetricsHistroyNetworkHandler(ClusterAPIHandler):
         ---
         tags:
         - node
-        summary: node's Monitor History Metrics
-        description: return the Monitor History Metrics of node by id
-        operationId: nodes.api.getMonitorHistoryMetrics
+        summary: node's Network History Metrics
+        description: return the Network History Metrics of node by id
+        operationId: nodes.api.getNetworkHistoryMetrics
         produces:
         - application/json
         parameters:
@@ -437,6 +623,40 @@ class NodeListBareNodeHandler(ClusterAPIHandler):
 class NodeInfoHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Get node's infomation
+        description: Get node's infomation.
+        operationId: nodes.api.getInfo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: node
+          description: node's ip and password
+          required: true
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                ip_address:
+                  type: string
+                  description: node's ip address
+                password:
+                  type: string
+                  description: node's password
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         nodes_data = json_decode(self.request.body)
         client = self.get_admin_client(ctxt)
@@ -453,6 +673,46 @@ class NodeInfoHandler(ClusterAPIHandler):
 class NodeCheckHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Verify that the node can be installed
+        description: Verify that the node can be installed.
+        operationId: nodes.api.checkNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: node
+          description: node's information
+          required: true
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                admin_ip:
+                  type: string
+                  description: node's admin ip
+                password:
+                  type: string
+                  description: node's password
+                public_ip:
+                  type: string
+                  description: node's public ip
+                cluster_ip:
+                  type: string
+                  description: node's cluster ip
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         nodes_data = json_decode(self.request.body)
         client = self.get_admin_client(ctxt)

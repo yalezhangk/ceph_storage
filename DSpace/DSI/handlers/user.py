@@ -113,6 +113,40 @@ class PermissionMixin(object):
 class UserListHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - user
+        summary: User List
+        description: Return a list of users
+        operationId: users.api.listuser
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
 
@@ -145,6 +179,38 @@ class UserLoginHandler(BaseAPIHandler, PermissionMixin):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - user
+        summary: user login
+        description: User login.
+        operationId: users.api.login
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: user
+          description: user's information
+          required: true
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+                description: user's name
+              password:
+                type: string
+                description: user's password
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         name = data.get('username')
@@ -166,6 +232,25 @@ class UserLoginHandler(BaseAPIHandler, PermissionMixin):
 class UserLogoutHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - user
+        summary: user logout
+        description: User logout.
+        operationId: users.api.logout
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        "200":
+          description: successful operation
+        """
         self.get_context()
         self.session['user'] = None
         self.write(objects.json_encode({}))
@@ -175,6 +260,25 @@ class PermissionHandler(BaseAPIHandler, PermissionMixin):
 
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - user
+        summary: return user's permission
+        description: return user's permission.
+        operationId: users.api.permission
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         permission = self.get_permission(ctxt, self.current_user,
                                          cluster_id=self.get_cluster_id())

@@ -20,10 +20,10 @@ class ClusterHandler(BaseAPIHandler):
         """
         ---
         tags:
-        - liences
-        summary: return the liences information
-        description: return the liences information
-        operationId: liences.api.getLiences
+        - cluster
+        summary: return the cluster information
+        description: return the clusters information
+        operationId: clusters.api.getCluster
         produces:
         - application/json
         responses:
