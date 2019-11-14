@@ -12,6 +12,7 @@ from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSI.handlers.base import BaseAPIHandler
+from DSpace.objects import fields as s_fields
 from DSpace.utils.license_verify import LicenseVerify
 from DSpace.utils.security import check_encrypted_password
 
@@ -40,7 +41,7 @@ default_permission = {
 }
 
 
-class PermissionMixin(object):
+class PermissionMixin(BaseAPIHandler):
     @staticmethod
     def license_verify(ctxt):
         # license校验
@@ -80,19 +81,29 @@ class PermissionMixin(object):
     def add_page(self, permission, page):
         permission['permissions']['stor'][page] = True
 
+    @gen.coroutine
     def check_init_page(self, ctxt):
-        value = objects.sysconfig.sys_config_get(
-            ctxt, "platform_init", default=False)
-        return value
+        inited = objects.sysconfig.sys_config_get(
+            ctxt, "platform_inited", default=False)
+        if not inited:
+            client = self.get_admin_client(ctxt)
+            inited = yield client.cluster_platform_check(ctxt)
+        if inited:
+            objects.SysConfig(
+                ctxt, key="platform_inited", value="True",
+                value_type=s_fields.SysConfigType.BOOL
+            ).create()
+        return inited
 
+    @gen.coroutine
     def get_permission(self, ctxt, user, cluster_id=None):
         permission = copy.deepcopy(default_permission)
         license = self.license_verify(ctxt)
         permission['license'] = license
-        # platform_init: true -> init done; false -> need init page
-        permission['platform_init'] = self.check_init_page(ctxt)
+        # platform_inited: true -> init done; false -> need init page
+        permission['platform_inited'] = yield self.check_init_page(ctxt)
         permission['user'] = user
-        if permission['platform_init']:
+        if permission['platform_inited']:
             if cluster_id:
                 cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
                 if cluster.is_admin:
@@ -173,7 +184,7 @@ class UserHandler(BaseAPIHandler):
         }))
 
 
-class UserLoginHandler(BaseAPIHandler, PermissionMixin):
+class UserLoginHandler(PermissionMixin):
     def get_context(self):
         return RequestContext(user_id=None, is_admin=False)
 
@@ -225,7 +236,7 @@ class UserLoginHandler(BaseAPIHandler, PermissionMixin):
         self.session['user'] = user
         self.current_user = user
         ctxt.user_id = user.id
-        permission = self.get_permission(ctxt, user)
+        permission = yield self.get_permission(ctxt, user)
         self.write(objects.json_encode(permission))
 
 
@@ -256,7 +267,7 @@ class UserLogoutHandler(BaseAPIHandler):
         self.write(objects.json_encode({}))
 
 
-class PermissionHandler(BaseAPIHandler, PermissionMixin):
+class PermissionHandler(PermissionMixin):
 
     @gen.coroutine
     def get(self):
@@ -280,6 +291,7 @@ class PermissionHandler(BaseAPIHandler, PermissionMixin):
           description: successful operation
         """
         ctxt = self.get_context()
-        permission = self.get_permission(ctxt, self.current_user,
-                                         cluster_id=self.get_cluster_id())
+        permission = yield self.get_permission(
+            ctxt, self.current_user,
+            cluster_id=self.get_cluster_id())
         self.write(objects.json_encode(permission))

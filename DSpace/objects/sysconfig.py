@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from oslo_utils import strutils
 from oslo_versionedobjects import fields
 
 from DSpace import db
@@ -81,6 +82,6 @@ def sys_config_get(ctxt, key, default=None):
     elif obj.value_type == s_fields.SysConfigType.NUMBER:
         return int(obj.value)
     elif obj.value_type == s_fields.SysConfigType.BOOL:
-        return bool(obj.value)
+        return strutils.bool_from_string(obj.value)
     else:
         raise exception.Invalid(msg=_("Invalid config type"))

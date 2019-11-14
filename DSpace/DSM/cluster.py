@@ -37,6 +37,26 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         """Cluster import"""
         pass
 
+    def cluster_platform_check(self, ctxt):
+        """Judge platform init success"""
+        logger.debug("cluster platform check")
+        clusters = objects.ClusterList.get_all(ctxt)
+        if not len(clusters):
+            return False
+
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        admin_ips = admin_ips.split(',')
+
+        cluster = clusters[0]
+        ctxt.cluster_id = cluster.id
+        for ip_address in admin_ips:
+            nodes = objects.NodeList.get_all(
+                ctxt, filters={"ip_address": ip_address}
+            )
+            if not len(nodes) or nodes[0].status != s_fields.NodeStatus.ACTIVE:
+                return False
+        return True
+
     def cluster_admin_nodes_get(self, ctxt):
         logger.debug("get admin nodes info")
         nodes = []
