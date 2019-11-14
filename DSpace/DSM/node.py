@@ -57,11 +57,12 @@ class NodeHandler(AdminBaseHandler):
             for rpc_service in rpc_services:
                 rpc_service.destroy()
             node.destroy()
+            logger.info("node delete success")
             msg = _("Node removed!")
         except Exception as e:
-            logger.error(e)
             node.status = s_fields.NodeStatus.ERROR
             node.save()
+            logger.exception("node delete error: %s", e)
             msg = _("Node remove error!")
 
         node = objects.Node.get_by_id(ctxt, node_id)
@@ -283,7 +284,7 @@ class NodeHandler(AdminBaseHandler):
             msg = _("set node roles")
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
-            logger.error('set node roles failed')
+            logger.exception('set node roles failed %s', e)
             msg = _("set node roles error, reason: {}".format(str(e)))
         node.status = status
         node.save()
@@ -341,8 +342,8 @@ class NodeHandler(AdminBaseHandler):
             msg = _("node create success")
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
-            logger.error('create node error, node ip: {}, reason: {}'.format(
-                         node.ip_address, str(e)))
+            logger.exception('create node error, node ip: %s, reason: %s',
+                             node.ip_address, e)
             msg = _("node create error, reason: {}".format(str(e)))
         node.status = status
         node.save()

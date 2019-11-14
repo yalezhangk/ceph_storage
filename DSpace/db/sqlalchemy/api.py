@@ -434,7 +434,8 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
     :returns: list of matching volumes
     """
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -455,7 +456,8 @@ def volume_get_all(context, marker=None, limit=None, sort_keys=None,
 def volume_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _volume_get_query(context, session)
@@ -684,7 +686,8 @@ def cluster_get_all(context, marker=None, limit=None, sort_keys=None,
 def node_status_get(context):
     session = get_session()
     filters = {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         query = session.query(models.Node.status, func.count(
             models.Node.id)).group_by(models.Node.status)
@@ -695,7 +698,8 @@ def node_status_get(context):
 def pool_status_get(context):
     session = get_session()
     filters = {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         query = session.query(models.Pool.status, func.count(
             models.Pool.id)).group_by(models.Pool.status)
@@ -706,7 +710,8 @@ def pool_status_get(context):
 def osd_status_get(context):
     session = get_session()
     filters = {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         query = session.query(models.Osd.status, func.count(
             models.Osd.id)).group_by(models.Osd.status)
@@ -765,6 +770,20 @@ def cluster_create(context, values):
         session.add(cluster_ref)
 
     return _cluster_get(context, values['id'], session=session)
+
+
+def cluster_destroy(context, cluster_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Cluster, session=session).\
+            filter_by(id=cluster_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
 
 
 ###############################
@@ -909,7 +928,8 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -934,7 +954,8 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
 def node_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _node_get_query(context, session)
@@ -1076,7 +1097,8 @@ def rack_get(context, rack_id, expected_attrs=None):
 def rack_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1176,7 +1198,8 @@ def osd_get_all(context, marker=None, limit=None, sort_keys=None,
                 expected_attrs=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -1198,7 +1221,8 @@ def osd_get_all(context, marker=None, limit=None, sort_keys=None,
 def osd_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _osd_get_query(context, session)
@@ -1285,7 +1309,8 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
                  expected_attrs=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -1307,7 +1332,8 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
 def pool_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _pool_get_query(context, session)
@@ -1406,7 +1432,8 @@ def sys_config_get_all(context, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -1559,7 +1586,8 @@ def volume_access_path_get_all(context, marker=None,
     :returns: list of matching volumes
     """
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1583,7 +1611,8 @@ def volume_access_path_get_all(context, marker=None,
 def volume_access_path_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _volume_access_path_get_query(context, session)
@@ -1738,7 +1767,8 @@ def volume_gateway_get_all(context, marker=None,
     :returns: list of matching volumes
     """
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -1870,7 +1900,8 @@ def volume_mapping_get_all(context, marker=None,
     :returns: list of matching volumes
     """
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2151,7 +2182,8 @@ def volume_client_group_get(context, client_group_id, expected_attrs=None):
 def volume_client_group_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _volume_client_group_get_query(context, session)
@@ -2185,7 +2217,8 @@ def volume_client_group_get_all(context, marker=None,
     :returns: list of matching volumes
     """
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2380,7 +2413,8 @@ def network_get_all(context, marker=None, limit=None, sort_keys=None,
                     sort_dirs=None, filters=None, offset=None,
                     expected_attrs=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2403,7 +2437,8 @@ def network_get_all(context, marker=None, limit=None, sort_keys=None,
 def network_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _network_get_query(context, session)
@@ -2467,6 +2502,20 @@ def alert_rule_create(context, values):
     return alert_rule_ref
 
 
+def alert_rule_destroy(context, alert_rule_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.AlertRule, session=session).\
+            filter_by(id=alert_rule_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
 @handle_db_data_error
 @require_context
 def alert_rule_update(context, alert_rule_id, values):
@@ -2482,7 +2531,8 @@ def alert_rule_update(context, alert_rule_id, values):
 def alert_rule_get_all(context, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2499,7 +2549,8 @@ def alert_rule_get_all(context, marker=None, limit=None, sort_keys=None,
 def alert_rule_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _alert_rule_get_query(context, session)
@@ -2574,7 +2625,8 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2597,7 +2649,8 @@ def disk_get_all(context, marker=None, limit=None, sort_keys=None,
 def disk_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _disk_get_query(context, session)
@@ -2682,7 +2735,8 @@ def disk_partition_get_all(context, marker=None, limit=None, sort_keys=None,
                            sort_dirs=None, filters=None, offset=None,
                            expected_attrs=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2705,7 +2759,8 @@ def disk_partition_get_all(context, marker=None, limit=None, sort_keys=None,
 def disk_partition_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _disk_partition_get_query(context, session)
@@ -2813,7 +2868,8 @@ def alert_group_get_all(context, marker=None, limit=None, sort_keys=None,
                         expected_attrs=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -2850,7 +2906,8 @@ def alert_group_destroy(context, alert_group_id):
 def alert_group_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _alert_group_get_query(context, session)
@@ -2906,7 +2963,8 @@ def email_group_update(context, email_group_id, values):
 def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -2923,7 +2981,8 @@ def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
 def email_group_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _email_group_get_query(context, session)
@@ -3009,7 +3068,8 @@ def alert_log_get_all(context, marker=None, limit=None, sort_keys=None,
                       sort_dirs=None, filters=None, offset=None,
                       expected_attrs=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -3029,7 +3089,8 @@ def alert_log_get_all(context, marker=None, limit=None, sort_keys=None,
 def alert_log_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _alert_log_get_query(context, session)
@@ -3118,7 +3179,8 @@ def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -3134,7 +3196,8 @@ def log_file_get_all(context, marker=None, limit=None, sort_keys=None,
 def log_file_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _log_file_get_query(context, session)
@@ -3227,7 +3290,8 @@ def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
                             sort_dirs=None, filters=None, offset=None,
                             expected_attrs=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -3247,7 +3311,8 @@ def volume_snapshot_get_all(context, marker=None, limit=None, sort_keys=None,
 def volume_snapshot_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _volume_snapshot_get_query(context, session)
@@ -3322,7 +3387,8 @@ def service_get(context, service_id, expected_attrs=None):
 def service_get_all(context, marker=None, limit=None, sort_keys=None,
                     sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -3340,7 +3406,8 @@ def service_get_all(context, marker=None, limit=None, sort_keys=None,
 def service_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _service_get_query(context, session)
@@ -3359,7 +3426,8 @@ def service_status_get(context, names, filters=None):
     """
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         all_status = {}
         for name in names:
@@ -3456,7 +3524,8 @@ def ceph_config_get_by_key(context, group, key):
 def ceph_config_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _ceph_config_get_query(context, session)
@@ -3468,7 +3537,8 @@ def ceph_config_get_count(context, filters=None):
 def ceph_config_get_all(context, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -3653,7 +3723,8 @@ def action_log_update(context, action_log_id, values):
 def action_log_get_all(context, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
@@ -3670,7 +3741,8 @@ def action_log_get_all(context, marker=None, limit=None, sort_keys=None,
 def action_log_get_count(context, filters=None):
     session = get_session()
     filters = filters or {}
-    filters['cluster_id'] = context.cluster_id
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     with session.begin():
         # Generate the query
         query = _action_log_get_query(context, session)

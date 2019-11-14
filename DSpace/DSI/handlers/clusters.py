@@ -110,6 +110,31 @@ class ClusterAdminNodesHandler(BaseAPIHandler):
         }))
 
 
+class ClusterCheckAdminNodeHandler(BaseAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Check admin node status
+        description: Check admin node status
+        operationId: clusters.api.checkAdminNode
+        produces:
+        - application/json
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        status = yield client.check_admin_node_status(ctxt)
+
+        self.write(objects.json_encode({
+            "status": status
+        }))
+
+
 class ClusterDetectHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

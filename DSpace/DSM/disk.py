@@ -211,7 +211,8 @@ class DiskHandler(AdminBaseHandler):
                 )
                 disk.create()
                 logger.info("Create disk %s: %s", name, data)
-            self.disk_partitions_reporter(ctxt, partitions, disk)
+            # TODO don't use now
+            # self.disk_partitions_reporter(ctxt, partitions, disk)
         for name, disk in six.iteritems(all_disks):
             logger.warning("Remove disk %s", name)
             disk.destroy()

@@ -631,8 +631,13 @@ def alert_rule_create(context, values):
     return IMPL.alert_rule_create(context, values)
 
 
+def alert_rule_destroy(context, alert_rule_id):
+    return IMPL.alert_rule_destroy(context, alert_rule_id)
+
+
 def alert_rule_get_count(context, filters):
     return IMPL.alert_rule_get_count(context, filters=filters)
+
 
 ###############
 

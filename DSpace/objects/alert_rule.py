@@ -40,6 +40,11 @@ class AlertRule(base.StorPersistentObject, base.StorObject,
 
         self.obj_reset_changes()
 
+    def destroy(self):
+        updated_values = db.alert_rule_destroy(self._context, self.id)
+        self.update(updated_values)
+        self.obj_reset_changes(updated_values.keys())
+
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         expected_attrs = expected_attrs or []
