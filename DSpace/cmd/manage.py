@@ -188,7 +188,7 @@ class DbCommands(object):
             ctxt
         )
         endpint = {}
-        allowed = ["ip", "port", "hostname", "service"]
+        allowed = ["ip", "port", "hostname", "service_name"]
         for c in configs:
             key, value = c.split("=", 1)
             if key not in allowed:
@@ -199,8 +199,8 @@ class DbCommands(object):
                 endpint['port'] = value
             if key == 'hostname':
                 rpc_service.hostname = value
-            if key == 'service':
-                rpc_service.service = value
+            if key == 'service_name':
+                rpc_service.service_name = value
         rpc_service.endpoint = json.dumps(endpint)
         rpc_service.create()
 
