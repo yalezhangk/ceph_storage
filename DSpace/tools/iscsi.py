@@ -185,22 +185,19 @@ def get_acl(iqn, iqn_initiator):
     return None
 
 
-def delete_acl(iqn, iqn_initiator):
-    tpg = _get_single_tpg(iqn)
-    acl = get_acl(iqn, iqn_initiator)
+def delete_acl(iqn_target, iqn_initiator):
+    acl = get_acl(iqn_target, iqn_initiator)
 
     # delete mapped tpg lun, acl and it's mapped lun
-    logger.info("delete acl %s for target %s", iqn_initiator, iqn)
+    logger.info("delete acl %s for target %s", iqn_initiator, iqn_target)
     if not acl:
         logger.error('acl %s not found', iqn_initiator)
         raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
     else:
         mapped_luns = acl.mapped_luns
         for ml in mapped_luns:
-            logger.debug('delete tpg lun lun%s for acl %s',
-                         ml.tpg_lun.lun, iqn_initiator)
-            tpg_lun_obj = LUN(tpg, ml.tpg_lun.lun)
-            tpg_lun_obj.delete()
+            logger.debug('delete %s for acl %s', ml, iqn_initiator)
+            ml.delete()
         acl.delete()
     logger.info("delete acl %s success", iqn_initiator)
     save_config()
@@ -274,25 +271,49 @@ def create_lun(iqn, so):
     return LUN(tpg, storage_object=so)
 
 
-def current_mapped_luns(iqn, iqn_initiator):
+def current_mapped_luns(iqn_target, iqn_initiator):
     """
     Returns list of currently mapped luns in given acl (resp tpg),
     each being represented as {'lun': '<id>'}.
     """
-    acl = get_acl(iqn, iqn_initiator)
+    current_tpg = _get_single_tpg(iqn_target)
+    acl = get_acl(iqn_target, iqn_initiator)
     if not acl:
         logger.debug('acl %s not found', iqn_initiator)
         raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
     mapped_luns = []
     for mapped_lun in acl.mapped_luns:
+        tpg_lun = mapped_lun.tpg_lun.lun
         mapped_luns.append(
             {
-                'lun': mapped_lun.mapped_lun,
-                'tpg_lun': "lun{}".format(mapped_lun.tpg_lun.lun)
+                'mapped_lun': mapped_lun.mapped_lun,
+                'tpg_lun': "lun{}".format(tpg_lun),
+                'disk_name': LUN(current_tpg, tpg_lun).storage_object.name
             }
         )
-
     return mapped_luns
+
+
+def remove_acl_mapped_lun(iqn_target, iqn_initiator, disk_name):
+    acl = get_acl(iqn_target, iqn_initiator)
+    if not acl:
+        logger.error('acl %s not found', iqn_initiator)
+        raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
+    acl_mapped_luns = current_mapped_luns(iqn_target, iqn_initiator)
+    disk_mapped_lun_id = None
+    for acl_ml in acl_mapped_luns:
+        if acl_ml.get("disk_name") == disk_name:
+            disk_mapped_lun_id = acl_ml.get("mapped_lun")
+    logger.info("find acl %s mapped_lun%s attached to %s",
+                iqn_initiator, disk_mapped_lun_id, disk_name)
+    if disk_mapped_lun_id is not None:
+        logger.info("delete mapped_lun %s for acl %s",
+                    disk_mapped_lun_id, iqn_initiator)
+        MappedLUN(acl, disk_mapped_lun_id).delete()
+        for ml in acl.mapped_luns:
+            if ml.mapped_lun == disk_mapped_lun_id:
+                ml.delete()
+        save_config()
 
 
 def current_attached_luns(iqn):
@@ -398,7 +419,7 @@ def _next_free_mapped_lun_index(iqn, iqn_initiator):
     """
     mapped_luns = current_mapped_luns(iqn, iqn_initiator)
     mapped_lun_indices = [
-        mapped_lun['lun'] for mapped_lun in mapped_luns
+        mapped_lun['mapped_lun'] for mapped_lun in mapped_luns
     ]
     if not mapped_lun_indices:
         next_free_index = 0
@@ -413,7 +434,7 @@ def _get_single_tpg(iqn):
     Returns TPG object for given iqn, assuming that each Target
     has a single TPG.
     """
-    tpg = TPG(Target(FabricModule('iscsi'), iqn), 1)
+    tpg = TPG(Target(FabricModule('iscsi'), iqn, mode="lookup"), 1)
     return tpg
 
 
