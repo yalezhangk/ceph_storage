@@ -625,6 +625,46 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "volume_access_path_delete", id=id)
         return response
 
+    def volume_access_path_mount_gw(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_mount_gw",
+                             id=id, data=data)
+        return response
+
+    def volume_access_path_unmount_gw(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_unmount_gw",
+                             id=id, data=data)
+        return response
+
+    def volume_access_path_set_chap(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_set_chap",
+                             id=id, data=data)
+        return response
+
+    def volume_access_path_create_mapping(self, ctxt, id, mapping_list):
+        response = self.call(ctxt, "volume_access_path_create_mapping",
+                             id=id, mapping_list=mapping_list)
+        return response
+
+    def volume_access_path_remove_mapping(self, ctxt, id, mapping_list):
+        response = self.call(ctxt, "volume_access_path_remove_mapping",
+                             id=id, mapping_list=mapping_list)
+        return response
+
+    def volume_access_path_add_volume(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_add_volume",
+                             id=id, data=data)
+        return response
+
+    def volume_access_path_remove_volume(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_remove_volume",
+                             id=id, data=data)
+        return response
+
+    def volume_access_path_change_client_group(self, ctxt, id, data):
+        response = self.call(ctxt, "volume_access_path_change_client_group",
+                             id=id, data=data)
+        return response
+
     ##################
 
     def volume_client_group_get_all(self, ctxt, marker=None, limit=None,
@@ -644,12 +684,12 @@ class AdminClient(BaseClient):
 
     def volume_client_group_create(self, ctxt, data):
         response = self.call(
-            ctxt, "volume_client_group_create", data=data)
+            ctxt, "volume_client_group_create", client_group=data)
         return response
 
     def volume_client_create(self, ctxt, data):
         response = self.call(
-            ctxt, "volume_client_create", data=data)
+            ctxt, "volume_client_create", volume_client=data)
         return response
 
     def volume_client_group_get(self, ctxt, group_id, expected_attrs=None):
@@ -672,6 +712,20 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def volume_client_group_update_name(self, ctxt, id, client_group):
+        response = self.call(ctxt, "volume_client_group_update_name",
+                             id=id, client_group=client_group)
+        return response
+
+    def volume_client_group_update(self, ctxt, id, new_volume_clients):
+        response = self.call(ctxt, "volume_client_group_update",
+                             id=id, new_volume_clients=new_volume_clients)
+        return response
+
+    def set_mutual_chap(self, ctxt, id, data):
+        response = self.call(ctxt, "set_mutual_chap",
+                             id=id, data=data)
+        return response
     ##################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
