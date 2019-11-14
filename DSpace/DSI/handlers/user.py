@@ -93,9 +93,10 @@ class PermissionMixin(object):
         permission['platform_init'] = self.check_init_page(ctxt)
         permission['user'] = user
         if permission['platform_init']:
-            cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
-            if cluster.is_admin:
-                self.add_page(permission, "manage-cluster")
+            if cluster_id:
+                cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+                if cluster.is_admin:
+                    self.add_page(permission, "manage-cluster")
             for p in self.default_page():
                 self.add_page(permission, p)
         else:
