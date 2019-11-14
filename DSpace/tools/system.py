@@ -154,11 +154,10 @@ class System(ToolBase):
     def check_package(self, pkg_name):
         cmd = ['rpm', '-qa', '|', 'grep', pkg_name]
         rc, stdout, stderr = self.run_command(cmd)
-        if not rc:
-            result = stdout.strip().decode('utf-8')
-            if len(result):
-                return False
-            else:
-                return True
-        raise RunCommandError(cmd=cmd, return_code=rc,
-                              stdout=stdout, stderr=stderr)
+        if rc == 0:
+            return False
+        elif rc == 1:
+            return True
+        else:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
