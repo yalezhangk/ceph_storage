@@ -16,6 +16,54 @@ logger = logging.getLogger(__name__)
 class LogFileListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - log_file
+        summary: log file List
+        description: Return a list of log files
+        operationId: logfiles.api.listLogFile
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: node_id
+          description: Node ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: service type
+          description: type of log file service, it can be mon/osd
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         # 日志文件列表(元数据)
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -47,6 +95,33 @@ class LogFileHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def get(self, log_file_id):
+        """
+        ---
+        tags:
+        - log_file
+        summary: download the log file by id
+        description: download log file by id
+        operationId: logfiles.api.downloadLogFile
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Log file's ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         # 日志文件下载
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
