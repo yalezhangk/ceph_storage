@@ -89,16 +89,18 @@ class PermissionMixin(object):
         permission = copy.deepcopy(default_permission)
         license = self.license_verify(ctxt)
         permission['license'] = license
+        # platform_init: true -> init done; false -> need init page
         permission['platform_init'] = self.check_init_page(ctxt)
         permission['user'] = user
-        if cluster_id:
+        if permission['platform_init']:
             cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
             if cluster.is_admin:
                 self.add_page(permission, "manage-cluster")
             for p in self.default_page():
                 self.add_page(permission, p)
         else:
-            self.add_page(permission, "manage-cluster")
+            self.add_page(permission, "set-system-info")
+
         # TODO: cache permission
         return {
             "message": "ok",
