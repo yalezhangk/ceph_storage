@@ -54,7 +54,7 @@ class VolumeListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
         expected_attrs = ['snapshots', 'pool', 'volume_access_path',
-                          'volume_client_group', 'parent_snap',
+                          'volume_client_groups', 'parent_snap',
                           'volume_clients']
         volumes = yield client.volume_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
@@ -149,7 +149,7 @@ class VolumeHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['snapshots', 'pool', 'volume_access_path',
-                          'volume_client_group', 'parent_snap',
+                          'volume_client_groups', 'parent_snap',
                           'volume_clients']
         volume = yield client.volume_get(ctxt, volume_id,
                                          expected_attrs=expected_attrs)
