@@ -322,8 +322,11 @@ class NodeHandler(AdminBaseHandler):
             roles = data.get('roles', "").split(',')
             role_monitor = "monitor" in roles
             role_storage = "storage" in roles
+            role_admin = "admin" in roles
             role_block_gateway = "blockgw" in roles
             role_object_gateway = "objectgw" in roles
+            if role_admin:
+                node.role_admin = True
             if role_monitor:
                 self._mon_install(ctxt, node)
             if role_storage:

@@ -88,6 +88,19 @@ class ClusterHandler(BaseAPIHandler):
 class ClusterAdminNodesHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Collect admin nodes info
+        description: Collect admin nodes info
+        operationId: clusters.api.admin_nodeInfo
+        produces:
+        - application/json
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         admin_nodes = yield client.cluster_admin_nodes_get(ctxt)
