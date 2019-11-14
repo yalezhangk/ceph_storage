@@ -12,6 +12,31 @@ logger = logging.getLogger(__name__)
 class ServiceListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - service
+        summary: return a list of services
+        description: return a list of services
+        operationId: services.api.listService
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: node
+          description: Node ID
+          type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         context = self.get_context()
         page_args = self.get_paginated_args()
 
