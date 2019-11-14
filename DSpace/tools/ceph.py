@@ -45,6 +45,17 @@ class CephTool(ToolBase):
 
         return cluster_network, public_network
 
+    def check_ceph_is_installed(self):
+        cmd = ["ceph", "-v"]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc == 0:
+            return True
+        elif rc == 127:
+            return False
+        else:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
     def mon_install(self, hostname, fsid, ceph_auth='none'):
 
         if ceph_auth == 'cephx':
