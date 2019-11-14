@@ -353,6 +353,11 @@ class IscsiAclNotFound(NotFound):
     message = _("iscsi acl %(iqn_initiator)s not found.")
 
 
+class IscsiAclMappedLunNotFound(NotFound):
+    message = _("iscsi acl %(iqn_initiator)s can't find a mapped lun "
+                "attached to %(disk_name)s")
+
+
 class AlertLogActionNotFound(NotFound):
     message = _("AlertLog Action %(action)s must in"
                 "'all_readed,del_alert_logs'")
@@ -374,6 +379,10 @@ class AccessPathNoMapping(NotFound):
     message = _("access path %(access_path)s no such mapping.")
 
 
+class AccessPathUnmountBgwError(StorException):
+    message = _("can't unmount bgw: %(reason)s")
+
+
 class AccessPathNoVolmues(NotFound):
     message = _("access path %(access_path)s no more volumes, can't remove.")
 
@@ -389,3 +398,7 @@ class VolumeMappingNotFound(NotFound):
 class AccessPathMappingVolumeExists(Duplicate):
     message = _("access path mapping %(access_path)s:%(client_group)s "
                 "already has volume %(volume)s.")
+
+
+class AccessPathDeleteError(StorException):
+    message = _("can't delete access path: %(reason)s")
