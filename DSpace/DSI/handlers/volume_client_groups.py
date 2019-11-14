@@ -12,7 +12,7 @@ from DSpace.utils.normalize_wwn import normalize_wwn
 logger = logging.getLogger(__name__)
 
 
-class VolumeClientGroupListHandler(ClusterAPIHandler):
+class CheckVolumeClientGroup():
     @gen.coroutine
     def check_volume_client_group(self, ctxt, client, volume_client_group):
         """verify that the volume cilent group's name exists."""
@@ -20,7 +20,7 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
         filters = {"name": name}
         vcg = yield client.volume_client_group_get_all(ctxt, filters=filters)
         if vcg:
-            logger.error("Im raise a exception")
+            logger.error("volume client group {} exists".format(vcg))
             raise exception.VolumeClientGroupExists(
                 volume_client_group_name=name)
 
@@ -32,13 +32,32 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
         if iqn:
             normalize_iqn, wwn_type = normalize_wwn(iqn)
             if not normalize_iqn:
+                logger.error("iqn %s is not allowed", iqn)
                 raise exception.Invalid(
                     _("iqn: {} is not allowed!").format(iqn))
 
             vc = yield client.volume_client_get_all(ctxt, filters=filters)
             if vc:
+                logger.error("volume client %s already in another "
+                             "cilent group", iqn)
                 raise exception.VolumeClientExists(iqn=iqn)
 
+    @gen.coroutine
+    def check_volume_client_group_mutual_chap(self, ctxt, data):
+        mutual_username = data.get("mutual_username")
+        mutual_password = data.get("mutual_password")
+        if not mutual_username or not mutual_password:
+            raise exception.InvalidInput(_("no mutual_username or "
+                                           " mutual_password input"))
+        if len(mutual_username) < 5 or len(mutual_password) < 5:
+            raise exception.InvalidInput(_("mutual_username or mutual_password"
+                                           "too short"))
+        elif len(mutual_username) > 32 or len(mutual_password) > 32:
+            raise exception.InvalidInput(_("mutual_username or mutual_password"
+                                           "too long"))
+
+
+class VolumeClientGroupListHandler(ClusterAPIHandler, CheckVolumeClientGroup):
     @gen.coroutine
     def get(self):
         """
@@ -78,7 +97,7 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        expected_attrs = ['volume_access_path', 'volumes', 'volume_clients']
+        expected_attrs = ['volume_access_paths', 'volumes', 'volume_clients']
         volume_client_groups = yield client.volume_client_group_get_all(
             ctxt, expected_attrs=expected_attrs, **page_args)
         volume_client_group_count = \
@@ -91,6 +110,22 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
         """
+        {
+            "volume_client_group": {
+                "name":"client-group-001",
+                "type":"iscsi",
+                "clients": [
+                    {
+                        "type": "iqn",
+                        "iqn": "iqn.1994-05.com.redhat:645ae6375e70"
+                    },
+                    {
+                        "type": "iqn",
+                        "iqn": "iqn.1994-05.com.redhat:645ae6375e71"
+                    }
+                ]}
+        }
+
         ---
         tags:
         - volume_client_group
@@ -153,21 +188,25 @@ class VolumeClientGroupListHandler(ClusterAPIHandler):
 
         # 验证
         # check方法返回的是Futrue，所以这里还需要一个yield来推动
+        logger.info("trying to create volume client group")
         yield self.check_volume_client_group(ctxt, client, volume_client_group)
         for volume_client in volume_clients:
             yield self.check_volume_client(ctxt, client, volume_client)
         # 创建
-        volume_client_group = \
-            yield client.volume_client_group_create(ctxt, volume_client_group)
+        logger.debug("create volume client group, data: %s",
+                     volume_client_group)
+        volume_client_group = yield client.volume_client_group_create(
+            ctxt, volume_client_group)
         for volume_client in volume_clients:
             volume_client["volume_client_group_id"] = volume_client_group.id
             yield client.volume_client_create(ctxt, volume_client)
+        logger.info("create volume client group success")
         self.write(objects.json_encode({
             "volume_client_group": volume_client_group
         }))
 
 
-class VolumeClientGroupHandler(ClusterAPIHandler):
+class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
     @gen.coroutine
     def get(self, group_id):
         """
@@ -199,11 +238,114 @@ class VolumeClientGroupHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        expected_attrs = ['volume_access_path', 'volumes', 'volume_clients']
+        expected_attrs = ['volume_access_paths', 'volumes', 'volume_clients']
         volume_client_group = yield client.volume_client_group_get(
             ctxt, group_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode(
             {"volume_client_group": volume_client_group}))
+
+    @gen.coroutine
+    def post(self, group_id):
+        """编辑客户端组：修改客户端组名称，添加或移除客户端
+        {"volume_client_group": {"name":"new_client_group"}}
+
+        {
+            "volume_client_group": {
+                "name":"client-group-001",
+                "type":"iscsi",
+                "clients": [
+                    {
+                        "type": "iqn",
+                        "iqn": "iqn.1994-05.com.redhat:645ae6375e70"
+                    }
+                ]}
+        }
+
+        ---
+        tags:
+        - volume_client_group
+        summary: Edit client group name or update clients
+        description: Edit client group name or update clients
+        operationId: volume_client_groups.api.editClientGroup
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: VolumeClientGroup's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: volume_client_group(name)
+          description: Edit volume client group name
+          required: true
+          schema:
+            type: object
+            properties:
+              volume_client_group:
+                type: object
+                description: volume_client_group object
+                properties:
+                  name:
+                    type: string
+                    description: volume client group name
+        - in: body
+          name: volume_client_group(update volume clients)
+          description: Created volume_client_group object
+          required: true
+          schema:
+            type: object
+            properties:
+              volume_client_group:
+                type: object
+                description: volume_client_group object
+                properties:
+                  name:
+                    type: string
+                    description: volume client group name
+                  clients:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        client_type:
+                          type: string
+                          description: volume_client's type, it can be iqn
+                        iqn:
+                          type: string
+                          description: volume_client's iqn, it must be in
+                                        strict iqn format
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        client_group = json_decode(self.request.body).get(
+            'volume_client_group')
+        if "name" not in client_group:
+            logger.error("no name in request data")
+            raise exception.InvalidInput(_("no name input"))
+        volume_client_group = yield client.volume_client_group_update_name(
+            ctxt, group_id, client_group)
+
+        if "clients" in client_group:
+            volume_clients = client_group.pop("clients")
+            for volume_client in volume_clients:
+                yield self.check_volume_client(ctxt, client, volume_client)
+            volume_client_group = yield client.volume_client_group_update(
+                ctxt, group_id, volume_clients)
+        self.write(objects.json_encode({
+            "volume_client_group": volume_client_group
+        }))
 
     @gen.coroutine
     def delete(self, group_id):
@@ -279,3 +421,95 @@ class VolumeClientByGroup(ClusterAPIHandler):
         volume_clients = yield client.volume_client_get_all(
             ctxt, filters=filters)
         self.write(objects.json_encode({"volume_clients": volume_clients}))
+
+
+class VolumeClientGroupSetMutualChapHandler(ClusterAPIHandler,
+                                            CheckVolumeClientGroup):
+    @gen.coroutine
+    def post(self, group_id):
+        """开启/关闭双向CHAP
+        {"volume_client_group":{"mutual_chap_enable":false}}
+
+        {
+            "volume_client_group":
+            {
+                "mutual_chap_enable":true,
+                "mutual_username":"username",
+                "mutual_password":"password"
+            }
+        }
+
+        ---
+        tags:
+        - volume_client_group
+        summary: Enable/Disable mutual CHAP
+        description: Enable/Disable mutual CHAP
+        operationId: volume_client_groups.api.setMutualChap
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: VolumeClientGroup's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: volume_client_group(enable mutual chap)
+          description: Created volume_client_group object
+          required: true
+          schema:
+            type: object
+            properties:
+              volume_client_group:
+                type: object
+                description: volume_client_group object
+                properties:
+                  mutual_chap_enable:
+                    type: boolean
+                    description: enable mutual chap
+                  mutual_username:
+                    type: string
+                    description: mutual username
+                  mutual_password:
+                    type: string
+                    description: mutual password
+        - in: body
+          name: volume_client_group(disable mutual chap)
+          description: Created volume_client_group object
+          required: true
+          schema:
+            type: object
+            properties:
+              volume_client_group:
+                type: object
+                description: volume_client_group object
+                properties:
+                  mutual_chap_enable:
+                    type: boolean
+                    description: disable mutual chap, it must be false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body).get('volume_client_group')
+        logger.debug("set client group mutual chap, data %s", data)
+        if "mutual_chap_enable" not in data:
+            logger.error("no mutual_chap_enable in request body")
+            raise exception.InvalidInput(_("no mutual_chap_enable input"))
+        if data.get("mutual_chap_enable"):
+            yield self.check_volume_client_group_mutual_chap(ctxt, data)
+        client_group = yield client.set_mutual_chap(
+            ctxt, group_id, data)
+        self.write(objects.json_encode({
+            "volume_client_group": client_group
+        }))

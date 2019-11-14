@@ -77,12 +77,29 @@ from DSpace.DSI.handlers.user import UserHandler
 from DSpace.DSI.handlers.user import UserListHandler
 from DSpace.DSI.handlers.user import UserLoginHandler
 from DSpace.DSI.handlers.user import UserLogoutHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathAddVolumeHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathChangeClientGroupHandler
+from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathChapHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathCreateMappingHandler
 from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathHandler
 from DSpace.DSI.handlers.volume_access_paths import VolumeAccessPathListHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathMountGWHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathRemoveMappingHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathRemoveVolumeHandler
+from DSpace.DSI.handlers.volume_access_paths import \
+    VolumeAccessPathUnmountGWHandler
 from DSpace.DSI.handlers.volume_client_groups import VolumeClientByGroup
 from DSpace.DSI.handlers.volume_client_groups import VolumeClientGroupHandler
 from DSpace.DSI.handlers.volume_client_groups import \
     VolumeClientGroupListHandler
+from DSpace.DSI.handlers.volume_client_groups import \
+    VolumeClientGroupSetMutualChapHandler
 from DSpace.DSI.handlers.volume_snapshot import VolumeSnapshotActionHandler
 from DSpace.DSI.handlers.volume_snapshot import VolumeSnapshotHandler
 from DSpace.DSI.handlers.volume_snapshot import VolumeSnapshotListHandler
@@ -176,9 +193,27 @@ def get_routers():
         (r"/permissions/", PermissionHandler),
         (r"/volume_access_paths/", VolumeAccessPathListHandler),
         (r"/volume_access_paths/([0-9]*)/", VolumeAccessPathHandler),
+        (r"/volume_access_paths/([0-9]*)/add_volume/",
+            VolumeAccessPathAddVolumeHandler),
+        (r"/volume_access_paths/([0-9]*)/change_client_group/",
+            VolumeAccessPathChangeClientGroupHandler),
+        (r"/volume_access_paths/([0-9]*)/create_mapping/",
+            VolumeAccessPathCreateMappingHandler),
+        (r"/volume_access_paths/([0-9]*)/mount_gw/",
+            VolumeAccessPathMountGWHandler),
+        (r"/volume_access_paths/([0-9]*)/remove_mapping/",
+            VolumeAccessPathRemoveMappingHandler),
+        (r"/volume_access_paths/([0-9]*)/remove_volume/",
+            VolumeAccessPathRemoveVolumeHandler),
+        (r"/volume_access_paths/([0-9]*)/set_chap/",
+            VolumeAccessPathChapHandler),
+        (r"/volume_access_paths/([0-9]*)/unmount_gw/",
+            VolumeAccessPathUnmountGWHandler),
         (r"/volume_client_groups/", VolumeClientGroupListHandler),
         (r"/volume_client_groups/([0-9]*)/", VolumeClientGroupHandler),
         (r"/volume_client_groups/([0-9]*)/clients/", VolumeClientByGroup),
+        (r"/volume_client_groups/([0-9]*)/set_mutual_chap/",
+            VolumeClientGroupSetMutualChapHandler),
         (r"/volume_snapshots/", VolumeSnapshotListHandler),
         (r"/volume_snapshots/([0-9]*)/", VolumeSnapshotHandler),
         (r"/volume_snapshots/([0-9]*)/action/", VolumeSnapshotActionHandler),
