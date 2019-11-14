@@ -16,6 +16,40 @@ logger = logging.getLogger(__name__)
 class VolumeSnapshotListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - volume_snapshot
+        summary: volume snapshot List
+        description: Return a list of volume snapshots
+        operationId: volumesnapshots.api.listVolumeSnapshot
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: limit
+          description: Limit objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        - in: request
+          name: offset
+          description: Skip objects of response
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
@@ -30,6 +64,46 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - volume_snapshot
+        summary: Create volume_snapshot
+        description: Create volume_snapshot.
+        operationId: volumesnapshots.api.createVolumeSnapshot
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: volume_snapshot
+          description: Created volume_snapshot object
+          required: true
+          schema:
+            type: object
+            properties:
+              volume_snapshot:
+                type: object
+                description: volume_snapshot object
+                properties:
+                  volume_id:
+                    type: integer
+                    description: volume's id
+                  display_name:
+                    type: string
+                    description: volume_snapshot's name
+                  display_description:
+                    type: string
+                    description: description of volume snapshot
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         data = data.get("volume_snapshot")
@@ -43,6 +117,33 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
 class VolumeSnapshotHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, volume_snapshot_id):
+        """
+        ---
+        tags:
+        - volume_snapshot
+        summary: Detail of the volume_snapshot
+        description: Return detail infomation of volume_snapshot by id
+        operationId: volumesnapshots.api.volumeSnapshotDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Volume snapshot ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         expected_attrs = ['volume', 'pool', 'child_volumes']
@@ -52,6 +153,49 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, volume_snapshot_id):
+        """
+        ---
+        tags:
+        - volume_snapshot
+        summary: Update volume_snapshot
+        description: update volume_snapshot.
+        operationId: volumesnapshots.api.updateVolumeSnapshot
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Volume_snapshot ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: volume_snapshot
+          description: updated volume_snapshot object
+          required: true
+          schema:
+            type: object
+            properties:
+              volume_snapshot:
+                type: object
+                properties:
+                  display_name:
+                    type: string
+                    description: volume_snapshot's name
+                  display_description:
+                    type: string
+                    description: description of volume snapshot
+        responses:
+        "200":
+          description: successful operation
+        """
         # 编辑:改名及描述
         ctxt = self.get_context()
         data = json_decode(self.request.body)
@@ -65,6 +209,33 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def delete(self, volume_snapshot_id):
+        """
+        ---
+        tags:
+        - volume_snapshot
+        summary: Delete the volume_snapshot by id
+        description: delete volume_snapshot by id
+        operationId: volumesnapshots.api.deleteVolumeSnapshot
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Volume_snapshot's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_delete(
@@ -82,6 +253,67 @@ class VolumeSnapshotActionHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def put(self, volume_snapshot_id):
+        """
+        ---
+        tags:
+        - volume_snapshot
+        summary: Volume_snapshot clone
+        description: clone volume_snapshot many times.
+        operationId: volumesnapshots.api.volumeSnapshotClone
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Volume_snapshot ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: volume_snapshot
+          description: clone the volume_snapshot object
+          required: true
+          schema:
+            type: object
+            description: how to clone the volume_snapshot
+            properties:
+              action:
+                type: string
+                description: volume_snapshot's action, it can be clone
+              volume_snapshot:
+                type: object
+                properties:
+                  batch_create:
+                    type: boolean
+                    description: Do multiple operations at once or not
+                  number:
+                    type: integer
+                    format: int32
+                    description: How many times you want.
+                  pool_id:
+                    type: integer
+                    format: int32
+                    description: Pool ID
+                  display_name:
+                    type: string
+                    description: volume_snapshot's name
+                  display_description:
+                    type: string
+                    description: description of volume snapshot
+                  is_link_clone:
+                    type: boolean
+                    description: lonk clone or not
+        responses:
+        "200":
+          description: successful operation
+        """
         # action:克隆
         ctxt = self.get_context()
         data = json_decode(self.request.body)
