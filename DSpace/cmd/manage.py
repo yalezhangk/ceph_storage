@@ -158,7 +158,7 @@ class DbCommands(object):
 
     @args('data', type=str, help='Init data')
     def sys_config(self, data):
-        configs = data.split(',')
+        configs = data.split('|')
         ctxt = context.get_context()
         allowed = ['image_name', 'image_namespace', 'dspace_version',
                    'admin_ip_address', 'admin_port', 'agent_port',
@@ -182,7 +182,7 @@ class DbCommands(object):
 
     @args('data', type=str, help='Init data')
     def rpc_service(self, data):
-        configs = data.split(',')
+        configs = data.split('|')
         ctxt = context.get_context()
         rpc_service = objects.RPCService(
             ctxt
