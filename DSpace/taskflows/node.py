@@ -439,7 +439,7 @@ class NodeTask(object):
         config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
         # rm config file
         file_tool = FileTool(ssh)
-        file_tool.rm(config_dir)
+        file_tool.rm("{}/dsa.conf".format(config_dir))
 
     def ceph_config_update(self, values):
         path = self._wapper('/etc/ceph/ceph.conf')
