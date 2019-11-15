@@ -97,6 +97,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "cluster_platform_check")
         return response
 
+    def check_admin_node_status(self, ctxt):
+        response = self.call(ctxt, "check_admin_node_status")
+        return response
+
     def cluster_admin_nodes_get(self, ctxt):
         response = self.call(ctxt, "cluster_admin_nodes_get")
         return response

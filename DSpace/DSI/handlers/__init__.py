@@ -16,6 +16,7 @@ from DSpace.DSI.handlers.ceph_config import CephConfigActionHandler
 from DSpace.DSI.handlers.ceph_config import CephConfigContentHandler
 from DSpace.DSI.handlers.ceph_config import CephConfigListHandler
 from DSpace.DSI.handlers.clusters import ClusterAdminNodesHandler
+from DSpace.DSI.handlers.clusters import ClusterCheckAdminNodeHandler
 from DSpace.DSI.handlers.clusters import ClusterDetectHandler
 from DSpace.DSI.handlers.clusters import ClusterHandler
 from DSpace.DSI.handlers.clusters import ClusterHistoryMetricsHandler
@@ -129,6 +130,7 @@ def get_routers():
         (r"/ceph_configs/content/", CephConfigContentHandler),
         (r"/clusters/", ClusterHandler),
         (r"/clusters/get_admin_nodes/", ClusterAdminNodesHandler),
+        (r"/clusters/check_admin_node_status/", ClusterCheckAdminNodeHandler),
         (r"/cluster_detect/", ClusterDetectHandler),
         (r"/clusters/history_metrics/", ClusterHistoryMetricsHandler),
         (r"/clusters/host_status/", ClusterHostStatus),

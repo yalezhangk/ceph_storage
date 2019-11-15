@@ -37,6 +37,44 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         """Cluster import"""
         pass
 
+    def check_admin_node_status(self, ctxt):
+        clusters = objects.ClusterList.get_all(ctxt)
+        if not len(clusters):
+            return True
+        for c in clusters:
+            nodes = objects.NodeList.get_all(
+                ctxt,
+                filters={
+                    "cluster_id": c.id
+                }
+            )
+            if len(nodes):
+                return False
+        return True
+
+    def _admin_node_delete(self, ctxt, node):
+        try:
+            node_task = NodeTask(ctxt, node)
+            node_task.chrony_uninstall()
+            node_task.node_exporter_uninstall()
+            node_task.dspace_agent_uninstall()
+            rpc_services = objects.RPCServiceList.get_all(
+                ctxt,
+                filters={
+                    "cluster_id": node.cluster_id,
+                    "service_name": "agent",
+                    "node_id": node.id
+                }
+            )
+            for rpc_service in rpc_services:
+                rpc_service.destroy()
+            node.destroy()
+            logger.debug("Admin node removed success!")
+        except Exception as e:
+            node.status = s_fields.NodeStatus.ERROR
+            node.save()
+            logger.exception("Admin node remove error: %s", e)
+
     def cluster_platform_check(self, ctxt):
         """Judge platform init success"""
         logger.debug("cluster platform check")
@@ -47,6 +85,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
         admin_ips = admin_ips.split(',')
 
+        success = True
         cluster = clusters[0]
         ctxt.cluster_id = cluster.id
         for ip_address in admin_ips:
@@ -54,8 +93,59 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 ctxt, filters={"ip_address": ip_address}
             )
             if not len(nodes) or nodes[0].status != s_fields.NodeStatus.ACTIVE:
-                return False
-        return True
+                success = False
+        if not success:
+            # clean cluster infos
+            for c in clusters:
+                # remove sysconfigs
+                sysconfigs = objects.SysConfigList.get_all(
+                    ctxt,
+                    filters={
+                        "cluster_id": c.id
+                    }
+                )
+                for conf in sysconfigs:
+                    conf.destroy()
+                # remove alert rules
+                alert_rules = objects.AlertRuleList.get_all(
+                    ctxt,
+                    filters={
+                        "cluster_id": c.id
+                    }
+                )
+                for rule in alert_rules:
+                    rule.destroy()
+                # remove networks
+                networks = objects.NetworkList.get_all(
+                    ctxt,
+                    filters={
+                        "cluster_id": c.id
+                    }
+                )
+                for net in networks:
+                    net.destroy()
+                # remove disks
+                disks = objects.DiskList.get_all(
+                    ctxt,
+                    filters={
+                        "cluster_id": c.id
+                    }
+                )
+                for disk in disks:
+                    disk.destroy()
+                # remove nodes
+                nodes = objects.NodeList.get_all(
+                    ctxt,
+                    filters={
+                        "cluster_id": c.id
+                    }
+                )
+                for node in nodes:
+                    logger.debug("delete admin node %s start", node.ip_address)
+                    self.task_submit(self._admin_node_delete, ctxt, node)
+                # remove cluster
+                c.destroy()
+        return success
 
     def cluster_admin_nodes_get(self, ctxt):
         logger.debug("get admin nodes info")
