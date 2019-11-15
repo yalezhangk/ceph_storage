@@ -94,9 +94,17 @@ class OsdListHandler(ClusterAPIHandler):
     def _osd_create_check(self, osd):
         osd_type = osd.get("type")
         journal_id = osd.get('journal_partition_id')
+        if not journal_id:
+            osd.pop('journal_partition_id', None)
         db_id = osd.get('db_partition_id')
+        if not db_id:
+            osd.pop('db_partition_id', None)
         wal_id = osd.get('wal_partition_id')
+        if not wal_id:
+            osd.pop('wal_partition_id', None)
         cache_id = osd.get('cache_partition_id')
+        if not cache_id:
+            osd.pop('cache_partition_id', None)
         if osd_type not in s_fields.OsdType.ALL:
             raise exception.InvalidInput(_("Osd type err"))
         if osd_type == s_fields.OsdType.BLUESTORE:
