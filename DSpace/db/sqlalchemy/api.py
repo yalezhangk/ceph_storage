@@ -1161,6 +1161,7 @@ def _osd_load_attr(osd, expected_attrs=None):
 @require_context
 def osd_create(context, values):
     osd_ref = models.Osd()
+    osd_ref.cluster_id = context.cluster_id
     osd_ref.update(values)
     session = get_session()
     with session.begin():
