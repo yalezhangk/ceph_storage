@@ -120,6 +120,8 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_create_partition_check(self, ctxt, data, key, role, disk):
         partition_id = data.get(key)
+        if not partition_id:
+            return
         partition = objects.DiskPartition.get_by_id(ctxt, partition_id)
         if partition.status != s_fields.DiskStatus.AVAILABLE:
             raise exception.InvalidInput(
