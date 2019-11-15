@@ -13,6 +13,10 @@ from DSpace.exception import RunCommandArgsError
 logger = logging.getLogger(__name__)
 
 
+def _bytes2str(string):
+    return string.decode('utf-8') if isinstance(string, bytes) else string
+
+
 class Executor(object):
     ssh = None
 
@@ -30,10 +34,8 @@ class Executor(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         stdout, stderr = cmd.communicate()
-        stdout = stdout.decode('utf-8') if stdout else stdout
-        stderr = stderr.decode('utf-8') if stderr else stderr
         rc = cmd.returncode
-        return (rc, stdout, stderr)
+        return (rc, _bytes2str(stdout), _bytes2str(stderr))
 
     def write(self, filename, content):
         f = open(filename, "w")
@@ -91,7 +93,7 @@ class SSHExecutor(Executor):
         rc = stdout.channel.recv_exit_status()
         # TODO: Need a better way.
         stdout, stderr = stdout.read(), stderr.read()
-        return (rc, stdout, stderr)
+        return (rc, _bytes2str(stdout), _bytes2str(stderr))
 
     def write(self, filename, content):
         ftp = self.ssh.open_sftp()
