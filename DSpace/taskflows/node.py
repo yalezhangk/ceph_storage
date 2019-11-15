@@ -279,7 +279,8 @@ class NodeTask(object):
                 logger.error("dsa cann't connect in 30 seconds")
                 raise exc.InvalidInput("dsa connect error")
             try:
-                self.get_agent()
+                agent = self.get_agent()
+                agent.check_dsa_status(self.ctxt)
                 break
             except _Rendezvous:
                 logger.debug("dsa not ready, will try connect after 1 second")

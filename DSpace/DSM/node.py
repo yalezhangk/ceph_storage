@@ -81,6 +81,10 @@ class NodeHandler(AdminBaseHandler):
     def node_delete(self, ctxt, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
         # judge node could be delete
+        allowed_status = [s_fields.NodeStatus.ACTIVE,
+                          s_fields.NodeStatus.ERROR]
+        if node.status not in allowed_status:
+            raise exc.InvalidInput(_("Node status not allow!"))
         if node.role_admin:
             raise exc.InvalidInput(_("admin role could not delete!"))
         if node.role_monitor:

@@ -37,6 +37,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_package_uninstall")
         return response
 
+    def check_dsa_status(self, ctxt):
+        response = self.call(ctxt, "check_dsa_status")
+        return response
+
     def ceph_osd_create(self, ctxt, osd):
         response = self.call(ctxt, "ceph_osd_create", osd=osd)
         return response
