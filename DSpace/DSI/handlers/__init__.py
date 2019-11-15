@@ -66,6 +66,7 @@ from DSpace.DSI.handlers.pools import PoolMetricsHandler
 from DSpace.DSI.handlers.pools import PoolMetricsHistoryHandler
 from DSpace.DSI.handlers.pools import PoolOsdsHandler
 from DSpace.DSI.handlers.pools import PoolPolicyHandler
+from DSpace.DSI.handlers.probe import ProbeClusterNodesHandler
 from DSpace.DSI.handlers.racks import RackHandler
 from DSpace.DSI.handlers.racks import RackListHandler
 from DSpace.DSI.handlers.rpc_service import RpcServiceListHandler
@@ -183,6 +184,7 @@ def get_routers():
         (r"/pools/([0-9]*)/metrics/", PoolMetricsHandler),
         (r"/pools/([0-9]*)/osds/", PoolOsdsHandler),
         (r"/pools/([0-9]*)/update_security_policy/", PoolPolicyHandler),
+        (r"/probe_cluster_nodes/", ProbeClusterNodesHandler),
         (r"/racks/", RackListHandler),
         (r"/racks/([0-9]*)/", RackHandler),
         (r"/rpc_services/", RpcServiceListHandler),

@@ -19,6 +19,7 @@ from DSpace.DSM.network import NetworkHandler
 from DSpace.DSM.node import NodeHandler
 from DSpace.DSM.osd import OsdHandler
 from DSpace.DSM.pool import PoolHandler
+from DSpace.DSM.probe import ProbeHandler
 from DSpace.DSM.prometheus import PrometheusHandler
 from DSpace.DSM.rack import RackHandler
 from DSpace.DSM.service import ServiceHandler
@@ -51,6 +52,7 @@ class AdminHandler(ActionLogHandler,
                    NodeHandler,
                    OsdHandler,
                    PoolHandler,
+                   ProbeHandler,
                    PrometheusHandler,
                    RackHandler,
                    ServiceHandler,

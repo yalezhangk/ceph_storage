@@ -199,6 +199,11 @@ class Invalid(StorException):
     code = 400
 
 
+class SSHInvalid(Invalid):
+    message = _("SSH Authentication failed: ip(%(ip)s) password(%(password)s)")
+    code = 400
+
+
 class VolumeAccessPathNotFound(NotFound):
     message = _("VolumeAccessPath %(access_path_id)s could not be found.")
 
