@@ -59,7 +59,7 @@ class Service(ToolBase):
         cmd = ["systemctl", "status", name, "|", "grep", "Active", "|",
                "awk", "'{{print $2}}'"]
         rc, stdout, stderr = self.run_command(cmd)
-        status = stdout.strip().decode('utf-8')
+        status = stdout.strip()
         if status != "active":
             status = "inactive"
         return status
