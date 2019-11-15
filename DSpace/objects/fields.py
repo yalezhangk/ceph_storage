@@ -284,8 +284,9 @@ class AllResourceType(BaseStorEnum):
     CLUSTER = 'cluster'
     VOLUME = 'volume'
     SNAPSHOT = 'snapshot'
+    ALERT_LOG = 'alert_log'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT)
+           VOLUME, SNAPSHOT, ALERT_LOG)
 
 
 class AllActionType(BaseStorEnum):
@@ -301,6 +302,7 @@ class AllActionType(BaseStorEnum):
     VOLUME_ROLLBACK = 'volume_rollback'
     VOLUME_UNLINK = 'volume_unlink'
     CLONE = 'clone'
+    SET_ALL_READED = 'set_all_readed'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE)
@@ -327,6 +329,9 @@ class ResourceAction(object):
     @classmethod
     def relation_resource_action(cls):
         relation = {
+            AllResourceType.ALERT_LOG:
+                [AllActionType.SET_ALL_READED, AllActionType.DELETE],
+
             AllResourceType.ALERT_GROUP:
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.MODIFY_ALERT_RULES,

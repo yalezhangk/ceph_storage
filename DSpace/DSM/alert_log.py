@@ -4,6 +4,7 @@ from oslo_utils import timeutils
 from DSpace import exception as exc
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.utils.mail import send_mail
 
@@ -191,8 +192,12 @@ class AlertLogHandler(AdminBaseHandler):
         if readed is not True:
             raise exc.InvalidInput(message="param 'readed' must be True")
         logger.info('begin alert_log set all_readed')
+        begin_action = self.begin_action(
+            ctxt, Resource.ALERT_LOG, Action.SET_ALL_READED)
         result = objects.AlertLogList.update(
             ctxt, filters, {'readed': True})
+        self.finish_action(
+            begin_action, resource_name='alert_log')
         return result
 
     def alert_logs_set_deleted(self, ctxt, alert_log_data):
@@ -200,9 +205,13 @@ class AlertLogHandler(AdminBaseHandler):
         if not before_time:
             raise exc.InvalidInput(message="param 'before_time' is required")
         logger.info('begin alert_log set deleted')
+        begin_action = self.begin_action(
+            ctxt, Resource.ALERT_LOG, Action.DELETE)
         filters = {'created_at': before_time}
         now = timeutils.utcnow()
         updates = {'deleted': True, 'deleted_at': now}
         result = objects.AlertLogList.update(
             ctxt, filters, updates)
+        self.finish_action(
+            begin_action, resource_name='alert_log')
         return result
