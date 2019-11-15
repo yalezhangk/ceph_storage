@@ -110,10 +110,20 @@ class Docker(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def status(self, name):
+        """Show docker container status
+
+        :param name: the container name.
+        :returns: status of container.
+                  error: not exists
+                  inactive: stop
+                  active: running
+        """
         logger.debug("Docker status: {}".format(name))
         cmd = ["docker", "inspect", "-f", "{{.State.Running}}", name]
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
+            if "No such object" in stderr:
+                return "error"
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         if stdout.strip().decode('utf-8') == "true":
