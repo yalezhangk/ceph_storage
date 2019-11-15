@@ -95,9 +95,6 @@ class NodeListHandler(ClusterAPIHandler):
                   hostname:
                     type: string
                     description: node's hostname
-                  cluster_id:
-                    type: string
-                    description: node's cluster id
                   ip_address:
                     type: string
                     description: node's ip address
@@ -113,6 +110,12 @@ class NodeListHandler(ClusterAPIHandler):
                   public_ip:
                     type: string
                     description: node's public ip
+                  roles:
+                    type: string
+                    description: node's role, it can be
+                                 monitor/storage/mds/radosgw/blockgw.
+                                 And if you want more roles, you can
+                                 use ',' to connect each role.
         - in: body
           name: nodes
           description: Created lots of node object
@@ -128,9 +131,6 @@ class NodeListHandler(ClusterAPIHandler):
                     hostname:
                       type: string
                       description: node's hostname
-                    cluster_id:
-                      type: string
-                      description: node's cluster id
                     ip_address:
                       type: string
                       description: node's ip address
@@ -146,6 +146,12 @@ class NodeListHandler(ClusterAPIHandler):
                     public_ip:
                       type: string
                       description: node's public ip
+                    roles:
+                      type: string
+                      description: node's role, it can be
+                                   monitor/storage/mds/radosgw/blockgw.
+                                   And if you want more roles, you can
+                                   use ',' to connect each role.
         responses:
         "200":
           description: successful operation
