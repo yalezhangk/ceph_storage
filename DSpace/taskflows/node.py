@@ -206,14 +206,25 @@ class NodeTask(object):
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
         docker_tool = DockerTool(ssh)
-        docker_tool.stop('{}_chrony'.format(image_namespace))
-        docker_tool.rm('{}_chrony'.format(image_namespace))
-        docker_tool.image_rm(
-            "{}/chrony:{}".format(image_namespace, dspace_version),
-            force=True)
+        image_name = '{}_chrony'.format(image_namespace)
+        status = docker_tool.status(image_name)
+        if status == 'active':
+            docker_tool.stop(image_name)
+            docker_tool.rm(image_name)
+        if status == 'inactive':
+            docker_tool.rm(image_name)
+        try:
+            docker_tool.image_rm(
+                "{}/chrony:{}".format(image_namespace, dspace_version),
+                force=True)
+        except exc.StorException as e:
+            logger.warning("remove chrony image failed, %s", e)
         # rm config file
         file_tool = FileTool(ssh)
-        file_tool.rm("{}/chrony.conf".format(config_dir))
+        try:
+            file_tool.rm("{}/chrony.conf".format(config_dir))
+        except exc.StorException as e:
+            logger.warning("remove chrony config failed, %s", e)
 
     def chrony_update(self):
         ssh = self.get_ssh_executor()
