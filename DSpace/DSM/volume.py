@@ -151,13 +151,15 @@ class VolumeHandler(AdminBaseHandler):
         if has_snap:
             raise exception.InvalidInput(
                 reason=_('The volume {} has snapshot').format(volume.name))
-        if volume.access_path_id:
+        if volume.volume_access_path:
             raise exception.InvalidInput(
                 reason=_('The volume {} has related access_path').format(
                     volume.name))
 
     def volume_delete(self, ctxt, volume_id):
-        volume = self.volume_get(ctxt, volume_id)
+        expected_attrs = ['volume_access_path']
+        volume = objects.Volume.get_by_id(
+            ctxt, volume_id, expected_attrs=expected_attrs)
         self._verify_volume_del(ctxt, volume)
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.DELETE)
@@ -265,7 +267,9 @@ class VolumeHandler(AdminBaseHandler):
         return volume
 
     def volume_rollback(self, ctxt, volume_id, data):
-        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        expected_attrs = ['volume_access_path']
+        volume = objects.Volume.get_by_id(ctxt, volume_id,
+                                          expected_attrs=expected_attrs)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         self._check_volume_status(volume)
@@ -277,7 +281,10 @@ class VolumeHandler(AdminBaseHandler):
             raise exception.InvalidInput(_(
                 'The volume_id {} has not the snap_id {}').format(
                 volume_id, snap_id))
-        # todo other verify
+        if volume.volume_access_path:
+            raise exception.InvalidInput(_(
+                'The volume {} has access_path, can not rollback').format(
+                volume_id, snap_id))
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_ROLLBACK)
         extra_data = {'snap_name': snap.uuid}
@@ -395,6 +402,12 @@ class VolumeHandler(AdminBaseHandler):
 
     def _verify_clone_data(self, ctxt, snapshot_id, data):
         display_name = data.get('display_name')
+        is_exist = objects.VolumeList.get_all(
+            ctxt, filters={'display_name': display_name})
+        if is_exist:
+            raise exception.InvalidInput(
+                reason=_('Volume name {} already exists!').format(
+                    display_name))
         display_description = data.get('display_description')
         c_pool_id = data.get('pool_id')
         is_link_clone = data.get('is_link_clone')
@@ -427,7 +440,7 @@ class VolumeHandler(AdminBaseHandler):
         # create volume
         batch_create = data.get('batch_create')
         if batch_create:
-            # 批量创建
+            # 批量克隆
             number = data.get('number')
             prefix_name = verify_data['display_name']
             new_volumes = []

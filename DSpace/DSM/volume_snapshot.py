@@ -27,26 +27,42 @@ class VolumeSnapshotHandler(AdminBaseHandler):
     def volume_snapshot_get_count(self, ctxt, filters=None):
         return objects.VolumeSnapshotList.get_count(ctxt, filters=filters)
 
-    def volume_snapshot_create(self, ctxt, data):
+    def _check_snap_create(self, ctxt, data):
+        display_name = data.get('display_name')
+        is_exist = objects.VolumeSnapshotList.get_all(
+            ctxt, filters={'display_name': display_name})
+        if is_exist:
+            raise exception.InvalidInput(
+                reason=_('snap name {} already exists!').format(
+                    display_name))
         volume_id = data.get('volume_id')
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
-        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
-        begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
-                                         AllActionType.CREATE)
+        pool_id = volume.pool_id
+        pool = objects.Pool.get_by_id(ctxt, pool_id)
+        if not pool:
+            raise exception.PoolNotFound(pool_id=pool_id)
         snap_data = {
             'cluster_id': ctxt.cluster_id,
             'uuid': str(uuid.uuid4()),
-            'display_name': data.get('display_name'),
+            'display_name': display_name,
             'status': s_fields.VolumeSnapshotStatus.CREATING,
             'display_description': data.get('display_description'),
-            'volume_id': data.get('volume_id')
+            'volume_id': volume_id,
+            'volume_name': volume.volume_name,
+            'pool_name': pool.pool_name
         }
+        return snap_data
+
+    def volume_snapshot_create(self, ctxt, data):
+        snap_data = self._check_snap_create(ctxt, data)
+        begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
+                                         AllActionType.CREATE)
+        extra_data = {'volume_name': snap_data.pop('volume_name'),
+                      'pool_name': snap_data.pop('pool_name')}
         snap = objects.VolumeSnapshot(ctxt, **snap_data)
         snap.create()
-        extra_data = {'volume_name': volume.volume_name,
-                      'pool_name': pool.pool_name}
         self.task_submit(self._snap_create, ctxt, snap, extra_data,
                          begin_action)
         logger.info('snap create task has begin,snap_name=%s',
@@ -127,24 +143,39 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         ).get_client()
         wb_client.send_message(ctxt, snap, 'DELETED', msg)
 
-    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
-        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id)
+    def _check_del_snap(self, ctxt, volume_snapshot_id):
+        expected_attrs = ['child_volumes']
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id,
+                                                expected_attrs=expected_attrs)
         if not snap:
             raise exception.VolumeSnapshotNotFound(
                 volume_snapshot_id=volume_snapshot_id)
-        volume = objects.Volume.get_by_id(ctxt, snap.volume_id)
+        volume_id = snap.volume_id
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
-            raise exception.VolumeNotFound(volume_id=snap.volume_id)
-        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+            raise exception.VolumeNotFound(volume_id=volume_id)
+        pool_id = volume.pool_id
+        pool = objects.Pool.get_by_id(ctxt, pool_id)
+        if not volume:
+            raise exception.PoolNotFound(pool_id=pool_id)
+        if snap.child_volumes:
+            raise exception.InvalidInput(_(
+                'snapshot {} has clone volume, can not del'
+            ).format(snap.display_name))
+        return {
+            'volume_name': volume.volume_name,
+            'pool_name': pool.pool_name,
+            'snap': snap
+        }
+
+    def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
+        extra_data = self._check_del_snap(ctxt, volume_snapshot_id)
         begin_action = self.begin_action(
             ctxt, AllResourceType.SNAPSHOT, AllActionType.DELETE)
-        snap_data = {'volume_name': volume.volume_name,
-                     'pool_name': pool.pool_name,
-                     'snap': snap}
-        snap = snap_data['snap']
+        snap = extra_data['snap']
         snap.status = s_fields.VolumeSnapshotStatus.DELETING
         snap.save()
-        self.task_submit(self._snap_delete, ctxt, snap, snap_data,
+        self.task_submit(self._snap_delete, ctxt, snap, extra_data,
                          begin_action)
         logger.info('snap delete task has begin,snap_name=%s',
                     snap.display_name)
