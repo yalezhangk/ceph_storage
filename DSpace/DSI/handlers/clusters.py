@@ -49,12 +49,6 @@ class ClusterHandler(BaseAPIHandler):
         produces:
         - application/json
         parameters:
-        - in: header
-          name: X-Cluster-Id
-          description: Cluster ID
-          schema:
-            type: string
-          required: true
         - in: body
           name: cluster
           description: Created cluster object
