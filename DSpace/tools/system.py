@@ -78,7 +78,7 @@ class System(ToolBase):
         cmd = ['ls', '/sys/class/net']
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
-            stdout = stdout.strip().decode('utf-8')
+            stdout = stdout.strip()
             nics = stdout.split('\n')
             return nics
         raise RunCommandError(cmd=cmd, return_code=rc,
@@ -98,8 +98,8 @@ class System(ToolBase):
                                   stdout=secondary_data, stderr=stderr)
 
         net_info = {}
-        primary_data = primary_data.strip().decode('utf-8')
-        secondary_data = secondary_data.strip().decode('utf-8')
+        primary_data = primary_data.strip()
+        secondary_data = secondary_data.strip()
         self._parse_ip_output(primary_data, net_info)
         self._parse_ip_output(secondary_data, net_info, secondary=True)
         return net_info
@@ -108,7 +108,7 @@ class System(ToolBase):
         cmd = ['hostname']
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
-            hostname = stdout.strip().decode('utf-8')
+            hostname = stdout.strip()
             return hostname
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
@@ -143,7 +143,7 @@ class System(ToolBase):
         cmd = ['getenforce']
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
-            result = stdout.strip().decode('utf-8')
+            result = stdout.strip()
             if result == 'Disabled':
                 return True
             else:
