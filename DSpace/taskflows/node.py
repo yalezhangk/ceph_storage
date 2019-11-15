@@ -169,6 +169,26 @@ class NodeTask(object):
         )
         return dsa_conf
 
+    def _node_remove_container(self, name, ssh):
+        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
+                                                          "dspace_version")
+        docker_tool = DockerTool(ssh)
+        container_name = '{}_{}'.format(image_namespace, name)
+        status = docker_tool.status(container_name)
+        if status == 'active':
+            docker_tool.stop(container_name)
+            docker_tool.rm(container_name)
+        if status == 'inactive':
+            docker_tool.rm(container_name)
+        try:
+            docker_tool.image_rm(
+                "{}/{}:{}".format(image_namespace, name, dspace_version),
+                force=True)
+        except exc.StorException as e:
+            logger.warning("remove %s image failed, %s", name, e)
+
     def chrony_install(self):
         ssh = self.get_ssh_executor()
         # install package
@@ -200,25 +220,8 @@ class NodeTask(object):
         logger.debug("uninstall chrony")
         ssh = self.get_ssh_executor()
         # remove container and image
+        self._node_remove_container("chrony", ssh)
         config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        docker_tool = DockerTool(ssh)
-        image_name = '{}_chrony'.format(image_namespace)
-        status = docker_tool.status(image_name)
-        if status == 'active':
-            docker_tool.stop(image_name)
-            docker_tool.rm(image_name)
-        if status == 'inactive':
-            docker_tool.rm(image_name)
-        try:
-            docker_tool.image_rm(
-                "{}/chrony:{}".format(image_namespace, dspace_version),
-                force=True)
-        except exc.StorException as e:
-            logger.warning("remove chrony image failed, %s", e)
         # rm config file
         file_tool = FileTool(ssh)
         try:
@@ -264,16 +267,7 @@ class NodeTask(object):
         logger.debug("uninstall node exporter")
         ssh = self.get_ssh_executor()
         # remove container and image
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        docker_tool = DockerTool(ssh)
-        docker_tool.stop('{}_node_exporter'.format(image_namespace))
-        docker_tool.rm('{}_node_exporter'.format(image_namespace))
-        docker_tool.image_rm(
-            "{}/node_exporter:{}".format(image_namespace, dspace_version),
-            force=True)
+        self._node_remove_container("node_exporter", ssh)
 
     def ceph_mon_install(self):
         logger.debug("install ceph mon")
@@ -441,18 +435,8 @@ class NodeTask(object):
     def dspace_agent_uninstall(self):
         logger.debug("uninstall chrony")
         ssh = self.get_ssh_executor()
+        self._node_remove_container("dsa", ssh)
         config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        # remove container and image
-        docker_tool = DockerTool(ssh)
-        docker_tool.stop('{}_dsa'.format(image_namespace))
-        docker_tool.rm('{}_dsa'.format(image_namespace))
-        docker_tool.image_rm(
-            "{}/dspace:{}".format(image_namespace, dspace_version),
-            force=True)
         # rm config file
         file_tool = FileTool(ssh)
         file_tool.rm(config_dir)
