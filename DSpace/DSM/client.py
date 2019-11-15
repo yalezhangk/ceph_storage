@@ -938,6 +938,13 @@ class AdminClient(BaseClient):
                              data=data)
         return response
 
+    #####################
+
+    def probe_cluster_nodes(self, ctxt, ip, password, user="root", port=22):
+        response = self.call(ctxt, "probe_cluster_nodes",
+                             ip=ip, password=password, port=port, user=user)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
