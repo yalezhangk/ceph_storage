@@ -7,6 +7,7 @@ import traceback
 from tornado.web import RequestHandler
 
 from DSpace import exception
+from DSpace import objects
 from DSpace.context import RequestContext
 from DSpace.DSI.session import Session
 from DSpace.DSM.client import AdminClientManager
@@ -52,7 +53,10 @@ class BaseAPIHandler(RequestHandler):
                      self.request.headers.get("X-Forwarded-For") or
                      self.request.remote_ip)
         ctxt.client_ip = client_ip
-        ctxt.cluster_id = self.get_cluster_id()
+        cluster_id = self.get_cluster_id()
+        if cluster_id:
+            objects.Cluster.get_by_id(ctxt, cluster_id)
+        ctxt.cluster_id = cluster_id
         return ctxt
 
     def get_paginated_args(self):
