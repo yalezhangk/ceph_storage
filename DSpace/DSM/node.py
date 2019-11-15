@@ -43,6 +43,7 @@ class NodeHandler(AdminBaseHandler):
             if node.role_object_gateway:
                 self._rgw_uninstall(ctxt, node)
             node_task = NodeTask(ctxt, node)
+            node_task.ceph_package_uninstall()
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
@@ -125,14 +126,59 @@ class NodeHandler(AdminBaseHandler):
             cephconf.save()
         return cephconf
 
+    def _mon_install_check(self, ctxt, node):
+        public_network = objects.sysconfig.sys_config_get(
+            ctxt, key="public_cidr"
+        )
+        cluster_network = objects.sysconfig.sys_config_get(
+            ctxt, key="cluster_cidr"
+        )
+        if not public_network or not cluster_network:
+            raise exc.InvalidInput(_("Please set network planning"))
+
+    def _mon_uninstall_check(self, ctxt, node):
+        osd_num = objects.OsdList.get_count(ctxt)
+        mon_num = objects.NodeList.get_count(
+            ctxt, filters={"role_monitor": True}
+        )
+        if osd_num and mon_num == 1:
+            raise exc.InvalidInput(_("Please remove osd first!"))
+
+    def _storage_install_check(self, ctxt, node):
+        pass
+
+    def _storage_uninstall_check(self, ctxt, node):
+        node_osds = objects.OsdList.get_count(
+            ctxt, filters={"node_id": node.id}
+        )
+        if node_osds:
+            raise exc.InvalidInput(_("Node %s has osd!" % node.hostname))
+
+    def _mds_install_check(self, ctxt, node):
+        pass
+
+    def _mds_uninstall_check(self, ctxt, node):
+        pass
+
+    def _rgw_install_check(self, ctxt, node):
+        pass
+
+    def _rgw_uninstall_check(self, ctxt, node):
+        pass
+
+    def _bgw_install_check(self, ctxt, node):
+        pass
+
+    def _bgw_uninstall_check(self, ctxt, node):
+        pass
+
     def _mon_install(self, ctxt, node):
         node.status = s_fields.NodeStatus.DEPLOYING
         node.role_monitor = True
         node.save()
 
         mon_nodes = objects.NodeList.get_all(
-            ctxt, filters={"cluster_id": ctxt.cluster_id,
-                           "role_monitor": True}
+            ctxt, filters={"role_monitor": True}
         )
         if len(mon_nodes) == 1:
             # init ceph config
@@ -161,7 +207,7 @@ class NodeHandler(AdminBaseHandler):
                                     value_type=value.get('type'))
         else:
             mon_host = ",".join(
-                [n.public_ip for n in mon_nodes]
+                [str(n.public_ip) for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
             self._set_ceph_conf(ctxt,
@@ -182,8 +228,7 @@ class NodeHandler(AdminBaseHandler):
         node.save()
 
         mon_nodes = objects.NodeList.get_all(
-            ctxt, filters={"cluster_id": ctxt.cluster_id,
-                           "role_monitor": True}
+            ctxt, filters={"role_monitor": True}
         )
         task = NodeTask(ctxt, node)
         if len(mon_nodes):
@@ -253,10 +298,7 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
-    def _node_roles_set(self, ctxt, node, data):
-
-        i_roles = data.get('install_roles')
-        u_roles = data.get('uninstall_roles')
+    def _node_roles_set(self, ctxt, node, i_roles, u_roles):
         install_role_map = {
             'monitor': self._mon_install,
             'storage': self._storage_install,
@@ -271,7 +313,6 @@ class NodeHandler(AdminBaseHandler):
             'radosgw': self._rgw_uninstall,
             'blockgw': self._bgw_uninstall,
         }
-
         try:
             for role in i_roles:
                 func = install_role_map.get(role)
@@ -296,10 +337,35 @@ class NodeHandler(AdminBaseHandler):
 
     def node_roles_set(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
-        node.status = s_fields.NodeStatus.DEPLOYING
-        node.save()
+        if node.status != s_fields.NodeStatus.ACTIVE:
+            raise exc.InvalidInput(_("Only host's status is active can set"
+                                     "role(host_name: %s)" % node.hostname))
 
-        self.task_submit(self._node_roles_set, ctxt, node, data)
+        i_roles = data.get('install_roles')
+        u_roles = data.get('uninstall_roles')
+        install_check_role_map = {
+            'monitor': self._mon_install_check,
+            'storage': self._storage_install_check,
+            'mds': self._mds_install_check,
+            'radosgw': self._rgw_install_check,
+            'blockgw': self._bgw_install_check
+        }
+        uninstall_check_role_map = {
+            'monitor': self._mon_uninstall_check,
+            'storage': self._storage_uninstall_check,
+            'mds': self._mds_uninstall_check,
+            'radosgw': self._rgw_uninstall_check,
+            'blockgw': self._bgw_uninstall
+        }
+        for role in i_roles:
+            func = install_check_role_map.get(role)
+            func(ctxt, node)
+        for role in u_roles:
+            func = uninstall_check_role_map.get(role)
+            func(ctxt, node)
+
+        logger.info('node %s roles check pass', node.hostname)
+        self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles)
         return node
 
     def _node_create(self, ctxt, node, data):
@@ -320,6 +386,7 @@ class NodeHandler(AdminBaseHandler):
                 node_id=node.id)
             rpc_service.create()
 
+            node_task.wait_agent_ready()
             roles = data.get('roles', "").split(',')
             role_monitor = "monitor" in roles
             role_storage = "storage" in roles
