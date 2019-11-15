@@ -167,7 +167,8 @@ class DbCommands(object):
                    'config_dir_container': 'string', 'log_dir': 'string',
                    'log_dir_container': 'string', 'admin_ips': 'string',
                    'max_osd_num': 'number', 'max_monitor_num': 'number',
-                   'dspace_dir': 'string', 'node_exporter_port': 'string'}
+                   'dspace_dir': 'string', 'node_exporter_port': 'string',
+                   'debug_mode': 'string'}
         for c in configs:
             key, value = c.split("=", 1)
             if key not in allowed:
