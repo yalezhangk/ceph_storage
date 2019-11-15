@@ -1125,11 +1125,11 @@ def rack_update(context, rack_id, values):
 ###############################
 
 
-def _osd_get_query(context, session=None):
-    return model_query(context, models.Osd, session=session)
+def _osd_get_query(context, session=None, **kwargs):
+    return model_query(context, models.Osd, session=session, **kwargs)
 
 
-def _osd_get(context, osd_id, session=None):
+def _osd_get(context, osd_id, session=None, **kwargs):
     result = _osd_get_query(context, session)
     result = result.filter_by(id=osd_id).first()
 
@@ -1188,10 +1188,11 @@ def osd_destroy(context, osd_id):
 
 
 @require_context
-def osd_get(context, osd_id, expected_attrs=None):
+def osd_get(context, osd_id, **kwargs):
+    expected_attrs = kwargs.pop("expected_attrs", None)
     session = get_session()
     with session.begin():
-        osd = _osd_get(context, osd_id, session)
+        osd = _osd_get(context, osd_id, session, **kwargs)
         _osd_load_attr(osd, expected_attrs)
         return osd
 

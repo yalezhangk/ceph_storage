@@ -240,7 +240,7 @@ class OsdHandler(AdminBaseHandler):
             osd.save()
             msg = _("Osd create error!")
 
-        osd = objects.Osd.get_by_id(ctxt, osd_id)
+        osd = objects.Osd.get_by_id(ctxt, osd_id, read_deleted='yes')
         wb_client = WebSocketClientManager(
             ctxt, cluster_id=ctxt.cluster_id
         ).get_client()

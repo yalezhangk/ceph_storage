@@ -50,7 +50,7 @@ class TestNode(NodeCompareTestCase):
                                       fake_node['id'])
         self._compare(fake_node, node)
         node_get.assert_called_once_with(
-            self.context, "Node", fake_node['id'], None)
+            self.context, "Node", fake_node['id'])
 
     @mock.patch('DSpace.db.sqlalchemy.api.get_session')
     @mock.patch('DSpace.db.sqlalchemy.api.model_query')

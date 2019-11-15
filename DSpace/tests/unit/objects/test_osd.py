@@ -29,7 +29,7 @@ class TestOsd(test_objects.BaseObjectsTestCase):
                                     fake_osd['id'])
         self._compare(self, fake_osd, osd)
         osd_get.assert_called_once_with(
-            self.context, "Osd", fake_osd['id'], None)
+            self.context, "Osd", fake_osd['id'])
 
     @mock.patch('DSpace.db.sqlalchemy.api.get_session')
     @mock.patch('DSpace.db.sqlalchemy.api.model_query')

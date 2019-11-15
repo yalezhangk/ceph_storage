@@ -28,7 +28,7 @@ class TestCephConfig(test_objects.BaseObjectsTestCase):
                                                    fake_ceph_config['id'])
         self._compare(self, fake_ceph_config, ceph_config)
         ceph_config_get.assert_called_once_with(
-            self.context, "CephConfig", fake_ceph_config['id'], None)
+            self.context, "CephConfig", fake_ceph_config['id'])
 
     @mock.patch('DSpace.db.ceph_config_get_by_key',
                 return_value=fake_ceph_config)
