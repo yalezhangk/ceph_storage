@@ -4,6 +4,7 @@
 import json
 import logging
 
+from netaddr import IPRange
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -650,26 +651,54 @@ class NodeInfoHandler(ClusterAPIHandler):
           description: node's ip and password
           required: true
           schema:
-            type: array
-            items:
-              type: object
-              properties:
-                ip_address:
+            type: object
+            properties:
+              ips:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ip_address:
+                      type: string
+                      description: node's ip address
+                    password:
+                      type: string
+                      description: node's password
+              ipr:
+                type: array
+                items:
                   type: string
-                  description: node's ip address
-                password:
-                  type: string
-                  description: node's password
+                  description: nodes ip ranges
         "200":
           description: successful operation
         """
         ctxt = self.get_context()
         nodes_data = json_decode(self.request.body)
+        logger.debug("node get info, param: %s", nodes_data)
         client = self.get_admin_client(ctxt)
+        ips = nodes_data.get("ips")
         res = []
-        for data in nodes_data:
+        for data in ips:
             info = yield client.node_get_infos(ctxt, data)
             res.append(info)
+
+        ip_ranges = nodes_data.get("ipr")
+        for ipr in ip_ranges:
+            if '-' not in ipr:
+                raise exception.InvalidInput(
+                    reason=_("IP Range %s format error", ipr))
+            start, end = ipr.split('-', 1)
+            r = None
+            try:
+                r = IPRange(start, end)
+            except Exception as e:
+                logger.error(e)
+                raise exception.InvalidInput(
+                    reason=_("IP Range %s format error", ipr))
+            for _ip in r:
+                ip = str(_ip)
+                info = yield client.node_get_infos(ctxt, {"ip_address": ip})
+                res.append(info)
 
         self.write(objects.json_encode({
             "data": res
