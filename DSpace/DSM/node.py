@@ -134,15 +134,23 @@ class NodeHandler(AdminBaseHandler):
             cephconf.save()
         return cephconf
 
-    def _mon_install_check(self, ctxt, node):
+    def _mon_install_check(self, ctxt):
         public_network = objects.sysconfig.sys_config_get(
             ctxt, key="public_cidr"
         )
         cluster_network = objects.sysconfig.sys_config_get(
             ctxt, key="cluster_cidr"
         )
+        max_mon_num = objects.sysconfig.sys_config_get(
+            ctxt, key="max_monitor_num"
+        )
+        mon_num = objects.NodeList.get_count(
+            ctxt, filters={"role_monitor": True}
+        )
         if not public_network or not cluster_network:
             raise exc.InvalidInput(_("Please set network planning"))
+        if mon_num >= max_mon_num:
+            raise exc.InvalidInput(_("Max monitor num is %s" % max_mon_num))
 
     def _mon_uninstall_check(self, ctxt, node):
         osd_num = objects.OsdList.get_count(ctxt)
@@ -152,7 +160,7 @@ class NodeHandler(AdminBaseHandler):
         if osd_num and mon_num == 1:
             raise exc.InvalidInput(_("Please remove osd first!"))
 
-    def _storage_install_check(self, ctxt, node):
+    def _storage_install_check(self, ctxt):
         pass
 
     def _storage_uninstall_check(self, ctxt, node):
@@ -162,19 +170,19 @@ class NodeHandler(AdminBaseHandler):
         if node_osds:
             raise exc.InvalidInput(_("Node %s has osd!" % node.hostname))
 
-    def _mds_install_check(self, ctxt, node):
+    def _mds_install_check(self, ctxt):
         pass
 
     def _mds_uninstall_check(self, ctxt, node):
         pass
 
-    def _rgw_install_check(self, ctxt, node):
+    def _rgw_install_check(self, ctxt):
         pass
 
     def _rgw_uninstall_check(self, ctxt, node):
         pass
 
-    def _bgw_install_check(self, ctxt, node):
+    def _bgw_install_check(self, ctxt):
         pass
 
     def _bgw_uninstall_check(self, ctxt, node):
@@ -348,6 +356,7 @@ class NodeHandler(AdminBaseHandler):
         if node.status != s_fields.NodeStatus.ACTIVE:
             raise exc.InvalidInput(_("Only host's status is active can set"
                                      "role(host_name: %s)" % node.hostname))
+        self._node_roles_check()
 
         i_roles = data.get('install_roles')
         u_roles = data.get('uninstall_roles')
@@ -363,11 +372,11 @@ class NodeHandler(AdminBaseHandler):
             'storage': self._storage_uninstall_check,
             'mds': self._mds_uninstall_check,
             'radosgw': self._rgw_uninstall_check,
-            'blockgw': self._bgw_uninstall
+            'blockgw': self._bgw_uninstall_check
         }
         for role in i_roles:
             func = install_check_role_map.get(role)
-            func(ctxt, node)
+            func(ctxt)
         for role in u_roles:
             func = uninstall_check_role_map.get(role)
             func(ctxt, node)
@@ -434,6 +443,10 @@ class NodeHandler(AdminBaseHandler):
         logger.debug("add node to cluster {}".format(data.get('ip_address')))
 
         NodeMixin._check_node_ip_address(ctxt, data)
+        roles = data.get('roles', "").split(',')
+        role_monitor = "monitor" in roles
+        if role_monitor:
+            self._mon_install_check(ctxt)
 
         node = objects.Node(
             ctxt, ip_address=data.get('ip_address'),

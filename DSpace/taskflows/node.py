@@ -441,7 +441,8 @@ class NodeTask(object):
         docker_tool.image_load(tmp_image)
         # run container
         # TODO: remove code_dir
-        code_dir = "/root/.local/lib/python3.6/site-packages/DSpace/"
+        code_dir_container = "/root/.local/lib/python3.6/site-packages/DSpace/"
+        code_dir = objects.sysconfig.sys_config_get(self.ctxt, "dspace_dir")
         docker_tool.run(
             name="{}_dsa".format(image_namespace),
             image="{}/dspace:{}".format(image_namespace, dspace_version),
@@ -453,7 +454,7 @@ class NodeTask(object):
                 ("/", "/host"),
                 ("/sys", "/sys"),
                 ("/root/.ssh/", "/root/.ssh", "ro,rslave"),
-                ("/opt/t2stor/DSpace/", code_dir)
+                (code_dir, code_dir_container)
             ]
         )
 
