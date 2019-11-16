@@ -2578,7 +2578,7 @@ def _disk_load_attr(context, disk, expected_attrs=None, session=None):
 def _disk_get_query(context, session=None):
     return model_query(
         context, models.Disk, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+    )
 
 
 def _disk_get(context, disk_id, session=None):
@@ -2670,6 +2670,21 @@ def disk_update(context, disk_id, values):
         result = query.filter_by(id=disk_id).update(values)
         if not result:
             raise exception.DiskNotFound(disk_id=disk_id)
+
+
+@require_context
+def disk_get_all_available(context, filters=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        query = _disk_get_query(context, session)
+        query = process_filters(models.Disk)(query, filters)
+        query = query.outerjoin(models.Node).filter_by(role_storage=True)
+        if query is None:
+            return []
+        return query.all()
 
 
 ###############################

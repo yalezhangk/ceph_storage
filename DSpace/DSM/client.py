@@ -380,6 +380,11 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
+    def disk_get_all_available(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "disk_get_all_available", filters=filters)
+        return response
+
     def disk_get_count(self, ctxt, filters=None):
         response = self.call(
             ctxt, "disk_get_count", filters=filters)
