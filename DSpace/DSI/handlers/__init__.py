@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
+
 from DSpace.DSI.handlers.action_log import ActionLogHandler
 from DSpace.DSI.handlers.action_log import ActionLogListHandler
 from DSpace.DSI.handlers.action_log import ResourceActionHandler
@@ -28,9 +30,6 @@ from DSpace.DSI.handlers.clusters import ClusterServiceStatus
 from DSpace.DSI.handlers.datacenters import DataCenterHandler
 from DSpace.DSI.handlers.datacenters import DataCenterListHandler
 from DSpace.DSI.handlers.datacenters import DataCenterTreeHandler
-from DSpace.DSI.handlers.disk_partitions import \
-    DiskPartitionAvailableListHandler
-from DSpace.DSI.handlers.disk_partitions import DiskPartitionListHandler
 from DSpace.DSI.handlers.disks import DiskActionHandler
 from DSpace.DSI.handlers.disks import DiskAvailableListHandler
 from DSpace.DSI.handlers.disks import DiskHandler
@@ -113,9 +112,44 @@ from DSpace.DSI.handlers.volumes import VolumeActionHandler
 from DSpace.DSI.handlers.volumes import VolumeHandler
 from DSpace.DSI.handlers.volumes import VolumeListHandler
 
+logger = logging.getLogger(__name__)
+
+
+class URLRegistry(object):
+    _registry = None
+    _routes = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._registry:
+            cls._registry = super(URLRegistry, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._registry
+
+    def __init__(self, *args, **kwargs):
+        if self._routes is None:
+            self._routes = []
+
+    @classmethod
+    def register(cls, url):
+        registry = cls()
+
+        def _wapper(handler):
+            registry.register_url(url, handler)
+            return handler
+        return _wapper
+
+    def register_url(self, url, handler):
+        logger.info("register %s -> %s", url, handler)
+        self._routes.append((url, handler))
+
+    def routes(self):
+        return self._routes
+
 
 def get_routers():
-    return [
+    __import__('DSpace.DSI.handlers.disk_partitions')
+    registry = URLRegistry()
+    return registry.routes() + [
         (r"/action_logs/", ActionLogListHandler),
         (r"/action_logs/([0-9]*)/", ActionLogHandler),
         (r"/action_logs/resource_action/", ResourceActionHandler),
@@ -151,8 +185,6 @@ def get_routers():
         (r"/disks/([0-9]*)/history_perf/", DiskPerfHistoryHandler),
         (r"/disks/([0-9]*)/smart/", DiskSmartHandler),
         (r"/disk_available/", DiskAvailableListHandler),
-        (r"/disk_partitions/", DiskPartitionListHandler),
-        (r"/disk_partition_available/", DiskPartitionAvailableListHandler),
         (r"/email_groups/", EmailGroupListHandler),
         (r"/email_groups/([0-9]*)/", EmailGroupHandler),
         (r"/login/", UserLoginHandler),
