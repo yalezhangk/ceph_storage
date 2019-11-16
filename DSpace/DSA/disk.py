@@ -100,10 +100,8 @@ class DiskHandler(AgentBaseHandler):
 
     def disk_partitions_create(self, ctxt, node, disk, values):
         logger.debug('Make cache disk partition: %s', disk.name)
-        ssh_client = self._get_ssh_executor(node)
-        if not ssh_client:
-            return []
-        disk_tool = DiskTool(ssh_client)
+        executor = self._get_executor()
+        disk_tool = DiskTool(executor)
         partition_num = values.get('partition_num')
         partition_role = values.get('partition_role')
         steps, partitions = self._get_disk_partition_steps(
@@ -119,10 +117,8 @@ class DiskHandler(AgentBaseHandler):
 
     def disk_partitions_remove(self, ctxt, node, name):
         logger.debug('Remove cache disk partitions: %s', name)
-        ssh_client = self._get_ssh_executor(node)
-        if not ssh_client:
-            return False
-        disk_tool = DiskTool(ssh_client)
+        executor = self._get_executor()
+        disk_tool = DiskTool(executor)
         try:
             _success = disk_tool.partitions_clear(name)
         except exception.StorException as e:

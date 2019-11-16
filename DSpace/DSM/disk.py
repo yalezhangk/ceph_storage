@@ -111,6 +111,7 @@ class DiskHandler(AdminBaseHandler):
         _success = client.disk_partitions_remove(ctxt, node=node,
                                                  name=disk.name, )
         if _success:
+            logger.info("Disk partitions remove: Successful")
             partitions_old = objects.DiskPartitionList.get_all(
                 ctxt, filters={'disk_id': disk.id})
             if partitions_old:
@@ -119,8 +120,10 @@ class DiskHandler(AdminBaseHandler):
             disk.partition_num = 0
             disk.role = values['role']
             disk.status = "available"
+            disk.save()
             msg = _("remove disk partitions success")
         else:
+            logger.error("Disk partitions remove: Failed")
             msg = _("remove disk partitions failed")
         # send ws message
         wb_client = WebSocketClientManager(
