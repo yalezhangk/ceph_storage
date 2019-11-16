@@ -79,8 +79,10 @@ class StorPersistentObject(object):
         if kwargs.pop('joined_load', False):
             expected_attrs = cls._get_expected_attrs(context)
 
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
         orm_obj = db.get_by_id(context, cls.obj_name(), id,
-                               expected_attrs, *args, **kwargs)
+                               *args, **kwargs)
         return cls._from_db_object(context, cls(context), orm_obj,
                                    expected_attrs)
 

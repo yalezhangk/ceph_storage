@@ -27,7 +27,7 @@ class TestRPCService(test_objects.BaseObjectsTestCase):
                                                    fake_rpc_service['id'])
         self._compare(self, fake_rpc_service, rpc_service)
         rpc_service_get.assert_called_once_with(
-            self.context, "RPCService", fake_rpc_service['id'], None)
+            self.context, "RPCService", fake_rpc_service['id'])
 
     @mock.patch('DSpace.db.sqlalchemy.api.model_query')
     def test_get_by_id_no_existing_id(self, model_query):
