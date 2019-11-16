@@ -104,7 +104,8 @@ class OsdHandler(AdminBaseHandler):
             ceph_cfg = objects.CephConfig(
                 ctxt, group="osd.%s" % osd.osd_id,
                 key='backend_type',
-                value='t2ce'
+                value='t2ce',
+                value_type=s_fields.ConfigType.STRING
             )
             ceph_cfg.create()
 

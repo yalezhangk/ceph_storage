@@ -118,7 +118,7 @@ class PermissionMixin(BaseAPIHandler):
             logger.info("platform inited")
             objects.SysConfig(
                 ctxt, key="platform_inited", value="True",
-                value_type=s_fields.SysConfigType.BOOL,
+                value_type=s_fields.ConfigType.BOOL,
                 cluster_id=None
             ).create()
         return inited

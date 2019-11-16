@@ -58,7 +58,7 @@ class MailHandler(AdminBaseHandler):
             else:
                 sysconf = objects.SysConfig(
                     ctxt, key=k, value=v,
-                    value_type=s_fields.SysConfigType.STRING)
+                    value_type=s_fields.ConfigType.STRING)
                 sysconf.create()
         self.finish_action(begin_action, resource_id=None,
                            resource_name='smtp',

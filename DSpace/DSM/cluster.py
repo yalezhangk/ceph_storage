@@ -202,7 +202,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         for key, value in six.iteritems(data):
             sysconf = objects.SysConfig(
                 ctxt, key=key, value=value,
-                value_type=s_fields.SysConfigType.STRING)
+                value_type=s_fields.ConfigType.STRING)
             sysconf.create()
 
         self.task_submit(self.init_alert_rule, ctxt, cluster.id)

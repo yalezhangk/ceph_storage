@@ -79,6 +79,9 @@ class CephHandler(AgentBaseHandler):
         # install package
         package_tool = PackageTool(client)
         package_tool.uninstall(["ceph-common", "libcephfs2"])
+        file_tool = FileTool(client)
+        file_tool.rm("/var/lib/ceph/")
+        file_tool.rm("/etc/ceph/")
         return True
 
     def ceph_osd_create(self, context, osd):

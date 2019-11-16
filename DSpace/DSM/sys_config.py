@@ -25,7 +25,7 @@ class SysConfigHandler(AdminBaseHandler):
     def update_chrony(self, ctxt, chrony_server):
         sysconf = objects.SysConfig(
             ctxt, key="chrony_server", value=chrony_server,
-            value_type=s_fields.SysConfigType.STRING)
+            value_type=s_fields.ConfigType.STRING)
         sysconf.create()
 
     def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
@@ -35,27 +35,27 @@ class SysConfigHandler(AdminBaseHandler):
         if cluster_name:
             sysconf = objects.SysConfig(
                 ctxt, key="cluster_name", value=cluster_name,
-                value_type=s_fields.SysConfigType.STRING)
+                value_type=s_fields.ConfigType.STRING)
             sysconf.create()
         if admin_cidr:
             sysconf = objects.SysConfig(
                 ctxt, key="admin_cidr", value=admin_cidr,
-                value_type=s_fields.SysConfigType.STRING)
+                value_type=s_fields.ConfigType.STRING)
             sysconf.create()
         if public_cidr:
             sysconf = objects.SysConfig(
                 ctxt, key="public_cidr", value=public_cidr,
-                value_type=s_fields.SysConfigType.STRING)
+                value_type=s_fields.ConfigType.STRING)
             sysconf.create()
         if cluster_cidr:
             sysconf = objects.SysConfig(
                 ctxt, key="cluster_cidr", value=cluster_cidr,
-                value_type=s_fields.SysConfigType.STRING)
+                value_type=s_fields.ConfigType.STRING)
             sysconf.create()
         if gateway_cidr:
             sysconf = objects.SysConfig(
                 ctxt, key="gateway_cidr", value=gateway_cidr,
-                value_type=s_fields.SysConfigType.STRING)
+                value_type=s_fields.ConfigType.STRING)
             sysconf.create()
 
     def image_namespace_get(self, ctxt):

@@ -387,8 +387,8 @@ class NodeTask(object):
     def node_get_infos(self):
         try:
             ssh = self.get_ssh_executor()
-        except paramiko.ssh_exception.SSHException:
-            raise exc.InvalidInput(_('SSH Error'))
+        except Exception as e:
+            raise exc.InvalidInput(_('SSH Error: %s' % e))
         sys_tool = SystemTool(ssh)
         node_infos = sys_tool.get_node_baseinfo()
         return node_infos
