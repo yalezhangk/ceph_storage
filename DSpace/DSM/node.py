@@ -193,7 +193,7 @@ class NodeHandler(AdminBaseHandler):
         pass
 
     def _mon_install(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.role_monitor = True
         node.save()
 
@@ -243,7 +243,7 @@ class NodeHandler(AdminBaseHandler):
         return node
 
     def _mon_uninstall(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.role_monitor = False
         node.save()
 
@@ -271,7 +271,7 @@ class NodeHandler(AdminBaseHandler):
         return node
 
     def _storage_install(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node_task = NodeTask(ctxt, node)
         node_task.ceph_osd_package_install()
 
@@ -280,7 +280,7 @@ class NodeHandler(AdminBaseHandler):
         return node
 
     def _storage_uninstall(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.REMOVING_ROLE
         node_task = NodeTask(ctxt, node)
         node_task.ceph_osd_package_uninstall()
 
@@ -295,25 +295,25 @@ class NodeHandler(AdminBaseHandler):
         pass
 
     def _rgw_install(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.role_object_gateway = True
         node.save()
         return node
 
     def _rgw_uninstall(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.role_object_gateway = False
         node.save()
         return node
 
     def _bgw_install(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.role_block_gateway = True
         node.save()
         return node
 
     def _bgw_uninstall(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING
+        node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.role_block_gateway = False
         node.save()
         return node

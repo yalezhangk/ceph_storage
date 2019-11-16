@@ -56,6 +56,16 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def check_mon_is_joined(self, public_ip):
+        cmd = ["ceph", "mon", "stat"]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc == 0:
+            stdout = stdout.strip()
+            if public_ip in stdout:
+                return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
     def mon_install(self, hostname, fsid, ceph_auth='none'):
 
         if ceph_auth == 'cephx':

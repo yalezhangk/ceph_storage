@@ -155,9 +155,9 @@ class System(ToolBase):
         cmd = ['rpm', '-qa', '|', 'grep', pkg_name]
         rc, stdout, stderr = self.run_command(cmd)
         if rc == 0:
-            return False
-        elif rc == 1:
             return True
+        elif rc == 1:
+            return False
         else:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
