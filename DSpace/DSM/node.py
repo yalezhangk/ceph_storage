@@ -511,75 +511,12 @@ class NodeHandler(AdminBaseHandler):
         return True
 
     def node_check(self, ctxt, data):
-        # TODO: use _node_check to replace this
-        logger.debug("check node: {}".format(data.get('admin_ip')))
-        ip_dict = {}
-        ip_dict['check_through'] = True
-        node = objects.Node(
-            ctxt, ip_address=data.get('admin_ip'),
-            password=data.get('password'))
-
-        admin_ip = data.get('admin_ip')
-        public_ip = data.get('public_ip')
-        cluster_ip = data.get('cluster_ip')
-        node_task = NodeTask(ctxt, node)
-        node_infos = node_task.node_get_infos()
-        hostname = node_infos.get('hostname')
-        if not hostname:
-            ip_dict['check_through'] = False
-            return ip_dict
-
-        li_ip = [admin_ip, public_ip, cluster_ip]
-        if not all(li_ip):
-            raise exc.Invalid(_('admin_ip,cluster_ip,public_ip is required'))
-        for ip in li_ip:
-            self._validate_ip(ip)
-        ip_dict['check_admin_ip'] = True
-        ip_dict['check_hostname'] = True
-        ip_dict['check_gateway_ip'] = True
-        ip_dict['check_cluster_ip'] = True
-        ip_dict['check_public_ip'] = True
-        if objects.NodeList.get_all(ctxt, filters={"ip_address": admin_ip}):
-            ip_dict['check_admin_ip'] = False
-        if objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "cluster_ip": cluster_ip
-            }
-        ):
-            ip_dict['check_cluster_ip'] = False
-        if objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "public_ip": public_ip
-            }
-        ):
-            ip_dict['check_public_ip'] = False
-        if objects.NodeList.get_all(ctxt, filters={"hostname": hostname}):
-            ip_dict['check_hostname'] = False
-        port = ["6789", "9876", "9100", "9283", "7480"]
-        ip_dict['check_port'] = []
-        for po in port:
-            if not node_task.check_port(po):
-                ip_dict['check_port'].append({"port": po, "status": False})
-            else:
-                ip_dict['check_port'].append({"port": po, "status": True})
-        ip_dict['check_SELinux'] = node_task.check_selinux()
-        if node_task.check_ceph_is_installed():
-            ip_dict['check_Installation_package'] = False
-        else:
-            ip_dict['check_Installation_package'] = True
-        if (node_task.check_network(public_ip) and
-                node_task.check_network(cluster_ip)):
-            ip_dict['check_network'] = True
-        else:
-            ip_dict['check_network'] = True
-        if node_task.check_firewall():
-            ip_dict['check_firewall'] = True
-        else:
-            ip_dict['check_firewall'] = False
-
-        return ip_dict
+        check_items = ["hostname", "selinux", "ports", "ceph_package",
+                       "network", "athena_ports", "firewall"]
+        # TODO delete it
+        data['ip_address'] = data.get('admin_ip')
+        res = self._node_check(ctxt, data, check_items)
+        return res
 
     def nodes_inclusion(self, ctxt, datas):
         logger.debug("check nodes: {}", datas)
@@ -727,10 +664,12 @@ class NodeHandler(AdminBaseHandler):
             # TODO: move to db
             ports = ["6789", "9876", "9100", "9283", "7480"]
             res['check_ceph_port'] = self._node_check_port(node_task, ports)
+            # TODO: delete it
+            res['check_port'] = self._node_check_port(node_task, ports)
         if "athena_ports" in items:
             # TODO: move to db
             ports = ["9100", "2083"]
-            res['check_ceph_port'] = self._node_check_port(node_task, ports)
+            res['check_athena_port'] = self._node_check_port(node_task, ports)
         if "network" in items:
             public_ip = data.get('public_ip')
             cluster_ip = data.get('cluster_ip')
@@ -738,7 +677,7 @@ class NodeHandler(AdminBaseHandler):
                     node_task.check_network(cluster_ip)):
                 res['check_network'] = True
             else:
-                res['check_network'] = True
+                res['check_network'] = False
         # TODO: check roles
         if "roles" in items:
             roles = data.get("roles") or None
@@ -771,7 +710,8 @@ class NodeHandler(AdminBaseHandler):
                 "ceph_package",
                 "network",
                 "roles",
-                "athena_ports"
+                "athena_ports",
+                "firewall"
             ])
             res['admin_ip'] = admin_ip
             status['nodes'].append(res)
