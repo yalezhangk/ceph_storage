@@ -2611,7 +2611,7 @@ def disk_destroy(context, disk_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.disk, session=session).\
+        model_query(context, models.Disk, session=session).\
             filter_by(id=disk_id).\
             update(updated_values)
     del updated_values['updated_at']
