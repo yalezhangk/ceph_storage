@@ -512,7 +512,7 @@ class NodeHandler(AdminBaseHandler):
         return True
 
     def node_check(self, ctxt, data):
-        check_items = ["hostname", "selinux", "ports", "ceph_package",
+        check_items = ["hostname", "selinux", "ceph_ports", "ceph_package",
                        "network", "athena_ports", "firewall"]
         # TODO delete it
         data['ip_address'] = data.get('admin_ip')
@@ -627,6 +627,8 @@ class NodeHandler(AdminBaseHandler):
             }
         )
         res['check_public_ip'] = False if nodes else True
+        # TODO delete it
+        res['check_gateway_ip'] = True
         return res
 
     def _node_check_roles(self, roles, services):
@@ -733,7 +735,7 @@ class NodeHandler(AdminBaseHandler):
             res = self._node_check(ctxt, data, [
                 "hostname",
                 "selinux",
-                "ports",
+                "ceph_ports",
                 "ceph_package",
                 "network",
                 "roles",
