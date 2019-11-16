@@ -216,3 +216,9 @@ class DiskHandler(AdminBaseHandler):
         for name, disk in six.iteritems(all_disks):
             logger.warning("Remove disk %s", name)
             disk.destroy()
+
+    def disk_get_all_available(self, ctxt, filters=None):
+        filters['status'] = s_fields.DiskStatus.AVAILABLE
+        filters['role'] = s_fields.DiskRole.DATA
+        disks = objects.DiskList.get_all_available(ctxt, filters=filters, )
+        return disks

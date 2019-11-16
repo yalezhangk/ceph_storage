@@ -461,3 +461,50 @@ class DiskPerfHistoryHandler(ClusterAPIHandler):
         self.write(json.dumps({
             "disk_history_perf": data
         }))
+
+
+class DiskAvailableListHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - disk
+        summary: available disk List
+        description: Return a list of abailable disks
+        operationId: disks.api.listAvailableDisk
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: node_id
+          description: Node ID
+          type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+
+        filters = {}
+        supported_filters = ['node_id']
+        for f in supported_filters:
+            value = self.get_query_argument(f, default=None)
+            if value:
+                filters.update({
+                    f: value
+                })
+
+        client = self.get_admin_client(ctxt)
+        disks = yield client.disk_get_all_available(
+            ctxt, filters=filters)
+        self.write(objects.json_encode({
+            "disks": disks,
+        }))
