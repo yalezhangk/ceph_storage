@@ -707,6 +707,9 @@ def disk_partition_update(context, disk_part_id, values):
     return IMPL.disk_partition_update(context, disk_part_id, values)
 
 
+def disk_partition_get_all_available(context, filters=None):
+    return IMPL.disk_partition_get_all_available(context, filters)
+
 ###################
 
 

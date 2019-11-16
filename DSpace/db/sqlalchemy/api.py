@@ -2797,6 +2797,21 @@ def disk_partition_update(context, disk_part_id, values):
             raise exception.DiskPartitionNotFound(disk_part_id=disk_part_id)
 
 
+@require_context
+def disk_partition_get_all_available(context, filters=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        query = _disk_partition_get_query(context, session)
+        query = process_filters(models.DiskPartition)(query, filters)
+        query = query.outerjoin(models.Node).filter_by(role_storage=True)
+        if query is None:
+            return []
+        return query.all()
+
+
 ###############################
 
 

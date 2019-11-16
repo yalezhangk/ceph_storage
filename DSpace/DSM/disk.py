@@ -220,5 +220,11 @@ class DiskHandler(AdminBaseHandler):
     def disk_get_all_available(self, ctxt, filters=None):
         filters['status'] = s_fields.DiskStatus.AVAILABLE
         filters['role'] = s_fields.DiskRole.DATA
-        disks = objects.DiskList.get_all_available(ctxt, filters=filters, )
+        disks = objects.DiskList.get_all_available(ctxt, filters=filters)
         return disks
+
+    def disk_partition_get_all_available(self, ctxt, filters=None):
+        filters['status'] = s_fields.DiskStatus.AVAILABLE
+        partitions = objects.DiskPartitionList.get_all_available(
+            ctxt, filters=filters)
+        return partitions
