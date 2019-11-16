@@ -5,8 +5,10 @@ import logging
 
 from tornado import gen
 
+from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
@@ -87,4 +89,58 @@ class DiskPartitionListHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "disk_partitions": disk_partitions,
             "total": disk_partition_count
+        }))
+
+
+class DiskPartitionAvailableListHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - disk
+        summary: available disk partition List
+        description: Return a list of abailable disk partitions
+        operationId: disks.api.listAvailableDiskPartition
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: role
+          description: Disk partition role
+          type: string
+          required: true
+        - in: request
+          name: node_id
+          description: Node ID
+          type: string
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+
+        filters = {}
+        supported_filters = ['node_id', 'role']
+        for f in supported_filters:
+            value = self.get_query_argument(f, default=None)
+            if value:
+                filters.update({
+                    f: value
+                })
+        if 'role' not in filters:
+            raise exception.InvalidInput(_("Disk partition role is required"))
+
+        client = self.get_admin_client(ctxt)
+        disk_partitions = yield client.disk_partition_get_all_available(
+            ctxt, filters=filters)
+        self.write(objects.json_encode({
+            "disk_partitions": disk_partitions,
         }))

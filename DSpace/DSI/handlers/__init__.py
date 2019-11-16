@@ -28,6 +28,8 @@ from DSpace.DSI.handlers.clusters import ClusterServiceStatus
 from DSpace.DSI.handlers.datacenters import DataCenterHandler
 from DSpace.DSI.handlers.datacenters import DataCenterListHandler
 from DSpace.DSI.handlers.datacenters import DataCenterTreeHandler
+from DSpace.DSI.handlers.disk_partitions import \
+    DiskPartitionAvailableListHandler
 from DSpace.DSI.handlers.disk_partitions import DiskPartitionListHandler
 from DSpace.DSI.handlers.disks import DiskActionHandler
 from DSpace.DSI.handlers.disks import DiskAvailableListHandler
@@ -150,6 +152,7 @@ def get_routers():
         (r"/disks/([0-9]*)/smart/", DiskSmartHandler),
         (r"/disk_available/", DiskAvailableListHandler),
         (r"/disk_partitions/", DiskPartitionListHandler),
+        (r"/disk_partition_available/", DiskPartitionAvailableListHandler),
         (r"/email_groups/", EmailGroupListHandler),
         (r"/email_groups/([0-9]*)/", EmailGroupHandler),
         (r"/login/", UserLoginHandler),
