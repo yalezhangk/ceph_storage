@@ -7,12 +7,14 @@ from tornado import gen
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/disk_partitions/")
 class DiskPartitionListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -92,6 +94,7 @@ class DiskPartitionListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disk_partition_available/")
 class DiskPartitionAvailableListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
