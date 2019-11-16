@@ -32,5 +32,5 @@ default_cluster_configs = {
     'auth_cluster_required': {'type': 'string', 'value': 'none'},
     'auth_service_required': {'type': 'string', 'value': 'none'},
     'auth_client_required': {'type': 'string', 'value': 'none'},
-    'osd_crush_update_on_start': {'type': 'string', 'value': 'none'},
+    'osd_crush_update_on_start': {'type': 'bool', 'value': False},
 }
