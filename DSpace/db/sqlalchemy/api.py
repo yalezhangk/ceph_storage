@@ -864,7 +864,7 @@ def rpc_service_update(context, rpc_service_id, values):
 def _node_get_query(context, session=None):
     return model_query(
         context, models.Node, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+    )
 
 
 def _node_get(context, node_id, session=None):
@@ -930,6 +930,8 @@ def node_get_all(context, marker=None, limit=None, sort_keys=None,
     if filters.get("cluster_id") != "*":
         if "cluster_id" not in filters.keys():
             filters['cluster_id'] = context.cluster_id
+    else:
+        filters.pop("cluster_id")
     session = get_session()
     with session.begin():
         # Generate the query

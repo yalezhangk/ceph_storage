@@ -56,7 +56,7 @@ class TestNode(NodeCompareTestCase):
     @mock.patch('DSpace.db.sqlalchemy.api.model_query')
     def test_get_by_id_no_existing_id(self, model_query, get_session):
         get_session().return_value = mock.MagicMock()
-        model_query().filter_by().filter_by().first.return_value = None
+        model_query().filter_by().first.return_value = None
         self.assertRaises(exception.NodeNotFound,
                           objects.Node.get_by_id,
                           self.context, 123)
