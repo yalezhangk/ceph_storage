@@ -137,9 +137,9 @@ class URLRegistry(object):
 def get_routers():
     __import__('DSpace.DSI.handlers.disk_partitions')
     __import__('DSpace.DSI.handlers.action_log')
-    __import__('DSpace.DSI.handlers.alter_group')
-    __import__('DSpace.DSI.handlers.alter_log')
-    __import__('DSpace.DSI.handlers.alter_rule')
+    __import__('DSpace.DSI.handlers.alert_group')
+    __import__('DSpace.DSI.handlers.alert_log')
+    __import__('DSpace.DSI.handlers.alert_rule')
     registry = URLRegistry()
     return registry.routes() + [
         (r"/ceph_configs/", CephConfigListHandler),
