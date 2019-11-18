@@ -10,12 +10,14 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/nodes/")
 class NodeListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -185,6 +187,7 @@ class NodeListHandler(ClusterAPIHandler):
             raise ValueError("data not accept: %s", data)
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/")
 class NodeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
@@ -329,6 +332,7 @@ class NodeHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/role/")
 class NodeRoleHandler(ClusterAPIHandler):
     @gen.coroutine
     def put(self, node_id):
@@ -393,6 +397,7 @@ class NodeRoleHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/metrics/")
 class NodeMetricsMonitorHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
@@ -431,6 +436,7 @@ class NodeMetricsMonitorHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/history_metrics/")
 class NodeMetricsHistroyMonitorHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
@@ -489,6 +495,7 @@ class NodeMetricsHistroyMonitorHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/metrics/network/")
 class NodeMetricsNetworkHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
@@ -532,6 +539,7 @@ class NodeMetricsNetworkHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/history_network/")
 class NodeMetricsHistroyNetworkHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, node_id):
@@ -594,6 +602,7 @@ class NodeMetricsHistroyNetworkHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/bare_node/")
 class NodeListBareNodeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -627,6 +636,7 @@ class NodeListBareNodeHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/get_infos/")
 class NodeInfoHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
@@ -705,6 +715,7 @@ class NodeInfoHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/check_node/")
 class NodeCheckHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):

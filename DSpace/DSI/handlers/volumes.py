@@ -8,11 +8,13 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/volumes/")
 class VolumeListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -116,6 +118,7 @@ class VolumeListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/volumes/([0-9]*)/")
 class VolumeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, volume_id):
@@ -221,6 +224,7 @@ class VolumeHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/volumes/([0-9]*)/action/")
 class VolumeActionHandler(ClusterAPIHandler):
 
     @gen.coroutine

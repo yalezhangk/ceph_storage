@@ -9,6 +9,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -16,6 +17,7 @@ from DSpace.objects import fields as s_fields
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/osds/")
 class OsdListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -216,6 +218,7 @@ class OsdListHandler(ClusterAPIHandler):
             raise ValueError("data not accept: %s", data)
 
 
+@URLRegistry.register(r"/osds/([0-9]*)/")
 class OsdHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
@@ -293,6 +296,7 @@ class OsdHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/osds/([0-9]*)/metrics/")
 class OsdMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
@@ -331,6 +335,7 @@ class OsdMetricsHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/osds/([0-9]*)/history_metrics/")
 class OsdMetricsHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
@@ -387,6 +392,7 @@ class OsdMetricsHistoryHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/osds/([0-9]*)/disk_metrics/")
 class OsdDiskMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):
@@ -425,6 +431,7 @@ class OsdDiskMetricsHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/osds/([0-9]*)/history_disk_metrics/")
 class OsdHistoryDiskMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, osd_id):

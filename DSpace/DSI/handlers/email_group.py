@@ -7,11 +7,13 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/email_groups/")
 class EmailGroupListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -117,6 +119,7 @@ class EmailGroupListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/email_groups/([0-9]*)/")
 class EmailGroupHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, email_group_id):

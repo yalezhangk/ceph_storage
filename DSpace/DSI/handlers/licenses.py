@@ -8,6 +8,7 @@ import os
 from tornado import gen
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
@@ -19,6 +20,7 @@ FILE_LEN = 2048
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/licenses/")
 class LicenseHandler(BaseAPIHandler):
 
     @gen.coroutine
@@ -118,6 +120,7 @@ class LicenseHandler(BaseAPIHandler):
         self.write(json.dumps(result))
 
 
+@URLRegistry.register(r"/licenses/download_file/")
 class DownloadlicenseHandler(BaseAPIHandler):
 
     def get(self):

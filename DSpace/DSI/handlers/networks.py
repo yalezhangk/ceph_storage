@@ -4,11 +4,13 @@ import logging
 from tornado import gen
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/networks/")
 class NetworkListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -74,6 +76,7 @@ class NetworkListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/networks/")
 class NetworkHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

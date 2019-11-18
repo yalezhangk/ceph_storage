@@ -11,6 +11,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.objects import fields as s_fields
 from DSpace.utils.license_verify import LicenseVerify
@@ -121,6 +122,7 @@ class PermissionMixin(BaseAPIHandler):
         }
 
 
+@URLRegistry.register(r"/users/")
 class UserListHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
@@ -169,6 +171,7 @@ class UserListHandler(BaseAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/users/([0-9]*)/")
 class UserHandler(BaseAPIHandler):
     @gen.coroutine
     def put(self, user_id):
@@ -184,6 +187,7 @@ class UserHandler(BaseAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/login/")
 class UserLoginHandler(PermissionMixin):
     def get_context(self):
         return RequestContext(user_id=None, is_admin=False)
@@ -240,6 +244,7 @@ class UserLoginHandler(PermissionMixin):
         self.write(objects.json_encode(permission))
 
 
+@URLRegistry.register(r"/logout/")
 class UserLogoutHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
@@ -267,6 +272,7 @@ class UserLogoutHandler(BaseAPIHandler):
         self.write(objects.json_encode({}))
 
 
+@URLRegistry.register(r"/permissions/")
 class PermissionHandler(PermissionMixin):
 
     @gen.coroutine

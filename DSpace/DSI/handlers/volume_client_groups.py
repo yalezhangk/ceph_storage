@@ -5,6 +5,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 from DSpace.utils.normalize_wwn import normalize_wwn
@@ -57,6 +58,7 @@ class CheckVolumeClientGroup():
                                            "too long"))
 
 
+@URLRegistry.register(r"/volume_client_groups/")
 class VolumeClientGroupListHandler(ClusterAPIHandler, CheckVolumeClientGroup):
     @gen.coroutine
     def get(self):
@@ -206,6 +208,7 @@ class VolumeClientGroupListHandler(ClusterAPIHandler, CheckVolumeClientGroup):
         }))
 
 
+@URLRegistry.register(r"/volume_client_groups/([0-9]*)/")
 class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
     @gen.coroutine
     def get(self, group_id):
@@ -384,6 +387,7 @@ class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
             {"volume_client_group": volume_client_group}))
 
 
+@URLRegistry.register(r"/volume_client_groups/([0-9]*)/clients/")
 class VolumeClientByGroup(ClusterAPIHandler):
     @gen.coroutine
     def get(self, group_id):
@@ -423,6 +427,7 @@ class VolumeClientByGroup(ClusterAPIHandler):
         self.write(objects.json_encode({"volume_clients": volume_clients}))
 
 
+@URLRegistry.register(r"/volume_client_groups/([0-9]*)/set_mutual_chap/")
 class VolumeClientGroupSetMutualChapHandler(ClusterAPIHandler,
                                             CheckVolumeClientGroup):
     @gen.coroutine

@@ -8,11 +8,13 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/log_files/")
 class LogFileListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -91,6 +93,7 @@ class LogFileListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/log_files/([0-9]*)/")
 class LogFileHandler(ClusterAPIHandler):
 
     @gen.coroutine

@@ -9,12 +9,14 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/disks/")
 class DiskListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -98,6 +100,7 @@ class DiskListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disks/([0-9]*)/")
 class DiskHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
@@ -194,6 +197,7 @@ class DiskHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disks/([0-9]*)/action/")
 class DiskActionHandler(ClusterAPIHandler):
     def _disk_light(self, ctxt, client, disk_id, values):
         return client.disk_light(ctxt, disk_id=disk_id, led=values['led'])
@@ -329,6 +333,7 @@ class DiskActionHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disks/([0-9]*)/smart/")
 class DiskSmartHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
@@ -368,6 +373,7 @@ class DiskSmartHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disks/([0-9]*)/perf/")
 class DiskPerfHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
@@ -406,6 +412,7 @@ class DiskPerfHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disks/([0-9]*)/history_perf/")
 class DiskPerfHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, disk_id):
@@ -463,6 +470,7 @@ class DiskPerfHistoryHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/disk_available/")
 class DiskAvailableListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
