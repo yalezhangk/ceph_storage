@@ -1,4 +1,5 @@
 from oslo_log import log as logging
+from oslo_utils import strutils
 
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
@@ -40,6 +41,12 @@ class MailHandler(AdminBaseHandler):
         for sysconf in sysconfs:
             if sysconf.key in keys:
                 result[sysconf.key] = sysconf.value
+                result['smtp_enabled'] = strutils.bool_from_string(
+                    result['smtp_enabled'])
+                result['smtp_enable_ssl'] = strutils.bool_from_string(
+                    result['smtp_enable_ssl'])
+                result['smtp_enable_tls'] = strutils.bool_from_string(
+                    result['smtp_enable_tls'])
         return result
 
     def update_smtp(self, ctxt, data):
