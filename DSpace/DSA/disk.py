@@ -105,7 +105,7 @@ class DiskHandler(AgentBaseHandler):
         partition_num = values.get('partition_num')
         partition_role = values.get('partition_role')
         steps, partitions = self._get_disk_partition_steps(
-            partition_num, partition_role, disk.name, disk.disk_size)
+            partition_num, partition_role, disk.name, disk.size)
         try:
             disk_tool.partitions_clear(disk.name)
             disk_tool.partitions_create(disk.name, steps)

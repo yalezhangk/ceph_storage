@@ -196,7 +196,7 @@ class DiskHandler(AdminBaseHandler):
             partitions = data.get("partitions")
             if name in all_disks:
                 disk = all_disks.pop(name)
-                disk.disk_size = int(data.get('size'))
+                disk.size = int(data.get('size'))
                 disk.partition_num = len(partitions)
                 disk.save()
                 logger.info("Update disk %s: %s", name, data)
@@ -206,7 +206,7 @@ class DiskHandler(AdminBaseHandler):
                     name=name,
                     status=s_fields.DiskStatus.AVAILABLE,
                     type=data.get('type', s_fields.DiskType.HDD),
-                    disk_size=data.get('size'),
+                    size=data.get('size'),
                     rotate_speed=data.get('rotate_speed'),
                     slot=data.get('slot'),
                     node_id=node_id,
