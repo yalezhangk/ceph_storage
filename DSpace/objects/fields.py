@@ -238,18 +238,16 @@ class OsdTypeField(BaseEnumField):
 
 
 class OsdStatus(BaseStorEnum):
-    UP = 'up'
-    DOWN = 'down'
     CREATING = 'creating'
     DELETING = 'deleting'
     ERROR = 'error'
+    AVAILABLE = 'available'
 
-    # TODO remove up/down or active/inactive
     INUSE = 'inuse'
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
-    ALL = (UP, DOWN, CREATING, DELETING, ERROR, INUSE, ACTIVE, INACTIVE)
+    ALL = (CREATING, DELETING, ERROR, AVAILABLE, INUSE, ACTIVE, INACTIVE)
 
 
 class OsdStatusField(BaseEnumField):

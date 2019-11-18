@@ -15,7 +15,7 @@ fake_osd = {
     'osd_id': "2",
     'type': "bluestore",
     'disk_type': "hdd",
-    'status': "up",
+    'status': "available",
     'cluster_id': "3fc66dde-6c6b-42d2-983b-930198d0c2f5",
     'pool_id': 1
 }

@@ -66,7 +66,7 @@ class OsdHandler(AdminBaseHandler):
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_install(osd)
             msg = _("Osd created!")
-            osd.status = s_fields.OsdStatus.UP
+            osd.status = s_fields.OsdStatus.AVAILABLE
             osd.save()
             logger.info("Osd %s create success.", osd.osd_id)
         except exception.StorException as e:
