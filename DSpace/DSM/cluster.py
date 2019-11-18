@@ -273,9 +273,9 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                   s_fields.OsdStatus.INACTIVE: 0,
                   s_fields.OsdStatus.INUSE: 0}
         for [k, v] in query_all:
-            if k == s_fields.OsdStatus.UP:
-                status[s_fields.OsdStatus.ACTIVE] = v
-            elif k == s_fields.OsdStatus.DOWN:
+            if k == s_fields.OsdStatus.AVAILABLE:
+                status[s_fields.OsdStatus.AVAILABLE] = v
+            elif k == s_fields.OsdStatus.INACTIVE:
                 status[s_fields.OsdStatus.INACTIVE] = v
             elif k == s_fields.OsdStatus.ERROR:
                 status[s_fields.OsdStatus.ERROR] = v
