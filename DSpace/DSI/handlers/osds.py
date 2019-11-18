@@ -69,7 +69,7 @@ class OsdListHandler(ClusterAPIHandler):
                           'journal_partition']
 
         filters = {}
-        supported_filters = ['node_id']
+        supported_filters = ['node_id', 'status']
         for f in supported_filters:
             value = self.get_query_argument(f, default=None)
             if value:
