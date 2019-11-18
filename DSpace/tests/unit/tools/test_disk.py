@@ -18,8 +18,8 @@ class TestDiskTool(test.TestCase):
         tool = DiskTool(Executor(), host_prefix="/host")
         tool.partitions_create(diskname, ["0%", "20%", "100%"])
         run_command.assert_called_once_with(
-            'parted /host/dev/sdb mklabel gpt  mkpart primary 0% 20%'
-            ' mkpart primary 20% 100%'
+            ['parted', '/host/dev/sdb', 'mklabel', 'gpt', 'mkpart', 'primary',
+             '0%', '20%', 'mkpart', 'primary', '20%', '100%']
         )
 
     @mock.patch.object(Executor, 'run_command')
@@ -29,5 +29,5 @@ class TestDiskTool(test.TestCase):
         tool = DiskTool(Executor(), host_prefix="/host")
         tool.partitions_clear(diskname)
         run_command.assert_called_once_with(
-            'wipefs /host/dev/sdb -a'
+            ['wipefs', '/host/dev/sdb', '-a']
         )

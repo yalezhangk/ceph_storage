@@ -63,29 +63,27 @@ class DiskTool(ToolBase):
                 raise ProgrammingError(
                     reason="partitions argument not end with %")
         disk = self._wapper("/dev/%s" % disk)
-        cmd = "parted {} mklabel gpt ".format(disk)
+        cmd = ["parted", disk, "mklabel", "gpt"]
         start = partitions.pop(0)
         while True:
             end = partitions.pop(0)
-            cmd += " mkpart primary {} {}".format(start, end)
+            cmd += ["mkpart", "primary", start, end]
             if len(partitions) == 0:
                 break
             start = end
         code, out, err = self.run_command(cmd)
         if code:
-            logger.exception("Create partations error, Stdout: %s", out)
-            raise ProgrammingError(
-                reason="partitions argument not end with %")
+            raise RunCommandError(cmd=cmd, return_code=code,
+                                  stdout=out, stderr=err)
         return True
 
     def partitions_clear(self, disk):
         disk_path = self._wapper("/dev/%s" % disk)
-        cmd = "wipefs {} -a".format(disk_path)
+        cmd = ["wipefs", disk_path, "-a"]
         code, out, err = self.run_command(cmd)
         if code:
-            logger.exception("Create partations error, Stdout: %s", out)
-            raise ProgrammingError(
-                reason="partitions argument not end with %")
+            raise RunCommandError(cmd=cmd, return_code=code,
+                                  stdout=out, stderr=err)
         return True
 
     def data_clear(self, disk):
