@@ -316,6 +316,7 @@ class RADOSClient(object):
     # ceph df ==> cluster and pool_list size
     def get_cluster_info(self):
         fsid = self.client.get_fsid()
+        fsid = encodeutils.safe_decode(fsid)
         ret, df_outbuf, __ = self.client.mon_command(
             '{"prefix":"df", "format":"json"}', '')
         if ret:
