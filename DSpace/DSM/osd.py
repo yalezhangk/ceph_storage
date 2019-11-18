@@ -25,6 +25,9 @@ class OsdHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
 
+        if not osds:
+            return osds
+
         if tab == "default":
             logger.debug("Get osd metrics: tab=default")
             ceph_client = CephTask(ctxt)
