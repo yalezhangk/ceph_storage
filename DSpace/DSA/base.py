@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import time
 from concurrent import futures
 
 from DSpace import exception
@@ -43,7 +44,17 @@ class AgentBaseHandler(object):
         self.admin = AdminClientManager(
             self.ctxt, async_support=False, endpoint=endpoint
         ).get_client()
-        self.node = self.admin.node_get(self.ctxt, node_id=CONF.node_id)
+        retry_interval = 10
+        retry_times = 0
+        while retry_times < 5:
+            try:
+                self.node = self.admin.node_get(
+                    self.ctxt, node_id=CONF.node_id)
+            except Exception as e:
+                logger.error("Cannot connect to admin: %s", e)
+                retry_times += 1
+                time.sleep(retry_interval)
+                retry_interval *= 2
 
     def _get_executor(self):
         return Executor()
