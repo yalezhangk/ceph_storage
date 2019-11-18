@@ -50,6 +50,8 @@ class AgentBaseHandler(object):
             try:
                 self.node = self.admin.node_get(
                     self.ctxt, node_id=CONF.node_id)
+                if self.node:
+                    break
             except Exception as e:
                 logger.error("Cannot connect to admin: %s", e)
                 retry_times += 1
