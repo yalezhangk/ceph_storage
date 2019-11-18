@@ -33,6 +33,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_osd_package_uninstall")
         return response
 
+    def ceph_package_uninstall(self, ctxt):
+        response = self.call(ctxt, "ceph_package_uninstall")
+        return response
+
     def ceph_osd_create(self, ctxt, osd):
         response = self.call(ctxt, "ceph_osd_create", osd=osd)
         return response

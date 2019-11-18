@@ -2,9 +2,11 @@ import configparser
 import logging
 import os
 import socket
+import time
 from pathlib import Path
 
 import paramiko
+from grpc._channel import _Rendezvous
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
@@ -217,7 +219,7 @@ class NodeTask(object):
         )
 
     def chrony_uninstall(self):
-        logger.debug("uninstall chrony")
+        logger.info("uninstall chrony")
         ssh = self.get_ssh_executor()
         # remove container and image
         self._node_remove_container("chrony", ssh)
@@ -264,13 +266,29 @@ class NodeTask(object):
         )
 
     def node_exporter_uninstall(self):
-        logger.debug("uninstall node exporter")
+        logger.info("uninstall node exporter")
         ssh = self.get_ssh_executor()
         # remove container and image
         self._node_remove_container("node_exporter", ssh)
 
+    def wait_agent_ready(self):
+        logger.debug("wait agent ready to work")
+        retry_times = 0
+        while True:
+            if retry_times == 30:
+                logger.error("dsa cann't connect in 30 seconds")
+                raise exc.InvalidInput("dsa connect error")
+            try:
+                self.get_agent()
+                break
+            except _Rendezvous:
+                logger.debug("dsa not ready, will try connect after 1 second")
+            retry_times += 1
+            time.sleep(1)
+        logger.info("dsa is ready")
+
     def ceph_mon_install(self):
-        logger.debug("install ceph mon")
+        logger.info("install ceph mon")
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
@@ -281,21 +299,26 @@ class NodeTask(object):
 
     def ceph_mon_uninstall(self, last_mon=False):
         # update ceph.conf
-        logger.debug("uninstall ceph mon")
+        logger.info("uninstall ceph mon")
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
         agent.ceph_mon_remove(self.ctxt, last_mon=last_mon)
 
     def ceph_osd_package_install(self):
-        logger.debug("install ceph-osd package on node")
+        logger.info("install ceph-osd package on node")
         agent = self.get_agent()
         agent.ceph_osd_package_install(self.ctxt)
 
     def ceph_osd_package_uninstall(self):
-        logger.debug("uninstall ceph-osd package on node")
+        logger.info("uninstall ceph-osd package on node")
         agent = self.get_agent()
         agent.ceph_osd_package_uninstall(self.ctxt)
+
+    def ceph_package_uninstall(self):
+        logger.info("uninstall ceph-common package on node")
+        agent = self.get_agent()
+        agent.ceph_package_uninstall(self.ctxt)
 
     def ceph_osd_install(self, osd):
         # write ceph.conf
@@ -311,7 +334,7 @@ class NodeTask(object):
         return osd
 
     def ceph_osd_uninstall(self, osd):
-        logger.debug("osd destroy on node")
+        logger.info("osd destroy on node")
         agent = self.get_agent()
         osd = agent.ceph_osd_destroy(self.ctxt, osd)
         return osd
@@ -407,6 +430,7 @@ class NodeTask(object):
         package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
         # start docker
         service_tool = ServiceTool(ssh)
+        service_tool.enable('docker')
         service_tool.start('docker')
         # load image
         docker_tool = DockerTool(ssh)
@@ -433,7 +457,7 @@ class NodeTask(object):
         )
 
     def dspace_agent_uninstall(self):
-        logger.debug("uninstall chrony")
+        logger.info("uninstall chrony")
         ssh = self.get_ssh_executor()
         self._node_remove_container("dsa", ssh)
         config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
