@@ -1,9 +1,11 @@
 import six
 from oslo_log import log as logging
 
+from DSpace import exception as exc
 from DSpace import objects
 from DSpace.DSM.alert_rule import AlertRuleInitMixin
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
@@ -179,30 +181,27 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
         return admin_nodes
 
+    def _cluster_create_check(self, ctxt, data):
+        if data.get('admin_create'):
+            clusters = objects.ClusterList.get_all(
+                ctxt, filters={'is_admin': True})
+            if clusters:
+                raise exc.Duplicate(_("Admin cluster exists"))
+
+        clusters = objects.ClusterList.get_all(
+            ctxt, filters={'display_name': data.get('cluster_name')})
+        if clusters:
+            raise exc.Duplicate(_("Cluster name exists"))
+
     def cluster_create(self, ctxt, data):
         """Deploy a new cluster"""
         logger.debug("Create a new cluster")
-        admin_create = data.get('admin_create')
-        if admin_create:
-            admin_clusters = objects.ClusterList.get_all(
-                ctxt,
-                filters={
-                    "is_admin": True
-                }
-            )
-            for c in admin_clusters:
-                c.destroy()
-            cluster = objects.Cluster(
-                ctxt,
-                is_admin=True,
-                display_name=data.get('cluster_name'))
-            cluster.create()
-        else:
-            cluster = objects.Cluster(
-                ctxt,
-                is_admin=False,
-                display_name=data.get('cluster_name'))
-            cluster.create()
+        self._cluster_create_check(ctxt, data)
+        cluster = objects.Cluster(
+            ctxt,
+            is_admin=data.get('admin_create'),
+            display_name=data.get('cluster_name'))
+        cluster.create()
 
         ctxt.cluster_id = cluster.id
         # TODO check key value
