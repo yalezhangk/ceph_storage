@@ -16,6 +16,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 
@@ -305,8 +306,11 @@ class NodeListHandler(ClusterAPIHandler):
                 try:
                     node = yield client.node_create(ctxt, data)
                     nodes.append(node)
-                except Exception:
-                    pass
+                except Exception as e:
+                    wb_client = WebSocketClientManager(
+                        context=ctxt).get_client()
+                    wb_client.send_message(
+                        ctxt, None, "NODE_CREATE_FAILED", str(e))
 
             self.write(objects.json_encode({
                 "nodes": nodes

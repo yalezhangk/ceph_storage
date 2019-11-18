@@ -13,6 +13,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 
@@ -240,8 +241,11 @@ class OsdListHandler(ClusterAPIHandler):
                 try:
                     osd = yield client.osd_create(ctxt, data)
                     osds.append(osd)
-                except Exception:
-                    pass
+                except Exception as e:
+                    wb_client = WebSocketClientManager(
+                        context=ctxt).get_client()
+                    wb_client.send_message(
+                        ctxt, None, "OSD_CREATE_FAILED", str(e))
 
             self.write(objects.json_encode({
                 "osds": osds
