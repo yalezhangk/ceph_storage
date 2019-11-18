@@ -687,7 +687,7 @@ def node_status_get(context):
     filters['cluster_id'] = context.cluster_id
     with session.begin():
         query = session.query(models.Node.status, func.count(
-            models.Node.id)).group_by(models.Node.status)
+            models.Node.id)).group_by(models.Node.status).filter_by(deleted=0)
     return query.all()
 
 
@@ -698,7 +698,7 @@ def pool_status_get(context):
     filters['cluster_id'] = context.cluster_id
     with session.begin():
         query = session.query(models.Pool.status, func.count(
-            models.Pool.id)).group_by(models.Pool.status)
+            models.Pool.id)).group_by(models.Pool.status).filter_by(deleted=0)
     return query.all()
 
 
@@ -709,7 +709,7 @@ def osd_status_get(context):
     filters['cluster_id'] = context.cluster_id
     with session.begin():
         query = session.query(models.Osd.status, func.count(
-            models.Osd.id)).group_by(models.Osd.status)
+            models.Osd.id)).group_by(models.Osd.status).filter_by(deleted=0)
     return query.all()
 
 
