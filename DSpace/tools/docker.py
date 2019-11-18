@@ -126,7 +126,7 @@ class Docker(ToolBase):
                 return "error"
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
-        if stdout.strip().decode('utf-8') == "true":
+        if stdout.strip() == "true":
             return "active"
         else:
             return "inactive"
