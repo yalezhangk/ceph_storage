@@ -23,6 +23,7 @@ from DSpace.common import config  # noqa
 from DSpace.db import migration as db_migration
 from DSpace.db.sqlalchemy import api as db_api
 from DSpace.i18n import _
+from DSpace.objects import fields as s_fields
 
 try:
     import collections.abc as collections
@@ -159,15 +160,25 @@ class DbCommands(object):
     def sys_config(self, data):
         configs = data.split('|')
         ctxt = context.get_context()
-        allowed = {'image_name': 'string', 'image_namespace': 'string',
-                   'dspace_version': 'string', 'admin_ip_address': 'string',
-                   'agent_port': 'number', 'admin_port': 'number',
-                   'dspace_repo': 'string', 'config_dir': 'string',
-                   'config_dir_container': 'string', 'log_dir': 'string',
-                   'log_dir_container': 'string', 'admin_ips': 'string',
-                   'max_osd_num': 'number', 'max_monitor_num': 'number',
-                   'dspace_dir': 'string', 'node_exporter_port': 'string',
-                   'debug_mode': 'string'}
+        allowed = {
+            'image_name': s_fields.ConfigType.STRING,
+            'image_namespace': s_fields.ConfigType.STRING,
+            'dspace_version': s_fields.ConfigType.STRING,
+            'admin_ip_address': s_fields.ConfigType.STRING,
+            'agent_port': s_fields.ConfigType.INT,
+            'admin_port': s_fields.ConfigType.INT,
+            'dspace_repo': s_fields.ConfigType.STRING,
+            'config_dir': s_fields.ConfigType.STRING,
+            'config_dir_container': s_fields.ConfigType.STRING,
+            'log_dir': s_fields.ConfigType.STRING,
+            'log_dir_container': s_fields.ConfigType.STRING,
+            'admin_ips': s_fields.ConfigType.STRING,
+            'max_osd_num': s_fields.ConfigType.INT,
+            'max_monitor_num': s_fields.ConfigType.INT,
+            'dspace_dir': s_fields.ConfigType.STRING,
+            'node_exporter_port': s_fields.ConfigType.STRING,
+            'debug_mode': s_fields.ConfigType.STRING
+        }
         for c in configs:
             key, value = c.split("=", 1)
             if key not in allowed:
