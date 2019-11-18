@@ -57,3 +57,8 @@ class SysConfigHandler(AdminBaseHandler):
                 ctxt, key="gateway_cidr", value=gateway_cidr,
                 value_type=s_fields.SysConfigType.STRING)
             sysconf.create()
+
+    def image_namespace_get(self, ctxt):
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        return image_namespace

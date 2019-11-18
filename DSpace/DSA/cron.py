@@ -15,39 +15,14 @@ from DSpace.tools.service import Service as ServiceTool
 logger = logging.getLogger(__name__)
 
 container_roles = ["base", "role_admin"]
-service_map = {
-    "base": {
-        "NODE_EXPORTER": "dspace_node_exporter",
-        "CHRONY": "dspace_chrony",
-        "DSA": "dsa",
-    },
-    "role_monitor": {
-        "MON": "ceph-mon@$HOSTNAME",
-        "MGR": "ceph-mgr@$HOSTNAME",
-    },
-    "role_admin": {
-        "PROMETHEUS": "dspace_prometheus",
-        "CONFD": "dspace_confd",
-        "ETCD": "dspace_etcd",
-        "PORTAL": "dspace_portal",
-        "NGINX": "dspace_portal_nginx",
-        "DSM": "dsm",
-        "DSI": "dsi",
-    },
-    "role_storage": {},
-    "role_block_gateway": {
-        "TCMU": "tcmu",
-    },
-    "role_object_gateway": {
-        "RGW": "ceph-radosgw@rgw.$HOSTNAME",
-    },
-    "role_file_gateway": {},
-}
 
 
 class CronHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
+        self.container_namespace = "athena"
+        self.service_map = {}
+        self._service_map_init()
         self.task_submit(self._setup)
         self.task_submit(self._cron)
 
@@ -72,6 +47,40 @@ class CronHandler(AgentBaseHandler):
         except Exception as e:
             logger.exception("Setup Exception: %s", e)
 
+    def _service_map_init(self):
+        namespace = self.admin.image_namespace_get(self.ctxt)
+        logger.info("Container namespace get: %s", namespace)
+        if namespace:
+            self.container_namespace = namespace
+        self.service_map = {
+            "base": {
+                "NODE_EXPORTER": self.container_namespace + "_node_exporter",
+                "CHRONY": self.container_namespace + "_chrony",
+                "DSA": self.container_namespace + "_dsa",
+            },
+            "role_monitor": {
+                "MON": "ceph-mon@$HOSTNAME",
+                "MGR": "ceph-mgr@$HOSTNAME",
+            },
+            "role_admin": {
+                "PROMETHEUS": self.container_namespace + "_prometheus",
+                "ETCD": self.container_namespace + "_etcd",
+                "PORTAL": self.container_namespace + "_portal",
+                "NGINX": self.container_namespace + "_nginx",
+                "DSM": self.container_namespace + "_dsm",
+                "DSI": self.container_namespace + "_dsi",
+                "MARIADB": self.container_namespace + "_mariadb",
+            },
+            "role_storage": {},
+            "role_block_gateway": {
+                "TCMU": "tcmu",
+            },
+            "role_object_gateway": {
+                "RGW": "ceph-radosgw@rgw.$HOSTNAME",
+            },
+            "role_file_gateway": {},
+        }
+
     def service_check(self):
         logger.debug("Get services status")
 
@@ -83,10 +92,13 @@ class CronHandler(AgentBaseHandler):
         service_tool = ServiceTool(ssh_client)
         services = []
 
-        for role, sers in six.iteritems(service_map):
+        for role, sers in six.iteritems(self.service_map):
             if (role != "base") and (not node[role]):
                 continue
             for k, v in six.iteritems(sers):
+                if v.find('$HOSTNAME'):
+                    if not node.hostname:
+                        continue
                 v = v.replace('$HOSTNAME', node.hostname)
                 try:
                     if role in container_roles:
