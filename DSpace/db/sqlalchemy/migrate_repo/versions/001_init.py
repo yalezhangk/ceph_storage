@@ -333,7 +333,7 @@ def define_tables(meta):
         Column('name', String(32)),
         Column('status', String(32)),
         Column('type', String(32)),
-        Column('disk_size', BigInteger),
+        Column('size', BigInteger),
         Column('rotate_speed', Integer),
         Column('slot', String(32)),
         Column('model', String(32)),

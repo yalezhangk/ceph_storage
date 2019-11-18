@@ -128,7 +128,7 @@ class Disk(BASE, StorBase):
     name = Column(String(32))
     status = Column(String(32))
     type = Column(String(32))
-    disk_size = Column(BigInteger)  # bytes
+    size = Column(BigInteger)  # bytes
     rotate_speed = Column(Integer)  # 转速
     slot = Column(String(32))  # 插槽
     model = Column(String(32))

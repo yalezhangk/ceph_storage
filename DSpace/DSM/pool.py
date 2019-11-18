@@ -94,7 +94,7 @@ class PoolHandler(AdminBaseHandler):
             datacenter = self.datacenter_get(ctxt, rack.datacenter_id)
             datacenter_name = "pool{}-dc{}".format(pool_id, datacenter.name)
             disk = self.disk_get(ctxt, osd.disk_id)
-            osd_info = (osd.osd_id, disk.disk_size)
+            osd_info = (osd.osd_id, disk.size)
             crush_osd_info = "{}-{}".format(osd_id, osd.osd_id)
             if not rack_dict.get(rack_name):
                 rack_dict[rack_name] = [node_name]
