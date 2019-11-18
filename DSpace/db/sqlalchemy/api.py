@@ -2674,7 +2674,7 @@ def disk_update(context, disk_id, values):
 
 
 @require_context
-def disk_get_all_available(context, filters=None):
+def disk_get_all_available(context, filters=None, expected_attrs=None):
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
@@ -2685,7 +2685,10 @@ def disk_get_all_available(context, filters=None):
         query = query.outerjoin(models.Node).filter_by(role_storage=True)
         if query is None:
             return []
-        return query.all()
+        disks = query.all()
+        for disk in disks:
+            _disk_load_attr(context, disk, expected_attrs, session)
+        return disks
 
 
 ###############################

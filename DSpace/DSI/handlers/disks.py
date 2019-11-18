@@ -503,8 +503,9 @@ class DiskAvailableListHandler(ClusterAPIHandler):
                 })
 
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['node']
         disks = yield client.disk_get_all_available(
-            ctxt, filters=filters)
+            ctxt, filters=filters, expected_attrs=expected_attrs)
         self.write(objects.json_encode({
             "disks": disks,
         }))
