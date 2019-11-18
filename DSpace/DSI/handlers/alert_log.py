@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -15,6 +16,23 @@ from DSpace.objects.fields import AlertLogLevel as Level
 from DSpace.objects.fields import AllResourceType as Resource
 
 logger = logging.getLogger(__name__)
+
+
+update_alert_log_schema = {
+    "type": "object",
+    "properties": {
+        "alert_log": {
+            "type": "object",
+            "properties": {
+                "readed": {"enum": [True]}
+            },
+            "required": ["readed"],
+            "additionalProperties": False
+        }
+    },
+    "required": ["alert_log"],
+    "additionalProperties": False
+}
 
 
 @URLRegistry.register(r"/alert_logs/")
@@ -177,9 +195,11 @@ class AlertLogHandler(ClusterAPIHandler):
         responses:
         "200":
           description: successful operation
+
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_alert_log_schema)
         alert_log_data = data.get('alert_log')
         client = self.get_admin_client(ctxt)
         alert_log = yield client.alert_log_update(
@@ -297,20 +317,57 @@ class AlertLogActionHandler(ClusterAPIHandler):
     @gen.coroutine
     def put(self):
         """alert_log action
-
         ---
         tags:
         - alert_log
-        summary: action:all_readed(全标已读)、del_alert_logs(删除告警记录)
+        summary: Update alert_log, action:all_readed(全标已读)、
+                 del_alert_logs(删除告警记录)
+        description: update alert_log.
+        operationId: alertlogs.api.updateAlertLog
         produces:
         - application/json
         parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
         - in: body
-          name: action
-          description: action type
+          name: alert_logs(read)
+          description: updated alert_logs object
           required: true
           schema:
-            type: str
+            type: object
+            properties:
+              alert_log:
+                type: object
+                properties:
+                  readed:
+                    type: boolean
+                    description: Update all of alert log to be read,
+                                 it must be true.
+              action:
+                type: string
+                description: Update all of alert log to be read,
+                             it must be 'all_readed'.
+        - in: body
+          name: alert_logs(deleted)
+          description: updated alert_logs object
+          required: true
+          schema:
+            type: object
+            properties:
+              alert_log:
+                type: object
+                properties:
+                  before_time:
+                    type: string
+                    description: times format, eg."2019-10-13 10:16:32".
+              action:
+                type: string
+                description: Delete all of the alert log,
+                             it must be 'del_alert_logs'.
         responses:
         "200":
           description: successful operation

@@ -3,6 +3,7 @@
 
 import logging
 
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -11,6 +12,67 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+create_alert_group_schema = {
+    "type": "object",
+    "properties": {
+        "alert_group": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "alert_rule_ids": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "uniqueItems": True
+                },
+                "email_group_ids": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "uniqueItems": True
+                }
+            },
+            "required": ["name", "alert_rule_ids", "email_group_ids"],
+            "additionalProperties": False
+        }
+    },
+    "required": ["alert_group"],
+    "additionalProperties": False
+}
+
+update_alert_group_schema = {
+    "type": "object",
+    "properties": {
+        "alert_group": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "alert_rule_ids": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "uniqueItems": True
+                },
+                "email_group_ids": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "uniqueItems": True
+                }
+            },
+            "additionalProperties": False
+        }
+    },
+    "additionalProperties": False,
+    "required": ["alert_group"]
+}
 
 
 @URLRegistry.register(r"/alert_groups/")
@@ -113,6 +175,7 @@ class AlertGroupListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_alert_group_schema)
         data = data.get("alert_group")
         client = self.get_admin_client(ctxt)
         alert_group = yield client.alert_group_create(ctxt, data)
@@ -233,6 +296,7 @@ class AlertGroupHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_alert_group_schema)
         alert_group_data = data.get('alert_group')
         client = self.get_admin_client(ctxt)
         alert_group = yield client.alert_group_update(
