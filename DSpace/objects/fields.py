@@ -285,8 +285,9 @@ class AllResourceType(BaseStorEnum):
     VOLUME = 'volume'
     SNAPSHOT = 'snapshot'
     ALERT_LOG = 'alert_log'
+    SMTP_SYSCONFS = 'smtp__sysconfs'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT, ALERT_LOG)
+           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS)
 
 
 class AllActionType(BaseStorEnum):
@@ -353,7 +354,11 @@ class ResourceAction(object):
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.VOLUME_EXTEND,
                  AllActionType.VOLUME_SHRINK, AllActionType.VOLUME_ROLLBACK,
-                 AllActionType.VOLUME_UNLINK]
+                 AllActionType.VOLUME_UNLINK],
+
+            AllResourceType.SMTP_SYSCONFS:
+                [AllActionType.UPDATE
+                 ]
         }
         return relation
 
