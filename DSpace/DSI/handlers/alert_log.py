@@ -7,6 +7,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
@@ -16,6 +17,7 @@ from DSpace.objects.fields import AllResourceType as Resource
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/alert_logs/")
 class AlertLogListHandler(ClusterAPIHandler):
 
     def _filter_query(self):
@@ -93,6 +95,7 @@ class AlertLogListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/alert_logs/([0-9]*)/")
 class AlertLogHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, alert_log_id):
@@ -222,6 +225,7 @@ class AlertLogHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/alert_logs/messages/")
 class ReceiveAlertMessageHandler(BaseAPIHandler):
     @gen.coroutine
     def post(self):
@@ -235,6 +239,7 @@ class ReceiveAlertMessageHandler(BaseAPIHandler):
             "alert_messages": alert_messages}))
 
 
+@URLRegistry.register(r"/alert_logs/type_count/")
 class AlertTpyeCountHandler(ClusterAPIHandler):
 
     @gen.coroutine
@@ -276,6 +281,7 @@ class AlertTpyeCountHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/alert_logs/action/")
 class AlertLogActionHandler(ClusterAPIHandler):
 
     @gen.coroutine

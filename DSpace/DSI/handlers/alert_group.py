@@ -7,11 +7,13 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/alert_groups/")
 class AlertGroupListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -119,6 +121,7 @@ class AlertGroupListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/alert_groups/([0-9]*)/")
 class AlertGroupHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, alert_group_id):

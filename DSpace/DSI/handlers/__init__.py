@@ -2,18 +2,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from DSpace.DSI.handlers.action_log import ActionLogHandler
-from DSpace.DSI.handlers.action_log import ActionLogListHandler
-from DSpace.DSI.handlers.action_log import ResourceActionHandler
-from DSpace.DSI.handlers.alert_group import AlertGroupHandler
-from DSpace.DSI.handlers.alert_group import AlertGroupListHandler
-from DSpace.DSI.handlers.alert_log import AlertLogActionHandler
-from DSpace.DSI.handlers.alert_log import AlertLogHandler
-from DSpace.DSI.handlers.alert_log import AlertLogListHandler
-from DSpace.DSI.handlers.alert_log import AlertTpyeCountHandler
-from DSpace.DSI.handlers.alert_log import ReceiveAlertMessageHandler
-from DSpace.DSI.handlers.alert_rule import AlertRuleHandler
-from DSpace.DSI.handlers.alert_rule import AlertRuleListHandler
 from DSpace.DSI.handlers.ceph_config import CephConfigActionHandler
 from DSpace.DSI.handlers.ceph_config import CephConfigContentHandler
 from DSpace.DSI.handlers.ceph_config import CephConfigListHandler
@@ -148,20 +136,12 @@ class URLRegistry(object):
 
 def get_routers():
     __import__('DSpace.DSI.handlers.disk_partitions')
+    __import__('DSpace.DSI.handlers.action_log')
+    __import__('DSpace.DSI.handlers.alter_group')
+    __import__('DSpace.DSI.handlers.alter_log')
+    __import__('DSpace.DSI.handlers.alter_rule')
     registry = URLRegistry()
     return registry.routes() + [
-        (r"/action_logs/", ActionLogListHandler),
-        (r"/action_logs/([0-9]*)/", ActionLogHandler),
-        (r"/action_logs/resource_action/", ResourceActionHandler),
-        (r"/alert_groups/", AlertGroupListHandler),
-        (r"/alert_groups/([0-9]*)/", AlertGroupHandler),
-        (r"/alert_logs/", AlertLogListHandler),
-        (r"/alert_logs/([0-9]*)/", AlertLogHandler),
-        (r"/alert_logs/action/", AlertLogActionHandler),
-        (r"/alert_logs/messages/", ReceiveAlertMessageHandler),
-        (r"/alert_logs/type_count/", AlertTpyeCountHandler),
-        (r"/alert_rules/", AlertRuleListHandler),
-        (r"/alert_rules/([0-9]*)/", AlertRuleHandler),
         (r"/ceph_configs/", CephConfigListHandler),
         (r"/ceph_configs/action/", CephConfigActionHandler),
         (r"/ceph_configs/content/", CephConfigContentHandler),

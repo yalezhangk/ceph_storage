@@ -7,11 +7,13 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/action_logs/")
 class ActionLogListHandler(ClusterAPIHandler):
 
     def filters_query(self):
@@ -114,6 +116,7 @@ class ActionLogListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/action_logs/([0-9]*)/")
 class ActionLogHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, action_log_id):
@@ -135,6 +138,7 @@ class ActionLogHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/action_logs/resource_action/")
 class ResourceActionHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
