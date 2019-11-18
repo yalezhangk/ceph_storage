@@ -142,8 +142,9 @@ class DiskPartitionAvailableListHandler(ClusterAPIHandler):
             raise exception.InvalidInput(_("Disk partition role is required"))
 
         client = self.get_admin_client(ctxt)
+        expected_attrs = ['node']
         disk_partitions = yield client.disk_partition_get_all_available(
-            ctxt, filters=filters)
+            ctxt, filters=filters, expected_attrs=expected_attrs)
         self.write(objects.json_encode({
             "disk_partitions": disk_partitions,
         }))

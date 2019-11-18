@@ -2686,6 +2686,8 @@ def disk_get_all_available(context, filters=None, expected_attrs=None):
         if query is None:
             return []
         disks = query.all()
+        if not expected_attrs:
+            return disks
         for disk in disks:
             _disk_load_attr(context, disk, expected_attrs, session)
         return disks
@@ -2802,7 +2804,8 @@ def disk_partition_update(context, disk_part_id, values):
 
 
 @require_context
-def disk_partition_get_all_available(context, filters=None):
+def disk_partition_get_all_available(context, filters=None,
+                                     expected_attrs=None):
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
@@ -2813,7 +2816,12 @@ def disk_partition_get_all_available(context, filters=None):
         query = query.outerjoin(models.Node).filter_by(role_storage=True)
         if query is None:
             return []
-        return query.all()
+        partitions = query.all()
+        if not expected_attrs:
+            return partitions
+        for partition in partitions:
+            _disk_pattition_load_attr(partition, expected_attrs)
+        return partitions
 
 
 ###############################

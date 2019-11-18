@@ -227,8 +227,9 @@ class DiskHandler(AdminBaseHandler):
             ctxt, filters=filters, expected_attrs=expected_attrs)
         return disks
 
-    def disk_partition_get_all_available(self, ctxt, filters=None):
+    def disk_partition_get_all_available(self, ctxt, filters=None,
+                                         expected_attrs=None):
         filters['status'] = s_fields.DiskStatus.AVAILABLE
         partitions = objects.DiskPartitionList.get_all_available(
-            ctxt, filters=filters)
+            ctxt, filters=filters, expected_attrs=expected_attrs)
         return partitions

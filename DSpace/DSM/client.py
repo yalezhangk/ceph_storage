@@ -428,9 +428,10 @@ class AdminClient(BaseClient):
             ctxt, "disk_partition_get_count", filters=filters)
         return response
 
-    def disk_partition_get_all_available(self, ctxt, filters=None):
+    def disk_partition_get_all_available(self, ctxt, filters=None,
+                                         expected_attrs=None):
         response = self.call(ctxt, "disk_partition_get_all_available",
-                             filters=filters)
+                             filters=filters, expected_attrs=expected_attrs)
         return response
 
     def disk_perf_get(self, ctxt, disk_id):
