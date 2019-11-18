@@ -241,6 +241,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "sysconf_get_all")
         return response
 
+    def image_namespace_get(self, ctxt):
+        response = self.call(ctxt, "image_namespace_get")
+        return response
+
     def update_chrony(self, ctxt, chrony_server):
         response = self.call(ctxt, "update_chrony",
                              chrony_server=chrony_server)
