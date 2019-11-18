@@ -3,6 +3,8 @@ from oslo_log import log as logging
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType
+from DSpace.objects.fields import AllResourceType
 from DSpace.utils.mail import send_mail
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,10 @@ class MailHandler(AdminBaseHandler):
 
     def update_smtp(self, ctxt, data):
         # TODO check a object exists
+        begin_action = self.begin_action(ctxt,
+                                         resource_type=
+                                         AllResourceType.SMTP_SYSCONFS,
+                                         action=AllActionType.UPDATE)
         sysconf = None
         for k, v in data.items():
             sysconf = objects.SysConfigList.get_all(ctxt,
@@ -54,4 +60,7 @@ class MailHandler(AdminBaseHandler):
                     ctxt, key=k, value=v,
                     value_type=s_fields.SysConfigType.STRING)
                 sysconf.create()
+        self.finish_action(begin_action, resource_id=None,
+                           resource_name='smtp',
+                           resource_data=objects.json_encode(sysconf))
         return sysconf
