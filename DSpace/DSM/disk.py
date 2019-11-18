@@ -220,10 +220,11 @@ class DiskHandler(AdminBaseHandler):
             logger.warning("Remove disk %s", name)
             disk.destroy()
 
-    def disk_get_all_available(self, ctxt, filters=None):
+    def disk_get_all_available(self, ctxt, filters=None, expected_attrs=None):
         filters['status'] = s_fields.DiskStatus.AVAILABLE
         filters['role'] = s_fields.DiskRole.DATA
-        disks = objects.DiskList.get_all_available(ctxt, filters=filters)
+        disks = objects.DiskList.get_all_available(
+            ctxt, filters=filters, expected_attrs=expected_attrs)
         return disks
 
     def disk_partition_get_all_available(self, ctxt, filters=None):

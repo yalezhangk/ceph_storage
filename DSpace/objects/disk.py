@@ -97,6 +97,8 @@ class DiskList(base.ObjectListBase, base.StorObject):
         return count
 
     @classmethod
-    def get_all_available(cls, context, filters=None):
-        disks = db.disk_get_all_available(context, filters)
-        return base.obj_make_list(context, cls(context), objects.Disk, disks)
+    def get_all_available(cls, context, filters=None, expected_attrs=None):
+        disks = db.disk_get_all_available(context, filters,
+                                          expected_attrs=expected_attrs)
+        return base.obj_make_list(context, cls(context), objects.Disk,
+                                  disks, expected_attrs=expected_attrs)

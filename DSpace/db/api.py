@@ -671,8 +671,9 @@ def disk_update(context, disk_id, values):
     return IMPL.disk_update(context, disk_id, values)
 
 
-def disk_get_all_available(context, filters=None):
-    return IMPL.disk_get_all_available(context, filters)
+def disk_get_all_available(context, filters=None, expected_attrs=None):
+    return IMPL.disk_get_all_available(context, filters,
+                                       expected_attrs=expected_attrs)
 
 
 ###################
