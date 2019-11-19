@@ -37,13 +37,14 @@ class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
                      service_type)
         ssh_client = self._get_ssh_executor(node)
         if not ssh_client:
+            logger.error('connect to node error,node_ip:%s', node.ip_address)
             return False
         log_file_tool = LogFileTool(ssh_client)
         try:
             metadata = log_file_tool.get_logfile_metadata(service_type)
             logger.info("get_logfile_metadata success:{}".format(service_type))
         except exception.StorException as e:
-            logger.error("get_logfile_metadata error:{}".format(e))
+            logger.exception("get_logfile_metadata error:%s", e)
             metadata = None
         return metadata
 

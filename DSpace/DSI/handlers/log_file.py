@@ -54,7 +54,7 @@ class LogFileListHandler(ClusterAPIHandler):
             format: int32
           required: true
         - in: request
-          name: service type
+          name: service_type
           description: type of log file service, it can be mon/osd
           schema:
             type: integer
