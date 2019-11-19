@@ -1,22 +1,22 @@
-[dspace-base]
+[ceph-base]
 name=Base packages and requirements
 baseurl={{ ceph_repo }}/rpm/x86/base
 enabled=1
 gpgcheck=0
 
-[dspace-ceph]
+[ceph]
 name=Ceph packages
 baseurl={{ ceph_repo }}/rpm/x86/ceph-rpms
 enabled=1
 gpgcheck=0
 
-[dspace-tools]
+[ceph-tools]
 name=Some useful tools
 baseurl={{ ceph_repo }}/rpm/x86/tools
 enabled=1
 gpgcheck=0
 
-[dspace-elasticsearch]
+[ceph-elasticsearch]
 name=Elasticsearch and java packages
 baseurl={{ ceph_repo }}/rpm/x86/elasticsearch
 enabled=1
