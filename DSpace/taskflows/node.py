@@ -256,13 +256,17 @@ class NodeTask(object):
                                                            "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
                                                           "dspace_version")
+        node_exporter_port = objects.sysconfig.sys_config_get(
+            self.ctxt, "node_exporter_port")
         docker_tool.run(
             image="{}/node_exporter:{}".format(image_namespace,
                                                dspace_version),
             privileged=True,
             name="{}_node_exporter".format(image_namespace),
             volumes=[(config_dir, config_dir_container),
-                     ("/", "/host", "ro,rslave")]
+                     ("/", "/host", "ro,rslave")],
+            envs=[("NODE_EXPORTER_ADDRESS", str(self.node.ip_address)),
+                  ("NODE_EXPORTER_PORT", node_exporter_port)]
         )
 
     def node_exporter_uninstall(self):
