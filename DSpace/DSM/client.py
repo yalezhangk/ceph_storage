@@ -456,11 +456,11 @@ class AdminClient(BaseClient):
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,
                             sort_keys=None, sort_dirs=None, filters=None,
-                            offset=None):
+                            offset=None, expected_attrs=None):
         response = self.call(
             ctxt, "email_group_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return response
 
     def email_group_create(self, ctxt, data):
@@ -468,9 +468,10 @@ class AdminClient(BaseClient):
             ctxt, "email_group_create", data=data)
         return response
 
-    def email_group_get(self, ctxt, email_group_id):
+    def email_group_get(self, ctxt, email_group_id, expected_attrs=None):
         response = self.call(ctxt, "email_group_get",
-                             email_group_id=email_group_id)
+                             email_group_id=email_group_id,
+                             expected_attrs=expected_attrs)
         return response
 
     def email_group_update(self, ctxt, email_group_id, data):

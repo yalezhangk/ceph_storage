@@ -2980,7 +2980,11 @@ def _email_group_get(context, email_group_id, session=None):
 
 @require_context
 def email_group_get(context, email_group_id, expected_attrs=None):
-    return _email_group_get(context, email_group_id)
+    session = get_session()
+    with session.begin():
+        email_group = _email_group_get(context, email_group_id, session)
+        _email_group_load_attr(context, email_group, expected_attrs, session)
+    return email_group
 
 
 @require_context
@@ -3005,9 +3009,17 @@ def email_group_update(context, email_group_id, values):
             raise exception.EmailGroupNotFound(email_group_id=email_group_id)
 
 
+def _email_group_load_attr(context, email_group, expected_attrs, session):
+    expected_attrs = expected_attrs or []
+    if 'alert_groups' in expected_attrs:
+        email_group.alert_groups = [al_group for al_group in
+                                    email_group.alert_groups]
+
+
 @require_context
 def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
-                        sort_dirs=None, filters=None, offset=None):
+                        sort_dirs=None, filters=None, offset=None,
+                        expected_attrs=None):
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
@@ -3020,7 +3032,10 @@ def email_group_get_all(context, marker=None, limit=None, sort_keys=None,
             sort_keys, sort_dirs, filters, offset)
         if query is None:
             return []
-        return query.all()
+    email_groups = query.all()
+    for email_group in email_groups:
+        _email_group_load_attr(context, email_group, expected_attrs, session)
+    return email_groups
 
 
 @require_context

@@ -52,7 +52,9 @@ class EmailGroupListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        email_groups = yield client.email_group_get_all(ctxt, **page_args)
+        expected_attrs = ['alert_groups']
+        email_groups = yield client.email_group_get_all(
+            ctxt, expected_attrs=expected_attrs, **page_args)
         email_group_count = yield client.email_group_get_count(ctxt)
         self.write(objects.json_encode({
             "email_groups": email_groups,
@@ -147,7 +149,9 @@ class EmailGroupHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        email_group = yield client.email_group_get(ctxt, email_group_id)
+        expected_attrs = ['alert_groups']
+        email_group = yield client.email_group_get(ctxt, email_group_id,
+                                                   expected_attrs)
         self.write(objects.json_encode({
             "email_group": email_group
         }))

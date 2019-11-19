@@ -15,7 +15,10 @@ class EmailGroup(base.StorPersistentObject, base.StorObject,
         'name': fields.StringField(),
         'emails': fields.StringField(),
         'cluster_id': fields.UUIDField(),
+        'alert_groups': fields.ListOfObjectsField('AlertGroup', nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('alert_groups',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -38,6 +41,18 @@ class EmailGroup(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+
+        if 'alert_groups' in expected_attrs:
+            alert_groups = db_obj.get('alert_groups', [])
+            obj.alert_groups = [objects.AlertGroup._from_db_object(
+                context, objects.AlertGroup(context), alert_group
+            ) for alert_group in alert_groups]
+
+        return super(EmailGroup, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class EmailGroupList(base.ObjectListBase, base.StorObject):
@@ -48,12 +63,13 @@ class EmailGroupList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         email_groups = db.email_group_get_all(context, marker, limit,
                                               sort_keys, sort_dirs, filters,
-                                              offset)
+                                              offset, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.EmailGroup,
-                                  email_groups)
+                                  email_groups, expected_attrs=expected_attrs)
 
     @classmethod
     def get_count(cls, context, filters=None):
