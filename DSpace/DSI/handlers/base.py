@@ -4,6 +4,7 @@ import json
 import logging
 import traceback
 
+from jsonschema.exceptions import ValidationError
 from tornado.web import RequestHandler
 
 from DSpace import exception
@@ -114,6 +115,13 @@ class BaseAPIHandler(RequestHandler):
         logger.exception(e)
         if isinstance(e, exception.StorException):
             self.send_error(e.code, reason=str(e))
+        elif isinstance(e, ValidationError):
+            e_path = []
+            for ep in e.path:
+                e_path.append(str(ep))
+            message = '.'.join(e_path)
+            message += ": " + e.message
+            self.send_error(400, reason=message)
         else:
             super(BaseAPIHandler, self)._handle_request_exception(e)
 
