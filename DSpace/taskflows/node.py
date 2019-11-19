@@ -448,19 +448,22 @@ class NodeTask(object):
         # TODO: remove code_dir
         code_dir_container = "/root/.local/lib/python3.6/site-packages/DSpace/"
         code_dir = objects.sysconfig.sys_config_get(self.ctxt, "dspace_dir")
+        debug_mode = objects.sysconfig.sys_config_get(self.ctxt, "debug_mode")
+        volumes = [
+            (config_dir, config_dir_container),
+            (log_dir, log_dir_container),
+            ("/", "/host"),
+            ("/sys", "/sys"),
+            ("/root/.ssh/", "/root/.ssh", "ro,rslave")
+        ]
+        if debug_mode == "yes":
+            volumes.append((code_dir, code_dir_container))
         docker_tool.run(
             name="{}_dsa".format(image_namespace),
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
             privileged=True,
-            volumes=[
-                (config_dir, config_dir_container),
-                (log_dir, log_dir_container),
-                ("/", "/host"),
-                ("/sys", "/sys"),
-                ("/root/.ssh/", "/root/.ssh", "ro,rslave"),
-                (code_dir, code_dir_container)
-            ]
+            volumes=volumes
         )
 
     def dspace_agent_uninstall(self):
