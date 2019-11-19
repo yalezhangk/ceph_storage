@@ -80,6 +80,14 @@ class NodeHandler(AdminBaseHandler):
 
     def node_delete(self, ctxt, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
+        # judge node could be delete
+        if node.role_admin:
+            raise exc.InvalidInput(_("admin role could not delete!"))
+        if node.role_monitor:
+            self._mon_uninstall_check(ctxt, node)
+        if node.role_storage:
+            self._storage_uninstall_check(ctxt, node)
+
         node.status = s_fields.NodeStatus.DELETING
         node.save()
         self.task_submit(self._node_delete, ctxt, node)
@@ -234,7 +242,7 @@ class NodeHandler(AdminBaseHandler):
         if len(mon_nodes):
             # update ceph config
             mon_host = ",".join(
-                [n.public_ip for n in mon_nodes]
+                [str(n.public_ip) for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
             self._set_ceph_conf(ctxt,
