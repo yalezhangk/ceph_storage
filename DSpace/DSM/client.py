@@ -943,20 +943,9 @@ class AdminClient(BaseClient):
             offset=offset)
         return response
 
-    def action_log_create(self, ctxt, data):
-        response = self.call(
-            ctxt, "action_log_create", data=data)
-        return response
-
     def action_log_get(self, ctxt, action_log_id):
         response = self.call(ctxt, "action_log_get",
                              action_log_id=action_log_id)
-        return response
-
-    def action_log_update(self, ctxt, action_log_id, data):
-        response = self.call(ctxt, "action_log_update",
-                             action_log_id=action_log_id,
-                             data=data)
         return response
 
     #####################
