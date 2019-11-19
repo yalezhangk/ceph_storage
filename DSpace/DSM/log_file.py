@@ -22,17 +22,18 @@ class LogFileHandler(AdminBaseHandler):
                          limit=None, sort_keys=None, sort_dirs=None,
                          filters=None, offset=None):
         # 1 参数校验，node/osd是否存在
+        logger.debug('begin get log_file list')
         node = objects.Node.get_by_id(ctxt, node_id)
         if not node:
             raise exception.NodeNotFound(node_id=node_id)
         if service_type == s_fields.LogfileType.MON:
             if not node.role_monitor:
                 raise exception.InvalidInput(
-                    reason=_('node_id {} is not monitor role'.format(node_id)))
+                    reason=_('node_id {} is not monitor role').format(node_id))
         elif service_type == s_fields.LogfileType.OSD:
             if not node.role_storage:
                 raise exception.InvalidInput(
-                    reason=_('node_id {} is not storage role'.format(node_id)))
+                    reason=_('node_id {} is not storage role').format(node_id))
         else:
             raise exception.InvalidInput(reason=_('service_type must is mon or'
                                                   'osd'))
@@ -43,7 +44,7 @@ class LogFileHandler(AdminBaseHandler):
         metadata = client.get_logfile_metadata(
             ctxt, node=node, service_type=service_type)
         if not metadata:
-            logger.error('get log_file metadata erro or without log_files')
+            logger.error('get log_file metadata error or without log_files')
             return None
         # 3 入库，删除旧的，再新增
         logger.info('get log_file metadata success')
@@ -63,7 +64,8 @@ class LogFileHandler(AdminBaseHandler):
             new_log = objects.LogFile(ctxt, **filters)
             new_log.create()
             result.append(new_log)
-        # todo 分页返回
+        logger.info('get log_file metadata success,'
+                    'node_id:%s, service_type:%s', node_id, service_type)
         return result
 
     def log_file_get_count(self, ctxt, node_id, service_type, filters=None):
@@ -80,7 +82,7 @@ class LogFileHandler(AdminBaseHandler):
         return alert_log
 
     def log_file_get(self, ctxt, log_file_id):
-        # todo
+        logger.debug('begin pull log_file, id:%s', log_file_id)
         # 参数校验
         log_file = objects.LogFile.get_by_id(ctxt, log_file_id)
         if not log_file:
@@ -95,8 +97,9 @@ class LogFileHandler(AdminBaseHandler):
             task = NodeTask(ctxt, node)
             task.pull_logfile(directory, filename, LOCAL_LOGFILE_DIR)
         except exception.StorException as e:
-            logger.error('pull log_file error,{}'.format(e))
+            logger.exception('pull log_file error,%s', e)
             raise exception.CephException(message='pull log_file error')
+        logger.info('pull log_file:%s success', log_file_id)
         return '{}{}'.format(LOCAL_LOGFILE_DIR, filename)
 
     def log_file_update(self, ctxt, log_file_id, data):
