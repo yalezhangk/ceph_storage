@@ -451,6 +451,7 @@ class NodeTask(object):
                 (config_dir, config_dir_container),
                 (log_dir, log_dir_container),
                 ("/", "/host"),
+                ("/sys", "/sys"),
                 ("/root/.ssh/", "/root/.ssh", "ro,rslave"),
                 ("/opt/t2stor/DSpace/", code_dir)
             ]
