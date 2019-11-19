@@ -78,8 +78,17 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def cluster_get(self, ctxt, cluster_id):
+        response = self.call(ctxt, "cluster_get", cluster_id=cluster_id)
+        return response
+
     def cluster_create(self, ctxt, data):
         response = self.call(ctxt, "cluster_create", data=data)
+        return response
+
+    def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
+        response = self.call(ctxt, "cluster_delete",
+                             cluster_id=cluster_id, clean_ceph=clean_ceph)
         return response
 
     def cluster_get_info(self, ctxt, ip_address, password=None):

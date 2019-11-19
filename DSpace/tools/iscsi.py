@@ -506,6 +506,12 @@ def _save_backups(savefile):
                          backupfile, backup_error)
             raise exc.IscsiTargetError(action="create backup file")
 
+
+# TODO clear all target
+def clear_config():
+    pass
+
+
 #############################################################################
 
 

@@ -936,6 +936,10 @@ def action_log_create(context, values):
     return IMPL.action_log_create(context, values)
 
 
+def action_log_destroy(context, action_log_id):
+    return IMPL.node_destroy(context, action_log_id)
+
+
 def action_log_update(context, action_log_id, values):
     return IMPL.action_log_update(context, action_log_id, values)
 

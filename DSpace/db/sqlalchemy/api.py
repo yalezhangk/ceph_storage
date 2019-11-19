@@ -650,7 +650,7 @@ def _cluster_get_query(context, session=None):
 
 
 @require_context
-def _cluster_get(context, cluster_id, session=None, joined_load=True):
+def _cluster_get(context, cluster_id, session=None):
     result = _cluster_get_query(context, session=session)
     result = result.filter_by(id=cluster_id).first()
 
@@ -722,7 +722,7 @@ def osd_status_get(context):
 def cluster_update(context, cluster_id, values):
     session = get_session()
     with session.begin():
-        query = _cluster_get_query(context, session, joined_load=False)
+        query = _cluster_get_query(context, session)
         result = query.filter_by(id=cluster_id).update(values)
         if not result:
             raise exception.ClusterNotFound(cluster_id=cluster_id)
@@ -3786,6 +3786,20 @@ def _action_log_get(context, action_log_id, session=None):
 @require_context
 def action_log_get(context, action_log_id, expected_attrs=None):
     return _action_log_get(context, action_log_id)
+
+
+def action_log_destroy(context, action_log_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.ActionLog, session=session).\
+            filter_by(id=action_log_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
 
 
 @require_context
