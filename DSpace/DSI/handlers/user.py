@@ -44,7 +44,7 @@ default_permission = {
 
 class PermissionMixin(BaseAPIHandler):
     @staticmethod
-    def license_verify(ctxt):
+    def license_verify(ctxt, cluster_id=None):
         # license校验
         licenses = objects.LicenseList.get_latest_valid(ctxt)
         if not licenses:
@@ -54,7 +54,12 @@ class PermissionMixin(BaseAPIHandler):
             if not v.licenses_data:
                 is_available = False
             else:
-                is_available = v.is_available()
+                if cluster_id:
+                    # verify: expire,cluster_size,node_num
+                    is_available = v.is_available()
+                else:
+                    # verify: expire
+                    is_available = v.check_licenses_expiry()
         return is_available
 
     def default_page(self):
@@ -99,7 +104,7 @@ class PermissionMixin(BaseAPIHandler):
     @gen.coroutine
     def get_permission(self, ctxt, user, cluster_id=None):
         permission = copy.deepcopy(default_permission)
-        license = self.license_verify(ctxt)
+        license = self.license_verify(ctxt, cluster_id)
         permission['license'] = license
         # platform_inited: true -> init done; false -> need init page
         permission['platform_inited'] = yield self.check_init_page(ctxt)
