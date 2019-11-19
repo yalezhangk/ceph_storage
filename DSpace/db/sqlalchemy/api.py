@@ -911,7 +911,7 @@ def _node_load_attr(node, expected_attrs=None):
     if 'networks' in expected_attrs:
         node.networks = [net for net in node._networks]
     if 'osds' in expected_attrs:
-        node.osds = [osd for osd in node._osds]
+        node.osds = [osd for osd in node._osds if osd.deleted is False]
 
 
 @require_context
