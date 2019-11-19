@@ -91,13 +91,18 @@ class PermissionMixin(BaseAPIHandler):
     def check_init_page(self, ctxt):
         inited = objects.sysconfig.sys_config_get(
             ctxt, "platform_inited", default=False)
-        if not inited:
-            client = self.get_admin_client(ctxt)
-            inited = yield client.cluster_platform_check(ctxt)
         if inited:
+            return True
+        logger.info("platform need init check")
+        client = self.get_admin_client(ctxt)
+        inited = yield client.cluster_platform_check(ctxt)
+        logger.info("platform check value: %s", inited)
+        if inited:
+            logger.info("platform inited")
             objects.SysConfig(
                 ctxt, key="platform_inited", value="True",
-                value_type=s_fields.SysConfigType.BOOL
+                value_type=s_fields.SysConfigType.BOOL,
+                cluster_id=None
             ).create()
         return inited
 

@@ -1403,9 +1403,10 @@ def sys_config_get_by_key(context, key, cluster_id, session=None):
 def sys_config_create(context, values):
     # TODO
     # get cluster id from context
-    values['cluster_id'] = context.cluster_id
     sys_config_ref = models.SysConfig()
     sys_config_ref.update(values)
+    if "cluster_id" not in values.keys():
+        sys_config_ref.cluster_id = context.cluster_id
     session = get_session()
     with session.begin():
         sys_config_ref.save(session)
