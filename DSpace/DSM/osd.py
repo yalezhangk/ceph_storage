@@ -146,6 +146,13 @@ class OsdHandler(AdminBaseHandler):
     def osd_create(self, ctxt, data):
         logger.info("Osd create with %s.", data)
 
+        # osd num check
+        max_osd_num = objects.sysconfig.sys_config_get(
+            ctxt, key="max_osd_num"
+        )
+        osd_num = objects.OsdList.get_count(ctxt)
+        if osd_num >= max_osd_num:
+            raise exception.InvalidInput(_("Max osd num is %s" % max_osd_num))
         # data check
         disk_id = data.get('disk_id')
         disk = self._osd_create_disk_check(ctxt, disk_id)
