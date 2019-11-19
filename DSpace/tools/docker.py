@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class Docker(ToolBase):
     def run(self, name, image, command=None, volumes=None, envs=None,
-            privileged=False):
+            privileged=False, restart=True):
         """Run container
 
         :param name: the container name
@@ -39,6 +39,8 @@ class Docker(ToolBase):
             cmd.extend(["-e", "{}={}".format(k, v)])
         if privileged:
             cmd.extend(["--privileged"])
+        if restart:
+            cmd.extend(["--restart", "unless-stopped"])
         cmd.append(image)
         if command:
             cmd.append(command)

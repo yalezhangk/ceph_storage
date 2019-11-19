@@ -635,14 +635,17 @@ class DSpaceAgentInstall(BaseTask):
             ("/sys", "/sys"),
             ("/root/.ssh/", "/root/.ssh", "ro,rslave")
         ]
+        restart = True
         if debug_mode == "yes":
             volumes.append((code_dir, CODE_DIR_CONTAINER))
+            restart = False
         docker_tool = DockerTool(ssh)
         docker_tool.run(
             name="{}_dsa".format(image_namespace),
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
             privileged=True,
+            restart=restart,
             volumes=volumes
         )
         agent_port = objects.sysconfig.sys_config_get(
