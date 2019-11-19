@@ -9,11 +9,13 @@ from tornado.escape import json_decode
 from tornado.escape import json_encode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/rpc_services/")
 class RpcServiceListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

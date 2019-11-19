@@ -5,6 +5,7 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
@@ -12,6 +13,7 @@ from DSpace.i18n import _
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/pools/")
 class PoolListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -157,6 +159,7 @@ class PoolListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/")
 class PoolHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
@@ -289,6 +292,7 @@ class PoolHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/osds/")
 class PoolOsdsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
@@ -327,6 +331,7 @@ class PoolOsdsHandler(ClusterAPIHandler):
         self.write(objects.json_encode({"osds": osds}))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/capacity/")
 class PoolCapacityHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
@@ -365,6 +370,7 @@ class PoolCapacityHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/increase_disk/")
 class PoolIncreaseDiskHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self, pool_id):
@@ -425,6 +431,7 @@ class PoolIncreaseDiskHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/decrease_disk/")
 class PoolDecreaseDiskHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self, pool_id):
@@ -485,6 +492,7 @@ class PoolDecreaseDiskHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/update_security_policy/")
 class PoolPolicyHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self, pool_id):
@@ -545,6 +553,7 @@ class PoolPolicyHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/metrics/")
 class PoolMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):
@@ -584,6 +593,7 @@ class PoolMetricsHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/pools/([0-9]*)/history_metrics/")
 class PoolMetricsHistoryHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, pool_id):

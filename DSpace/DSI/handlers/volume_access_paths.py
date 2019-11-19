@@ -5,6 +5,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
@@ -39,6 +40,7 @@ class CheckVolumeAccessPath():
             raise exception.InvalidInput(_("username or password too long"))
 
 
+@URLRegistry.register(r"/volume_access_paths/")
 class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
     def get(self):
@@ -152,6 +154,7 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/")
 class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
     def get(self, voluem_access_path_id):
@@ -297,6 +300,7 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/mount_gw/")
 class VolumeAccessPathMountGWHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
     def post(self, id):
@@ -362,6 +366,7 @@ class VolumeAccessPathMountGWHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/unmount_gw/")
 class VolumeAccessPathUnmountGWHandler(ClusterAPIHandler,
                                        CheckVolumeAccessPath):
     @gen.coroutine
@@ -427,6 +432,7 @@ class VolumeAccessPathUnmountGWHandler(ClusterAPIHandler,
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/create_mapping/")
 class VolumeAccessPathCreateMappingHandler(ClusterAPIHandler,
                                            CheckVolumeAccessPath):
     @gen.coroutine
@@ -504,6 +510,7 @@ class VolumeAccessPathCreateMappingHandler(ClusterAPIHandler,
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/remove_mapping/")
 class VolumeAccessPathRemoveMappingHandler(ClusterAPIHandler,
                                            CheckVolumeAccessPath):
     @gen.coroutine
@@ -581,6 +588,7 @@ class VolumeAccessPathRemoveMappingHandler(ClusterAPIHandler,
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/set_chap/")
 class VolumeAccessPathChapHandler(ClusterAPIHandler,
                                   CheckVolumeAccessPath):
     @gen.coroutine
@@ -666,6 +674,7 @@ class VolumeAccessPathChapHandler(ClusterAPIHandler,
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/change_client_group/")
 class VolumeAccessPathChangeClientGroupHandler(ClusterAPIHandler,
                                                CheckVolumeAccessPath):
     @gen.coroutine
@@ -731,6 +740,7 @@ class VolumeAccessPathChangeClientGroupHandler(ClusterAPIHandler,
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/add_volume/")
 class VolumeAccessPathAddVolumeHandler(ClusterAPIHandler,
                                        CheckVolumeAccessPath):
     @gen.coroutine
@@ -803,6 +813,7 @@ class VolumeAccessPathAddVolumeHandler(ClusterAPIHandler,
         }))
 
 
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/remove_volume/")
 class VolumeAccessPathRemoveVolumeHandler(ClusterAPIHandler,
                                           CheckVolumeAccessPath):
     @gen.coroutine

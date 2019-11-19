@@ -8,12 +8,14 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/clusters/")
 class ClusterHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
@@ -79,6 +81,7 @@ class ClusterHandler(BaseAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/clusters/get_admin_nodes/")
 class ClusterAdminNodesHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
@@ -104,6 +107,7 @@ class ClusterAdminNodesHandler(BaseAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/clusters/check_admin_node_status/")
 class ClusterCheckAdminNodeHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
@@ -129,6 +133,7 @@ class ClusterCheckAdminNodeHandler(BaseAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/cluster_detect/")
 class ClusterDetectHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -173,6 +178,7 @@ class ClusterDetectHandler(ClusterAPIHandler):
         ))
 
 
+@URLRegistry.register(r"/clusters/metrics/")
 class ClusterMetricsHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -204,6 +210,7 @@ class ClusterMetricsHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/clusters/history_metrics/")
 class ClusterHistoryMetricsHandler(ClusterMetricsHandler):
     @gen.coroutine
     def get(self):
@@ -253,6 +260,7 @@ class ClusterHistoryMetricsHandler(ClusterMetricsHandler):
         }))
 
 
+@URLRegistry.register(r"/clusters/services_status/")
 class ClusterServiceStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -283,6 +291,7 @@ class ClusterServiceStatus(ClusterAPIHandler):
         self.write(json.dumps(service_status))
 
 
+@URLRegistry.register(r"/clusters/host_status/")
 class ClusterHostStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -312,6 +321,7 @@ class ClusterHostStatus(ClusterAPIHandler):
         self.write(json.dumps({"host_status": host_status}))
 
 
+@URLRegistry.register(r"/clusters/pool_status/")
 class ClusterPoolStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -341,6 +351,7 @@ class ClusterPoolStatus(ClusterAPIHandler):
         self.write(json.dumps({"pool_status": pool_status}))
 
 
+@URLRegistry.register(r"/clusters/osd_status/")
 class ClusterOsdStatus(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

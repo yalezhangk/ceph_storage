@@ -8,6 +8,7 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import exception
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
@@ -15,6 +16,7 @@ from DSpace.i18n import _
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/sysinfos/")
 class SysInfoHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -134,6 +136,7 @@ class SysInfoHandler(ClusterAPIHandler):
         # TODO agent设置Chrony服务器
 
 
+@URLRegistry.register(r"/sysconfs/smtp/")
 class SmtpHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -165,6 +168,7 @@ class SmtpHandler(ClusterAPIHandler):
         self.write(json.dumps({'smtp_sysconfs': data}))
 
 
+@URLRegistry.register(r"/sysconfs/mail/test/")
 class SmtpTestHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):

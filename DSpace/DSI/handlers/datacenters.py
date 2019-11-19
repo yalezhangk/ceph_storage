@@ -7,6 +7,7 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
@@ -14,6 +15,7 @@ from DSpace.i18n import _
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/datacenters/")
 class DataCenterListHandler(ClusterAPIHandler):
     # TODO 返回数据中心中的rack和vhost
     @gen.coroutine
@@ -92,6 +94,7 @@ class DataCenterListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/datacenters/([0-9]*)/")
 class DataCenterHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, datacenter_id):
@@ -226,6 +229,7 @@ class DataCenterHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/datacenters/tree/")
 class DataCenterTreeHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

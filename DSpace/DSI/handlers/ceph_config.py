@@ -8,6 +8,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 from DSpace.utils import cluster_config
@@ -15,6 +16,7 @@ from DSpace.utils import cluster_config
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/ceph_configs/")
 class CephConfigListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -78,6 +80,7 @@ class CephConfigListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/ceph_configs/action/")
 class CephConfigActionHandler(ClusterAPIHandler):
     def _ceph_config_set(self, ctxt, client, action, values):
         if action == 'update':
@@ -181,6 +184,7 @@ class CephConfigActionHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/ceph_configs/content/")
 class CephConfigContentHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):

@@ -7,11 +7,13 @@ from tornado import gen
 from tornado.escape import json_decode
 
 from DSpace import objects
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
 
 
+@URLRegistry.register(r"/racks/")
 class RackListHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
@@ -101,6 +103,7 @@ class RackListHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/racks/([0-9]*)/")
 class RackHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self, rack_id):
