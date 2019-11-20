@@ -1,4 +1,5 @@
 import copy
+import json
 import uuid
 
 import six
@@ -11,6 +12,8 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType
+from DSpace.objects.fields import AllResourceType
 from DSpace.taskflows.ceph import CephTask
 from DSpace.tools.prometheus import PrometheusTool
 
@@ -33,9 +36,11 @@ class PoolHandler(AdminBaseHandler):
                 prometheus.pool_get_capacity(pool)
                 prometheus.pool_get_pg_state(pool)
                 pg_state = pool.metrics.get("pg_state")
-                time_now = timeutils.utcnow()
+                time_now = timeutils.utcnow(with_timezone=True)
                 if pool.updated_at:
                     time_diff = time_now - pool.created_at
+                    logger.info("pool %s, get metrics: %s",
+                                pool.pool_name, pool.metrics)
                     if time_diff.total_seconds() <= 60:
                         continue
                     if pool.status not in [s_fields.PoolStatus.CREATING,
@@ -74,9 +79,10 @@ class PoolHandler(AdminBaseHandler):
             prometheus.osd_get_capacity(osd)
         return osds
 
-    def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
+    def _update_osd_info(self, ctxt, osds, osd_status, crush_rule_id):
         for osd_id in osds:
             osd = self.osd_get(ctxt, osd_id)
+            osd.status = osd_status
             osd.crush_rule_id = crush_rule_id
             osd.save()
 
@@ -145,15 +151,24 @@ class PoolHandler(AdminBaseHandler):
         if pool.data_chunk_num and pool.coding_chunk_num:
             k = str(pool.data_chunk_num)
             m = str(pool.coding_chunk_num)
-            ec_profile = "plugin=jerasuer technique=reed_sol_van k={k} \
-                          m={m}".format(k=k, m=m)
-            body.update(ec_profile=ec_profile)
+            body.update(k=k)
+            body.update(m=m)
         return body, crush_content
 
     def _pool_create(self, ctxt, pool, osds):
         crush_rule_name = "rule-{}".format(pool.id)
         body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
-        logger.debug("create pool, body: {}".format(body))
+        ceph_version = objects.sysconfig.sys_config_get(ctxt, 'ceph_version')
+        if (ceph_version == s_fields.CephVersion.T2STOR):
+            logger.info("ceph version is: %s, can specified replicate size "
+                        "while creating pool", ceph_version)
+            # can specified replicate size
+            body.update(specified_rep=True)
+        else:
+            logger.info("ceph version is: %s, can't specified replicate size "
+                        "while creating pool", ceph_version)
+            body.update(specified_rep=False)
+        logger.debug("create pool, body: %s", body)
         try:
             ceph_client = CephTask(ctxt)
             db_pool_id = ceph_client.pool_create(body)
@@ -174,7 +189,8 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.rule_id = rule_id
         pool.save()
         crush_rule.save()
-        self._update_osd_crush_id(ctxt, osds, crush_rule.id)
+        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
+                              crush_rule.id)
         wb_client = WebSocketClientManager(
             context=ctxt, cluster_id=pool.cluster_id).get_client()
         wb_client.send_message(ctxt, pool, "CREATED", msg)
@@ -182,6 +198,9 @@ class PoolHandler(AdminBaseHandler):
     def pool_create(self, ctxt, data):
         uid = str(uuid.uuid4())
         pool_name = "pool-{}".format(uid)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.CREATE)
         osds = data.get('osds')
         pool = objects.Pool(
             ctxt,
@@ -195,10 +214,15 @@ class PoolHandler(AdminBaseHandler):
             coding_chunk_num=data.get("coding_chunk_num"),
             osd_num=len(osds),
             speed_type=data.get("speed_type"),
-            replicated_size=data.get("replicated_size"),
-            failure_domain_type=data.get("failure_domain_type"))
+            replicate_size=data.get("replicate_size"),
+            failure_domain_type=data.get("failure_domain_type"),
+            data_pool=data.get("data_pool")
+        )
         pool.create()
         self._pool_create(ctxt, pool, osds)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
         return pool
 
     def _pool_delete(self, ctxt, pool):
@@ -207,13 +231,21 @@ class PoolHandler(AdminBaseHandler):
         osd_ids = []
         racks = []
         datacenters = []
-        crush_rule = self.crush_rule_get(ctxt, pool.crush_rule_id)
+        crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
+                                                 expected_attrs=['osds'])
         toplogy_data = crush_rule.content
-        logger.debug("get crush rule data: {}".format(toplogy_data))
+        logger.debug("pool delete, get crush rule data: %s", toplogy_data)
         rule_name = toplogy_data.get("crush_rule_name")
         root_name = toplogy_data.get("root_name")
         pool_role = toplogy_data.get("pool_role")
-        logger.error("crush_rule osds: {}".format(crush_rule.osds))
+        failure_domain = toplogy_data.get("fault_domain")
+        crush_rule_name = toplogy_data.get("crush_rule_name")
+        pool_name = toplogy_data.get("pool_name")
+        if pool_name != pool.pool_name:
+            logger.error("pool name don't match %s:<%s>", pool.pool_name,
+                         pool_name)
+            raise exception.ProgrammingError(reason="pool name don't match")
+        logger.debug("crush_rule osds: {}".format(crush_rule.osds))
         for h, o in six.iteritems(toplogy_data.get('host')):
             nodes.append(h)
             for osd in o:
@@ -221,19 +253,29 @@ class PoolHandler(AdminBaseHandler):
                 osd_name = "osd.{}".format(oname)
                 osds.append(osd_name)
                 osd_ids.append(oid)
-        for r, h in six.iteritems(toplogy_data.get('rack')):
-            racks.append(r)
-        for d, r in six.iteritems(toplogy_data.get('datacenter')):
-            datacenters.append(d)
+
+        if failure_domain == "rack":
+            for r, h in six.iteritems(toplogy_data.get('rack')):
+                if r:
+                    racks.append(r)
+        if failure_domain == "datacenter":
+            for d, r in six.iteritems(toplogy_data.get('datacenter')):
+                if d:
+                    datacenters.append(d)
+                    for rack in r:
+                        racks.append(rack)
         data = {
             "osds": osds,
             "nodes": nodes,
             "racks": racks,
             "datacenters": datacenters,
             "root_name": root_name,
-            "pool_role": pool_role
+            "pool_role": pool_role,
+            "crush_rule_name": crush_rule_name,
+            "pool_name": pool_name
         }
-        logger.debug("pool delete: {}".format(data))
+        logger.info("delete pool: %s, send data to client: %s", pool_name,
+                    json.dumps(data))
         try:
             ceph_client = CephTask(ctxt)
             ceph_client.pool_delete(data)
@@ -250,19 +292,26 @@ class PoolHandler(AdminBaseHandler):
             msg = _("delete pool error")
         if rule_name not in 'replicated_rule':
             self.crush_rule_delete(ctxt, pool.crush_rule_id)
-        self._update_osd_crush_id(ctxt, osd_ids, None)
+        self._update_osd_info(ctxt, osd_ids, s_fields.OsdStatus.AVAILABLE,
+                              None)
         pool.crush_rule_id = None
         pool.osd_num = None
         pool.stats = status
         wb_client = WebSocketClientManager(
             context=ctxt, cluster_id=pool.cluster_id).get_client()
-        wb_client.send_message(ctxt, pool, "CREATED", msg)
+        wb_client.send_message(ctxt, pool, "DELETED", msg)
 
     def pool_delete(self, ctxt, pool_id):
         pool = self.pool_get(ctxt, pool_id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.DELETE)
         self._pool_delete(ctxt, pool)
         pool.save()
         pool.destroy()
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
         return pool
 
     def _pool_increase_disk(self, ctxt, pool, osds):
@@ -278,7 +327,8 @@ class PoolHandler(AdminBaseHandler):
             msg = _("{} increase disk error").format(pool.pool_name)
             status = s_fields.PoolStatus.ERROR
             pool.status = status
-        crush_rule = self.crush_rule_get(ctxt, pool.crush_rule_id)
+        crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
+                                                 expected_attrs=['osds'])
         crush_osds = [osd.id for osd in crush_rule.osds]
         new_osds = crush_osds + osds
         logger.debug("pool increate disk, new_osds: {}".format(new_osds))
@@ -286,15 +336,23 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.content = content
         logger.debug("crush_rule content{}".format(crush_rule.content))
         crush_rule.save()
+        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
+                              crush_rule.id)
         wb_client = WebSocketClientManager(
             context=ctxt, cluster_id=pool.cluster_id).get_client()
         wb_client.send_message(ctxt, pool, "INCREASE_DISK", msg)
 
     def pool_increase_disk(self, ctxt, id, data):
         pool = objects.Pool.get_by_id(ctxt, id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_ADD_DISK)
         osds = data.get('osds')
         self._pool_increase_disk(ctxt, pool, osds)
         pool.save()
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
         return pool
 
     def _pool_decrease_disk(self, ctxt, pool, osds):
@@ -309,7 +367,8 @@ class PoolHandler(AdminBaseHandler):
             msg = _("{} decrease disk error").format(pool.pool_name)
             status = s_fields.PoolStatus.ERROR
             pool.status = status
-        crush_rule = self.crush_rule_get(ctxt, pool.crush_rule_id)
+        crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
+                                                 expected_attrs=['osds'])
         crush_osds = [osd.id for osd in crush_rule.osds]
         new_osds = list(set(crush_osds).difference(set(osds)))
         _tmp, content = self._generate_pool_opdata(ctxt, pool, new_osds)
@@ -317,30 +376,56 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.content = content
         logger.debug("crush_content {}".format(crush_rule.content))
         crush_rule.save()
+        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
         wb_client = WebSocketClientManager(
             context=ctxt, cluster_id=pool.cluster_id).get_client()
         wb_client.send_message(ctxt, pool, "DECREASE_DISK", msg)
 
     def pool_decrease_disk(self, ctxt, id, data):
         pool = objects.Pool.get_by_id(ctxt, id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_DEL_DISK)
         osds = data.get('osds')
         self._pool_decrease_disk(ctxt, pool, osds)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
         pool.save()
         return pool
 
     def pool_update_display_name(self, ctxt, id, name):
         pool = objects.Pool.get_by_id(ctxt, id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.UPDATE)
+        logger.info("update pool name from %s to %s", pool.display_name, name)
         pool.display_name = name
         pool.save()
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
         return pool
 
     def pool_update_policy(self, ctxt, id, data):
         pool = objects.Pool.get_by_id(ctxt, id)
-        rep_size = data.get('rep_size')
-        fault_domain = data.get('fault_domain')
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_UPDATE_POLICY)
+        rep_size = data.get('replicate_size')
+        fault_domain = data.get('failure_domain_type')
+        if int(rep_size) < int(pool.replicate_size):
+            logger.error("can't set pool size from %s to %s",
+                         pool.replicate_size, rep_size)
+            raise exception.InvalidInput(reason="can't set lower rep size")
+        if pool.failure_domain_type == "rack" and fault_domain == "host":
+            logger.error("can't set fault_domain from rack to host")
+            raise exception.InvalidInput(
+                reason="can't set fault_domain from rack to host")
         pool.failure_domain_type = fault_domain
         pool.replicate_size = rep_size
-        crush_rule = self.crush_rule_get(ctxt, pool.crush_rule_id)
+        crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
+                                                 expected_attrs=["osds"])
         osds = [osd.id for osd in crush_rule.osds]
         body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
         logger.debug("pool policy, body: {}".format(body))
@@ -351,13 +436,16 @@ class PoolHandler(AdminBaseHandler):
             crush_rule.rule_id = new_rule_id
             msg = _("{} update policy success").format(pool.pool_name)
         except exception.StorException as e:
-            logger.error("increase disk error: {}".format(e))
+            logger.error("update pool policy error: {}".format(e))
             msg = _("{} update policy error").format(pool.pool_name)
             status = s_fields.PoolStatus.ERROR
             pool.status = status
             return None
         crush_rule.content = crush_content
         crush_rule.save()
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
         pool.save()
         wb_client = WebSocketClientManager(
             context=ctxt, cluster_id=pool.cluster_id).get_client()
@@ -380,3 +468,54 @@ class PoolHandler(AdminBaseHandler):
                     'size': size
                 }
         return {}
+
+    def _generate_osd_tree(self, ctxt, osds):
+        node_ids = {}
+        for osd in osds:
+            if osd.node_id not in node_ids:
+                node_ids[osd.node_id] = []
+            node_ids[osd.node_id].append(osd)
+
+        # nodes
+        nodes = objects.NodeList.get_all(ctxt)
+        rack_ids = {}
+        for node in nodes:
+            if node.rack_id not in rack_ids:
+                rack_ids[node.rack_id] = []
+            rack_ids[node.rack_id].append(node)
+            node.osds = node_ids.get(node.id, [])
+
+        # racks
+        racks = objects.RackList.get_all(ctxt)
+        dc_ids = {}
+        for rack in racks:
+            if rack.datacenter_id not in dc_ids:
+                dc_ids[rack.datacenter_id] = []
+            dc_ids[rack.datacenter_id].append(rack)
+            rack.nodes = rack_ids.get(rack.id, [])
+
+        # datacenters
+        dcs = objects.DatacenterList.get_all(ctxt)
+        for dc in dcs:
+            dc.racks = dc_ids.get(dc.id, [])
+        if not dcs and racks:
+            return racks
+        return dcs
+
+    def pool_osd_tree(self, ctxt, pool_id):
+        pool = objects.Pool.get_by_id(ctxt, pool_id)
+        if not pool:
+            logger.error("can't get specified pool by pool_id: ", pool_id)
+            raise exception.PoolNotFound(pool_id=pool_id)
+        crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
+                                                 expected_attrs=['osds'])
+        osds = crush_rule.osds
+        logger.debug("crush rule %s, get osds: %s", crush_rule.rule_name, osds)
+        if not osds:
+            logger.error("can't get osds from crush rule: %s",
+                         crush_rule.rule_name)
+            raise exception.ProgrammingError(
+                reason="can't get osds from crush rule: {}".format(
+                    crush_rule.rule_name))
+        osd_tree = self._generate_osd_tree(ctxt, osds)
+        return osd_tree

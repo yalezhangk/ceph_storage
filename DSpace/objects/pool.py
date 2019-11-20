@@ -51,6 +51,7 @@ class Pool(base.StorPersistentObject, base.StorObject,
 
     def save(self):
         updates = self.stor_obj_get_changes()
+        updates.pop("metrics", None)
         if updates:
             db.pool_update(self._context, self.id, updates)
 

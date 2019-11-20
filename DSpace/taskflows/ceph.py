@@ -121,12 +121,8 @@ class CephTask(object):
         }
     }
     """
-
-    # TODO
-    # 1.检查传入参数
-    # 2.自动计算pg数
     def pool_create(self, pool_data):
-        logger.debug("pool_data: {}".format(json.dumps(pool_data)))
+        logger.debug("pool_data: %s", json.dumps(pool_data))
         osds = []
         with RADOSClient(self.rados_args()) as rados_client:
             # 1. Create bucket: host, rack, [datacenter], root
@@ -138,12 +134,14 @@ class CephTask(object):
             pool_name = pool_data.get('pool_name')
             rule_name = pool_data.get('crush_rule_name')
             pool_type = pool_data.get('pool_type')
-            # ec_profile = pool_data.get('ec_profile')
             rep_size = pool_data.get('rep_size')
             fault_domain = pool_data.get('fault_domain')
             pool_role = pool_data.get('pool_role')
+            can_specified_rep = pool_data.get('specified_rep')
+            pool_rep_size = rep_size if can_specified_rep else None
 
             if pool_name in rados_client.pool_list():
+                logger.error("pool %s alread exists", pool_name)
                 raise exc.PoolExists(pool=pool_name)
 
             rados_client.root_add(default_root_name)
@@ -195,37 +193,36 @@ class CephTask(object):
                             osd_id, osd_size = osd_info[0], osd_info[1]
                             rados_client.osd_add(osd_id, osd_size, h)
             pg_num = self._cal_pg_num(len(osds), rep_size)
-            logger.debug('pg_num: {}'.format(pg_num))
-            crush_file = '/tmp/.crushmap'
-            crush_with_rule_file = '/tmp/.crushmap.add_rule'
-            if rados_client.get_crushmap(crush_file):
-                rados_client.rule_add(crush_file, crush_with_rule_file,
-                                      rule_name=rule_name,
-                                      root_name=default_root_name,
-                                      choose_type=fault_domain)
-                rados_client.set_crushmap(crush_with_rule_file)
-                rados_client.pool_create(pool_name=pool_name,
-                                         pool_type=pool_type,
-                                         rule_name=rule_name,
-                                         pg_num=pg_num,
-                                         pgp_num=pg_num,
-                                         rep_size=rep_size)
-                if pool_role == 'gateway':
-                    pg_num = 32
-                    rgw_pools = ['.rgw.root', 'default.rgw.control',
-                                 'default.rgw.meta', 'default.rgw.log',
-                                 'default.rgw.buckets.index',
-                                 'default.rgw.buckets.non-ec',
-                                 'default.rgw.buckets.data']
-                    for pool in rgw_pools:
-                        rados_client.pool_create(pool_name=pool,
-                                                 pool_type=pool_type,
-                                                 rule_name=rule_name,
-                                                 pg_num=pg_num,
-                                                 pgp_num=pg_num,
-                                                 rep_size=rep_size)
+            logger.info('creating pool pg_num: %s', pg_num)
 
-            os.remove(crush_with_rule_file)
+            rados_client.rule_add(rule_name, default_root_name, fault_domain)
+            rados_client.pool_create(pool_name=pool_name,
+                                     pool_type=pool_type,
+                                     rule_name=rule_name,
+                                     pg_num=pg_num,
+                                     pgp_num=pg_num,
+                                     rep_size=pool_rep_size)
+            if not can_specified_rep:
+                rados_client.pool_set_replica_size(
+                    pool_name=pool_name, rep_size=rep_size)
+            if pool_role == 'gateway':
+                pg_num = 32
+                rgw_pools = ['.rgw.root', 'default.rgw.control',
+                             'default.rgw.meta', 'default.rgw.log',
+                             'default.rgw.buckets.index',
+                             'default.rgw.buckets.non-ec',
+                             'default.rgw.buckets.data']
+                for pool in rgw_pools:
+                    rados_client.pool_create(pool_name=pool,
+                                             pool_type=pool_type,
+                                             rule_name=rule_name,
+                                             pg_num=pg_num,
+                                             pgp_num=pg_num,
+                                             rep_size=pool_rep_size)
+                    if not can_specified_rep:
+                        rados_client.pool_set_replica_size(
+                            pool_name=pool, rep_size=rep_size)
+
             return rados_client.get_pool_stats(pool_name).get('pool_id')
 
     def config_set(self, cluster_temp_configs):
@@ -236,11 +233,11 @@ class CephTask(object):
                                         config['value'])
 
     def rule_get(self, rule_name):
-        with RADOSClient(self.ceph_config()) as rados_client:
+        with RADOSClient(self.rados_args()) as rados_client:
             rule_detail = rados_client.rule_get(rule_name)
             return rule_detail
 
-    def _cal_pg_num(self, osd_num, rep_size):
+    def _cal_pg_num(self, osd_num, rep_size=3):
         if not osd_num:
             return 0
         pg_num = (100 * osd_num) / rep_size
@@ -283,7 +280,6 @@ class CephTask(object):
                              'default.rgw.buckets.data']
                 for pool in rgw_pools:
                     rados_client.pool_delete(pool)
-            # with CrushmapTool() as crushmap_tool:
             rados_client.rule_remove(rule_name)
             if 'osds' in data:
                 osds = data.get('osds')
@@ -414,27 +410,16 @@ class CephTask(object):
                 rados_client.set_pool_info(pool_name, 'pg_num', new_pg_num)
                 rados_client.set_pool_info(pool_name, 'pgp_num', new_pg_num)
 
+    # TODO remove osd, if it's parent is None, also remove parent
     def pool_del_disk(self, data):
         logger.debug("pool_data: {}".format(data))
-        root = data.get('root_name')
         with RADOSClient(self.rados_args()) as rados_client:
-            if 'osds' in data:
-                osds = data.get('osds')
-                for osd in osds:
-                    rados_client.bucket_remove(osd)
-            if 'nodes' in data:
-                hosts = data.get('nodes')
-                for host in hosts:
-                    rados_client.bucket_remove(host)
-            if 'racks' in data:
-                racks = data.get('racks')
-                for rack in racks:
-                    rados_client.bucket_remove(rack)
-            if 'datacenters' in data:
-                datacenters = data.get('datacenters')
-                for dc in datacenters:
-                    rados_client.bucket_remove(dc)
-            rados_client.bucket_remove(root)
+            if 'host' in data:
+                for h, o in six.iteritems(data.get('host')):
+                    for osd_info in o:
+                        osd_id, _ = osd_info[0], osd_info[1]
+                        osd_name = "osd.{}".format(osd_id)
+                        rados_client.bucket_remove(osd_name)
 
     def cluster_info(self):
         with RADOSClient(self.rados_args(), timeout='1') as rados_client:
@@ -478,8 +463,8 @@ class CephTask(object):
             tmp_rule_name = "{}-new".format(rule_name)
             rados_client.rule_add(tmp_rule_name, root_name, fault_domain)
             rados_client.set_pool_info(pool_name, "crush_rule", tmp_rule_name)
+            rados_client.rule_remove(rule_name)
             rados_client.rule_rename(tmp_rule_name, rule_name)
-            rados_client.rule_remove(tmp_rule_name)
             return rados_client.rule_get(rule_name)
 
     def rbd_list(self, pool_name):

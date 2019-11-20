@@ -302,6 +302,9 @@ class AllActionType(BaseStorEnum):
     VOLUME_SHRINK = 'volume_shrink'
     VOLUME_ROLLBACK = 'volume_rollback'
     VOLUME_UNLINK = 'volume_unlink'
+    POOL_ADD_DISK = 'pool_add_disk'
+    POOL_DEL_DISK = 'pool_del_disk'
+    POOL_UPDATE_POLICY = 'pool_update_policy'
     CLONE = 'clone'
     SET_ALL_READED = 'set_all_readed'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
@@ -357,8 +360,13 @@ class ResourceAction(object):
                  AllActionType.VOLUME_UNLINK],
 
             AllResourceType.SMTP_SYSCONFS:
-                [AllActionType.UPDATE
-                 ]
+                [AllActionType.UPDATE],
+
+            AllResourceType.POOL:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.POOL_ADD_DISK,
+                 AllActionType.POOL_DEL_DISK,
+                 AllActionType.POOL_UPDATE_POLICY],
         }
         return relation
 

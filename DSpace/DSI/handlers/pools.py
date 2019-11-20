@@ -85,7 +85,7 @@ class PoolListHandler(ClusterAPIHandler):
             "role": string[data,metadata],
             "data_chunk_num": number,
             "coding_chunk_num": number,
-            "replicated_size": number,
+            "replicate_size": number,
             "failure_domain_type": string[host,rack,datacenter],
             'osds', [1,3]
         }
@@ -133,7 +133,7 @@ class PoolListHandler(ClusterAPIHandler):
                   coding_chunk_num:
                     type: integer
                     format: int32
-                  replicated_size:
+                  replicate_size:
                     type: integer
                     format: int32
                   failure_domain_type:
@@ -151,7 +151,7 @@ class PoolListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('pool')
-        logger.debug("create pool data: {}".format(data))
+        logger.debug("create pool data: %s", data)
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_create(ctxt, data)
         self.write(objects.json_encode({
@@ -284,9 +284,11 @@ class PoolHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
+        logger.info("trying to delete pool: %s", pool_id)
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_delete(
             ctxt, pool_id)
+        logger.info("delete pool: %s success", pool_id)
         self.write(objects.json_encode({
             "pool": pool
         }))
@@ -498,7 +500,8 @@ class PoolPolicyHandler(ClusterAPIHandler):
     def post(self, pool_id):
         """修改存储池安全策略
 
-        {"pool":{"rep_size":3,"fault_domain":"rack"}}
+        {"pool":{"replicate_size":3,"failure_domain_type":"rack"}}
+        {"pool":{"replicate_size":3,"failure_domain_type":"datacenter"}}
 
         ---
         tags:
@@ -532,10 +535,10 @@ class PoolPolicyHandler(ClusterAPIHandler):
               pool:
                 type: object
                 properties:
-                  rep_size:
+                  replicate_size:
                     type: integer
                     format: int32
-                  fault_domain:
+                  failure_domain_type:
                     type: string
                     description: fault domain's Level
         responses:
@@ -649,3 +652,45 @@ class PoolMetricsHistoryHandler(ClusterAPIHandler):
         self.write(json.dumps({
             "pool_metrics_history": data
         }))
+
+
+@URLRegistry.register(r"/pools/([0-9]*)/osd_tree/")
+class PoolOsdTreeHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, pool_id):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool's Osd Tree
+        description: return the osd tree of pool by id
+        operationId: pools.api.osdTree
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Pool's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        logger.info("trying to get osd tree for pool %s", pool_id)
+        data = yield client.pool_osd_tree(
+            ctxt, pool_id=pool_id)
+        self.write(objects.json_encode({
+            "pool_osd_tree": data
+        }))
+        logger.info("get osd tree success")
