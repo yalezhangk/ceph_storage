@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-28 14:03+0800\n"
+"POT-Creation-Date: 2019-11-20 15:53-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -136,7 +136,9 @@ msgstr "没有与客户端组 %(volume_client_group)s 关联的映射"
 msgid ""
 "access path %(access_path)s don't enable chap, can't enable mutual chap for "
 "client group %(volume_client_group)s"
-msgstr "访问路径 %(access_path)s 未开启chap认证，无法开启客户端组 %(volume_client_group)s 的双向chap认证"
+msgstr ""
+"访问路径 %(access_path)s 未开启chap认证，无法开启客户端组 "
+"%(volume_client_group)s 的双向chap认证"
 
 msgid "License %(license_id)s could not be found."
 msgstr "证书 %(license_id)s 未找到"
@@ -224,7 +226,8 @@ msgstr "ISCSI ACL IQN %(iqn_initiator)s 未找到"
 
 msgid ""
 "iscsi acl %(iqn_initiator)s can't find a mapped lun attached to %(disk_name)s"
-msgstr "ISCSI ACL IQN %(iqn_initiator)s 无法找到已映射到磁盘 %(disk_name)s 的路径"
+msgstr ""
+"ISCSI ACL IQN %(iqn_initiator)s 无法找到已映射到磁盘 %(disk_name)s 的路径"
 
 msgid "AlertLog Action %(action)s must in'all_readed,del_alert_logs'"
 msgstr "告警记录操作 %(action)s 只支持 'all_readed'或'del_alert_logs'"
@@ -262,6 +265,9 @@ msgid "can't delete access path: %(reason)s"
 msgstr "无法删除访问路径：%(reason)s"
 
 msgid "download file error: %(reason)s"
+msgstr "下载文件错误：%(reason)s"
+
+msgid "Timeout error: %(reason)s"
 msgstr "下载文件错误：%(reason)s"
 
 msgid "resource_type:{} not exist"
@@ -435,11 +441,20 @@ msgstr "集群删除成功"
 msgid "Cluster delete error!"
 msgstr "集群删除错误"
 
-msgid "Admin node cannot be delete"
-msgstr "管理节点无法删除"
+msgid "Admin cluster cannot be delete"
+msgstr "管理集群不能删除"
 
 msgid "Cluster is %s"
 msgstr "集群%s"
+
+msgid "Cluster has nodes in doing task"
+msgstr "集群中有节点正在执行任务"
+
+msgid "Cluster has osds in doing task"
+msgstr "集群中有正在进行的osd任务"
+
+msgid "Cluster is importing"
+msgstr "集群正在纳管"
 
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"
@@ -452,6 +467,9 @@ msgstr "创建磁盘分区成功"
 
 msgid "create disk partitions failed"
 msgstr "创建磁盘分区失败"
+
+msgid "Partition type not support"
+msgstr "不支持此标签页"
 
 msgid "remove disk partitions success"
 msgstr "移除磁盘分区成功"
@@ -537,8 +555,14 @@ msgstr "设置角色错误: {}"
 msgid "Only host's status is active can setrole(host_name: %s)"
 msgstr "%s：仅当服务器状态健康才能设置角色"
 
+msgid "Please provide roles"
+msgstr "请先移除硬盘"
+
 msgid "Can't not set and unset the same role"
 msgstr "无法设置并移除相同角色"
+
+msgid "Only one node can set roles at the same time"
+msgstr "同时只有一个节点可以设置或者取消角色"
 
 msgid "node create success"
 msgstr "节点创建成功"
@@ -586,6 +610,9 @@ msgid "The partition is not on the same machine as the disk"
 msgstr "分区和磁盘不在同一个节点"
 
 msgid "%s not support filestore"
+msgstr "%s 不支持 filestore"
+
+msgid "%s not support cache"
 msgstr "%s 不支持 filestore"
 
 msgid "No active monitor"
@@ -741,7 +768,7 @@ msgid "Available categories:"
 msgstr "可用分类："
 
 msgid "\t%s"
-msgstr "	%s"
+msgstr "\t%s"
 
 msgid "Invalid directory: %s"
 msgstr "不合法的目录"
@@ -787,3 +814,4 @@ msgstr "协调器未初始化"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
