@@ -4,6 +4,8 @@
 import json
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -14,6 +16,77 @@ from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
+
+
+update_disk_type_schema = {
+    "type": "object",
+    "properties": {
+        "disk": {
+            "type": "object",
+            "properties": {"type": {
+                "type": "string",
+                "enum": ["ssd", "hdd"]
+            }}, "required": ["type"],
+        },
+    },
+    "required": ["disk"],
+}
+
+update_disk_schema = {
+    "type": "object",
+    "properties": {
+        "action": {
+            "type": "string",
+            "enum": ["light", "partition_create", "partition_remove"]
+        },
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {"action": {"const": "light"}}
+            },
+            "then": {
+                "properties": {"disk": {
+                    "type": "object",
+                    "properties": {"led": {"enum": ["on", "off"]}},
+                    "required": ["led"],
+                    "additionalProperties": False
+                }}
+            }
+        }, {
+            "if": {
+                "properties": {"action": {"const": "partition_create"}}
+            },
+            "then": {
+                "properties": {"disk": {
+                    "type": "object",
+                    "properties": {
+                        "partition_num": {"type": "number", "minimum": 1},
+                        "role": {"enum": ["system", "data", "accelerate"]},
+                        "partition_role": {
+                            "enum": ["cache", "db", "wal", "journal", "mix"]
+                        }},
+                    "required": ["partition_num", "role", "partition_role"],
+                    "additionalProperties": False
+                }}
+            }
+        }, {
+            "if": {
+                "properties": {"action": {"const": "partition_remove"}}
+            },
+            "then": {
+                "properties": {"disk": {
+                    "type": "object",
+                    "properties": {
+                        "role": {"enum": ["system", "data", "accelerate"]},
+                    },
+                    "required": ["role"],
+                    "additionalProperties": False
+                }}
+            }
+        },
+    ], "required": ["action", "disk"]
+}
 
 
 @URLRegistry.register(r"/disks/")
@@ -181,7 +254,10 @@ class DiskHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        disk = json_decode(self.request.body).get('disk')
+        body = json_decode(self.request.body)
+        validate(body, schema=update_disk_type_schema,
+                 format_checker=draft7_format_checker)
+        disk = body.get('disk')
         disk_type = disk.get('type')
         if not disk_type:
             raise exception.InvalidInput(reason=_("disk: disk type is none"))
@@ -312,6 +388,8 @@ class DiskActionHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         body = json_decode(self.request.body)
+        validate(body, schema=update_disk_schema,
+                 format_checker=draft7_format_checker)
         action = body.get('action')
         if not action:
             raise exception.InvalidInput(reason=_("disk: action is none"))
