@@ -253,7 +253,7 @@ class OsdListHandler(ClusterAPIHandler):
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
                     wb_client.send_message(
-                        ctxt, data, "OSD_CREATE_FAILED", err_ms,
+                        ctxt, data, "CREATE_ERROR", err_ms,
                         resource_type='Osd')
 
             self.write(objects.json_encode({
