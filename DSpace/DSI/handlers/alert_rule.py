@@ -165,7 +165,7 @@ class AlertRuleHandler(ClusterAPIHandler):
                 type: object
                 properties:
                   enabled:
-                    type: string
+                    type: boolean
                     description: Enable alert rule or not
         responses:
         "200":
