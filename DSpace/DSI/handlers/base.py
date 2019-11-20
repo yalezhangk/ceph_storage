@@ -116,10 +116,7 @@ class BaseAPIHandler(RequestHandler):
         if isinstance(e, exception.StorException):
             self.send_error(e.code, reason=str(e))
         elif isinstance(e, ValidationError):
-            e_path = []
-            for ep in e.path:
-                e_path.append(str(ep))
-            message = '.'.join(e_path)
+            message = '.'.join([str(i) for i in e.path])
             message += ": " + e.message
             self.send_error(400, reason=message)
         else:

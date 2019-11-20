@@ -244,7 +244,8 @@ class AlertLogHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        validate(data, schema=update_alert_log_schema)
+        validate(data, schema=update_alert_log_schema,
+                 format_checker=draft7_format_checker)
         alert_log_data = data.get('alert_log')
         client = self.get_admin_client(ctxt)
         alert_log = yield client.alert_log_update(

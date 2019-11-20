@@ -3,6 +3,7 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
 from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
@@ -175,7 +176,8 @@ class AlertGroupListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        validate(data, schema=create_alert_group_schema)
+        validate(data, schema=create_alert_group_schema,
+                 format_checker=draft7_format_checker)
         data = data.get("alert_group")
         client = self.get_admin_client(ctxt)
         alert_group = yield client.alert_group_create(ctxt, data)
@@ -296,7 +298,8 @@ class AlertGroupHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
-        validate(data, schema=update_alert_group_schema)
+        validate(data, schema=update_alert_group_schema,
+                 format_checker=draft7_format_checker)
         alert_group_data = data.get('alert_group')
         client = self.get_admin_client(ctxt)
         alert_group = yield client.alert_group_update(
