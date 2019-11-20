@@ -92,9 +92,7 @@ class DiskHandler(AdminBaseHandler):
             msg = _("create disk partitions failed")
 
         # send ws message
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=disk.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, "CREATED", msg)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
@@ -126,9 +124,7 @@ class DiskHandler(AdminBaseHandler):
             logger.error("Disk partitions remove: Failed")
             msg = _("remove disk partitions failed")
         # send ws message
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=disk.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, "REMOVED", msg)
 
     def disk_partitions_remove(self, ctxt, disk_id, values):

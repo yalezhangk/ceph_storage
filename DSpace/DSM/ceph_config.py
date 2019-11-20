@@ -176,8 +176,7 @@ class CephConfigHandler(AdminBaseHandler):
             msg = _('Ceph config update failed')
 
         # send ws message
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=ctxt.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, values, "UPDATED", msg)
 
     def ceph_config_set(self, ctxt, values):

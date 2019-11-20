@@ -76,9 +76,7 @@ class OsdHandler(AdminBaseHandler):
             msg = _("Osd create error!")
             logger.info("Osd %s create error.", osd.osd_id)
 
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, "CREATED", msg)
 
     def _set_osd_partation_role(self, osd):
@@ -248,9 +246,7 @@ class OsdHandler(AdminBaseHandler):
             msg = _("Osd create error!")
 
         osd = objects.Osd.get_by_id(ctxt, osd_id, read_deleted='yes')
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, "DELETED", msg)
 
     def osd_delete(self, ctxt, osd_id):

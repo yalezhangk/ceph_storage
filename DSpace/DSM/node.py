@@ -67,9 +67,7 @@ class NodeHandler(AdminBaseHandler):
             msg = _("Node remove error!")
 
         node = objects.Node.get_by_id(ctxt, node_id)
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "DELETED", msg)
 
     def node_update_rack(self, ctxt, node_id, rack_id):
@@ -350,9 +348,7 @@ class NodeHandler(AdminBaseHandler):
         node.status = status
         node.save()
         # send ws message
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=node.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "DEPLOYED", msg)
 
     def node_roles_set(self, ctxt, node_id, data):
@@ -435,9 +431,7 @@ class NodeHandler(AdminBaseHandler):
         node.save()
 
         # send ws message
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=node.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "CREATED", msg)
         return node
 
