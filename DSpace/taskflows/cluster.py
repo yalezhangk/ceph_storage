@@ -47,7 +47,13 @@ class UninstallCeph(BaseTask):
             # TODO clear iscsi
             pass
         # clear ceph osd
-        osds = objects.OsdList.get_all(ctxt, expected_attrs=['node', 'disk'])
+        osds = objects.OsdList.get_all(
+            ctxt,
+            expected_attrs=[
+                'node', 'disk', 'cache_partition',
+                'db_partition', 'wal_partition', 'journal_partition'
+            ]
+        )
         clear_osd_flow = uf.Flow('Clean osd')
         for osd in osds:
             osd.node.executer = self.get_ssh_executor(osd.node)

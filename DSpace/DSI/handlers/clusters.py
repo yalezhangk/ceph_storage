@@ -173,6 +173,7 @@ class ClusterHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         clean_ceph = bool(self.get_argument('clean_ceph'))
+        clean_ceph = True if clean_ceph == 'True' else False
         client = self.get_admin_client(ctxt)
         cluster = yield client.cluster_delete(
             ctxt, cluster_id, clean_ceph=clean_ceph)
