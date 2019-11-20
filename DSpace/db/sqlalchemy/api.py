@@ -2594,6 +2594,7 @@ def _disk_get(context, disk_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def disk_create(context, values):
     disk_ref = models.Disk()
     disk_ref.cluster_id = context.cluster_id
