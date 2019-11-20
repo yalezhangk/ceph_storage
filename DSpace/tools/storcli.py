@@ -20,7 +20,7 @@ class StorCli:
 
     def get_device_id(self):
         _stdin, _stdout, _stderr = self.ssh.run_command('lsscsi')
-        for line in _stdout.decode('utf-8').split('\n'):
+        for line in _stdout.split('\n'):
             if self.disk_name in line:
                 fields = line.split(':', 5)
                 return fields[2]
@@ -57,7 +57,7 @@ class StorCli:
         _stdin, _stdout, _stderr = self.ssh.run_command(
             '{} /c0/e{}/s{} {} locate'.format(
                 self.cli_path, es[0], es[1], cmd))
-        for line in _stdout.decode('utf-8').split('\n'):
+        for line in _stdout.split('\n'):
             if "Status = Success" in line:
                 _success = True
         return _success
