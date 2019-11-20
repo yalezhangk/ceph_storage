@@ -119,8 +119,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            objects.json_encode(volume), status)
         # send ws message
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=volume.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, "CREATED", msg)
 
     def volume_update(self, ctxt, volume_id, data):
@@ -190,9 +189,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            objects.json_encode(volume), status)
         # send ws message
-        wb_client = WebSocketClientManager(
-            context=ctxt,
-            cluster_id=volume.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'DELETED', msg)
 
     def volume_extend(self, ctxt, volume_id, data):
@@ -240,9 +237,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            objects.json_encode(volume), status)
         # send ws message
-        wb_client = WebSocketClientManager(
-            context=ctxt,
-            cluster_id=volume.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_RESIZE', msg)
 
     def volume_shrink(self, ctxt, volume_id, data):
@@ -316,9 +311,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            objects.json_encode(volume), status)
         # send ws message
-        wb_client = WebSocketClientManager(
-            context=ctxt,
-            cluster_id=volume.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_ROLLBACK', msg)
 
     def volume_unlink(self, ctxt, volume_id):
@@ -361,9 +354,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            objects.json_encode(volume), status)
         # send ws message
-        wb_client = WebSocketClientManager(
-            context=ctxt,
-            cluster_id=volume.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_UNLINK', msg)
 
     def _volume_create_from_snapshot(self, ctxt, verify_data, begin_action):
@@ -395,9 +386,7 @@ class VolumeHandler(AdminBaseHandler):
                            new_volume.display_name,
                            objects.json_encode(new_volume), status)
         # send msg
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=new_volume.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, new_volume, 'VOLUME_CLONE', msg)
 
     def _verify_clone_data(self, ctxt, snapshot_id, data):

@@ -92,9 +92,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         self.finish_action(begin_action, snap.id, snap.display_name,
                            objects.json_encode(snap), status)
         # send ws message
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=snap.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, snap, "CREATED", msg)
 
     def volume_snapshot_get(self, ctxt, volume_snapshot_id,
@@ -138,9 +136,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             msg = _('delete snapshot error')
         self.finish_action(begin_action, snap.id, snap.display_name,
                            objects.json_encode(snap), status)
-        wb_client = WebSocketClientManager(
-            ctxt, cluster_id=snap.cluster_id
-        ).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, snap, 'DELETED', msg)
 
     def _check_del_snap(self, ctxt, volume_snapshot_id):

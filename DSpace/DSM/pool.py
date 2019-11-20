@@ -191,8 +191,7 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.save()
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
                               crush_rule.id)
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=pool.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "CREATED", msg)
 
     def pool_create(self, ctxt, data):
@@ -297,8 +296,7 @@ class PoolHandler(AdminBaseHandler):
         pool.crush_rule_id = None
         pool.osd_num = None
         pool.stats = status
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=pool.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "DELETED", msg)
 
     def pool_delete(self, ctxt, pool_id):
@@ -338,8 +336,7 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.save()
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
                               crush_rule.id)
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=pool.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "INCREASE_DISK", msg)
 
     def pool_increase_disk(self, ctxt, id, data):
@@ -377,8 +374,7 @@ class PoolHandler(AdminBaseHandler):
         logger.debug("crush_content {}".format(crush_rule.content))
         crush_rule.save()
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=pool.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "DECREASE_DISK", msg)
 
     def pool_decrease_disk(self, ctxt, id, data):
@@ -447,8 +443,7 @@ class PoolHandler(AdminBaseHandler):
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))
         pool.save()
-        wb_client = WebSocketClientManager(
-            context=ctxt, cluster_id=pool.cluster_id).get_client()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "UPDATE_POLICY", msg)
         return pool
 
