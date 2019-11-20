@@ -137,6 +137,8 @@ class CephTool(ToolBase):
 
 
 def get_json_output(json_databuf):
+    if len(json_databuf) == 0:
+        return None
     outbuf = encodeutils.safe_decode(json_databuf)
     logger.debug('get_json_output, outbuf: {}'.format(outbuf))
     outdata = json.loads(outbuf)
@@ -367,15 +369,6 @@ class RADOSClient(object):
     def pool_exists(self, pool):
         return self.client.pool_exists(pool)
 
-    """
-    XXX crush_rule is a integer
-    """
-    # def pool_create(self, pool_name=DEFAULT_POOL, crush_rule):
-    #     try:
-    #         self.client.create_pool(pool_name)
-    #     except rados.Error:
-    #         raise
-
     # TODO
     def _ec_pool_create(self):
         pass
@@ -391,7 +384,7 @@ class RADOSClient(object):
         return self.set_pool_info(pool_name, "size", rep_size)
 
     def pool_create(self, pool_name=None, pool_type=None, rule_name=None,
-                    ec_profile=None, pg_num=None, pgp_num=None, rep_size=0):
+                    ec_profile=None, pg_num=None, pgp_num=None, rep_size=None):
         """
         Create replicated pool or EC pool
         ceph osd pool create rbd 128 128 replicated replicated_rule 0 0 1
@@ -408,12 +401,10 @@ class RADOSClient(object):
     def _replicated_pool_create(self, pool_name=DEFAULT_POOL,
                                 pool_type='replicated',
                                 rule_name='replicated_rule',
-                                pg_num=None, pgp_num=None, rep_size=0):
+                                pg_num=None, pgp_num=None, rep_size=None):
         """
         osd pool create <poolname> <int[0-]> {<int[0-]>} {replicated|erasure} \
             {<erasure_code_profile>} {<rule>} {<int>} :  create pool
-
-        FIXME Only support create replicated pool now
         """
         cmd = {
             "rule": "0",
