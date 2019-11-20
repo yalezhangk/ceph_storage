@@ -3,6 +3,8 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -11,6 +13,21 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+
+update_alert_rule_schema = {
+    "type": "object",
+    "properties": {
+        "alert_rule": {
+            "type": "object",
+            "properties": {"enabled": {"type": "boolean"}},
+            "required": ["enabled"],
+            "additionalProperties": False
+        },
+    },
+    "required": ["alert_rule"],
+    "additionalProperties": False
+}
 
 
 @URLRegistry.register(r"/alert_rules/")
@@ -156,6 +173,8 @@ class AlertRuleHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_alert_rule_schema,
+                 format_checker=draft7_format_checker)
         alert_rule_data = data.get('alert_rule')
         client = self.get_admin_client(ctxt)
         rule = yield client.alert_rule_update(ctxt, alert_rule_id,
