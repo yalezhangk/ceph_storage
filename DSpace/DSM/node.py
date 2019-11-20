@@ -569,8 +569,6 @@ class NodeHandler(AdminBaseHandler):
     def node_check(self, ctxt, data):
         check_items = ["hostname", "selinux", "ceph_ports", "ceph_package",
                        "network", "athena_ports", "firewall", "container"]
-        # TODO delete it
-        data['ip_address'] = data.get('admin_ip')
         res = self._node_check(ctxt, data, check_items)
         return res
 
@@ -835,13 +833,11 @@ class NodeHandler(AdminBaseHandler):
         # check port
         if "ceph_ports" in items:
             # TODO: move to db
-            ports = ["6789", "9876", "9100", "9283", "7480"]
+            ports = [6789, 9876, 9100, 9283, 7480]
             res['check_ceph_port'] = self._node_check_port(node_task, ports)
-            # TODO: delete it
-            res['check_port'] = self._node_check_port(node_task, ports)
         if "athena_ports" in items:
             # TODO: move to db
-            ports = ["9100", "2083"]
+            ports = [9100, 2083]
             res['check_athena_port'] = self._node_check_port(node_task, ports)
         if "network" in items:
             public_ip = data.get('public_ip')

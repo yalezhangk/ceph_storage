@@ -129,6 +129,23 @@ class DiskHandler(AdminBaseHandler):
                            objects.json_encode(disk), status)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, 'ceph_version_name')
+        if (ceph_version == s_fields.CephVersion.T2STOR):
+            T2STOR_SUPPORT_TYPE = [
+                s_fields.DiskPartitionRole.DB,
+                s_fields.DiskPartitionRole.CACHE,
+                s_fields.DiskPartitionRole.MIX
+            ]
+            if values['partition_role'] not in T2STOR_SUPPORT_TYPE:
+                raise exception.InvalidInput(_("Partition type not support"))
+        else:
+            LUMINOUS_SUPPORT_TYPE = [
+                s_fields.DiskPartitionRole.DB,
+                s_fields.DiskPartitionRole.JOURNAL
+            ]
+            if values['partition_role'] not in LUMINOUS_SUPPORT_TYPE:
+                raise exception.InvalidInput(_("Partition type not support"))
         begin_action = self.begin_action(ctxt, Resource.DISK, Action.CREATE)
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         node = objects.Node.get_by_id(ctxt, disk.node_id)

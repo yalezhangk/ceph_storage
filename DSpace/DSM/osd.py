@@ -196,13 +196,16 @@ class OsdHandler(AdminBaseHandler):
                   "disk") % partition_id)
 
     def _osd_create_check_store(self, ctxt, data):
-        store = data.get('type')
-        if store == s_fields.OsdType.BLUESTORE:
-            return
-        if (objects.sysconfig.sys_config_get(ctxt, 'ceph_version') ==
-                s_fields.CephVersion.T2STOR):
-            raise exception.InvalidInput(
-                _("%s not support filestore") % s_fields.CephVersion.T2STOR)
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, 'ceph_version_name')
+        if (ceph_version == s_fields.CephVersion.T2STOR):
+            if data.get('type') == s_fields.OsdType.FILESTORE:
+                raise exception.InvalidInput(
+                    _("%s not support filestore") % ceph_version)
+        else:
+            if data.get('cache_partition_id'):
+                raise exception.InvalidInput(
+                    _("%s not support cache") % ceph_version)
 
     def _osd_create_check(self, ctxt, data):
         # check mon is ready
@@ -227,6 +230,7 @@ class OsdHandler(AdminBaseHandler):
         logger.info("Osd create with %s.", data)
 
         self._osd_create_check(ctxt, data)
+        self._osd_create_check_store(ctxt, data)
         # data check
         disk_id = data.get('disk_id')
         disk = self._osd_create_disk_check(ctxt, disk_id)
