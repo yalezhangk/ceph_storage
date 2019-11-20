@@ -545,5 +545,11 @@ class NodeTask(object):
     def check_ceph_is_installed(self):
         ssh = self.get_ssh_executor()
         ceph_tool = CephTool(ssh)
+        # 判断是否有残留环境
         result = ceph_tool.check_ceph_is_installed()
+        sys_tool = SystemTool(ssh)
+        result |= sys_tool.check_package('ceph')
+        file_tool = FileTool(ssh)
+        result |= file_tool.exist('/etc/ceph')
+        result |= file_tool.exist('/var/lib/ceph')
         return result

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import time
 
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
@@ -113,6 +114,23 @@ class CephHandler(AgentBaseHandler):
             self._data_clear(client, osd.journal_partition.name)
         return osd
 
+    def _wait_mon_ready(self, client):
+        logger.debug("wait monitor ready to work")
+        retry_times = 0
+        while True:
+            if retry_times == 30:
+                logger.exception("monitor cann't join cluster")
+                raise exception.InvalidInput("monitor cann't join cluster")
+            try:
+                ceph_tool = CephTool(client)
+                ceph_tool.check_mon_is_joined(str(self.node.public_ip))
+                break
+            except exception.RunCommandError as e:
+                logger.info("mon join failed : %s, retry after 1 second", e)
+            retry_times += 1
+            time.sleep(1)
+        logger.debug("mon is ready")
+
     def ceph_mon_create(self, context, ceph_auth='none'):
         client = self._get_ssh_executor()
         # install package
@@ -121,9 +139,11 @@ class CephHandler(AgentBaseHandler):
         # create mon dir
         file_tool = FileTool(client)
         file_tool.mkdir("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
+        file_tool.rm("/var/lib/ceph/mon/ceph-{}/*".format(self.node.hostname))
         file_tool.chown("/var/lib/ceph/mon", user='ceph', group='ceph')
         # create mgr dir
         file_tool.mkdir("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
+        file_tool.rm("/var/lib/ceph/mgr/ceph-{}/*".format(self.node.hostname))
         file_tool.chown("/var/lib/ceph/mgr", user='ceph', group='ceph')
 
         ceph_tool = CephTool(client)
@@ -137,6 +157,8 @@ class CephHandler(AgentBaseHandler):
         service_tool.start("ceph-mon@{}".format(self.node.hostname))
         service_tool.enable("ceph-mgr@{}".format(self.node.hostname))
         service_tool.start("ceph-mgr@{}".format(self.node.hostname))
+
+        self._wait_mon_ready(client)
         return True
 
     def ceph_mon_remove(self, context, last_mon=False):

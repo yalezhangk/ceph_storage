@@ -37,6 +37,16 @@ class File(ToolBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def exist(self, path):
+        cmd = ["ls", path]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        if rc == 2:
+            return False
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
     def chown(self, path, user='root', group='root'):
         cmd = ["chown", "-R", "{}:{}".format(user, group), path]
         rc, stdout, stderr = self.executor.run_command(cmd)
