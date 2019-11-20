@@ -24,9 +24,32 @@ class DiskTool(ToolBase):
             path = path[1:]
         return os.path.join(self.host_prefix, path)
 
+    def _get_disk_mounts(self):
+        cmd = ["lsblk", "-P", "-o", "NAME,MOUNTPOINT,TYPE"]
+        code, out, err = self.run_command(cmd)
+        if code:
+            return
+        disk_mounts = {}
+        for info in out.split('\n'):
+            values = info.split()
+            if not values:
+                continue
+            disk = {}
+            for v in values:
+                k_v = v.split('=', 1)
+                disk.update({k_v[0]: eval(k_v[1])})
+            if disk:
+                disk_mounts[disk['NAME']] = disk
+        logger.info("lsblk detail parsed %s", disk_mounts)
+        return disk_mounts
+
     def all(self):
         res = {}
         path = self._wapper("/sys/class/block/")
+        disk_mounts = self._get_disk_mounts()
+        sys_partitions = [self._wapper('/'),
+                          self._wapper('/boot'),
+                          self._wapper('/home')]
         for block in os.listdir(path):
             if block[-1].isdigit():
                 continue
@@ -40,7 +63,17 @@ class DiskTool(ToolBase):
                     os.path.join(path, block, 'queue', 'rotational')
                 ).read().strip()
             }
+            block_mount = disk_mounts.get(block)
+            if block_mount:
+                if block_mount['MOUNTPOINT']:
+                    res[block]['mounted'] = True
+
             for partition in dirs:
+                mount_info = disk_mounts.get(partition)
+                if mount_info:
+                    if mount_info['MOUNTPOINT'] in sys_partitions \
+                            and mount_info['TYPE'] == 'part':
+                        res[block]['is_sys_dev'] = True
                 if not partition.startswith(block):
                     continue
                 res[block]["partitions"][partition] = {
