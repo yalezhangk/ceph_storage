@@ -198,20 +198,34 @@ class DiskHandler(AdminBaseHandler):
                 disk = all_disks.pop(name)
                 disk.size = int(data.get('size'))
                 disk.partition_num = len(partitions)
+                if len(partitions) or data.get('mounted'):
+                    disk.status = s_fields.DiskStatus.INUSE
+                else:
+                    disk.status = s_fields.DiskStatus.AVAILABLE
                 disk.save()
                 logger.info("Update node_id %s disk %s: %s",
                             node_id, name, data)
             else:
+                if data.get('is_sys_dev'):
+                    status = s_fields.DiskStatus.INUSE
+                    role = s_fields.DiskRole.SYSTEM
+                else:
+                    status = s_fields.DiskStatus.AVAILABLE
+                    role = s_fields.DiskRole.DATA
+                if len(partitions) or data.get('mounted'):
+                    status = s_fields.DiskStatus.INUSE
+
                 disk = objects.Disk(
                     ctxt,
                     name=name,
-                    status=s_fields.DiskStatus.AVAILABLE,
+                    status=status,
                     type=data.get('type', s_fields.DiskType.HDD),
                     size=data.get('size'),
                     rotate_speed=data.get('rotate_speed'),
                     slot=data.get('slot'),
                     node_id=node_id,
                     partition_num=len(partitions),
+                    role=role
                 )
                 disk.create()
                 logger.info("Create node_id %s disk %s: %s",
