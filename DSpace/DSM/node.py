@@ -187,7 +187,7 @@ class NodeHandler(AdminBaseHandler):
         return cephconf
 
     def _mon_install_check(self, ctxt, node=None):
-        if node.role_monitor:
+        if node and node.role_monitor:
             raise exc.InvalidInput(_("The monitor role has been installed."))
         public_network = objects.sysconfig.sys_config_get(
             ctxt, key="public_cidr"
