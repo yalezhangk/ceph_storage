@@ -2,8 +2,10 @@ import uuid
 
 from oslo_log import log as logging
 
+from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +38,18 @@ class DatacenterHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
+    def _check_datacenter_by_name(self, ctxt, name):
+        filters = {"name": name}
+        v = self.datacenter_get_all(ctxt, filters=filters)
+        if v:
+            logger.error("create/update datacenter error, %s already exists",
+                         name)
+            raise exception.Duplicate(
+                _("datacenter: {} is already exists!").format(name))
+
     def datacenter_update(self, ctxt, id, name):
         datacenter = objects.Datacenter.get_by_id(ctxt, id)
+        self._check_datacenter_by_name(ctxt, name)
         datacenter.name = name
         datacenter.save()
         return datacenter

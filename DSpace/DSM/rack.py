@@ -2,8 +2,10 @@ import uuid
 
 from oslo_log import log as logging
 
+from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +37,18 @@ class RackHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
 
+    def _check_rack_by_name(self, ctxt, name):
+        filters = {"name": name}
+        v = self.rack_get_all(ctxt, filters=filters)
+        if v:
+            logger.error("update rack error, %s already exists",
+                         name)
+            raise exception.Duplicate(
+                _("rack: {} is already exists!").format(name))
+
     def rack_update_name(self, ctxt, id, name):
         rack = objects.Rack.get_by_id(ctxt, id)
+        self._check_rack_by_name(ctxt, name)
         rack.name = name
         rack.save()
         return rack
