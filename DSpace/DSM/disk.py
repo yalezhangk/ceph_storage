@@ -192,14 +192,15 @@ class DiskHandler(AdminBaseHandler):
             disk.name: disk for disk in all_disk_objs
         }
         for name, data in six.iteritems(disks):
-            logger.info("Check disk %s: %s", name, data)
+            logger.info("Check node_id %s disk %s: %s", node_id, name, data)
             partitions = data.get("partitions")
             if name in all_disks:
                 disk = all_disks.pop(name)
                 disk.size = int(data.get('size'))
                 disk.partition_num = len(partitions)
                 disk.save()
-                logger.info("Update disk %s: %s", name, data)
+                logger.info("Update node_id %s disk %s: %s",
+                            node_id, name, data)
             else:
                 disk = objects.Disk(
                     ctxt,
@@ -213,11 +214,12 @@ class DiskHandler(AdminBaseHandler):
                     partition_num=len(partitions),
                 )
                 disk.create()
-                logger.info("Create disk %s: %s", name, data)
+                logger.info("Create node_id %s disk %s: %s",
+                            node_id, name, data)
             # TODO don't use now
             # self.disk_partitions_reporter(ctxt, partitions, disk)
         for name, disk in six.iteritems(all_disks):
-            logger.warning("Remove disk %s", name)
+            logger.warning("Remove node_id %s, disk %s", node_id, name)
             disk.destroy()
 
     def disk_get_all_available(self, ctxt, filters=None, expected_attrs=None):
