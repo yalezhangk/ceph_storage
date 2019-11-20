@@ -3,6 +3,8 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -14,6 +16,50 @@ from DSpace.i18n import _
 from DSpace.utils import cluster_config
 
 logger = logging.getLogger(__name__)
+
+update_ceph_config_schema = {
+    "type": "object",
+    "properties": {
+        "action": {
+            "type": "string",
+            "enum": ["config_update", "config_reset"]
+        }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {"action": {"const": "config_update"}}
+            },
+            "then": {
+                "properties": {"ceph_config": {
+                    "type": "object",
+                    "properties": {
+                        "group": {"type": "string"},
+                        "key": {"type": "string"},
+                        "value": {"type": "string"}
+                    },
+                    "required": ["group", "key", "value"],
+                    "additionalProperties": False
+                }}
+            }
+        }, {
+            "if": {
+                "properties": {"action": {"const": "config_reset"}}
+            },
+            "then": {
+                "properties": {"ceph_config": {
+                    "type": "object",
+                    "properties": {
+                        "group": {"type": "string"},
+                        "key": {"type": "string"},
+                    },
+                    "required": ["group", "key"],
+                    "additionalProperties": False
+                }}
+            }
+        },
+    ], "required": ["action", "ceph_config"]
+}
 
 
 @URLRegistry.register(r"/ceph_configs/")
@@ -155,12 +201,18 @@ class CephConfigActionHandler(ClusterAPIHandler):
                     type: string
                     description: cluster_configs key, it can be
                                  debug_osd/debug_mon/debug_rgw/osd_pool_default_type.
+                  value:
+                    type: string
+                    description:  if the action is config_reset, you must give
+                                  this value.
         responses:
         "200":
           description: successful operation
         """
         ctxt = self.get_context()
         body = json_decode(self.request.body)
+        validate(body, schema=update_ceph_config_schema,
+                 format_checker=draft7_format_checker)
         action = body.get('action')
         if not action:
             raise exception.InvalidInput(reason=_("Ceph config: action is "
