@@ -600,8 +600,8 @@ msgstr "删除硬盘成功：osd.{}"
 msgid "delete osd.{} error"
 msgstr "删除硬盘失败：osd.{}"
 
-msgid "Osd status is %s"
-msgstr "硬盘状态：%s"
+msgid "Only available and error osd can be delete"
+msgstr "只能删除可用与错误的硬盘"
 
 msgid "create pool success: {}"
 msgstr "创建存储池成功：{}"

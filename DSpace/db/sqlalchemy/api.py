@@ -3541,14 +3541,17 @@ def service_status_get(context, names, filters=None):
             filters["name"] = name
             query = _service_get_query(context, session)
             query = process_filters(models.Service)(query, filters)
+            active = 0
+            error = 0
+            inactive = 0
             if query:
                 active = query.filter_by(status=ServiceStatus.ACTIVE).count()
-                failed = query.filter_by(status=ServiceStatus.FAILED).count()
+                error = query.filter_by(status=ServiceStatus.ERROR).count()
                 inactive = query.filter_by(
                     status=ServiceStatus.INACTIVE).count()
             status = {name: {
                 ServiceStatus.ACTIVE: active,
-                ServiceStatus.FAILED: failed,
+                ServiceStatus.FAILED: error,
                 ServiceStatus.INACTIVE: inactive
             }}
             all_status.update(status)
