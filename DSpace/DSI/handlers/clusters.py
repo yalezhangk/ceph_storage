@@ -4,6 +4,8 @@
 import json
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -13,6 +15,24 @@ from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+
+create_cluster_schema = {
+    "type": "object",
+    "properties": {
+        "cluster": {
+            "type": "object",
+            "properties": {"name": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 32
+            }}, "required": ["name"],
+            "additionalProperties": False
+        },
+    },
+    "required": ["cluster"],
+    "additionalProperties": False
+}
 
 
 @URLRegistry.register(r"/clusters/")
@@ -71,6 +91,8 @@ class ClusterHandler(BaseAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_cluster_schema,
+                 format_checker=draft7_format_checker)
         cluster_data = data.get("cluster")
 
         client = self.get_admin_client(ctxt)

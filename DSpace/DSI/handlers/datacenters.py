@@ -3,6 +3,8 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -13,6 +15,23 @@ from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
+
+update_datacenter_schema = {
+    "type": "object",
+    "properties": {
+        "datacenter": {
+            "type": "object",
+            "properties": {"name": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 32
+            }}, "required": ["name"],
+            "additionalProperties": False
+        },
+    },
+    "required": ["datacenter"],
+    "additionalProperties": False
+}
 
 
 @URLRegistry.register(r"/datacenters/")
@@ -177,7 +196,10 @@ class DataCenterHandler(ClusterAPIHandler):
         "200":
           description: successful operation
         """
-        data = json_decode(self.request.body).get('datacenter')
+        body = json_decode(self.request.body)
+        validate(body, schema=update_datacenter_schema,
+                 format_checker=draft7_format_checker)
+        data = body.get('datacenter')
         datacenter_name = data.get('name')
         if not datacenter_name:
             raise InvalidInput(reason=_("datacenter: name is none"))
