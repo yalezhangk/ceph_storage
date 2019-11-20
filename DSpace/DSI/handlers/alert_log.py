@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from jsonschema import draft7_format_checker
 from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
@@ -32,6 +33,50 @@ update_alert_log_schema = {
     },
     "required": ["alert_log"],
     "additionalProperties": False
+}
+
+update_alert_log_all_schema = {
+    "type": "object",
+    "properties": {
+        "action": {
+            "type": "string",
+            "enum": ["all_readed", "del_alert_logs"]
+        },
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {"action": {"const": "all_readed"}}
+            },
+            "then": {
+                "properties": {"alert_log": {
+                    "type": "object",
+                    "properties": {
+                        "readed": {"enum": [True]}
+                    },
+                    "required": ["readed"],
+                    "additionalProperties": False
+                }}
+            }
+        }, {
+            "if": {
+                "properties": {"action": {"const": "del_alert_logs"}}
+            },
+            "then": {
+                "properties": {"alert_log": {
+                    "type": "object",
+                    "properties": {
+                        "before_time": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    "required": ["before_time"],
+                    "additionalProperties": False
+                }}
+            }
+        },
+    ], "required": ["action", "alert_log"]
 }
 
 
@@ -161,7 +206,7 @@ class AlertLogHandler(ClusterAPIHandler):
         - alert_log
         summary: Update alert_log
         description: update alert_log.
-        operationId: alertlogs.api.updateAlertLog
+        operationId: alertlogs.api.updateOneAlertLog
         produces:
         - application/json
         parameters:
@@ -323,7 +368,7 @@ class AlertLogActionHandler(ClusterAPIHandler):
         summary: Update alert_log, action:all_readed(全标已读)、
                  del_alert_logs(删除告警记录)
         description: update alert_log.
-        operationId: alertlogs.api.updateAlertLog
+        operationId: alertlogs.api.updateAllAlertLog
         produces:
         - application/json
         parameters:
@@ -374,6 +419,8 @@ class AlertLogActionHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, update_alert_log_all_schema,
+                 format_checker=draft7_format_checker)
         alert_log_data = data.get('alert_log')
         action = data.get('action')
         client = self.get_admin_client(ctxt)
