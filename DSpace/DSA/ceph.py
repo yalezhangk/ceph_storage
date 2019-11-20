@@ -142,7 +142,7 @@ class CephHandler(AgentBaseHandler):
             time.sleep(1)
         logger.debug("mon is ready")
 
-    def ceph_mon_create(self, context, ceph_auth='none'):
+    def ceph_mon_create(self, context, fsid, ceph_auth='none'):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
@@ -159,7 +159,7 @@ class CephHandler(AgentBaseHandler):
 
         ceph_tool = CephTool(client)
         ceph_tool.mon_install(self.node.hostname,
-                              self.node.cluster_id,
+                              fsid,
                               ceph_auth=ceph_auth)
 
         # enable and start ceph-mon

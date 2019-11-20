@@ -204,7 +204,9 @@ class NodeTask(object):
 
         ceph_auth = objects.CephConfig.get_by_key(
             self.ctxt, 'global', 'auth_cluster_required')
-        agent.ceph_mon_create(self.ctxt, ceph_auth=ceph_auth)
+        fsid = objects.CephConfig.get_by_key(
+            self.ctxt, 'global', 'fsid')
+        agent.ceph_mon_create(self.ctxt, fsid, ceph_auth=ceph_auth)
 
     def ceph_config_update(self, ctxt, values):
         logger.info("update ceph config")
