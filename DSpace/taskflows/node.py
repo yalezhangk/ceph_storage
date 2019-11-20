@@ -206,6 +206,12 @@ class NodeTask(object):
             self.ctxt, 'global', 'auth_cluster_required')
         agent.ceph_mon_create(self.ctxt, ceph_auth=ceph_auth)
 
+    def ceph_config_update(self, ctxt, values):
+        logger.info("update ceph config")
+        agent = self.get_agent()
+        res = agent.ceph_config_update(ctxt, values)
+        return res
+
     def ceph_mon_uninstall(self, last_mon=False):
         # update ceph.conf
         logger.info("uninstall ceph mon")

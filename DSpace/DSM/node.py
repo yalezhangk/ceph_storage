@@ -276,15 +276,17 @@ class NodeHandler(AdminBaseHandler):
             cluster_network = objects.sysconfig.sys_config_get(
                 ctxt, key="cluster_cidr"
             )
+            mon_host = str(node.public_ip)
+            mon_initial_members = node.hostname
             new_cluster_config = {
                 'fsid': {'type': 'string', 'value': ctxt.cluster_id},
                 'mon_host': {'type': 'string',
-                             'value': str(node.public_ip)},
+                             'value': mon_host},
                 'osd_objectstore': {'type': 'string', 'value': 'bluestore'},
                 'mon_pg_warn_min_per_osd': {'type': 'int', 'value': 0},
                 'debug_mon': {'type': 'int', 'value': 10},
                 'mon_initial_members': {'type': 'string',
-                                        'value': node.hostname},
+                                        'value': mon_initial_members},
                 'public_network': {'type': 'string', 'value': public_network},
                 'cluster_network': {'type': 'string', 'value': cluster_network}
             }
@@ -311,6 +313,20 @@ class NodeHandler(AdminBaseHandler):
                                 value_type='string')
         node_task = NodeTask(ctxt, node)
         node_task.ceph_mon_install()
+        # sync config file
+        osd_nodes = objects.NodeList.get_all(
+            ctxt, filters={"role_storage": True}
+        )
+        configs = [
+            {"group": "global", "key": "mon_host", "value": mon_host},
+            {"group": "global", "key": "mon_initial_members",
+             "value": mon_initial_members}
+        ]
+        nodes = mon_nodes + osd_nodes
+        for n in nodes:
+            task = NodeTask(ctxt, n)
+            for config in configs:
+                task.ceph_config_update(ctxt, config)
         node_task.prometheus_target_config(action='add', service='mgr')
         return node
 
@@ -338,6 +354,19 @@ class NodeHandler(AdminBaseHandler):
                                 value=mon_initial_members,
                                 value_type='string')
             task.ceph_mon_uninstall(last_mon=False)
+            osd_nodes = objects.NodeList.get_all(
+                ctxt, filters={"role_storage": True}
+            )
+            configs = [
+                {"group": "global", "key": "mon_host", "value": mon_host},
+                {"group": "global", "key": "mon_initial_members",
+                 "value": mon_initial_members}
+            ]
+            nodes = mon_nodes + osd_nodes
+            for n in nodes:
+                task = NodeTask(ctxt, n)
+                for config in configs:
+                    task.ceph_config_update(ctxt, config)
         else:
             task.ceph_mon_uninstall(last_mon=True)
         task.prometheus_target_config(action='remove', service='mgr')
