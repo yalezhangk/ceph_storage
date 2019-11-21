@@ -109,7 +109,6 @@ get_node_info_schema = {
                 "required": ["ip_address"],
                 "additionalProperties": False
             },
-            "minItems": 1
         },
         "ipr": {
             "type": "array",
