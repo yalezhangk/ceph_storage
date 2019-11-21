@@ -227,6 +227,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "nodes_inclusion", datas=datas)
         return response
 
+    def nodes_inclusion_clean(self, ctxt):
+        response = self.call(ctxt, "nodes_inclusion_clean")
+        return response
+
     def nodes_inclusion_check(self, ctxt, datas):
         response = self.call(ctxt, "nodes_inclusion_check", datas=datas)
         return response

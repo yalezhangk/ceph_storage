@@ -136,26 +136,6 @@ class NodeTask(object):
         ).get_client(self.node.id)
         return client
 
-    def _node_remove_container(self, name, ssh):
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        docker_tool = DockerTool(ssh)
-        container_name = '{}_{}'.format(image_namespace, name)
-        status = docker_tool.status(container_name)
-        if status == 'active':
-            docker_tool.stop(container_name)
-            docker_tool.rm(container_name)
-        if status == 'inactive':
-            docker_tool.rm(container_name)
-        try:
-            docker_tool.image_rm(
-                "{}/{}:{}".format(image_namespace, name, dspace_version),
-                force=True)
-        except exc.StorException as e:
-            logger.warning("remove %s image failed, %s", name, e)
-
     def chrony_install(self):
         wf = lf.Flow('DSpace Chrony Install')
         wf.add(DSpaceChronyInstall('DSpace Chrony Install'))
@@ -168,16 +148,14 @@ class NodeTask(object):
 
     def chrony_uninstall(self):
         logger.info("uninstall chrony")
-        ssh = self.get_ssh_executor()
-        # remove container and image
-        self._node_remove_container("chrony", ssh)
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        # rm config file
-        file_tool = FileTool(ssh)
-        try:
-            file_tool.rm("{}/chrony.conf".format(config_dir))
-        except exc.StorException as e:
-            logger.warning("remove chrony config failed, %s", e)
+        wf = lf.Flow('DSpace Chrony Uninstall')
+        wf.add(DSpaceChronyUninstall('DSpace Chrony Uninstall'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            'task_info': {}
+        })
 
     def chrony_update(self):
         ssh = self.get_ssh_executor()
@@ -206,9 +184,15 @@ class NodeTask(object):
 
     def node_exporter_uninstall(self):
         logger.info("uninstall node exporter")
-        ssh = self.get_ssh_executor()
         # remove container and image
-        self._node_remove_container("node_exporter", ssh)
+        wf = lf.Flow('DSpace Exporter Uninstall')
+        wf.add(DSpaceExpoterUninstall('DSpace Exporter Uninstall'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            'task_info': {}
+        })
 
     def wait_agent_ready(self):
         logger.debug("wait agent ready to work")
@@ -355,13 +339,15 @@ class NodeTask(object):
         })
 
     def dspace_agent_uninstall(self):
-        logger.info("uninstall chrony")
-        ssh = self.get_ssh_executor()
-        self._node_remove_container("dsa", ssh)
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        # rm config file
-        file_tool = FileTool(ssh)
-        file_tool.rm("{}/dsa.conf".format(config_dir))
+        logger.info("uninstall agent")
+        wf = lf.Flow('DSpace Agent Uninstall')
+        wf.add(DSpaceAgentUninstall('DSpace Agent Uninstall'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            'task_info': {}
+        })
 
     def ceph_config_update(self, values):
         path = self._wapper('/etc/ceph/ceph.conf')
@@ -501,6 +487,28 @@ class NodeTask(object):
                     path=path + '/prometheus/targets/targets.json')
 
 
+class ContainerUninstallMixin(object):
+    def _node_remove_container(self, ctxt, name, ssh):
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(
+            ctxt, "dspace_version")
+        docker_tool = DockerTool(ssh)
+        container_name = '{}_{}'.format(image_namespace, name)
+        status = docker_tool.status(container_name)
+        if status == 'active':
+            docker_tool.stop(container_name)
+            docker_tool.rm(container_name)
+        if status == 'inactive':
+            docker_tool.rm(container_name)
+        try:
+            docker_tool.image_rm(
+                "{}/{}:{}".format(image_namespace, name, dspace_version),
+                force=True)
+        except exc.StorException as e:
+            logger.warning("remove %s image failed, %s", name, e)
+
+
 class InstallCephRepo(BaseTask):
     def execute(self, ctxt, node, task_info):
         super(InstallCephRepo, self).execute(task_info)
@@ -562,6 +570,17 @@ class InstallDocker(BaseTask):
         tpl = template.get('dspace.repo.j2')
         repo = tpl.render(dspace_repo=dspace_repo)
         return repo
+
+
+class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
+    def execute(self, ctxt, node, task_info):
+        super(DSpaceAgentUninstall, self).execute(task_info)
+        ssh = node.executer
+        self._node_remove_container(ctxt, "dsa", ssh)
+        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        # rm config file
+        file_tool = FileTool(ssh)
+        file_tool.rm("{}/dsa.conf".format(config_dir))
 
 
 class DSpaceAgentInstall(BaseTask):
@@ -628,6 +647,21 @@ class DSpaceAgentInstall(BaseTask):
         return dsa_conf
 
 
+class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
+    def execute(self, ctxt, node, task_info):
+        super(DSpaceChronyUninstall, self).execute(task_info)
+        ssh = node.executer
+        # remove container and image
+        self._node_remove_container(ctxt, "chrony", ssh)
+        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        # rm config file
+        file_tool = FileTool(ssh)
+        try:
+            file_tool.rm("{}/chrony.conf".format(config_dir))
+        except exc.StorException as e:
+            logger.warning("remove chrony config failed, %s", e)
+
+
 class DSpaceChronyInstall(BaseTask):
     def execute(self, ctxt, node, task_info):
         super(DSpaceChronyInstall, self).execute(task_info)
@@ -666,6 +700,14 @@ class DSpaceChronyInstall(BaseTask):
         chrony_conf = tpl.render(chrony_server=chrony_server,
                                  ip_address=str(ip))
         return chrony_conf
+
+
+class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin):
+    def execute(self, ctxt, node, task_info):
+        super(DSpaceExpoterUninstall, self).execute(task_info)
+
+        ssh = node.executer
+        self._node_remove_container(ctxt, "node_exporter", ssh)
 
 
 class DSpaceExpoterInstall(BaseTask):

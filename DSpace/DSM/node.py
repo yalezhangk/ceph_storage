@@ -9,6 +9,7 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.taskflows.include import include_clean_flow
 from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodeMixin
 from DSpace.taskflows.node import NodeTask
@@ -519,7 +520,7 @@ class NodeHandler(AdminBaseHandler):
         return res
 
     def nodes_inclusion(self, ctxt, datas):
-        logger.debug("check nodes: {}", datas)
+        logger.debug("include nodes: {}", datas)
         t = objects.Task(
             ctxt,
             name="Import Cluster",
@@ -531,6 +532,21 @@ class NodeHandler(AdminBaseHandler):
         )
         t.create()
         self.task_submit(include_flow, ctxt, t, datas)
+        return t
+
+    def nodes_inclusion_clean(self, ctxt):
+        logger.debug("include delete nodes")
+        t = objects.Task(
+            ctxt,
+            name="Clean Import Cluster",
+            description="Clean Import Cluster",
+            current="",
+            step_num=0,
+            status=s_fields.TaskStatus.RUNNING,
+            step=0
+        )
+        t.create()
+        self.task_submit(include_clean_flow, ctxt, t)
         return t
 
     def _nodes_inclusion_check_admin_ips(self, ctxt, datas):
