@@ -140,6 +140,48 @@ class SysInfoHandler(ClusterAPIHandler):
 class SmtpHandler(ClusterAPIHandler):
     @gen.coroutine
     def get(self):
+        """
+        ---
+        tags:
+        - smtp
+        summary: smtp sysconfs
+        description: Return a sysconfs of smtp
+        operationId: smtp.api.sysconfsSmtp
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: smtp_conf
+          description: Get smtp_sysconfs
+          required: true
+          schema:
+            type: object
+            properties:
+              smtp_enabled:
+                type: bool
+                description: is or not smtp_enable
+              smtp_user:
+                type: string
+                description: smtp_user_email
+              smtp_password:
+                type: string
+                description: smtp_user_email_password
+              smtp_host:
+                type: string
+                description: smtp_host
+              smtp_port:
+                type: string
+                description: smtp_port
+              smtp_enable_ssl:
+                type: bool
+                description: enable_ssl
+              smtp_enable_tls:
+                type: bool
+                description: enable_tls
+        responses:
+        "200":
+        description: successful operation
+        """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         smtp_conf = yield client.smtp_get(ctxt)
@@ -157,6 +199,50 @@ class SmtpHandler(ClusterAPIHandler):
 
     @gen.coroutine
     def post(self):
+        """
+        Post smtp_sysconfs
+
+        ---
+        tags:
+        - smtp
+        summary: Post smtp_sysconfs
+        description: Post smtp_sysconfs.
+        operationId: sysconfs.api.postSmtp_sysconfs
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: data
+          description: Post smtp_sysconfs
+          required: true
+          schema:
+            type: object
+            properties:
+              smtp_enabled:
+                type: bool
+                description: is or not smtp_enable
+              smtp_user:
+                type: string
+                description: smtp_user_email
+              smtp_password:
+                type: string
+                description: smtp_user_email_password
+              smtp_host:
+                type: string
+                description: smtp_host
+              smtp_port:
+                type: string
+                description: smtp_port
+              smtp_enable_ssl:
+                type: bool
+                description: enable_ssl
+              smtp_enable_tls:
+                type: bool
+                description: enable_tls
+        responses:
+        "200":
+        description: successful operation
+        """
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('data')
         logger.error(data)
@@ -172,6 +258,54 @@ class SmtpHandler(ClusterAPIHandler):
 class SmtpTestHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
+        """
+        ---
+        tags:
+        - smtp
+        summary: Post smtp_sysconfs
+        description: Post smtp_sysconfs.
+        operationId: sysconfs.api.postSmto_sysconfs
+        produces:
+        - application/json
+        parameters:
+        - in: body
+         name: data
+         description: Post smtp_sysconfs
+         required: true
+         schema:
+           type: object
+           properties:
+             smtp_enabled:
+               type: bool
+               description: is or not smtp_enable
+             smtp_user:
+               type: string
+               description: smtp_user_email
+             smtp_password:
+               type: string
+               description: smtp_user_email_password
+             smtp_host:
+               type: string
+               description: smtp_host
+             smtp_port:
+               type: string
+               description: smtp_port
+             smtp_enable_ssl:
+               type: bool
+               description: enable_ssl
+             smtp_enable_tls:
+               type: integer
+               description: enable_tls
+             smtp_subject:
+               type: string
+               description: test_mail_subject
+             smtp_content:
+               type: string
+               description: test_mail_content
+        responses:
+        "200":
+         description: successful operation
+        """
         config = json_decode(self.request.body)
         config = config.get('smtp_conf')
         if not config:
