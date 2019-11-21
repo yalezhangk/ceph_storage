@@ -9,10 +9,14 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodeMixin
 from DSpace.taskflows.node import NodeTask
+from DSpace.taskflows.probe import ProbeTask
 from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config as ClusterConfg
+from DSpace.utils import logical_xor
+from DSpace.utils import validator
 
 logger = logging.getLogger(__name__)
 
@@ -500,9 +504,10 @@ class NodeHandler(AdminBaseHandler):
                                     'is incorrect!').format(ip_str))
         return True
 
-    def node_check(self, ctxt, data):
+    def node_check(self, ctxt, data, exclude=None):
+        # TODO: use _node_check to replace this
         logger.debug("check node: {}".format(data.get('admin_ip')))
-
+        exclude = exclude or []
         ip_dict = {}
         ip_dict['check_through'] = True
         node = objects.Node(
@@ -555,10 +560,9 @@ class NodeHandler(AdminBaseHandler):
             else:
                 ip_dict['check_port'].append({"port": po, "status": True})
         ip_dict['check_SELinux'] = node_task.check_selinux()
-        if node_task.check_ceph_is_installed():
-            ip_dict['check_Installation_package'] = False
-        else:
-            ip_dict['check_Installation_package'] = True
+        if "ceph_package" not in exclude:
+            res = node_task.check_ceph_is_installed()
+            ip_dict['check_Installation_package'] = res
         if (node_task.check_network(public_ip) and
                 node_task.check_network(cluster_ip)):
             ip_dict['check_network'] = True
@@ -566,3 +570,197 @@ class NodeHandler(AdminBaseHandler):
             ip_dict['check_network'] = True
 
         return ip_dict
+
+    def nodes_inclusion(self, ctxt, datas):
+        logger.debug("check nodes: {}", datas)
+        include_flow(ctxt, datas)
+
+    def _nodes_inclusion_check_admin_ips(self, ctxt, datas):
+        """Check admin_ips in nodes
+
+        :return list: The admin_ip not in datas
+        """
+        cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
+        if not cluster.is_admin:
+            return []
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        if admin_ips:
+            admin_ips = admin_ips.split(',')
+        for data in datas:
+            admin_ip = data.get("admin_ip")
+            if admin_ip in admin_ips:
+                admin_ips.pop(admin_ip)
+        return admin_ips
+
+    def _nodes_inclusion_check_all_ips(self, ctxt, datas):
+        node_ips = [data.get('ip_address') for data in datas]
+        data = datas[0]
+        node = objects.Node(ip_address=data.get('ip_address'),
+                            password=data.get('password'))
+        node_task = ProbeTask(ctxt, node)
+        infos = node_task.probe_cluster_nodes()
+        leaks = []
+        for n in infos['nodes']:
+            if n not in node_ips:
+                leaks.append(n)
+        extras = []
+        for n in node_ips:
+            if n not in infos['nodes']:
+                extras.append(n)
+        return leaks, extras
+
+    def _node_check_port(self, node_task, ports):
+        res = []
+        for po in ports:
+            if not node_task.check_port(po):
+                res.append({"port": po, "status": False})
+            else:
+                res.append({"port": po, "status": True})
+        return res
+
+    def _node_check_ips(self, ctxt, data):
+        res = {}
+        admin_ip = data.get('ip_address')
+        public_ip = data.get('public_ip')
+        cluster_ip = data.get('cluster_ip')
+        li_ip = [admin_ip, public_ip, cluster_ip]
+        if not all(li_ip):
+            raise exc.Invalid(_('admin_ip,cluster_ip,public_ip is required'))
+        # format
+        for ip in li_ip:
+            validator.validate_ip(ip)
+        # admin_ip
+        nodes = objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "ip_address": admin_ip
+            }
+        )
+        res['check_admin_ip'] = False if nodes else True
+        # cluster_ip
+        nodes = objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "cluster_ip": cluster_ip
+            }
+        )
+        res['check_cluster_ip'] = False if nodes else True
+        # public_ip
+        nodes = objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "public_ip": public_ip
+            }
+        )
+        res['check_public_ip'] = False if nodes else True
+        return res
+
+    def _node_check_roles(self, roles, services):
+        res = {}
+        # add default value
+        for s in roles:
+            res[s] = True
+
+        # update value
+        if logical_xor("ceph-osd" in services, "storage" in roles):
+            res['storage'] = False
+        if logical_xor("ceph-mon" in services, "monitor" in roles):
+            res['monitor'] = False
+
+        data = []
+        for k, v in six.iteritems(res):
+            data.append({
+                'role': k,
+                'status': v
+            })
+        return data
+
+    def _node_check(self, ctxt, data, items=None):
+        if not items:
+            logger.error("items empty!")
+            raise exc.ProgrammingError("items empty!")
+        res = {}
+
+        # check input info
+        res.update(self._node_check_ips(ctxt, data))
+
+        # connection
+        node = objects.Node(
+            ctxt, ip_address=data.get('ip_address'),
+            password=data.get('password'))
+        node_task = NodeTask(ctxt, node)
+        node_infos = node_task.node_get_infos()
+
+        # check connection
+        hostname = node_infos.get('hostname')
+        res['check_through'] = True if hostname else False
+        if not hostname:
+            return res
+        if "hostname" in items:
+            if objects.NodeList.get_all(ctxt, filters={"hostname": hostname}):
+                res['check_hostname'] = False
+            else:
+                res['check_hostname'] = True
+        # check ceph package
+        if "ceph_package" in items:
+            r = node_task.check_ceph_is_installed()
+            res['check_Installation_package'] = r
+        # check selinux
+        if "selinux" in items:
+            res['check_SELinux'] = node_task.check_selinux()
+        # check port
+        if "ceph_ports" in items:
+            # TODO: move to db
+            ports = ["6789", "9876", "9100", "9283", "7480"]
+            res['check_ceph_port'] = self._node_check_port(node_task, ports)
+        if "athena_ports" in items:
+            # TODO: move to db
+            ports = ["9100", "2083"]
+            res['check_ceph_port'] = self._node_check_port(node_task, ports)
+        if "network" in items:
+            public_ip = data.get('public_ip')
+            cluster_ip = data.get('cluster_ip')
+            if (node_task.check_network(public_ip) and
+                    node_task.check_network(cluster_ip)):
+                res['check_network'] = True
+            else:
+                res['check_network'] = True
+        # TODO: check roles
+        if "roles" in items:
+            roles = data.get("roles") or None
+            if roles:
+                roles = roles.split(',')
+            services = node_task.probe_node_services()
+            res['check_roles'] = self._node_check_roles(roles, services)
+        return res
+
+    def nodes_inclusion_check(self, ctxt, datas):
+        logger.info("check datas: %s", datas)
+        status = {}
+        status['leak_admin_ips'] = self._nodes_inclusion_check_admin_ips(
+            ctxt, datas)
+        logger.info("leak_admin_ips: %s", status['leak_admin_ips'])
+        leaks, extras = self._nodes_inclusion_check_all_ips(
+            ctxt, datas)
+        status['leak_cluster_ips'] = leaks
+        status['extra_cluster_ips'] = extras
+        logger.info("leak_cluster_ips: %s", status['leak_admin_ips'])
+        status['nodes'] = []
+        for data in datas:
+            admin_ip = data.get('ip_address')
+            res = self._node_check(ctxt, data, [
+                "hostname",
+                "selinux",
+                "ports",
+                "ceph_package",
+                "network",
+                "roles",
+                "athena_ports"
+            ])
+            res['admin_ip'] = admin_ip
+            status['nodes'].append(res)
+            logger.info("check node: %s, result: %s", admin_ip, res)
+        for node in status['nodes']:
+            if node['admin_ip'] not in extras:
+                node['check_Installation_package'] = False
+        return status

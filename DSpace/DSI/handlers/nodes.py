@@ -16,7 +16,6 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
-from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
@@ -903,22 +902,132 @@ class NodeCheckHandler(ClusterAPIHandler):
         }))
 
 
-@URLRegistry.register('/tpl/download/')
-class TplDownload(ClusterAPIHandler):
-    def get(self):
-        file_name = self.get_argument('name')
-        if file_name == 'include-example.xlsx':
-            path = os.path.join(TPL_PATH, file_name)
-        else:
-            raise InvalidInput(reason=_('file_name not exist'))
-        self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition',
-                        'attachment; filename={}'.format("example.xlsx"))
-        logger.info("download file: %s", path)
-        if not os.path.exists(path):
-            raise InvalidInput(reason=_('file not yet generate or '
-                                        'file path is error'))
-        with open(path, 'rb') as f:
-            file_content = f.read()
-            self.write(file_content)
-        self.finish()
+@URLRegistry.register(r"/nodes/include/")
+class NodeInclusionHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Create node
+        description: Create node or nodes.
+        operationId: nodes.api.createNode
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: nodes
+          description: Created lots of node object
+          required: true
+          schema:
+            type: object
+            properties:
+              nodes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    hostname:
+                      type: string
+                      description: node's hostname
+                    cluster_id:
+                      type: string
+                      description: node's cluster id
+                    ip_address:
+                      type: string
+                      description: node's ip address
+                    password:
+                      type: string
+                      description: node's password, it can be null
+                    gateway_ip_address:
+                      type: string
+                      description: node's gateway ip address
+                    cluster_ip:
+                      type: string
+                      description: node's cluster ip
+                    public_ip:
+                      type: string
+                      description: node's public ip
+                    roles:
+                      type: string
+                      description: node's role
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        datas = data.get('nodes')
+        client = self.get_admin_client(ctxt)
+        nodes = yield client.nodes_inclusion(ctxt, datas)
+        self.write(objects.json_encode({
+            "nodes": nodes
+        }))
+
+
+@URLRegistry.register(r"/nodes/check_include/")
+class NodeInclusionCheckHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Node inclusion check
+        description: Create node or nodes.
+        operationId: nodes.api.incusionCheck
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: nodes
+          description: lots of node object
+          required: true
+          schema:
+            type: object
+            properties:
+              nodes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ip_address:
+                      type: string
+                      description: node's ip address
+                    cluster_ip:
+                      type: string
+                      description: node's cluster ip
+                    public_ip:
+                      type: string
+                      description: node's public ip
+                    password:
+                      type: string
+                      description: node's password, it can be null
+                    roles:
+                      type: string
+                      description: node's role
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        datas = data.get('nodes')
+        client = self.get_admin_client(ctxt)
+        nodes = yield client.nodes_inclusion_check(ctxt, datas)
+        self.write(objects.json_encode({
+            "nodes": nodes
+        }))

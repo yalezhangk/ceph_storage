@@ -223,6 +223,14 @@ class AdminClient(BaseClient):
             net_name=net_name, start=start, end=end)
         return response
 
+    def nodes_inclusion(self, ctxt, datas):
+        response = self.call(ctxt, "nodes_inclusion", datas=datas)
+        return response
+
+    def nodes_inclusion_check(self, ctxt, datas):
+        response = self.call(ctxt, "nodes_inclusion_check", datas=datas)
+        return response
+
     ###################
 
     def network_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
@@ -982,10 +990,7 @@ if __name__ == '__main__':
          version=version.version_string())
     logging.setup(CONF, "stor")
     objects.register_all()
-    ctxt = RequestContext(user_id="xxx", project_id="stor", is_admin=False)
-    client = AdminClientManager(
-        ctxt, cluster_id='7be530ce').get_client("devel")
-    re = client.cluster_install_agent(
-        ctxt, ip_address="192.168.211.128", password='aaaaaa'
-    )
-    print(re)
+    ctxt = RequestContext(user_id="xxx", project_id="stor", is_admin=False,
+                          request_id='xxxxxxxxxxxxxxxxxxxxxxxxx')
+    logger = logging.getLogger(__name__)
+    logger.info('Simple')
