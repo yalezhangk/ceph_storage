@@ -942,6 +942,7 @@ def action_log_get_all(context, *args, **kwargs):
 def action_log_get_count(context, filters):
     return IMPL.action_log_get_count(context, filters=filters)
 
+
 ###############
 
 
@@ -972,6 +973,38 @@ def user_get_count(context, filters):
 
 def user_update(context, user_id, values):
     return IMPL.user_update(context, user_id, values)
+
+
+###############
+
+
+def task_create(context, values):
+    return IMPL.task_create(context, values)
+
+
+def task_destroy(context, task_id):
+    return IMPL.task_destroy(context, task_id)
+
+
+def task_get(context, task_id):
+    return IMPL.task_get(context, task_id)
+
+
+def task_get_all(context, filters, marker, limit,
+                 offset, sort_keys, sort_dirs,
+                 expected_attrs=None):
+    return IMPL.task_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def task_get_count(context, filters):
+    return IMPL.task_get_all(context, filters=filters)
+
+
+def task_update(context, task_id, values):
+    return IMPL.task_update(context, task_id, values)
 
 
 ###############
