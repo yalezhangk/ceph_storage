@@ -309,7 +309,7 @@ class VolumeSnapshotActionNotFound(NotFound):
     message = _("VolumeSnapshot Action %(action)s must in 'clone'")
 
 
-class PoolExists(StorException):
+class PoolExists(Duplicate):
     message = _("a pool named %(pool)s is exists")
 
 

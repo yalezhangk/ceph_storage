@@ -248,24 +248,10 @@ class CephTask(object):
             pg_log2 = 16
         return 2**pg_log2
 
-    """
-    {
-        "pool_name":"test",
-        "crush_rule_name":"rule-test",
-        "root_name": "root-test",
-        "datacenters": ["da1", "da2"],
-        "hosts":["nod1","nod2"],
-        "racks":["rack1","rack2"],
-        "osds":[
-            "osd.0",
-            "osd.1"
-        ]
-    }
-    """
     def pool_delete(self, data):
-        logger.debug("pool_data: {}".format(data))
+        logger.debug("pool_delete, pool_data: {}".format(data))
         pool_name = data.get('pool_name')
-        root = data.get('root_name')
+        root_name = data.get('root_name')
         rule_name = data.get('crush_rule_name')
         pool_role = data.get('pool_role')
         with RADOSClient(self.rados_args()) as rados_client:
@@ -280,24 +266,22 @@ class CephTask(object):
                              'default.rgw.buckets.data']
                 for pool in rgw_pools:
                     rados_client.pool_delete(pool)
-            rados_client.rule_remove(rule_name)
-            if 'osds' in data:
-                osds = data.get('osds')
-                for osd in osds:
-                    rados_client.bucket_remove(osd)
-            if 'nodes' in data:
-                hosts = data.get('nodes')
-                for host in hosts:
-                    rados_client.bucket_remove(host)
-            if 'racks' in data:
-                racks = data.get('racks')
-                for rack in racks:
-                    rados_client.bucket_remove(rack)
-            if 'datacenters' in data:
-                datacenters = data.get('datacenters')
-                for dc in datacenters:
-                    rados_client.bucket_remove(dc)
-            rados_client.bucket_remove(root)
+            if rule_name != "replicated_rule":
+                rados_client.rule_remove(rule_name)
+            if 'host' in data:
+                for h, o in six.iteritems(data.get('host')):
+                    for osd_info in o:
+                        osd_id, _ = osd_info[0], osd_info[1]
+                        osd_name = "osd.{}".format(osd_id)
+                        rados_client.bucket_remove(osd_name, ancestor=h)
+                    rados_client.bucket_remove(h)
+            if "rack" in data:
+                for r, h in six.iteritems(data.get('rack')):
+                    rados_client.bucket_remove(r)
+            if "datacenter" in data:
+                for d, r in six.iteritems(data.get('datacenter')):
+                    rados_client.bucket_remove(d)
+            rados_client.bucket_remove(root_name)
 
     """
     Example:
@@ -609,3 +593,19 @@ class CephTask(object):
     def osd_new(self, osd_fsid):
         with RADOSClient(self.rados_args()) as rados_client:
             return rados_client.osd_new(osd_fsid)
+
+    def get_pools(self):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.get_pools()
+
+    def get_pool_info(self, pool_name="rbd", keyword="size"):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.get_pool_info(pool_name, keyword)
+
+    def get_crush_rule_info(self, rule_name="replicated_rule"):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.get_crush_rule_info(rule_name)
+
+    def get_bucket_info(self, bucket):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.bucket_get(bucket)
