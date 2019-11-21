@@ -61,11 +61,13 @@ class BaseAPIHandler(RequestHandler):
         return ctxt
 
     def get_paginated_args(self):
+        sort_key = self.get_query_argument('sort_key', default=None)
+        sort_dir = self.get_query_argument('sort_dir', default=None)
         return {
             "marker": self.get_query_argument('marker', default=None),
             "limit": self.get_query_argument('limit', default=None),
-            "sort_keys": self.get_query_argument('sort_keys', default=None),
-            "sort_dirs": self.get_query_argument('sort_dirs', default=None),
+            "sort_keys": [sort_key] if sort_key else None,
+            "sort_dirs": [sort_dir] if sort_dir else None,
             "offset": self.get_query_argument('offset', default=None)
         }
 
@@ -134,6 +136,21 @@ class BaseAPIHandler(RequestHandler):
         if not cluster_id:
             cluster_id = self.request.headers.get('X-Cluster-Id')
         return cluster_id
+
+    def get_support_filters(self, exact_filters=None, fuzzy_filters=None):
+        filters = {}
+        for e in exact_filters:
+            # 精确字段
+            value = self.get_query_argument(e, default=None)
+            if value:
+                filters.update({e: value})
+        for f in fuzzy_filters:
+            # 模糊字段
+            value = self.get_query_argument(f, default=None)
+            if value:
+                fuzzy_filter = '{}~'.format(f)
+                filters.update({fuzzy_filter: value})
+        return filters
 
 
 class ClusterAPIHandler(BaseAPIHandler):
