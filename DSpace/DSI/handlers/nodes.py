@@ -92,6 +92,47 @@ update_node_role_schema = {
     "required": ["node"]
 }
 
+get_node_info_schema = {
+    "type": "object",
+    "properties": {
+        "ips": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "ip_address": {"type": "string", "format": "ipv4"},
+                    "password": {"type": "string", "minLength": 1}
+                },
+                "required": ["ip_address"],
+                "additionalProperties": False
+            },
+            "minItems": 1
+        },
+        "ipr": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+
+    }, "minProperties": 1,
+    "additionalProperties": False
+}
+
+check_node_schema = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "admin_ip": {"type": "string", "format": "ipv4"},
+            "password": {"type": "string", "minLength": 1},
+            "cluster_ip": {"type": "string", "format": "ipv4"},
+            "public_ip": {"type": "string", "format": "ipv4"},
+        },
+        "required": ["admin_ip", "cluster_ip", "public_ip"],
+        "additionalProperties": False
+    },
+    "minItems": 1,
+}
+
 
 @URLRegistry.register(r"/nodes/")
 class NodeListHandler(ClusterAPIHandler):
@@ -766,6 +807,8 @@ class NodeInfoHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         nodes_data = json_decode(self.request.body)
+        validate(nodes_data, schema=get_node_info_schema,
+                 format_checker=draft7_format_checker)
         logger.debug("node get info, param: %s", nodes_data)
         client = self.get_admin_client(ctxt)
         ips = nodes_data.get("ips")
@@ -843,6 +886,8 @@ class NodeCheckHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         nodes_data = json_decode(self.request.body)
+        validate(nodes_data, schema=check_node_schema,
+                 format_checker=draft7_format_checker)
         client = self.get_admin_client(ctxt)
         res = []
         for data in nodes_data:
