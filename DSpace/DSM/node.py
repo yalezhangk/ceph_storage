@@ -504,10 +504,9 @@ class NodeHandler(AdminBaseHandler):
                                     'is incorrect!').format(ip_str))
         return True
 
-    def node_check(self, ctxt, data, exclude=None):
+    def node_check(self, ctxt, data):
         # TODO: use _node_check to replace this
         logger.debug("check node: {}".format(data.get('admin_ip')))
-        exclude = exclude or []
         ip_dict = {}
         ip_dict['check_through'] = True
         node = objects.Node(
@@ -560,9 +559,10 @@ class NodeHandler(AdminBaseHandler):
             else:
                 ip_dict['check_port'].append({"port": po, "status": True})
         ip_dict['check_SELinux'] = node_task.check_selinux()
-        if "ceph_package" not in exclude:
-            res = node_task.check_ceph_is_installed()
-            ip_dict['check_Installation_package'] = res
+        if node_task.check_ceph_is_installed():
+            ip_dict['check_Installation_package'] = False
+        else:
+            ip_dict['check_Installation_package'] = True
         if (node_task.check_network(public_ip) and
                 node_task.check_network(cluster_ip)):
             ip_dict['check_network'] = True
@@ -704,7 +704,11 @@ class NodeHandler(AdminBaseHandler):
         # check ceph package
         if "ceph_package" in items:
             r = node_task.check_ceph_is_installed()
-            res['check_Installation_package'] = r
+            if r:
+                res['check_Installation_package'] = False
+            else:
+                res['check_Installation_package'] = True
+
         # check selinux
         if "selinux" in items:
             res['check_SELinux'] = node_task.check_selinux()
