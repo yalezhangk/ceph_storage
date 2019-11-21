@@ -4,6 +4,8 @@
 import json
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -15,6 +17,34 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
+
+create_osd_schema = {
+    "definitions": {
+        "osd": {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string", "enum": ["bluestore", "filestore"]},
+                "disk_id": {"type": "integer"},
+                "cache_partition_id": {"type": "integer"},
+                "db_partition_id": {"type": "integer"},
+                "wal_partition_id": {"type": "integer"},
+                "jounal_partition_id": {"type": "integer"},
+            },
+            "required": ["type", "disk_id"],
+            "additionalProperties": False
+        }
+    },
+    "type": "object",
+    "properties": {
+        "osd": {"$ref": "#/definitions/osd"},
+        "osds": {
+            "type": "array",
+            "items": {"type": "object", "$ref": "#/definitions/osd"},
+            "minItems": 2
+        },
+    },
+    "anyOf": [{"required": ["osd"]}, {"required": ["osds"]}]
+}
 
 
 @URLRegistry.register(r"/osds/")
@@ -138,57 +168,65 @@ class OsdListHandler(ClusterAPIHandler):
           schema:
             type: object
             properties:
-              type:
-                type: string
-                description: bluestore or filestore
-              disk_id:
-                type: integer
-                format: int32
-              cache_partition_id:
-                type: integer
-                format: int32
-              db_partition_id:
-                type: integer
-                format: int32
-              wal_partition_id:
-                type: integer
-                format: int32
-              jounal_partition_id:
-                type: integer
-                format: int32
+                osd:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      description: bluestore or filestore
+                    disk_id:
+                      type: integer
+                      format: int32
+                    cache_partition_id:
+                      type: integer
+                      format: int32
+                    db_partition_id:
+                      type: integer
+                      format: int32
+                    wal_partition_id:
+                      type: integer
+                      format: int32
+                    jounal_partition_id:
+                      type: integer
+                      format: int32
         - in: body
           name: osds
           description: Created multiple osd object
           required: false
           schema:
-            type: array
-            items:
-              type: object
-              properties:
-                type:
-                  type: string
-                  description: bluestore or filestore
-                disk_id:
-                  type: integer
-                  format: int32
-                cache_partition_id:
-                  type: integer
-                  format: int32
-                db_partition_id:
-                  type: integer
-                  format: int32
-                wal_partition_id:
-                  type: integer
-                  format: int32
-                jounal_partition_id:
-                  type: integer
-                  format: int32
+            type: object
+            properties:
+                osds:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: bluestore or filestore
+                      disk_id:
+                        type: integer
+                        format: int32
+                      cache_partition_id:
+                        type: integer
+                        format: int32
+                      db_partition_id:
+                        type: integer
+                        format: int32
+                      wal_partition_id:
+                        type: integer
+                        format: int32
+                      jounal_partition_id:
+                        type: integer
+                        format: int32
         responses:
         "200":
           description: successful operation
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_osd_schema,
+                 format_checker=draft7_format_checker)
         if 'osd' in data:
             data = data.get('osd')
             client = self.get_admin_client(ctxt)
