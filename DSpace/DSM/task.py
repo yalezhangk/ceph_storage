@@ -18,3 +18,7 @@ class TaskHandler(AdminBaseHandler):
     def task_get_count(self, ctxt, filters=None):
         count = objects.TaskList.get_count(ctxt, filters=filters)
         return count
+
+    def task_get(self, ctxt, task_id):
+        task = objects.Task.get_by_id(ctxt, task_id)
+        return task
