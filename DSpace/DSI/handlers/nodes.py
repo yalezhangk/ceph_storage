@@ -46,7 +46,7 @@ create_node_schema = {
         "nodes": {
             "type": "array",
             "items": {"type": "object", "$ref": "#/definitions/node"},
-            "minItems": 2
+            "minItems": 1
         },
     }, "maxProperties": 1, "additionalProperties": False,
     "anyOf": [{"required": ["node"]}, {"required": ["nodes"]}]
