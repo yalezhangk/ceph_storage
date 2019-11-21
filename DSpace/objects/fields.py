@@ -377,3 +377,15 @@ class AlertLogLevel(BaseStorEnum):
     ERROR = 'ERROR'
     FATAL = 'FATAL'
     ALL = (INFO, WARN, ERROR, FATAL)
+
+
+class TaskStatus(BaseStorEnum):
+    SUCCESS = 'success'
+    RUNNING = 'running'
+    FAILED = 'failed'
+    ROLLBACKING = 'rollbacking'
+    ALL = (SUCCESS, RUNNING, FAILED, ROLLBACKING)
+
+
+class TaskStatusField(BaseEnumField):
+    AUTO_TYPE = TaskStatus()
