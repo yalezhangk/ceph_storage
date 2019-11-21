@@ -921,9 +921,9 @@ class NodeInclusionHandler(ClusterAPIHandler):
         ---
         tags:
         - node
-        summary: Create node
+        summary: Include cluster
         description: Create node or nodes.
-        operationId: nodes.api.createNode
+        operationId: nodes.api.import
         produces:
         - application/json
         parameters:
@@ -978,6 +978,35 @@ class NodeInclusionHandler(ClusterAPIHandler):
         datas = data.get('nodes')
         client = self.get_admin_client(ctxt)
         task = yield client.nodes_inclusion(ctxt, datas)
+        self.write(objects.json_encode({
+            "task": task
+        }))
+
+    @gen.coroutine
+    def delete(self):
+        """
+        ---
+        tags:
+        - node
+        summary: Delete node
+        description: Delete.
+        operationId: nodes.api.clean
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        task = yield client.nodes_inclusion_clean(ctxt)
         self.write(objects.json_encode({
             "task": task
         }))
