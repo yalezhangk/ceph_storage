@@ -80,7 +80,7 @@ class ClusterHandler(BaseAPIHandler):
                 type: object
                 description: cluster object
                 properties:
-                  name:
+                  cluster_name:
                     type: string
                     description: cluster's name
         responses:
