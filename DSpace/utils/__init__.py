@@ -12,3 +12,7 @@ def get_shortened_ipv6(address):
 def get_shortened_ipv6_cidr(address):
     net = netaddr.IPNetwork(address, version=6)
     return str(net.cidr)
+
+
+def logical_xor(v1, v2):
+    return bool(v1) ^ bool(v2)
