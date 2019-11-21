@@ -100,7 +100,7 @@ def sys_config_set(ctxt, key, value, value_type=None):
         obj = objs[0]
         obj.value = value
         obj.value_type = value_type
-        obj.save
+        obj.save()
     else:
         obj = SysConfig(
             ctxt, key=key, value=value, value_type=value_type

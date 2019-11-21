@@ -148,6 +148,18 @@ class SyncClusterInfo(BaseTask):
         osd.create()
 
 
+class UpdateIncludeFinish(BaseTask):
+    def execute(self, ctxt, task_info):
+        """Mark Include Finish"""
+        super(UpdateIncludeFinish, self).execute(task_info)
+        objects.sysconfig.sys_config_set(
+            ctxt, 'import_task_id', -1
+        )
+
+    def revert(self, task_info, result, flow_failures):
+        pass
+
+
 def include_flow(ctxt, t, datas):
     # update task
     t.step_num = 5
@@ -160,6 +172,7 @@ def include_flow(ctxt, t, datas):
     wf.add(InstallService("Install Services"))
     wf.add(MakeNodeActive("Mark Node Active"))
     wf.add(SyncClusterInfo("Sync Cluster Info"))
+    wf.add(UpdateIncludeFinish("Update Include Finish"))
     wf.add(CompleteTask('Complete'))
     taskflow.engines.run(wf, store={
         "ctxt": ctxt,
