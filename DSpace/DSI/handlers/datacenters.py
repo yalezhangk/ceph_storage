@@ -36,7 +36,6 @@ update_datacenter_schema = {
 
 @URLRegistry.register(r"/datacenters/")
 class DataCenterListHandler(ClusterAPIHandler):
-    # TODO 返回数据中心中的rack和vhost
     @gen.coroutine
     def get(self):
         """数据中心列表

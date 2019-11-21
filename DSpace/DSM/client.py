@@ -326,8 +326,13 @@ class AdminClient(BaseClient):
                              datacenter_id=datacenter_id)
         return response
 
-    def datacenter_get_all(self, ctxt):
-        response = self.call(ctxt, "datacenter_get_all")
+    def datacenter_get_all(self, ctxt, marker=None, limit=None,
+                           sort_keys=None, sort_dirs=None,
+                           filters=None, offset=None):
+        response = self.call(ctxt, "datacenter_get_all", marker=marker,
+                             limit=limit, sort_keys=sort_keys,
+                             sort_dirs=sort_dirs, filters=filters,
+                             offset=offset)
         return response
 
     def datacenter_update(self, ctxt, datacenter_id, datacenter_name):
@@ -355,8 +360,13 @@ class AdminClient(BaseClient):
                              rack_id=rack_id)
         return response
 
-    def rack_get_all(self, ctxt):
-        response = self.call(ctxt, "rack_get_all")
+    def rack_get_all(self, ctxt, marker=None, limit=None,
+                     sort_keys=None, sort_dirs=None,
+                     filters=None, offset=None):
+        response = self.call(ctxt, "rack_get_all", marker=marker,
+                             limit=limit, sort_keys=sort_keys,
+                             sort_dirs=sort_dirs, filters=filters,
+                             offset=offset)
         return response
 
     def rack_update_name(self, ctxt, rack_id, rack_name):
