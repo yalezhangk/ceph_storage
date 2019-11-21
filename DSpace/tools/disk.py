@@ -56,9 +56,10 @@ class DiskTool(ToolBase):
             dirs = os.listdir(os.path.join(path, block))
             if 'stat' not in dirs:
                 continue
+            size = open(os.path.join(path, block, 'size')).read().strip()
             res[block] = {
                 "partitions": {},
-                "size": open(os.path.join(path, block, 'size')).read().strip(),
+                "size": int(size) * 512,
                 "rotational": open(
                     os.path.join(path, block, 'queue', 'rotational')
                 ).read().strip()
