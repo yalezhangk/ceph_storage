@@ -522,3 +522,17 @@ class User(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(64))
     password = Column(String(255))
+
+
+class Task(BASE, StorBase):
+    __tablename__ = 'tasks'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64))
+    description = Column(String(255))
+    status = Column(String(32))
+    current = Column(String(255))
+    reason = Column(Text)
+    step = Column(Integer)
+    step_num = Column(Integer)
+    finished_at = Column(DateTime)
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))

@@ -3885,6 +3885,94 @@ def user_get_count(context, filters=None):
 ###############################
 
 
+def _task_get_query(context, session=None):
+    return model_query(context, models.Task, session=session)
+
+
+def _task_get(context, task_id, session=None):
+    result = _task_get_query(context, session)
+    result = result.filter_by(id=task_id).first()
+
+    if not result:
+        raise exception.TaskNotFound(task_id=task_id)
+
+    return result
+
+
+@require_context
+def task_create(context, values):
+    task_ref = models.Task()
+    task_ref.update(values)
+    if "cluster_id" not in values:
+        task_ref.cluster_id = context.cluster_id
+    session = get_session()
+    with session.begin():
+        task_ref.save(session)
+
+    return task_ref
+
+
+def task_destroy(context, task_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Task, session=session).\
+            filter_by(id=task_id).\
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def task_get(context, task_id, expected_attrs=None):
+    return _task_get(context, task_id)
+
+
+@require_context
+def task_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Task, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def task_update(context, task_id, values):
+    session = get_session()
+    with session.begin():
+        query = _task_get_query(context, session)
+        result = query.filter_by(id=task_id).update(values)
+        if not result:
+            raise exception.TaskNotFound(task_id=task_id)
+
+
+@require_context
+def task_get_count(context, filters=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _task_get_query(context, session)
+        query = process_filters(models.Task)(query, filters)
+        return query.count()
+
+
+###############################
+
+
 def is_valid_model_filters(model, filters, exclude_list=None):
     """Return True if filter values exist on the model
 
