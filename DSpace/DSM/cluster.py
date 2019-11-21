@@ -58,6 +58,9 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
+            node_task.prometheus_target_config(action='remove',
+                                               service='node_exporter')
+
             rpc_services = objects.RPCServiceList.get_all(
                 ctxt,
                 filters={
