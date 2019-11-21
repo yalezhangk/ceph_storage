@@ -4,6 +4,8 @@ import copy
 import logging
 
 import six
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -18,6 +20,22 @@ from DSpace.utils.license_verify import LicenseVerify
 from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
+
+user_login_schema = {
+    "type": "object",
+    "properties": {
+        "username": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 32
+        },
+        "password": {
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "required": ["username", "password"],
+}
 
 default_permission = {
     "license": True,
@@ -238,6 +256,8 @@ class UserLoginHandler(PermissionMixin):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=user_login_schema,
+                 format_checker=draft7_format_checker)
         name = data.get('username')
         password = data.get('password')
         users = objects.UserList.get_all(ctxt, filters={'name': name})
