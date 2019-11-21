@@ -57,6 +57,7 @@ def get_routers():
     __import__('DSpace.DSI.handlers.racks')
     __import__('DSpace.DSI.handlers.rpc_service')
     __import__('DSpace.DSI.handlers.sysinfos')
+    __import__('DSpace.DSI.handlers.tasks')
     __import__('DSpace.DSI.handlers.user')
     __import__('DSpace.DSI.handlers.volume_access_paths')
     __import__('DSpace.DSI.handlers.volume_client_groups')

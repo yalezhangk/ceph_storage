@@ -968,7 +968,7 @@ def user_get_all(context, filters, marker, limit,
 
 
 def user_get_count(context, filters):
-    return IMPL.user_get_all(context, filters=filters)
+    return IMPL.user_get_count(context, filters=filters)
 
 
 def user_update(context, user_id, values):
@@ -1000,7 +1000,7 @@ def task_get_all(context, filters, marker, limit,
 
 
 def task_get_count(context, filters):
-    return IMPL.task_get_all(context, filters=filters)
+    return IMPL.task_get_count(context, filters=filters)
 
 
 def task_update(context, task_id, values):

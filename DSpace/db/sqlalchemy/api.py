@@ -3944,7 +3944,8 @@ def task_get(context, task_id, expected_attrs=None):
 
 @require_context
 def task_get_all(context, marker=None, limit=None, sort_keys=None,
-                 sort_dirs=None, filters=None, offset=None):
+                 sort_dirs=None, filters=None, offset=None,
+                 expected_attrs=None):
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
@@ -4093,6 +4094,9 @@ PAGINATION_HELPERS = {
     models.User: (_user_get_query,
                   process_filters(models.User),
                   _user_get),
+    models.Task: (_task_get_query,
+                  process_filters(models.Task),
+                  _task_get),
 }
 
 
