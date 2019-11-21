@@ -164,6 +164,19 @@ class System(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def check_firewall(self):
+        cmd = ["systemctl", "status", "firewalld", "|", "grep", "Active",
+               "|", "awk", "'{{print $2}}'"]
+        rc, stdout, stderr = self.run_command(cmd)
+        if not rc:
+            result = stdout.strip()
+            if result == 'active':
+                return False
+            else:
+                return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
     def get_all_process(self):
         proc = self._wapper('/proc')
         pids = [pid for pid in os.listdir(proc) if pid.isdigit()]

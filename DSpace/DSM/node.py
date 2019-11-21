@@ -575,6 +575,10 @@ class NodeHandler(AdminBaseHandler):
             ip_dict['check_network'] = True
         else:
             ip_dict['check_network'] = True
+        if node_task.check_firewall():
+            ip_dict['check_firewall'] = True
+        else:
+            ip_dict['check_firewall'] = False
 
         return ip_dict
 
@@ -743,6 +747,8 @@ class NodeHandler(AdminBaseHandler):
                 roles = roles.split(',')
             services = node_task.probe_node_services()
             res['check_roles'] = self._node_check_roles(roles, services)
+        if "firewall" in items:
+            res['check_firewall'] = node_task.check_firewall()
         return res
 
     def nodes_inclusion_check(self, ctxt, datas):

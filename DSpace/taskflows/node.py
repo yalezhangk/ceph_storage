@@ -430,6 +430,12 @@ class NodeTask(object):
         result = sys_tool.check_package(pkg_name)
         return result
 
+    def check_firewall(self):
+        ssh = self.get_ssh_executor()
+        sys_tool = SystemTool(ssh)
+        result = sys_tool.check_firewall()
+        return result
+
     def get_ceph_service(self):
         ssh = self.get_ssh_executor()
         sys_tool = SystemTool(ssh)
