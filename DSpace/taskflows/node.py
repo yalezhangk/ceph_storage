@@ -488,13 +488,13 @@ class NodeTask(object):
 
 
 class ContainerUninstallMixin(object):
-    def _node_remove_container(self, ctxt, name, ssh):
+    def _node_remove_container(self, ctxt, ssh, container_name, image_name):
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, "image_namespace")
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, "dspace_version")
         docker_tool = DockerTool(ssh)
-        container_name = '{}_{}'.format(image_namespace, name)
+        container_name = '{}_{}'.format(image_namespace, container_name)
         status = docker_tool.status(container_name)
         if status == 'active':
             docker_tool.stop(container_name)
@@ -503,10 +503,9 @@ class ContainerUninstallMixin(object):
             docker_tool.rm(container_name)
         try:
             docker_tool.image_rm(
-                "{}/{}:{}".format(image_namespace, name, dspace_version),
-                force=True)
+                "{}/{}:{}".format(image_namespace, image_name, dspace_version))
         except exc.StorException as e:
-            logger.warning("remove %s image failed, %s", name, e)
+            logger.warning("remove %s image failed, %s", image_name, e)
 
 
 class InstallCephRepo(BaseTask):
@@ -576,7 +575,7 @@ class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceAgentUninstall, self).execute(task_info)
         ssh = node.executer
-        self._node_remove_container(ctxt, "dsa", ssh)
+        self._node_remove_container(ctxt, ssh, "dsa", "dspace")
         config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
         # rm config file
         file_tool = FileTool(ssh)
@@ -652,7 +651,7 @@ class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
         super(DSpaceChronyUninstall, self).execute(task_info)
         ssh = node.executer
         # remove container and image
-        self._node_remove_container(ctxt, "chrony", ssh)
+        self._node_remove_container(ctxt, ssh, "chrony", "chrony")
         config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
         # rm config file
         file_tool = FileTool(ssh)
@@ -707,7 +706,8 @@ class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin):
         super(DSpaceExpoterUninstall, self).execute(task_info)
 
         ssh = node.executer
-        self._node_remove_container(ctxt, "node_exporter", ssh)
+        self._node_remove_container(ctxt, ssh, "node_exporter",
+                                    "node_exporter")
 
 
 class DSpaceExpoterInstall(BaseTask):
