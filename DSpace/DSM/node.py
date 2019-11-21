@@ -762,5 +762,5 @@ class NodeHandler(AdminBaseHandler):
             logger.info("check node: %s, result: %s", admin_ip, res)
         for node in status['nodes']:
             if node['admin_ip'] not in extras:
-                node['check_Installation_package'] = False
+                node['check_Installation_package'] = True
         return status
