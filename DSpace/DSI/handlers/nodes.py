@@ -3,18 +3,22 @@
 
 import json
 import logging
+import os
 
 from netaddr import IPRange
 from tornado import gen
 from tornado.escape import json_decode
 
+from DSpace import ROOT
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
+TPL_PATH = os.path.join(ROOT, 'templates')
 
 
 @URLRegistry.register(r"/nodes/")
@@ -770,3 +774,24 @@ class NodeCheckHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "data": res
         }))
+
+
+@URLRegistry.register('/tpl/download/')
+class TplDownload(ClusterAPIHandler):
+    def get(self):
+        file_name = self.get_argument('name')
+        if file_name == 'include-example.xlsx':
+            path = os.path.join(TPL_PATH, file_name)
+        else:
+            raise InvalidInput(reason=_('file_name not exist'))
+        self.set_header('Content-Type', 'application/octet-stream')
+        self.set_header('Content-Disposition',
+                        'attachment; filename={}'.format("example.xlsx"))
+        logger.info("download file: %s", path)
+        if not os.path.exists(path):
+            raise InvalidInput(reason=_('file not yet generate or '
+                                        'file path is error'))
+        with open(path, 'rb') as f:
+            file_content = f.read()
+            self.write(file_content)
+        self.finish()
