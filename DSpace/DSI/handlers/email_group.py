@@ -28,7 +28,6 @@ email_group_schema = {
                 },
                 "emails": {
                     "type": "string",
-                    "minLength": 5
                 }},
             "required": ["name", "emails"],
         },

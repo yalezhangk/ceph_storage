@@ -29,7 +29,7 @@ create_node_schema = {
             "properties": {
                 "hostname": {"type": "string", "format": "hostname"},
                 "ip_address": {"type": "string", "format": "ipv4"},
-                "password": {"type": "string", "minLength": 1},
+                "password": {"type": ["string", "null"]},
                 "gateway_ip_address": {"type": "string", "format": "ipv4"},
                 "cluster_ip": {"type": "string", "format": "ipv4"},
                 "public_ip": {"type": "string", "format": "ipv4"},
@@ -104,7 +104,7 @@ get_node_info_schema = {
                 "type": "object",
                 "properties": {
                     "ip_address": {"type": "string", "format": "ipv4"},
-                    "password": {"type": "string", "minLength": 1}
+                    "password": {"type": ["string", "null"]},
                 },
                 "required": ["ip_address"],
                 "additionalProperties": False
@@ -125,9 +125,15 @@ check_node_schema = {
         "type": "object",
         "properties": {
             "admin_ip": {"type": "string", "format": "ipv4"},
-            "password": {"type": "string", "minLength": 1},
+            "password": {"type": ["string", "null"]},
             "cluster_ip": {"type": "string", "format": "ipv4"},
             "public_ip": {"type": "string", "format": "ipv4"},
+            "gateway_ip": {"type": "string", "format": "ipv4"},
+            "role": {
+                "type": "string",
+                "enum": [
+                    "monitor", "storage", "mds", "radosgw", "blockgw"
+                ]},
         },
         "required": ["admin_ip", "cluster_ip", "public_ip"],
         "additionalProperties": False
@@ -887,6 +893,12 @@ class NodeCheckHandler(ClusterAPIHandler):
                 cluster_ip:
                   type: string
                   description: node's cluster ip
+                gateway_ip_address:
+                  type: string
+                  description: node's gateway ip address
+                roles:
+                  type: string
+                  description: node's role
         "200":
           description: successful operation
         """
