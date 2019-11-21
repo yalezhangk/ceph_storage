@@ -20,3 +20,5 @@ python-socketio
 tornado-swagger
 jsonschema
 strict-rfc3339
+taskflow
+networkx==1.11

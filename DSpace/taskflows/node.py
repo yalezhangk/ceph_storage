@@ -6,24 +6,29 @@ import time
 from pathlib import Path
 
 import paramiko
+import taskflow.engines
 from grpc._channel import _Rendezvous
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from taskflow.patterns import linear_flow as lf
 
 from DSpace import exception as exc
 from DSpace import objects
 from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
+from DSpace.taskflows.base import BaseTask
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
 from DSpace.tools.docker import Docker as DockerTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
+from DSpace.tools.probe import ProbeTool
 from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
 from DSpace.utils import template
 
 logger = logging.getLogger(__name__)
+CODE_DIR_CONTAINER = "/root/.local/lib/python3.6/site-packages/DSpace/"
 
 
 class NodeMixin(object):
@@ -131,46 +136,6 @@ class NodeTask(object):
         ).get_client(self.node.id)
         return client
 
-    def get_dspace_repo(self):
-        dspace_repo = objects.sysconfig.sys_config_get(
-            self.ctxt, "dspace_repo")
-        tpl = template.get('dspace.repo.j2')
-        repo = tpl.render(dspace_repo=dspace_repo)
-        return repo
-
-    def get_ceph_repo(self):
-        ceph_repo = objects.sysconfig.sys_config_get(self.ctxt, "ceph_repo")
-        tpl = template.get('ceph.repo.j2')
-        repo = tpl.render(ceph_repo=ceph_repo)
-        return repo
-
-    def get_chrony_conf(self):
-        chrony_server = objects.sysconfig.sys_config_get(self.ctxt,
-                                                         "chrony_server")
-        tpl = template.get('chrony.conf.j2')
-        chrony_conf = tpl.render(chrony_server=chrony_server,
-                                 ip_address=str(self.node.ip_address))
-        return chrony_conf
-
-    def get_dsa_conf(self):
-        admin_ip_address = objects.sysconfig.sys_config_get(
-            self.ctxt, "admin_ip_address")
-        admin_port = objects.sysconfig.sys_config_get(
-            self.ctxt, "admin_port")
-        agent_port = objects.sysconfig.sys_config_get(
-            self.ctxt, "agent_port")
-
-        tpl = template.get('dsa.conf.j2')
-        dsa_conf = tpl.render(
-            ip_address=str(self.node.ip_address),
-            admin_ip_address=str(admin_ip_address),
-            admin_port=admin_port,
-            agent_port=agent_port,
-            node_id=self.node.id,
-            cluster_id=self.node.cluster_id
-        )
-        return dsa_conf
-
     def _node_remove_container(self, name, ssh):
         image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
                                                            "image_namespace")
@@ -192,31 +157,13 @@ class NodeTask(object):
             logger.warning("remove %s image failed, %s", name, e)
 
     def chrony_install(self):
-        ssh = self.get_ssh_executor()
-        # install package
-        log_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
-        log_dir_container = objects.sysconfig.sys_config_get(
-            self.ctxt, "log_dir_container")
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        config_dir_container = objects.sysconfig.sys_config_get(
-            self.ctxt, "config_dir_container")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        file_tool = FileTool(ssh)
-        file_tool.write("{}/chrony.conf".format(config_dir),
-                        self.get_chrony_conf())
-
-        # run container
-        docker_tool = DockerTool(ssh)
-        docker_tool.run(
-            image="{}/chrony:{}".format(image_namespace, dspace_version),
-            privileged=True,
-            name="{}_chrony".format(image_namespace),
-            volumes=[(config_dir, config_dir_container),
-                     (log_dir, log_dir_container)]
-        )
+        wf = lf.Flow('DSpace Chrony Install')
+        wf.add(DSpaceChronyInstall('DSpace Chrony Install'))
+        self.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "node": self.node,
+            'task_info': {}
+        })
 
     def chrony_uninstall(self):
         logger.info("uninstall chrony")
@@ -246,28 +193,13 @@ class NodeTask(object):
         docker_tool.restart('{}_chrony'.format(image_namespace))
 
     def node_exporter_install(self):
-        ssh = self.get_ssh_executor()
-        # run container
-        docker_tool = DockerTool(ssh)
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        config_dir_container = objects.sysconfig.sys_config_get(
-            self.ctxt, "config_dir_container")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        node_exporter_port = objects.sysconfig.sys_config_get(
-            self.ctxt, "node_exporter_port")
-        docker_tool.run(
-            image="{}/node_exporter:{}".format(image_namespace,
-                                               dspace_version),
-            privileged=True,
-            name="{}_node_exporter".format(image_namespace),
-            volumes=[(config_dir, config_dir_container),
-                     ("/", "/host", "ro,rslave")],
-            envs=[("NODE_EXPORTER_ADDRESS", str(self.node.ip_address)),
-                  ("NODE_EXPORTER_PORT", node_exporter_port)]
-        )
+        wf = lf.Flow('DSpace Exporter Install')
+        wf.add(DSpaceExpoterInstall('DSpace Exporter Install'))
+        self.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "node": self.node,
+            'task_info': {}
+        })
 
     def node_exporter_uninstall(self):
         logger.info("uninstall node exporter")
@@ -408,66 +340,15 @@ class NodeTask(object):
             mutual_username, mutual_password)
 
     def dspace_agent_install(self):
-        ssh = self.get_ssh_executor()
-        # get global config
-        log_dir = objects.sysconfig.sys_config_get(self.ctxt, "log_dir")
-        log_dir_container = objects.sysconfig.sys_config_get(
-            self.ctxt, "log_dir_container")
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        config_dir_container = objects.sysconfig.sys_config_get(
-            self.ctxt, "config_dir_container")
-        image_name = objects.sysconfig.sys_config_get(self.ctxt, "image_name")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(self.ctxt,
-                                                          "dspace_version")
-        dspace_repo = objects.sysconfig.sys_config_get(
-            self.ctxt, "dspace_repo")
-
-        # write config
-        file_tool = FileTool(ssh)
-        file_tool.mkdir(config_dir)
-        file_tool.write("{}/dsa.conf".format(config_dir),
-                        self.get_dsa_conf())
-        file_tool.write("/etc/yum.repos.d/dspace.repo",
-                        self.get_dspace_repo())
-        file_tool.write("/etc/yum.repos.d/ceph.repo",
-                        self.get_ceph_repo())
-        # install docker
-        package_tool = PackageTool(ssh)
-        package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
-        # start docker
-        service_tool = ServiceTool(ssh)
-        service_tool.enable('docker')
-        service_tool.start('docker')
-        # load image
-        docker_tool = DockerTool(ssh)
-        # pull images from repo
-        tmp_image = '/tmp/{}'.format(image_name)
-        fetch_url = '{}/images/{}'.format(dspace_repo, image_name)
-        file_tool.fetch_from_url(tmp_image, fetch_url)
-        docker_tool.image_load(tmp_image)
-        # run container
-        # TODO: remove code_dir
-        code_dir_container = "/root/.local/lib/python3.6/site-packages/DSpace/"
-        code_dir = objects.sysconfig.sys_config_get(self.ctxt, "dspace_dir")
-        debug_mode = objects.sysconfig.sys_config_get(self.ctxt, "debug_mode")
-        volumes = [
-            (config_dir, config_dir_container),
-            (log_dir, log_dir_container),
-            ("/", "/host"),
-            ("/sys", "/sys"),
-            ("/root/.ssh/", "/root/.ssh", "ro,rslave")
-        ]
-        if debug_mode == "yes":
-            volumes.append((code_dir, code_dir_container))
-        docker_tool.run(
-            name="{}_dsa".format(image_namespace),
-            image="{}/dspace:{}".format(image_namespace, dspace_version),
-            command="dsa",
-            privileged=True,
-            volumes=volumes
-        )
+        wf = lf.Flow('DSpace Agent Install')
+        wf.add(InstallDocker('Install Docker'))
+        wf.add(DSpaceAgentInstall('DSpace Agent Install'))
+        wf.add(InstallCephRepo('DSpace Agent Install'))
+        self.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "node": self.node,
+            'task_info': {}
+        })
 
     def dspace_agent_uninstall(self):
         logger.info("uninstall chrony")
@@ -545,6 +426,16 @@ class NodeTask(object):
         result = sys_tool.check_package(pkg_name)
         return result
 
+    def get_ceph_service(self):
+        ssh = self.get_ssh_executor()
+        sys_tool = SystemTool(ssh)
+        services = []
+        for i in ["ceph-mon", "ceph-osd", "ceph-mgr", "ceph-radosgw"]:
+            res = sys_tool.get_process_list(i)
+            if res:
+                services.append(i)
+        return services
+
     def check_ceph_is_installed(self):
         ssh = self.get_ssh_executor()
         ceph_tool = CephTool(ssh)
@@ -556,3 +447,204 @@ class NodeTask(object):
         result |= file_tool.exist('/etc/ceph')
         result |= file_tool.exist('/var/lib/ceph')
         return result
+
+    def probe_node_services(self):
+        ssh = self.get_ssh_executor()
+        probe_tool = ProbeTool(ssh)
+        result = probe_tool.probe_node_services()
+        return result
+
+
+class InstallCephRepo(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(InstallCephRepo, self).execute(task_info)
+        ssh = node.executer
+        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        file_tool = FileTool(ssh)
+        file_tool.mkdir(config_dir)
+        file_tool.write("/etc/yum.repos.d/ceph.repo",
+                        self.get_ceph_repo(ctxt))
+
+    def get_ceph_repo(self, ctxt):
+        ceph_repo = objects.sysconfig.sys_config_get(ctxt, "ceph_repo")
+        tpl = template.get('ceph.repo.j2')
+        repo = tpl.render(ceph_repo=ceph_repo)
+        return repo
+
+
+class InstallDocker(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(InstallDocker, self).execute(task_info)
+        ssh = node.executer
+        # write config
+        file_tool = FileTool(ssh)
+        file_tool.write("/etc/yum.repos.d/dspace.repo",
+                        self.get_dspace_repo(ctxt))
+        # install docker
+        package_tool = PackageTool(ssh)
+        package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
+        # start docker
+        service_tool = ServiceTool(ssh)
+        service_tool.enable('docker')
+        service_tool.start('docker')
+
+        # load image
+        docker_tool = DockerTool(ssh)
+        rc = False
+        for i in range(7):
+            rc = docker_tool.available()
+            if rc:
+                break
+            else:
+                time.sleep(2 ** i)
+        if not rc:
+            logger.error("Docker service not available")
+            raise exc.ProgrammingError("Docker service not available")
+
+        # pull images from repo
+        dspace_repo = objects.sysconfig.sys_config_get(
+            ctxt, "dspace_repo")
+        image_name = objects.sysconfig.sys_config_get(ctxt, "image_name")
+        tmp_image = '/tmp/{}'.format(image_name)
+        fetch_url = '{}/images/{}'.format(dspace_repo, image_name)
+        file_tool.fetch_from_url(tmp_image, fetch_url)
+        docker_tool.image_load(tmp_image)
+
+    def get_dspace_repo(self, ctxt):
+        dspace_repo = objects.sysconfig.sys_config_get(
+            ctxt, "dspace_repo")
+        tpl = template.get('dspace.repo.j2')
+        repo = tpl.render(dspace_repo=dspace_repo)
+        return repo
+
+
+class DSpaceAgentInstall(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(DSpaceAgentInstall, self).execute(task_info)
+
+        ssh = node.executer
+        # get global config
+        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "log_dir_container")
+        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir_container")
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(ctxt,
+                                                          "dspace_version")
+
+        # write config
+        file_tool = FileTool(ssh)
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/dsa.conf".format(config_dir),
+                        self.get_dsa_conf(ctxt, node))
+        # run container
+        # TODO: remove code_dir
+        code_dir = objects.sysconfig.sys_config_get(ctxt, "dspace_dir")
+        debug_mode = objects.sysconfig.sys_config_get(ctxt, "debug_mode")
+        volumes = [
+            (config_dir, config_dir_container),
+            (log_dir, log_dir_container),
+            ("/", "/host"),
+            ("/sys", "/sys"),
+            ("/root/.ssh/", "/root/.ssh", "ro,rslave")
+        ]
+        if debug_mode == "yes":
+            volumes.append((code_dir, CODE_DIR_CONTAINER))
+        docker_tool = DockerTool(ssh)
+        docker_tool.run(
+            name="{}_dsa".format(image_namespace),
+            image="{}/dspace:{}".format(image_namespace, dspace_version),
+            command="dsa",
+            privileged=True,
+            volumes=volumes
+        )
+
+    def get_dsa_conf(self, ctxt, node):
+        admin_ip_address = objects.sysconfig.sys_config_get(
+            ctxt, "admin_ip_address")
+        admin_port = objects.sysconfig.sys_config_get(
+            ctxt, "admin_port")
+        agent_port = objects.sysconfig.sys_config_get(
+            ctxt, "agent_port")
+
+        tpl = template.get('dsa.conf.j2')
+        dsa_conf = tpl.render(
+            ip_address=str(node.ip_address),
+            admin_ip_address=str(admin_ip_address),
+            admin_port=admin_port,
+            agent_port=agent_port,
+            node_id=node.id,
+            cluster_id=node.cluster_id
+        )
+        return dsa_conf
+
+
+class DSpaceChronyInstall(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(DSpaceChronyInstall, self).execute(task_info)
+
+        ssh = node.executer
+        # install package
+        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "log_dir_container")
+        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir_container")
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(ctxt,
+                                                          "dspace_version")
+        file_tool = FileTool(ssh)
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/chrony.conf".format(config_dir),
+                        self.get_chrony_conf(ctxt, node.ip_address))
+
+        # run container
+        docker_tool = DockerTool(ssh)
+        docker_tool.run(
+            image="{}/chrony:{}".format(image_namespace, dspace_version),
+            privileged=True,
+            name="{}_chrony".format(image_namespace),
+            volumes=[(config_dir, config_dir_container),
+                     (log_dir, log_dir_container)]
+        )
+
+    def get_chrony_conf(self, ctxt, ip):
+        chrony_server = objects.sysconfig.sys_config_get(ctxt,
+                                                         "chrony_server")
+        tpl = template.get('chrony.conf.j2')
+        chrony_conf = tpl.render(chrony_server=chrony_server,
+                                 ip_address=str(ip))
+        return chrony_conf
+
+
+class DSpaceExpoterInstall(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(DSpaceExpoterInstall, self).execute(task_info)
+
+        ssh = node.executer
+        # run container
+        docker_tool = DockerTool(ssh)
+        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir_container")
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(ctxt,
+                                                          "dspace_version")
+        node_exporter_port = objects.sysconfig.sys_config_get(
+            ctxt, "node_exporter_port")
+        docker_tool.run(
+            image="{}/node_exporter:{}".format(image_namespace,
+                                               dspace_version),
+            privileged=True,
+            name="{}_node_exporter".format(image_namespace),
+            volumes=[(config_dir, config_dir_container),
+                     ("/", "/host", "ro,rslave")],
+            envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
+                  ("NODE_EXPORTER_PORT", node_exporter_port)]
+        )
