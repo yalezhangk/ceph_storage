@@ -31,6 +31,26 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
+    def _remove_node_resource(self, ctxt, node):
+        rpc_services = objects.RPCServiceList.get_all(
+            ctxt,
+            filters={
+                "service_name": "agent",
+                "node_id": node.id
+            }
+        )
+        for rpc_service in rpc_services:
+            rpc_service.destroy()
+
+        disks = objects.DiskList.get_all(ctxt, filters={"node_id": node.id})
+        for disk in disks:
+            disk.destroy()
+
+        networks = objects.NetworkList.get_all(
+            ctxt, filters={"node_id": node.id})
+        for network in networks:
+            network.destroy()
+
     def _node_delete(self, ctxt, node):
         node_id = node.id
         try:
@@ -47,16 +67,8 @@ class NodeHandler(AdminBaseHandler):
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
-            rpc_services = objects.RPCServiceList.get_all(
-                ctxt,
-                filters={
-                    "cluster_id": node.cluster_id,
-                    "service_name": "agent",
-                    "node_id": node.id
-                }
-            )
-            for rpc_service in rpc_services:
-                rpc_service.destroy()
+
+            self._remove_node_resource(ctxt, node)
             node.destroy()
             logger.info("node delete success")
             msg = _("Node removed!")
