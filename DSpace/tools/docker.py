@@ -109,6 +109,15 @@ class Docker(ToolBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def available(self):
+        logger.info("Test docker available")
+        cmd = ["docker", "ps"]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            return False
+        else:
+            return True
+
     def status(self, name):
         """Show docker container status
 
