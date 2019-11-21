@@ -15,7 +15,7 @@ class CrushRule(base.StorPersistentObject, base.StorObject,
                 base.StorObjectDictCompat, base.StorComparableObject):
     fields = {
         'id': fields.IntegerField(),
-        'rule_id': fields.IntegerField(),
+        'rule_id': fields.IntegerField(nullable=True),
         'rule_name': fields.StringField(),
         'type': fields.StringField(),
         'content': s_fields.DictOfNullableField(),

@@ -86,7 +86,7 @@ class PoolHandler(AdminBaseHandler):
             osd.crush_rule_id = crush_rule_id
             osd.save()
 
-    def _generate_osd_toplogy(self, ctxt, pool_id, osds):
+    def _generate_osd_toplogy(self, ctxt, pool, osds):
         rack_dict = dict()
         host_dict = dict()
         crush_host_dict = dict()
@@ -94,11 +94,12 @@ class PoolHandler(AdminBaseHandler):
         for osd_id in osds:
             osd = self.osd_get(ctxt, osd_id)
             node = self.node_get(ctxt, osd.node_id)
-            node_name = "pool{}-host{}".format(pool_id, node.hostname)
+            node_name = "{}-{}".format(pool.pool_name, node.hostname)
             rack = self.rack_get(ctxt, node.rack_id)
-            rack_name = "pool{}-rack{}".format(pool_id, rack.name)
+            rack_name = "{}-rack{}".format(pool.pool_name, rack.id)
             datacenter = self.datacenter_get(ctxt, rack.datacenter_id)
-            datacenter_name = "pool{}-dc{}".format(pool_id, datacenter.name)
+            datacenter_name = "{}-datacenter{}".format(pool.pool_name,
+                                                       datacenter.id)
             disk = self.disk_get(ctxt, osd.disk_id)
             osd_info = (osd.osd_id, disk.size)
             crush_osd_info = "{}-{}".format(osd_id, osd.osd_id)
@@ -128,12 +129,12 @@ class PoolHandler(AdminBaseHandler):
             "pool_role": pool.role,
             "rep_size": pool.replicate_size,
             "fault_domain": pool.failure_domain_type,
-            "root_name": "pool{}-root".format(pool_id),
+            "root_name": "{}-root".format(pool.pool_name),
             "crush_rule_name": crush_rule_name
         }
         crush_content = copy.deepcopy(body)
         host_dict, rack_dict, datacenter_dict, crush_host_dict = (
-            self._generate_osd_toplogy(ctxt, pool_id, osds))
+            self._generate_osd_toplogy(ctxt, pool, osds))
         logger.debug("*** _generate_pool_opdata: {} {} {} {}".format(
             host_dict, rack_dict, datacenter_dict, crush_host_dict))
         if pool.failure_domain_type == 'host':
@@ -168,6 +169,12 @@ class PoolHandler(AdminBaseHandler):
             logger.info("ceph version is: %s, can't specified replicate size "
                         "while creating pool", ceph_version)
             body.update(specified_rep=False)
+        crush_rule = self.crush_rule_create(
+            ctxt, crush_rule_name, pool.failure_domain_type, crush_content)
+        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
+                              crush_rule.id)
+        pool.crush_rule_id = crush_rule.id
+        pool.save()
         logger.debug("create pool, body: %s", body)
         try:
             ceph_client = CephTask(ctxt)
@@ -181,22 +188,17 @@ class PoolHandler(AdminBaseHandler):
             rule_id = None
             status = s_fields.PoolStatus.ERROR
             msg = _("create pool error")
-        crush_rule = self.crush_rule_create(
-            ctxt, crush_rule_name, pool.failure_domain_type, crush_content)
-        pool.crush_rule_id = crush_rule.id
+        crush_rule.rule_id = rule_id
+        crush_rule.save()
         pool.pool_id = db_pool_id
         pool.status = status
-        crush_rule.rule_id = rule_id
         pool.save()
-        crush_rule.save()
-        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
-                              crush_rule.id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "CREATED", msg)
 
     def pool_create(self, ctxt, data):
         uid = str(uuid.uuid4())
-        pool_name = "pool-{}".format(uid)
+        pool_name = "pool-{}".format(uid.replace('-', ''))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.CREATE)
@@ -320,6 +322,7 @@ class PoolHandler(AdminBaseHandler):
             ceph_client.pool_add_disk(body)
             msg = _("{} increase disk success").format(pool.pool_name)
             pool.osd_num += len(osds)
+            pool.status = s_fields.PoolStatus.ACTIVE
         except exception.StorException as e:
             logger.error("increase disk error: {}".format(e))
             msg = _("{} increase disk error").format(pool.pool_name)
@@ -358,6 +361,7 @@ class PoolHandler(AdminBaseHandler):
         try:
             ceph_client = CephTask(ctxt)
             ceph_client.pool_del_disk(body)
+            pool.status = s_fields.PoolStatus.ACTIVE
             msg = _("{} decrease disk success").format(pool.pool_name)
         except exception.StorException as e:
             logger.error("increase disk error: {}".format(e))
@@ -377,12 +381,56 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "DECREASE_DISK", msg)
 
+    def _get_osd_fault_domains(self, ctxt, fault_domain, osd_ids):
+        nodes = []
+        racks = []
+        datacenters = []
+        for osd_id in osd_ids:
+            osd = objects.Osd.get_by_id(ctxt, osd_id)
+            node = objects.Node.get_by_id(ctxt, osd.node_id)
+            if node not in nodes:
+                nodes.append(node)
+            rack = objects.Rack.get_by_id(ctxt, node.rack_id)
+            if rack not in racks:
+                racks.append(rack)
+            datacenter = objects.Datacenter.get_by_id(ctxt, rack.datacenter_id)
+            if datacenter not in datacenters:
+                datacenters.append(datacenter)
+        if fault_domain == "host":
+            logger.info("%s, get hosts: %s", osd_id, nodes)
+            return len(nodes)
+        elif fault_domain == "rack":
+            logger.info("%s, get racks: %s", osd_id, racks)
+            return len(racks)
+        elif fault_domain == "datacenter":
+            logger.info("%s, get datacenters: %s", osd_id, datacenters)
+            return len(datacenters)
+
+    def _check_data_lost(self, ctxt, pool, osd_ids):
+        fault_domain = pool.failure_domain_type
+        rep_size = pool.replicate_size
+        pool_osd_ids = [i.id for i in pool.osds]
+        pool_avail_domain = self._get_osd_fault_domains(
+            ctxt, fault_domain, pool_osd_ids)
+        dec_domain = self._get_osd_fault_domains(ctxt, fault_domain, osd_ids)
+        if dec_domain >= rep_size:
+            logger.error("can't remove osds more than pool's rep size: %s",
+                         rep_size)
+            raise exception.InvalidInput(
+                reason="can't remove osds more than pool's rep size")
+        if dec_domain >= pool_avail_domain:
+            logger.error("can't remove osds more than pool's available domain")
+            raise exception.InvalidInput(
+                reason="can't remove osds more than pool's available domain")
+
     def pool_decrease_disk(self, ctxt, id, data):
-        pool = objects.Pool.get_by_id(ctxt, id)
+        pool = objects.Pool.get_by_id(
+            ctxt, id, expected_attrs=['crush_rule', 'osds'])
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.POOL_DEL_DISK)
         osds = data.get('osds')
+        self._check_data_lost(ctxt, pool, osds)
         self._pool_decrease_disk(ctxt, pool, osds)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
@@ -431,6 +479,7 @@ class PoolHandler(AdminBaseHandler):
             new_rule_id = ceph_client.update_pool_policy(body).get('rule_id')
             crush_rule.rule_id = new_rule_id
             msg = _("{} update policy success").format(pool.pool_name)
+            status = s_fields.PoolStatus.ACTIVE
         except exception.StorException as e:
             logger.error("update pool policy error: {}".format(e))
             msg = _("{} update policy error").format(pool.pool_name)
