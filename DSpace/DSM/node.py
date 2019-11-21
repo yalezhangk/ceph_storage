@@ -583,7 +583,18 @@ class NodeHandler(AdminBaseHandler):
 
     def nodes_inclusion(self, ctxt, datas):
         logger.debug("check nodes: {}", datas)
-        include_flow(ctxt, datas)
+        t = objects.Task(
+            ctxt,
+            name="Import Cluster",
+            description="Import Cluster",
+            current="",
+            step_num=0,
+            status=s_fields.TaskStatus.RUNNING,
+            step=0
+        )
+        t.create()
+        self.task_submit(include_flow, ctxt, t, datas)
+        return t
 
     def _nodes_inclusion_check_admin_ips(self, ctxt, datas):
         """Check admin_ips in nodes

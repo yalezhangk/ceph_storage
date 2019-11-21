@@ -19,17 +19,6 @@ logger = logging.getLogger(__name__)
 
 class PrepareTask(task.Task):
     def execute(self, ctxt, task_info):
-        t = objects.Task(
-            ctxt,
-            name=task_info.get('name'),
-            description=task_info.get('description'),
-            current=self.name,
-            step_num=task_info.get('step_num'),
-            status=s_fields.TaskStatus.RUNNING,
-            step=0
-        )
-        t.create()
-        task_info['task'] = t
         return True
 
     def revert(self, task_info, result, flow_failures):
@@ -61,14 +50,23 @@ class BaseTask(task.Task):
 
 
 def create_flow(ctxt):
+    t = objects.Task(
+        ctxt,
+        name="Example",
+        description="Example",
+        current="",
+        step_num=0,
+        status=s_fields.TaskStatus.RUNNING,
+        step=0
+    )
+    t.create()
     wf = lf.Flow('TaskFlow')
     wf.add(PrepareTask("TaskPrepare"))
     wf.add(CompleteTask('Complete'))
     taskflow.engines.run(wf, store={
         "ctxt": ctxt,
         'task_info': {
-            "name": "name",
-            "step_num": "5"
+            "task": t
         }
     })
     logger.info("Create flow run success")

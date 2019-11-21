@@ -85,3 +85,24 @@ def sys_config_get(ctxt, key, default=None):
         return strutils.bool_from_string(obj.value)
     else:
         raise exception.Invalid(msg=_("Invalid config type"))
+
+
+def sys_config_set(ctxt, key, value, value_type=None):
+    if not value_type:
+        if isinstance(value, bool):
+            value_type = s_fields.ConfigType.BOOL
+        elif isinstance(value, int):
+            value_type = s_fields.ConfigType.NUMBER
+        else:
+            value_type = s_fields.ConfigType.STRING
+    objs = SysConfigList.get_all(ctxt, filters={"key": key})
+    if objs:
+        obj = objs[0]
+        obj.value = value
+        obj.value_type = value_type
+        obj.save
+    else:
+        obj = SysConfig(
+            ctxt, key=key, value=value, value_type=value_type
+        )
+        obj.create()

@@ -977,9 +977,9 @@ class NodeInclusionHandler(ClusterAPIHandler):
         data = json_decode(self.request.body)
         datas = data.get('nodes')
         client = self.get_admin_client(ctxt)
-        nodes = yield client.nodes_inclusion(ctxt, datas)
+        task = yield client.nodes_inclusion(ctxt, datas)
         self.write(objects.json_encode({
-            "nodes": nodes
+            "task": task
         }))
 
 
