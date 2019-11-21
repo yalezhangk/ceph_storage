@@ -197,8 +197,9 @@ class NodeTask(object):
         logger.info("Install node exporter for %s", self.node.hostname)
         wf = lf.Flow('DSpace Exporter Install')
         wf.add(DSpaceExpoterInstall('DSpace Exporter Install'))
-        self.executer = self.get_ssh_executor()
+        self.node.executer = self.get_ssh_executor()
         taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
             "node": self.node,
             'task_info': {}
         })
