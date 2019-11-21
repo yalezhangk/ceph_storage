@@ -4,6 +4,8 @@
 import logging
 
 import six
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 from tornado.escape import json_encode
@@ -13,6 +15,41 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+
+create_rpc_service_schema = {
+    "type": "object",
+    "properties": {
+        "rpc_service": {
+            "type": "object",
+            "properties": {
+                "hostname": {"type": "string", "format": "hostname"},
+                "cluster_id": {
+                    "type": "string",
+                    "minLength": 36,
+                    "maxLength": 36
+                },
+                "service_name": {"type": "string"},
+                "endpoint": {
+                    "type": "object",
+                    "properties": {
+                        "ip": {"type": "string", "format": "ipv4"},
+                        "port": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 65535
+                        }
+                    },
+                    "required": ["ip", "port"]
+                }
+            },
+            "additionalProperties": False,
+            "required": ["service_name", "endpoint"]
+        },
+    },
+    "required": ["rpc_service"],
+    "additionalProperties": False
+}
 
 
 @URLRegistry.register(r"/rpc_services/")
@@ -85,7 +122,7 @@ class RpcServiceListHandler(ClusterAPIHandler):
                     properties:
                       ip:
                         type: string
-                      prot:
+                      port:
                         type: string
         responses:
         "200":
@@ -93,6 +130,8 @@ class RpcServiceListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_rpc_service_schema,
+                 format_checker=draft7_format_checker)
         data = data.get("rpc_service")
         r = objects.RPCService(
             ctxt, cluster_id=ctxt.cluster_id, hostname=data.get('hostname'),
