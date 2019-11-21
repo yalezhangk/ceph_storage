@@ -104,6 +104,11 @@ class CephHandler(AgentBaseHandler):
             ceph_tool.osd_zap(osd.disk.name)
         except Exception as e:
             logger.exception(e)
+        try:
+            ceph_tool.osd_remove_from_cluster(osd.osd_id)
+        except exception.RunCommandError as e:
+            logger.exception("Remove osd from cluster error: %s", e)
+            raise exception.InvalidInput("Remove osd from cluster error")
         if osd.cache_partition_id:
             self._data_clear(client, osd.cache_partition.name)
         if osd.db_partition_id:
