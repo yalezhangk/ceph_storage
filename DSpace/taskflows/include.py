@@ -38,6 +38,16 @@ class CreateDB(BaseTask):
 
     def execute(self, ctxt, datas, task_info):
         super(CreateDB, self).execute(task_info)
+        # init task data
+        objects.sysconfig.sys_config_set(
+            ctxt, 'is_import', True
+        )
+        t = task_info['task']
+        objects.sysconfig.sys_config_set(
+            ctxt, 'import_task_id', t.id
+        )
+
+        # create node data
         nodes = []
         for data in datas:
             node = objects.Node(
@@ -138,7 +148,12 @@ class SyncClusterInfo(BaseTask):
         osd.create()
 
 
-def include_flow(ctxt, datas):
+def include_flow(ctxt, t, datas):
+    # update task
+    t.step_num = 5
+    t.save()
+
+    # crate task flow
     wf = lf.Flow('TaskFlow')
     wf.add(PrepareTask("Task prepare"))
     wf.add(CreateDB("Database add info"))
@@ -150,8 +165,7 @@ def include_flow(ctxt, datas):
         "ctxt": ctxt,
         "datas": datas,
         'task_info': {
-            "name": "Include Cluster",
-            "step_num": "5"
+            "task": t,
         }
     })
     logger.info("Include flow run success")
@@ -164,12 +178,22 @@ def main():
     objects.register_all()
     ctxt = context.get_context()
     ctxt.cluster_id = '358fc820-ae9c-44e3-8090-790882161b1e'
+    t = objects.Task(
+        ctxt,
+        name="Example",
+        description="Example",
+        current="",
+        step_num=0,
+        status=s_fields.TaskStatus.RUNNING,
+        step=0
+    )
+    t.create()
     datas = [{
         "ip_address": "192.168.103.140",
         "cluster_ip": "192.168.103.140",
         "public_ip": "192.168.103.140"
     }]
-    include_flow(ctxt, datas)
+    include_flow(ctxt, t, datas)
 
 
 if __name__ == '__main__':
