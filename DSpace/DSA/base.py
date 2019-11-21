@@ -37,12 +37,14 @@ class AgentBaseHandler(object):
         self._executor.submit(self._wapper, fun, *args, **kwargs)
 
     def _get_node(self):
-        endpoint = {
-            "ip": CONF.admin_ip,
-            "port": CONF.admin_port,
+        endpoints = {
+            "admin": {
+                "ip": CONF.admin_ip,
+                "port": CONF.admin_port,
+            }
         }
         self.admin = AdminClientManager(
-            self.ctxt, async_support=False, endpoint=endpoint
+            self.ctxt, async_support=False, endpoints=endpoints
         ).get_client()
         retry_interval = 10
         retry_times = 0

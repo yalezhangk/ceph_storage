@@ -31,14 +31,13 @@ class BaseClientManager:
     client_cls = None
 
     def __init__(self, context, cluster_id=None, async_support=False,
-                 endpoint=None):
-        self.endpoint = endpoint
+                 endpoints=None):
         self.context = context
         self.async_support = async_support
         if cluster_id:
             self.cluster_id = cluster_id
-        if endpoint:
-            self.endpoints = {'admin': endpoint}
+        if endpoints:
+            self.endpoints = endpoints
         logger.debug("etcd server(%s) cluster_id(%s) service_name(%s)" % (
             "127.0.0.1", self.cluster_id, self.service_name
         ))
@@ -60,8 +59,9 @@ class BaseClientManager:
         return endpoints
 
     def get_endpoints(self):
-        self.endpoints = self._get_endpoints_db()
-        return self.endpoints
+        if self.endpoints:
+            return self.endpoints
+        return self._get_endpoints_db()
 
     def get_endpoint(self, node_id=None):
         endpoints = self.get_endpoints()
