@@ -159,6 +159,7 @@ class CephHandler(AgentBaseHandler):
         service_tool.start("ceph-mgr@{}".format(self.node.hostname))
 
         self._wait_mon_ready(client)
+        ceph_tool.module_enable("prometheus")
         return True
 
     def ceph_mon_remove(self, context, last_mon=False):

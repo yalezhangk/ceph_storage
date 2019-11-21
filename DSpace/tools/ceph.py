@@ -66,6 +66,13 @@ class CephTool(ToolBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def module_enable(self, module):
+        cmd = ["ceph", "mgr", "module", "enable", module]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
     def mon_install(self, hostname, fsid, ceph_auth='none'):
 
         if ceph_auth == 'cephx':
