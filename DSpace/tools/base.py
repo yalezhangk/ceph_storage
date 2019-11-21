@@ -7,6 +7,7 @@ import subprocess
 import paramiko
 import six
 
+from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.exception import RunCommandArgsError
 
@@ -19,10 +20,11 @@ def _bytes2str(string):
 
 class Executor(object):
     ssh = None
+    host_prefix = None
 
     def __init__(self):
         """Command executor"""
-        pass
+        self.host_prefix = CONF.host_prefix
 
     def run_command(self, args, timeout=None):
         logger.debug("Run Command: {}".format(args))
@@ -45,6 +47,7 @@ class Executor(object):
 
 class SSHExecutor(Executor):
     ssh = None
+    host_prefix = None
 
     def __init__(self, hostname=None, port=22, user='root', password=None,
                  pkey=None):
@@ -72,7 +75,11 @@ class SSHExecutor(Executor):
             pkey = paramiko.RSAKey.from_private_key(pkey)
             kwargs['pkey'] = pkey
 
-        self.ssh.connect(hostname, port=port, username=user, **kwargs)
+        try:
+            self.ssh.connect(hostname, port=port, username=user, **kwargs)
+        except paramiko.ssh_exception.AuthenticationException as e:
+            logger.warning(e)
+            raise exception.SSHAuthInvalid(ip=hostname, password=password)
 
     def close(self):
         if self.ssh:
@@ -104,21 +111,17 @@ class SSHExecutor(Executor):
 
 
 class ToolBase(object):
-    host_prefix = None
 
-    def __init__(self, executor, host_prefix=None):
+    def __init__(self, executor):
         self.executor = executor
-        if host_prefix is None:
-            self.host_prefix = CONF.host_prefix
-        else:
-            self.host_prefix = host_prefix
 
     def _wapper(self, path):
-        if not self.host_prefix:
+        host_prefix = self.executor.host_prefix
+        if not host_prefix:
             return path
         if path[0] == os.path.sep:
             path = path[1:]
-        return os.path.join(self.host_prefix, path)
+        return os.path.join(host_prefix, path)
 
     def run_command(self, args, **kwargs):
         return self.executor.run_command(args, **kwargs)
