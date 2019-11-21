@@ -14,7 +14,7 @@ class SysConfigHandler(AdminBaseHandler):
             ctxt, filters={"cluster_id": ctxt.cluster_id})
         keys = ['cluster_name', 'admin_cidr', 'public_cidr', 'cluster_cidr',
                 'gateway_cidr', 'chrony_server', 'ceph_version',
-                'ceph_version_name', 'is_admin']
+                'ceph_version_name', 'is_admin', 'is_import', 'import_task_id']
         for key in keys:
             result[key] = None
         for sysconf in sysconfs:
