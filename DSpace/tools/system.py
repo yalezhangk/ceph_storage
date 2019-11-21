@@ -1,4 +1,6 @@
 import logging
+import os
+import re
 import socket
 import struct
 
@@ -161,3 +163,25 @@ class System(ToolBase):
         else:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
+
+    def get_all_process(self):
+        proc = self._wapper('/proc')
+        pids = [pid for pid in os.listdir(proc) if pid.isdigit()]
+        processes = []
+
+        for pid in pids:
+            try:
+                processes.append(open(
+                    os.path.join(proc, pid, 'cmdline'), 'rb'
+                ).read().split('\0'))
+            except IOError:  # proc has already terminated
+                continue
+        return processes
+
+    def get_process_list(self, match):
+        matched = []
+        processes = self.get_all_process()
+        for i in processes:
+            if(re.search(match, i[0])):
+                matched.append(i)
+        return matched
