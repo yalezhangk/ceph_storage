@@ -31,7 +31,6 @@ user_login_schema = {
         },
         "password": {
             "type": "string",
-            "minLength": 1,
         },
     },
     "required": ["username", "password"],

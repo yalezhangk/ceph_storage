@@ -27,12 +27,12 @@ create_alert_group_schema = {
                 },
                 "alert_rule_ids": {
                     "type": "array",
-                    "items": {"type": "number"},
+                    "items": {"type": "integer"},
                     "uniqueItems": True
                 },
                 "email_group_ids": {
                     "type": "array",
-                    "items": {"type": "number"},
+                    "items": {"type": "integer"},
                     "uniqueItems": True
                 }
             },
@@ -59,12 +59,12 @@ update_alert_group_schema = {
                 },
                 "alert_rule_ids": {
                     "type": "array",
-                    "items": {"type": "number"},
+                    "items": {"type": "integer"},
                     "uniqueItems": True
                 },
                 "email_group_ids": {
                     "type": "array",
-                    "items": {"type": "number"},
+                    "items": {"type": "integer"},
                     "uniqueItems": True
                 }
             },
