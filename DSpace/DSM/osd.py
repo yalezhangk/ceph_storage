@@ -264,6 +264,9 @@ class OsdHandler(AdminBaseHandler):
 
     def osd_delete(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        if osd.status not in [s_fields.OsdStatus.ACTIVE,
+                              s_fields.OsdStatus.ERROR]:
+            raise exception.InvalidInput(_('Osd status is %s', osd.status))
         osd.status = s_fields.OsdStatus.DELETING
         osd.save()
         self.task_submit(self._osd_delete, ctxt, osd.node, osd)
