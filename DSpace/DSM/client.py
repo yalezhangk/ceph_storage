@@ -978,6 +978,23 @@ class AdminClient(BaseClient):
                              ip=ip, password=password, port=port, user=user)
         return response
 
+    ####################
+
+    def task_get_all(self, ctxt, marker=None, limit=None,
+                     sort_keys=None, sort_dirs=None, filters=None,
+                     offset=None):
+        response = self.call(
+            ctxt, "task_get_all",
+            marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def task_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "task_get_count", filters=filters)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
