@@ -76,9 +76,7 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
-    def node_delete(self, ctxt, node_id):
-        node = objects.Node.get_by_id(ctxt, node_id)
-        # judge node could be delete
+    def _node_delete_check(self, ctxt, node):
         allowed_status = [s_fields.NodeStatus.ACTIVE,
                           s_fields.NodeStatus.ERROR]
         if node.status not in allowed_status:
@@ -89,7 +87,16 @@ class NodeHandler(AdminBaseHandler):
             self._mon_uninstall_check(ctxt, node)
         if node.role_storage:
             self._storage_uninstall_check(ctxt, node)
+        disk_partition_num = objects.DiskPartitionList.get_count(
+            ctxt, filters={"node_id": node.id}
+        )
+        if disk_partition_num:
+            raise exc.InvalidInput(_("Please remove disk partition first!"))
 
+    def node_delete(self, ctxt, node_id):
+        node = objects.Node.get_by_id(ctxt, node_id)
+        # judge node could be delete
+        self._node_delete_check(ctxt, node)
         node.status = s_fields.NodeStatus.DELETING
         node.save()
         self.task_submit(self._node_delete, ctxt, node)
