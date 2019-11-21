@@ -40,7 +40,7 @@ create_osd_schema = {
         "osds": {
             "type": "array",
             "items": {"type": "object", "$ref": "#/definitions/osd"},
-            "minItems": 2
+            "minItems": 1
         },
     },
     "anyOf": [{"required": ["osd"]}, {"required": ["osds"]}]
