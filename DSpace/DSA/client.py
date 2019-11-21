@@ -161,6 +161,16 @@ class AgentClient(BaseClient):
                              mutual_password=mutual_password)
         return response
 
+    def prometheus_target_add(self, ctxt, ip, port, hostname, path):
+        response = self.call(ctxt, 'prometheus_target_add',
+                             ip=ip, port=port, hostname=hostname, path=path)
+        return response
+
+    def prometheus_target_remove(self, ctxt, ip, port, hostname, path):
+        response = self.call(ctxt, 'prometheus_target_remove',
+                             ip=ip, port=port, hostname=hostname, path=path)
+        return response
+
 
 class AgentClientManager(BaseClientManager):
     service_name = "agent"

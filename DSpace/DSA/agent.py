@@ -11,6 +11,7 @@ from DSpace.DSA.cron import CronHandler
 from DSpace.DSA.disk import DiskHandler
 from DSpace.DSA.iscsi import IscsiHandler
 from DSpace.DSA.network import NetworkHandler
+from DSpace.DSA.prometheus import PrometheusHandler
 from DSpace.service import ServiceBase
 from DSpace.tools.log_file import LogFile as LogFileTool
 from DSpace.tools.service import Service as ServiceTool
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
-                   IscsiHandler):
+                   IscsiHandler, PrometheusHandler):
 
     def service_restart(self, context, name):
         logger.debug("Service restart: %s", name)

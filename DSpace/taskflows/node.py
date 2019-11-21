@@ -159,8 +159,9 @@ class NodeTask(object):
     def chrony_install(self):
         wf = lf.Flow('DSpace Chrony Install')
         wf.add(DSpaceChronyInstall('DSpace Chrony Install'))
-        self.executer = self.get_ssh_executor()
+        self.node.executer = self.get_ssh_executor()
         taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
             "node": self.node,
             'task_info': {}
         })
@@ -193,6 +194,7 @@ class NodeTask(object):
         docker_tool.restart('{}_chrony'.format(image_namespace))
 
     def node_exporter_install(self):
+        logger.info("Install node exporter for %s", self.node.hostname)
         wf = lf.Flow('DSpace Exporter Install')
         wf.add(DSpaceExpoterInstall('DSpace Exporter Install'))
         self.executer = self.get_ssh_executor()
@@ -343,9 +345,10 @@ class NodeTask(object):
         wf = lf.Flow('DSpace Agent Install')
         wf.add(InstallDocker('Install Docker'))
         wf.add(DSpaceAgentInstall('DSpace Agent Install'))
-        wf.add(InstallCephRepo('DSpace Agent Install'))
-        self.executer = self.get_ssh_executor()
+        wf.add(InstallCephRepo('Install Ceph Repo'))
+        self.node.executer = self.get_ssh_executor()
         taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
             "node": self.node,
             'task_info': {}
         })
@@ -453,6 +456,42 @@ class NodeTask(object):
         probe_tool = ProbeTool(ssh)
         result = probe_tool.probe_node_services()
         return result
+
+    def prometheus_target_config(self, action, service, port=None, path=None):
+        logger.info("Config from prometheus target file: %s, %s, %s",
+                    service, self.node.ip_address, self.node.hostname)
+        if not path:
+            path = objects.sysconfig.sys_config_get(
+                self.ctxt, "config_dir_container")
+        if not port:
+            if service == 'node_exporter':
+                port = objects.sysconfig.sys_config_get(
+                    self.ctxt, "node_exporter_port")
+            if service == "mgr":
+                port = '9283'
+        ip = self.node.ip_address
+        hostname = self.node.hostname
+
+        admin_node = objects.NodeList.get_all(
+            self.ctxt, filters={'role_admin': 1})
+        for node in admin_node:
+            client = AgentClientManager(
+                self.ctxt, cluster_id=self.node.cluster_id
+            ).get_client(node_id=node.id)
+            if action == "add":
+                logger.info("Add to %s prometheus target file: %s, %s",
+                            node.hostname, ip, port)
+                client.prometheus_target_add(
+                    self.ctxt, ip=str(ip), port=port,
+                    hostname=hostname,
+                    path=path + '/prometheus/targets/targets.json')
+            if action == "remove":
+                logger.info("Remove from %s prometheus target file: %s, %s",
+                            node.hostname, ip, port)
+                client.prometheus_target_remove(
+                    self.ctxt, ip=str(ip), port=port,
+                    hostname=hostname,
+                    path=path + '/prometheus/targets/targets.json')
 
 
 class InstallCephRepo(BaseTask):

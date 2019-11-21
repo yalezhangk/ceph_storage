@@ -71,8 +71,10 @@ class NodeHandler(AdminBaseHandler):
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
-
+            node_task.prometheus_target_config(action='remove',
+                                               service='node_exporter')
             self._remove_node_resource(ctxt, node)
+
             node.destroy()
             logger.info("node delete success")
             msg = _("Node removed!")
@@ -261,6 +263,7 @@ class NodeHandler(AdminBaseHandler):
                                 value_type='string')
         node_task = NodeTask(ctxt, node)
         node_task.ceph_mon_install()
+        node_task.prometheus_target_config(action='add', service='mgr')
         return node
 
     def _mon_uninstall(self, ctxt, node):
@@ -289,6 +292,7 @@ class NodeHandler(AdminBaseHandler):
             task.ceph_mon_uninstall(last_mon=False)
         else:
             task.ceph_mon_uninstall(last_mon=True)
+        task.prometheus_target_config(action='remove', service='mgr')
         return node
 
     def _storage_install(self, ctxt, node):
@@ -452,6 +456,9 @@ class NodeHandler(AdminBaseHandler):
             msg = _("node create error, reason: {}".format(str(e)))
         node.status = status
         node.save()
+
+        node_task.prometheus_target_config(action='add',
+                                           service='node_exporter')
 
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
