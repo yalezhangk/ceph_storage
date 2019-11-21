@@ -78,7 +78,7 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
-        package_tool.uninstall(["ceph-common"])
+        package_tool.uninstall(["ceph-common", "libcephfs2"])
         return True
 
     def ceph_osd_create(self, context, osd):

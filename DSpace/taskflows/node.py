@@ -323,7 +323,10 @@ class NodeTask(object):
     def ceph_package_uninstall(self):
         logger.info("uninstall ceph-common package on node")
         agent = self.get_agent()
-        agent.ceph_package_uninstall(self.ctxt)
+        try:
+            agent.ceph_package_uninstall(self.ctxt)
+        except Exception as e:
+            logger.warning("uninstall ceph package failed: %s", e)
 
     def ceph_osd_install(self, osd):
         # write ceph.conf
