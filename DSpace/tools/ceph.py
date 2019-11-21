@@ -564,13 +564,26 @@ class RADOSClient(object):
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
 
-    def bucket_remove(self, bucket):
+    def bucket_remove(self, bucket, ancestor=None):
         """
+        Remove a bucket
         {"prefix": "osd crush remove", "name": "da2"}
+
+        Remove a bucket from it's ancestor
+        {
+            "prefix": "osd crush remove",
+            "ancestor": "ceph-3",
+            "name": "osd.3"
+        }
         """
-        command_str = '{"prefix": "osd crush remove", "name": "%(bucket)s"}' \
-                      % {'bucket': bucket}
-        logger.debug('command_str: {}'.format(command_str))
+        cmd = {
+            "prefix": "osd crush remove",
+            "name": bucket
+        }
+        if ancestor:
+            cmd["ancestor"] = ancestor
+        command_str = json.dumps(cmd)
+        logger.info('bucket remove command_str: %s', command_str)
         ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
         if ret:
             logger.error("remove bucket {} error: {}".format(
@@ -578,6 +591,25 @@ class RADOSClient(object):
             raise CephException(
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
+
+    def bucket_get(self, bucket):
+        """
+        Get a bucket's childrent
+
+        {
+            "node": "pool-643b97a3e9d54fd3b0e1178bce1cce25-rack15",
+            "prefix": "osd crush ls",
+            "format": "json"
+        }
+        """
+        cmd = {
+            "node": bucket,
+            "prefix": "osd crush ls",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        bucket_info = self._send_mon_command(command_str)
+        return bucket_info
 
     def host_move_to_rack(self, host_name, rack_name):
         """

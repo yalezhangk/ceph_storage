@@ -48,6 +48,9 @@ class StorObject(base.VersionedObject):
             elif isinstance(v, netaddr.IPAddress):
                 changes[k] = str(v)
 
+        for field in self.OPTIONAL_FIELDS:
+            changes.pop(field, None)
+
         # Return modified dict
         return changes
 

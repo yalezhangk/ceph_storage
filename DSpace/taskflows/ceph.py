@@ -419,7 +419,17 @@ class CephTask(object):
                     for osd_info in o:
                         osd_id, _ = osd_info[0], osd_info[1]
                         osd_name = "osd.{}".format(osd_id)
-                        rados_client.bucket_remove(osd_name)
+                        rados_client.bucket_remove(osd_name, ancestor=h)
+                    if not rados_client.bucket_get(h):
+                        rados_client.bucket_remove(h)
+            if "rack" in data:
+                for r, h in six.iteritems(data.get('rack')):
+                    if not rados_client.bucket_get(r):
+                        rados_client.bucket_remove(r)
+            if "datacenter" in data:
+                for d, r in six.iteritems(data.get('datacenter')):
+                    if not rados_client.bucket_get(d):
+                        rados_client.bucket_remove(d)
 
     def cluster_info(self):
         with RADOSClient(self.rados_args(), timeout='1') as rados_client:
