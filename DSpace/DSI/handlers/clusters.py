@@ -22,16 +22,14 @@ create_cluster_schema = {
     "properties": {
         "cluster": {
             "type": "object",
-            "properties": {"name": {
+            "properties": {"cluster_name": {
                 "type": "string",
                 "minLength": 5,
                 "maxLength": 32
-            }}, "required": ["name"],
-            "additionalProperties": False
+            }}, "required": ["cluster_name"],
         },
     },
     "required": ["cluster"],
-    "additionalProperties": False
 }
 
 

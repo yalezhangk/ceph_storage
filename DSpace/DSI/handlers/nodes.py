@@ -4,6 +4,8 @@
 import json
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from netaddr import IPRange
 from tornado import gen
 from tornado.escape import json_decode
@@ -15,6 +17,80 @@ from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
+
+
+create_node_schema = {
+    "definitions": {
+        "node": {
+            "type": "object",
+            "properties": {
+                "hostname": {"type": "string", "format": "hostname"},
+                "ip_address": {"type": "string", "format": "ipv4"},
+                "password": {"type": "string", "minLength": 1},
+                "gateway_ip_address": {"type": "string", "format": "ipv4"},
+                "cluster_ip": {"type": "string", "format": "ipv4"},
+                "public_ip": {"type": "string", "format": "ipv4"},
+                "roles": {"type": "string"},
+            },
+            "required": ["ip_address", "cluster_ip", "public_ip"],
+            "additionalProperties": False
+        }
+    },
+    "type": "object",
+    "properties": {
+        "node": {"$ref": "#/definitions/node"},
+        "nodes": {
+            "type": "array",
+            "items": {"type": "object", "$ref": "#/definitions/node"},
+            "minItems": 2
+        },
+    }, "maxProperties": 1, "additionalProperties": False,
+    "anyOf": [{"required": ["node"]}, {"required": ["nodes"]}]
+}
+
+update_node_schema = {
+    "type": "object",
+    "properties": {
+        "node": {
+            "type": "object",
+            "properties": {
+                "rack": {"type": "integer", "minimum": 1},
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                }
+            },
+            "anyOf": [{"required": ["rack"]}, {"required": ["name"]}]
+        },
+    },
+    "required": ["node"]
+}
+
+update_node_role_schema = {
+    "definitions": {
+        "role": {
+            "type": "string",
+            "enum": [
+                "monitor", "storage", "mds", "radosgw", "blockgw"
+            ]}},
+    "type": "object",
+    "properties": {
+        "node": {
+            "type": "object",
+            "properties": {
+                "install_roles": {
+                    "type": "array",
+                    "items": {"type": "string", "$ref": "#/definitions/role"},
+                },
+                "uninstall_roles": {
+                    "type": "array",
+                    "items": {"type": "string", "$ref": "#/definitions/role"},
+                }},
+            "required": ["install_roles", "uninstall_roles"]
+        }},
+    "required": ["node"]
+}
 
 
 @URLRegistry.register(r"/nodes/")
@@ -161,6 +237,8 @@ class NodeListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_node_schema,
+                 format_checker=draft7_format_checker)
         if 'node' in data:
             data = data.get('node')
             client = self.get_admin_client(ctxt)
@@ -284,6 +362,8 @@ class NodeHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_node_schema,
+                 format_checker=draft7_format_checker)
         client = self.get_admin_client(ctxt)
         node = data.get("node")
         if "rack_id" in node:
@@ -388,6 +468,8 @@ class NodeRoleHandler(ClusterAPIHandler):
         # monitor, mds, rgw, bgw role
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_node_role_schema,
+                 format_checker=draft7_format_checker)
         node_data = data.get('node')
         client = self.get_admin_client(ctxt)
         node = yield client.node_roles_set(ctxt, node_id, node_data)
