@@ -3,6 +3,8 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -11,6 +13,37 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+
+create_rack_schame = {
+    "type": "object",
+    "properties": {
+        "datacenter": {
+            "type": "integer",
+            "minimum": 1
+        },
+    },
+    "required": ["datacenter"],
+}
+
+update_rack_schame = {
+    "type": "object",
+    "properties": {
+        "rack": {
+            "type": "object",
+            "properties": {
+                "datacenter": {"type": "integer", "minimum": 1},
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                }
+            },
+            "anyOf": [{"required": ["datacenter"]}, {"required": ["name"]}]
+        },
+    },
+    "required": ["rack"]
+}
 
 
 @URLRegistry.register(r"/racks/")
@@ -91,7 +124,10 @@ class RackListHandler(ClusterAPIHandler):
                 format: int32
                 description: ID of the datacenter to which the rack belongs
         """
-        datacenter_id = json_decode(self.request.body).get('datacenter_id')
+        data = json_decode(self.request.body)
+        validate(data, schema=create_rack_schame,
+                 format_checker=draft7_format_checker)
+        datacenter_id = data.get('datacenter_id')
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         rack = yield client.rack_create(ctxt, datacenter_id)
@@ -203,7 +239,10 @@ class RackHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        data = json_decode(self.request.body).get('rack')
+        body = json_decode(self.request.body)
+        validate(body, schema=update_rack_schame,
+                 format_checker=draft7_format_checker)
+        data = body.get('rack')
         rack_name = data.get('name')
         datacenter_id = data.get('datacenter_id')
         if rack_name:
