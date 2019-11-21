@@ -199,7 +199,7 @@ class Invalid(StorException):
     code = 400
 
 
-class SSHInvalid(Invalid):
+class SSHAuthInvalid(Invalid):
     message = _("SSH Authentication failed: ip(%(ip)s) password(%(password)s)")
     code = 400
 
