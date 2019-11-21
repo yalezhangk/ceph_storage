@@ -129,11 +129,7 @@ check_node_schema = {
             "cluster_ip": {"type": "string", "format": "ipv4"},
             "public_ip": {"type": "string", "format": "ipv4"},
             "gateway_ip": {"type": "string", "format": "ipv4"},
-            "roles": {
-                "type": "string",
-                "enum": [
-                    "monitor", "storage", "mds", "radosgw", "blockgw"
-                ]},
+            "roles": {"type": "string"},
         },
         "required": ["admin_ip", "cluster_ip", "public_ip"],
         "additionalProperties": False
