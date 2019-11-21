@@ -141,9 +141,17 @@ class OsdHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("%s not support filestore") % s_fields.CephVersion.T2STOR)
 
-    def osd_create(self, ctxt, data):
-        logger.info("Osd create with %s.", data)
-
+    def _osd_create_check(self, ctxt, data):
+        # check mon is ready
+        active_mon_num = objects.NodeList.get_count(
+            ctxt,
+            filters={
+                "role_monitor": True,
+                "status": s_fields.NodeStatus.ACTIVE
+            }
+        )
+        if not active_mon_num:
+            raise exception.InvalidInput(_("No active monitor"))
         # osd num check
         max_osd_num = objects.sysconfig.sys_config_get(
             ctxt, key="max_osd_num"
@@ -151,6 +159,11 @@ class OsdHandler(AdminBaseHandler):
         osd_num = objects.OsdList.get_count(ctxt)
         if osd_num >= max_osd_num:
             raise exception.InvalidInput(_("Max osd num is %s" % max_osd_num))
+
+    def osd_create(self, ctxt, data):
+        logger.info("Osd create with %s.", data)
+
+        self._osd_create_check(ctxt, data)
         # data check
         disk_id = data.get('disk_id')
         disk = self._osd_create_disk_check(ctxt, disk_id)
