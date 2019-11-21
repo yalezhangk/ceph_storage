@@ -122,15 +122,15 @@ class NetworkTypeField(BaseEnumField):
     AUTO_TYPE = NetworkType()
 
 
-class SysConfigType(BaseStorEnum):
+class ConfigType(BaseStorEnum):
     STRING = 'string'
     NUMBER = 'number'
     BOOL = 'bool'
     ALL = (STRING, NUMBER, BOOL)
 
 
-class SysConfigTypeField(BaseEnumField):
-    AUTO_TYPE = SysConfigType()
+class ConfigTypeField(BaseEnumField):
+    AUTO_TYPE = ConfigType()
 
 
 class DiskStatus(BaseStorEnum):

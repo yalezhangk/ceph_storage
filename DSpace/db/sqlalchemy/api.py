@@ -2716,7 +2716,7 @@ def _disk_partition_get_query(context, session=None):
 
 
 def _disk_partition_get(context, disk_part_id, session=None):
-    result = _disk_get_query(context, session)
+    result = _disk_partition_get_query(context, session)
     result = result.filter_by(id=disk_part_id).first()
 
     if not result:

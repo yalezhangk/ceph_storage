@@ -478,7 +478,6 @@ class NodeHandler(AdminBaseHandler):
             ctxt, ip_address=data.get('ip_address'),
             hostname=data.get('hostname'),
             password=data.get('password'),
-            gateway_ip_address=data.get('gateway_ip_address'),
             cluster_ip=data.get('cluster_ip'),
             public_ip=data.get('public_ip'),
             status=s_fields.NodeStatus.CREATING)

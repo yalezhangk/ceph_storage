@@ -149,7 +149,7 @@ class DiskNotFound(NotFound):
 
 
 class DiskPartitionNotFound(NotFound):
-    message = _("Disk %(disk_part_id)s could not be found.")
+    message = _("Disk partition %(disk_part_id)s could not be found.")
 
 
 class ServiceNotFound(NotFound):

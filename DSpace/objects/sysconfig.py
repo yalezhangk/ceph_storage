@@ -20,7 +20,7 @@ class SysConfig(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'key': fields.StringField(),
         'value': fields.StringField(),
-        'value_type': s_fields.SysConfigTypeField(),
+        'value_type': s_fields.ConfigTypeField(),
         'display_description': fields.StringField(nullable=True),
         'cluster_id': fields.UUIDField(nullable=True),
     }
@@ -77,11 +77,11 @@ def sys_config_get(ctxt, key, default=None):
         obj = SysConfig.get_by_key(ctxt, key, cluster_id=None)
     if not obj:
         return default
-    if obj.value_type == s_fields.SysConfigType.STRING:
+    if obj.value_type == s_fields.ConfigType.STRING:
         return obj.value
-    elif obj.value_type == s_fields.SysConfigType.NUMBER:
+    elif obj.value_type == s_fields.ConfigType.NUMBER:
         return int(obj.value)
-    elif obj.value_type == s_fields.SysConfigType.BOOL:
+    elif obj.value_type == s_fields.ConfigType.BOOL:
         return strutils.bool_from_string(obj.value)
     else:
         raise exception.Invalid(msg=_("Invalid config type"))
