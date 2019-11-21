@@ -30,7 +30,7 @@ create_node_schema = {
                 "hostname": {"type": "string", "format": "hostname"},
                 "ip_address": {"type": "string", "format": "ipv4"},
                 "password": {"type": ["string", "null"]},
-                "gateway_ip_address": {"type": "string", "format": "ipv4"},
+                "gateway_ip": {"type": "string", "format": "ipv4"},
                 "cluster_ip": {"type": "string", "format": "ipv4"},
                 "public_ip": {"type": "string", "format": "ipv4"},
                 "roles": {"type": "string"},
@@ -124,6 +124,7 @@ check_node_schema = {
     "items": {
         "type": "object",
         "properties": {
+            "hostname": {"type": "string", "format": "hostname"},
             "admin_ip": {"type": "string", "format": "ipv4"},
             "password": {"type": ["string", "null"]},
             "cluster_ip": {"type": "string", "format": "ipv4"},
@@ -132,7 +133,6 @@ check_node_schema = {
             "roles": {"type": "string"},
         },
         "required": ["admin_ip", "cluster_ip", "public_ip"],
-        "additionalProperties": False
     },
     "minItems": 1,
 }
