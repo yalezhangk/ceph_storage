@@ -178,7 +178,7 @@ class SyncClusterInfo(BaseTask):
     def _update_osd(self, ctxt, osd_info, node):
         logger.info("sync node_id %s, osd %s", node.id, osd_info)
         diskname = osd_info.get('disk')
-        disk = self._get_disk(ctxt, diskname)
+        disk = self._get_disk(ctxt, diskname, node.id)
 
         osd = objects.Osd(
             ctxt, node_id=node.id,
@@ -192,25 +192,25 @@ class SyncClusterInfo(BaseTask):
 
         if "block.db" in osd_info:
             part_name = osd_info["block.db"]
-            part = self._get_part(part_name)
+            part = self._get_part(part_name, node.id)
             part.role = s_fields.DiskPartitionRole.DB
             part.status = s_fields.DiskStatus.INUSE
             part.save()
         if "block.wal" in osd_info:
             part_name = osd_info["block.wal"]
-            part = self._get_part(part_name)
+            part = self._get_part(part_name, node.id)
             part.role = s_fields.DiskPartitionRole.WAL
             part.status = s_fields.DiskStatus.INUSE
             part.save()
         if "block.t2ce" in osd_info:
             part_name = osd_info["block.t2ce"]
-            part = self._get_part(part_name)
+            part = self._get_part(part_name, node.id)
             part.role = s_fields.DiskPartitionRole.CACHE
             part.status = s_fields.DiskStatus.INUSE
             part.save()
         if "journal" in osd_info:
             part_name = osd_info["journal"]
-            part = self._get_part(part_name)
+            part = self._get_part(part_name, node.id)
             part.role = s_fields.DiskPartitionRole.JOURNAL
             part.status = s_fields.DiskStatus.INUSE
             part.save()
