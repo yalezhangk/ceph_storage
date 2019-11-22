@@ -15,7 +15,10 @@ fake_rpc_service = {
     'service_name': "admin",
     'hostname': "devel",
     'cluster_id': 'defalut',
-    'endpoint': '{}',
+    'endpoint': {
+        "ip": "192.168.1.1",
+        "port": 22
+    },
 }
 
 

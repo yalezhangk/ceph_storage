@@ -67,7 +67,7 @@ class AgentBaseHandler(object):
         if not node:
             node = self.node
         try:
-            ssh_client = SSHExecutor(hostname=node.hostname,
+            ssh_client = SSHExecutor(hostname=str(node.ip_address),
                                      password=node.password)
         except exception.StorException as e:
             logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))

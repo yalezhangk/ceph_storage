@@ -1,5 +1,3 @@
-import json
-
 import six
 from netaddr import IPAddress
 from netaddr import IPNetwork
@@ -419,19 +417,6 @@ class NodeHandler(AdminBaseHandler):
             node_task.dspace_agent_install()
             node_task.chrony_install()
             node_task.node_exporter_install()
-            # add agent rpc service
-            agent_port = objects.sysconfig.sys_config_get(
-                ctxt, "agent_port")
-            endpoint = {"ip": str(node.ip_address), "port": agent_port}
-            rpc_service = objects.RPCService(
-                ctxt, service_name='agent',
-                hostname=node.hostname,
-                endpoint=json.dumps(endpoint),
-                cluster_id=node.cluster_id,
-                node_id=node.id)
-            rpc_service.create()
-
-            node_task.wait_agent_ready()
             roles = data.get('roles', "").split(',')
             role_monitor = "monitor" in roles
             role_storage = "storage" in roles

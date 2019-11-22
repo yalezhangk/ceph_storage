@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 
-import json
 import logging as python_logging
 import sys
 import time
@@ -207,7 +206,7 @@ class DbCommands(object):
                 rpc_service.hostname = value
             if key == 'service_name':
                 rpc_service.service_name = value
-        rpc_service.endpoint = json.dumps(endpint)
+        rpc_service.endpoint = endpint
         rpc_service.create()
 
     def version(self):

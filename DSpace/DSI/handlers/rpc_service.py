@@ -8,7 +8,6 @@ from jsonschema import draft7_format_checker
 from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
-from tornado.escape import json_encode
 
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
@@ -136,7 +135,7 @@ class RpcServiceListHandler(ClusterAPIHandler):
         r = objects.RPCService(
             ctxt, cluster_id=ctxt.cluster_id, hostname=data.get('hostname'),
             service_name=data.get('service_name'),
-            endpoint=json_encode(data.get('endpoint'))
+            endpoint=data.get('endpoint')
         )
         r.create()
         self.write(objects.json_encode({
@@ -160,10 +159,7 @@ class RpcServiceHandler(ClusterAPIHandler):
         rpc_service_data = data.get("rpc_service")
         r = objects.RPCServiceList.get_by_id(ctxt, rpc_service_id)
         for k, v in six.iteritems(rpc_service_data):
-            if k != "endpoint":
-                setattr(r, k, v)
-            else:
-                setattr(r, k, json_encode(v))
+            setattr(r, k, v)
 
         r.save()
         self.write(objects.json_encode({

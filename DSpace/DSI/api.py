@@ -1,5 +1,3 @@
-import json
-
 import socketio
 import tornado.ioloop
 import tornado.web
@@ -46,10 +44,10 @@ class WebSocketService(ServiceBase):
 
     def __init__(self, ioloop, sio):
         self.handler = WebSocketHandler(ioloop, sio)
-        self.rpc_endpoint = json.dumps({
+        self.rpc_endpoint = {
             "ip": self.rpc_ip,
             "port": self.rpc_port
-        })
+        }
         super(WebSocketService, self).__init__()
 
 
