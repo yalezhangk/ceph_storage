@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import configparser
 import errno
 import json
 import os
@@ -236,6 +237,17 @@ def collect_osd_info():
     return res
 
 
+def collect_ceph_config():
+    configs = {}
+    config = configparser.ConfigParser()
+    config.read('/etc/ceph/ceph.conf')
+    for section in config.sections():
+        configs[section] = {}
+        for key in config[section]:
+            configs[section][key] = config[section][key]
+    return configs
+
+
 def main():
     action = sys.argv[1]
     if action == "collect_nodes":
@@ -247,6 +259,9 @@ def main():
     elif action == "ceph_osd":
         # TODO: get osd info
         data = collect_osd_info()
+        print(json.dumps(data))
+    elif action == "ceph_config":
+        data = collect_ceph_config()
         print(json.dumps(data))
 
 
