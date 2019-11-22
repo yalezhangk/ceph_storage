@@ -15,6 +15,13 @@ logger = logging.getLogger(__name__)
 
 class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def ceph_cluster_info(self, ctxt):
+        filters = {'status': s_fields.NodeStatus.ACTIVE,
+                   'role_monitor': True}
+        mon_host = objects.NodeList.get_all(filters=filters)
+        if not mon_host:
+            logger.info('has not active mon host, ceph_cluster_info '
+                        'default is {}')
+            return {}
         try:
             ceph_client = CephTask(ctxt)
             cluster_info = ceph_client.cluster_info()
