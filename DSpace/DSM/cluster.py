@@ -17,7 +17,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def ceph_cluster_info(self, ctxt):
         filters = {'status': s_fields.NodeStatus.ACTIVE,
                    'role_monitor': True}
-        mon_host = objects.NodeList.get_all(filters=filters)
+        mon_host = objects.NodeList.get_all(ctxt, filters=filters)
         if not mon_host:
             logger.info('has not active mon host, ceph_cluster_info '
                         'default is {}')
