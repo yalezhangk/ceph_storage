@@ -12,14 +12,21 @@ from DSpace.tools.disk import DiskTool
 class TestDiskTool(test.TestCase):
 
     @mock.patch.object(Executor, 'run_command')
-    def test_partations_create(self, run_command):
+    @mock.patch("uuid.uuid4",
+                return_value='b14030e6-0ce5-11ea-b4e9-000e1eeb6272')
+    def test_partations_create(self, uuid4, run_command):
         run_command.return_value = (0, "", "")
-        diskname = "sdb"
+        diskname = "sdg"
         tool = DiskTool(Executor(), host_prefix="/host")
-        tool.partitions_create(diskname, ["0%", "20%", "100%"])
+        tool.partitions_create(
+            diskname, [{'name': 'sdg1', 'size': 1998998994944.0, 'role': 'db'}]
+        )
         run_command.assert_called_once_with(
-            ['parted', '/host/dev/sdb', 'mklabel', 'gpt', 'mkpart', 'primary',
-             '0%', '20%', 'mkpart', 'primary', '20%', '100%']
+            ["sgdisk", "--new=1:0:+1952147456.0K",
+             "--change-name='1:ceph block.db'",
+             "--partition-guid=1:b14030e6-0ce5-11ea-b4e9-000e1eeb6272",
+             "--typecode=1:30cd0809-c2b2-499c-8879-2d6b78529876",
+             "--mbrtogpt", "--", "/host/dev/sdg"]
         )
 
     @mock.patch.object(Executor, 'run_command')

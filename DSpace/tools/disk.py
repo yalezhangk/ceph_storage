@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import uuid
 
-from DSpace.exception import ProgrammingError
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
+from DSpace.utils.ptype import PTYPE
 
 logger = logging.getLogger(__name__)
 
@@ -85,30 +86,30 @@ class DiskTool(ToolBase):
         return res
 
     def partitions_create(self, disk, partitions):
-        """Create partitions
-
-        :param disk: disk name, eg sda.
-        :param partitions: partitions to create, eg ["0%", "20%", "100%"] will
-                           create two partitions, 0%-20% and 20%-100%.
-
-        """
-        for i in partitions:
-            if i[-1] != "%":
-                raise ProgrammingError(
-                    reason="partitions argument not end with %")
+        logger.info('Create disk partition for %s', disk)
         disk = self._wapper("/dev/%s" % disk)
-        cmd = ["parted", disk, "mklabel", "gpt"]
-        start = partitions.pop(0)
-        while True:
-            end = partitions.pop(0)
-            cmd += ["mkpart", "primary", start, end]
-            if len(partitions) == 0:
-                break
-            start = end
-        code, out, err = self.run_command(cmd)
-        if code:
-            raise RunCommandError(cmd=cmd, return_code=code,
-                                  stdout=out, stderr=err)
+        order = 1
+        role_map = {
+            "db": "block.db",
+            "wal": "block.wal",
+            "cache": "block.t2ce",
+            "journal": "journal"
+        }
+        for part in partitions:
+            role = role_map[part["role"]]
+            size = part["size"] / 1024
+            partition_guid = "--partition-guid={}:{}".format(order,
+                                                             str(uuid.uuid4()))
+            type_code = "--typecode={}:{}"\
+                .format(order, PTYPE['regular'][role]['ready'])
+            cmd = ["sgdisk", "--new={}:0:+{}K".format(order, size),
+                   "--change-name='{}:ceph {}'".format(order, role),
+                   partition_guid, type_code, "--mbrtogpt", "--", disk]
+            code, out, err = self.run_command(cmd)
+            if code:
+                raise RunCommandError(cmd=cmd, return_code=code,
+                                      stdout=out, stderr=err)
+            order += 1
         return True
 
     def partitions_clear(self, disk):
@@ -132,5 +133,6 @@ class DiskTool(ToolBase):
 
 if __name__ == '__main__':
     from DSpace.tools.base import Executor
+
     t = DiskTool(Executor())
     print(t.all())
