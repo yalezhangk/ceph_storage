@@ -41,6 +41,10 @@ pool_total_perf_map = {
     'total_ops': 'ceph_pool_read_op_per_sec + ceph_pool_write_op_per_sec'
 }
 
+bluefs_capacity = ['db_total_bytes', 'db_used_bytes',
+                   'wal_total_bytes', 'wal_used_bytes',
+                   'slow_total_bytes', 'slow_used_bytes']
+
 
 class PrometheusTool(object):
     prometheus_url = None
@@ -375,6 +379,7 @@ class PrometheusTool(object):
             logger.error(e)
 
     def osd_get_capacity(self, osd):
+        logger.info("osd_get_capacity: osd_id: %s.", osd.id)
         for m in osd_capacity:
             metric = "ceph_osd_capacity_" + m
             value = self.prometheus_get_metric(metric, filter={
@@ -382,7 +387,8 @@ class PrometheusTool(object):
             osd.metrics.update({m: value})
 
     def osd_get_bluefs_capacity(self, osd):
-        for m in osd.bluefs_capacity:
+        logger.info("osd_get_bluefs_capacity: osd_id: %s.", osd.id)
+        for m in bluefs_capacity:
             metric = "ceph_bluefs_" + m
             value = self.prometheus_get_metric(metric, filter={
                 "ceph_daemon": "osd.{}".format(osd.osd_id)})
