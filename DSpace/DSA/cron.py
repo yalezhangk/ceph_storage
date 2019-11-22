@@ -23,7 +23,8 @@ class CronHandler(AgentBaseHandler):
         self.container_namespace = "athena"
         self.service_map = {}
         self._service_map_init()
-        self.task_submit(self._setup)
+        self._setup()
+        self.state = 'ready'
         self.task_submit(self._cron)
 
     def _cron(self):

@@ -21,6 +21,7 @@ class AgentBaseHandler(object):
 
     def __init__(self, *args, **kwargs):
         super(AgentBaseHandler, self).__init__(*args, **kwargs)
+        self.state = 'setup'
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
         self.ctxt = RequestContext(user_id="xxx",

@@ -505,14 +505,15 @@ class NodeHandler(AdminBaseHandler):
         public_ip = data.get('public_ip')
         cluster_ip = data.get('cluster_ip')
         # check ip
-        node = self._node_get_by_ip(ctxt, "ip_address", admin_ip)
+        node = self._node_get_by_ip(ctxt, "ip_address", admin_ip, "*")
         if node:
             raise exc.Duplicate(_("Admin ip exists"))
         if IPAddress(admin_ip) not in IPNetwork(admin_cidr):
             raise exc.InvalidInput("admin ip not in admin cidr ({})"
                                    "".format(admin_cidr))
         # cluster_ip
-        node = self._node_get_by_ip(ctxt, "cluster_ip", cluster_ip)
+        node = self._node_get_by_ip(ctxt, "cluster_ip", cluster_ip,
+                                    ctxt.cluster_id)
         if node:
             raise exc.Duplicate(_("Cluster ip exists"))
         if (IPAddress(cluster_ip) not in
@@ -520,7 +521,8 @@ class NodeHandler(AdminBaseHandler):
             raise exc.InvalidInput("cluster ip not in cluster cidr ({})"
                                    "".format(cluster_cidr))
         # public_ip
-        node = self._node_get_by_ip(ctxt, "public_ip", public_ip)
+        node = self._node_get_by_ip(ctxt, "public_ip", public_ip,
+                                    ctxt.cluster_id)
         if node:
             raise exc.Duplicate(_("Public ip exists"))
         if (IPAddress(public_ip) not in
@@ -533,7 +535,7 @@ class NodeHandler(AdminBaseHandler):
         if include_tag:
             raise exc.InvalidInput(_("Please Clean First"))
         for data in datas:
-            self._node_check_ip(self, ctxt, data)
+            self._node_check_ip(ctxt, data)
 
     def nodes_inclusion(self, ctxt, datas):
         logger.debug("include nodes: {}", datas)

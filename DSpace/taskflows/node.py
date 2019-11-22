@@ -613,6 +613,39 @@ class DSpaceAgentInstall(BaseTask):
             privileged=True,
             volumes=volumes
         )
+        agent_port = objects.sysconfig.sys_config_get(
+            ctxt, "agent_port")
+        endpoint = {"ip": str(node.ip_address), "port": agent_port}
+        rpc_service = objects.RPCService(
+            ctxt, service_name='agent',
+            hostname=node.hostname,
+            endpoint=endpoint,
+            cluster_id=node.cluster_id,
+            node_id=node.id)
+        rpc_service.create()
+        self.wait_agent_ready(ctxt, node)
+
+    def wait_agent_ready(self, ctxt, node):
+        logger.debug("wait agent ready to work")
+        retry_times = 0
+        while True:
+            if retry_times == 30:
+                logger.error("dsa cann't connect in 30 seconds")
+                raise exc.InvalidInput("dsa connect error")
+            try:
+                agent = AgentClientManager(
+                    ctxt, cluster_id=ctxt.cluster_id
+                ).get_client(node.id)
+                state = agent.check_dsa_status(ctxt)
+                if state == 'ready':
+                    break
+                logger.info("dsa up but not ready, will try connect"
+                            "after 1 second")
+            except _Rendezvous:
+                logger.info("dsa not up, will try connect after 1 second")
+            retry_times += 1
+            time.sleep(1)
+        logger.info("dsa is ready")
 
     def get_dsa_conf(self, ctxt, node):
         admin_ip_address = objects.sysconfig.sys_config_get(
@@ -724,33 +757,3 @@ class DSpaceExpoterInstall(BaseTask):
             envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
                   ("NODE_EXPORTER_PORT", node_exporter_port)]
         )
-        agent_port = objects.sysconfig.sys_config_get(
-            ctxt, "agent_port")
-        endpoint = {"ip": str(node.ip_address), "port": agent_port}
-        rpc_service = objects.RPCService(
-            ctxt, service_name='agent',
-            hostname=node.hostname,
-            endpoint=endpoint,
-            cluster_id=node.cluster_id,
-            node_id=node.id)
-        rpc_service.create()
-        self.wait_agent_ready()
-
-    def wait_agent_ready(self, ctxt, node):
-        logger.debug("wait agent ready to work")
-        retry_times = 0
-        while True:
-            if retry_times == 30:
-                logger.error("dsa cann't connect in 30 seconds")
-                raise exc.InvalidInput("dsa connect error")
-            try:
-                agent = AgentClientManager(
-                    self.ctxt, cluster_id=self.ctxt.cluster_id
-                ).get_client(node.id)
-                agent.check_dsa_status(ctxt)
-                break
-            except _Rendezvous:
-                logger.debug("dsa not ready, will try connect after 1 second")
-            retry_times += 1
-            time.sleep(1)
-        logger.info("dsa is ready")

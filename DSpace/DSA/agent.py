@@ -31,7 +31,7 @@ class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
 
     def check_dsa_status(self, context):
         logger.info("DSA start success")
-        return True
+        return self.state
 
     def get_logfile_metadata(self, ctxt, node, service_type):
         logger.debug('begin get_logfile_metadata,service_type:%s',
