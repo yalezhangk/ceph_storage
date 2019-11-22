@@ -25,10 +25,10 @@ create_osd_schema = {
             "properties": {
                 "type": {"type": "string", "enum": ["bluestore", "filestore"]},
                 "disk_id": {"type": "integer"},
-                "cache_partition_id": {"type": "integer"},
-                "db_partition_id": {"type": "integer"},
-                "wal_partition_id": {"type": "integer"},
-                "jounal_partition_id": {"type": "integer"},
+                "cache_partition_id": {"type": ["integer", "null"]},
+                "db_partition_id": {"type": ["integer", "null"]},
+                "wal_partition_id": {"type": ["integer", "null"]},
+                "jounal_partition_id": {"type": ["integer", "null"]},
             },
             "required": ["type", "disk_id"],
             "additionalProperties": False
