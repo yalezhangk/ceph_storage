@@ -60,3 +60,42 @@ class TaskListHandler(ClusterAPIHandler):
             "tasks": tasks,
             "total": task_count
         }))
+
+
+@URLRegistry.register(r"/tasks/([0-9]*)/")
+class TaskHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, task_id):
+        """
+        ---
+        tags:
+        - task
+        summary: Detail of the task
+        description: Return detail infomation of task by id
+        operationId: tasks.api.taskDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Task ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        task = yield client.task_get(ctxt, task_id)
+        self.write(objects.json_encode({
+            "task": task
+        }))

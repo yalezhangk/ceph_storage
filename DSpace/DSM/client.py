@@ -999,6 +999,11 @@ class AdminClient(BaseClient):
             ctxt, "task_get_count", filters=filters)
         return response
 
+    def task_get(self, ctxt, task_id):
+        response = self.call(ctxt, "task_get",
+                             task_id=task_id)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
