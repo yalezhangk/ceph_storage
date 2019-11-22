@@ -3,6 +3,7 @@
 
 import sys
 
+import six
 import taskflow.engines
 from oslo_log import log as logging
 from taskflow.patterns import linear_flow as lf
@@ -17,6 +18,7 @@ from DSpace.objects import fields as s_fields
 from DSpace.taskflows.base import BaseTask
 from DSpace.taskflows.base import CompleteTask
 from DSpace.taskflows.base import PrepareTask
+from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import DSpaceAgentInstall
 from DSpace.taskflows.node import DSpaceAgentUninstall
 from DSpace.taskflows.node import DSpaceChronyInstall
@@ -156,6 +158,36 @@ class MakeNodeActive(BaseTask):
         pass
 
 
+class SyncCephConfig(BaseTask):
+    def execute(self, ctxt, nodes, task_info):
+        super(SyncCephConfig, self).execute(task_info)
+        for node in nodes:
+            tool = ProbeTool(node.executer)
+            ceph_configs = tool.probe_ceph_config()
+            logger.info(ceph_configs)
+            for section in ceph_configs:
+                for key, value in six.iteritems(ceph_configs.get(section)):
+                    self._update_config(section, key, value)
+
+    def _update_config(ctxt, section, key, value):
+        objs = objects.CephConfigList.get_all(
+            filters={"section": section, "key": key}
+        )
+        if objs:
+            obj = objs[0]
+            if value != obj.value:
+                logger.warning("config diff on node: [%s]%s=%s diff db %s",
+                               section, key, value, obj.value)
+        else:
+            ceph_conf = objects.CephConfig(
+                ctxt, group=section, key=key,
+                value=value,
+                value_type="string",
+                display_description=None,
+                cluster_id=ctxt.cluster_id)
+            ceph_conf.create()
+
+
 class SyncClusterInfo(BaseTask):
     def execute(self, ctxt, nodes, task_info):
         """Sync Cluster info
@@ -171,9 +203,119 @@ class SyncClusterInfo(BaseTask):
             logger.info(osd_infos)
             for info in osd_infos:
                 self._update_osd(ctxt, info, node)
+            # TODO Probe pool info, sync to db
+            self.pool_probe()
 
     def revert(self, task_info, result, flow_failures):
         pass
+
+    def _pool_osd_info(self, ceph_client, fault_domain, root_buckets):
+        osds = []
+        if fault_domain == "host":
+            hosts = root_buckets
+            for host in hosts:
+                host_osds = ceph_client.get_bucket_info(host)
+                osds.extend(host_osds)
+        elif fault_domain == "rack":
+            racks = root_buckets
+            for rack in racks:
+                hosts = ceph_client.get_bucket_info(rack)
+                for host in hosts:
+                    host_osds = ceph_client.get_bucket_info(host)
+                    osds.extend(host_osds)
+        elif fault_domain == "datacenter":
+            datacenters = root_buckets
+            for datacenter in datacenters:
+                racks = ceph_client.get_bucket_info(datacenter)
+                for rack in racks:
+                    hosts = ceph_client.get_bucket_info(rack)
+                    for host in hosts:
+                        host_osds = ceph_client.get_bucket_info(host)
+                        osds.extend(host_osds)
+        return osds
+
+    def _probe_pool_info(self, ctxt):
+        logger.info("trying to probe cluster pool info")
+        try:
+            ceph_client = CephTask(ctxt)
+            all_pools = ceph_client.get_pools()
+            logger.info("get all pools: %s", all_pools)
+            pool_infos = []
+            crush_rule_infos = []
+            for pool in all_pools:
+                pool_id = pool.get("poolnum")
+                pool_name = pool.get("poolname")
+                pool_info = ceph_client.get_pool_info(pool_name, "crush_rule")
+                logger.info("pool_info: %s", pool_info)
+
+                # {'pool': 'rbd', 'pool_id': 2, 'size': 3}
+                pool_size = ceph_client.get_pool_info(pool_name, "size")
+                rep_size = pool_size.get("size")
+                rule_name = pool_info.get("crush_rule")
+                rule_info = ceph_client.get_crush_rule_info(rule_name)
+                root_name = None
+                fault_domain = None
+                rule_id = rule_info.get("rule_id")
+                if "steps" in rule_info:
+                    for op_info in rule_info.get("steps"):
+                        if op_info.get("op") == "take":
+                            root_name = op_info.get("item_name")
+                        elif op_info.get("op") == "chooseleaf_firstn":
+                            fault_domain = op_info.get("type")
+                root_buckets = ceph_client.get_bucket_info(root_name)
+                osds = self._pool_osd_info(ceph_client, fault_domain,
+                                           root_buckets)
+                pool_info = {
+                    "pool_name": pool_name,
+                    "pool_id": pool_id,
+                    "crush_rule": rule_name,
+                    "fault_domain": fault_domain,
+                    "rep_size": rep_size,
+                    "osds": osds,
+                    "osd_num": len(osds)
+                }
+                crush_rule_info = {
+                    "rule_name": rule_name,
+                    "rule_id": rule_id,
+                    "type": fault_domain
+                }
+                pool_infos.append(pool_info)
+                crush_rule_infos.append(crush_rule_info)
+        except exception.StorException as e:
+            logger.error("pool probe error: {}".format(e))
+            return None
+        return pool_infos, crush_rule_infos
+
+    def pool_probe(self, ctxt):
+        pool_infos, crush_rule_infos = self._probe_pool_info(ctxt)
+        for crush_rule_info in crush_rule_infos:
+            crush_rule = objects.CrushRule(
+                ctxt, cluster_id=ctxt.cluster_id,
+                rule_name=crush_rule_info.get("rule_name"),
+                type=crush_rule_info.get("type"),
+                content=None)
+            crush_rule.create()
+        for pool_info in pool_infos:
+            rule_name = pool_info.get("crush_rule")
+            crush_rule = objects.CrushRuleList(
+                ctxt, filters={"rule_name": rule_name})
+            crush_rule_id = crush_rule[0].id
+            pool = objects.Pool(
+                ctxt, crush_rule_id=crush_rule_id,
+                cluster_id=ctxt.cluster_id,
+                status=s_fields.PoolStatus.ACTIVE,
+                pool_name=pool_info.get("pool_name"),
+                display_name=pool_info.get("pool_name"),
+                type="replicated",
+                role="data",
+                data_chunk_num=None,
+                coding_chunk_num=None,
+                osd_num=len(pool_info.get("osds")),
+                speed_type="hdd",
+                replicate_size=pool_info.get("rep_size"),
+                failure_domain_type=pool_info.get("fault_domain")
+            )
+            pool.create()
 
     def _update_osd(self, ctxt, osd_info, node):
         logger.info("sync node_id %s, osd %s", node.id, osd_info)
@@ -300,6 +442,7 @@ def include_flow(ctxt, t, datas):
     wf.add(CreateDB("Database add info"))
     wf.add(InstallService("Install Services"))
     wf.add(MakeNodeActive("Mark Node Active"))
+    wf.add(SyncCephConfig("Sync Ceph Config"))
     wf.add(SyncClusterInfo("Sync Cluster Info"))
     wf.add(UpdateIncludeFinish("Update Include Finish"))
     wf.add(CompleteTask('Complete'))

@@ -53,3 +53,16 @@ class ProbeTool(ToolBase):
             return json.loads(out)
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=out, stderr=err)
+
+    def probe_ceph_config(self):
+        tool = "ceph_collect.py"
+        self.executor.write(
+            "/tmp/ceph_collect.py", open(_get_tool_path(tool)).read()
+        )
+        cmd = ['python', "/tmp/ceph_collect.py", "ceph_config"]
+        rc, out, err = self.executor.run_command(cmd)
+        if not rc:
+            logger.info(out)
+            return json.loads(out)
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=out, stderr=err)
