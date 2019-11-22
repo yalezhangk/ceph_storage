@@ -1,6 +1,8 @@
 import json
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -11,6 +13,134 @@ from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
+
+
+create_pool_schema = {
+    "type": "object",
+    "properties": {
+        "pool": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["replicated", "erasure"]
+                },
+                "speed_type": {"type": "string"},
+                "role": {"type": "string"},
+                "failure_domain_type": {
+                    "type": "string",
+                    "enum": ["host", "rack", "datacenter"]
+                },
+                "osds": {
+                    "type": "array",
+                    "items": {"type": "integer", "minimum": 1},
+                    "minItems": 1,
+                    "uniqueItems": True
+                }
+            },
+            "required": ["name", "type", "role",
+                         "failure_domain_type", "osds"],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {"type": {"const": "replicated"}}
+                    },
+                    "then": {
+                        "properties": {
+                            "replicate_size": {
+                                "type": "integer",
+                                "minimum": 1
+                            },
+                        },
+                        "required": ["replicate_size"]
+                    }
+                }, {
+                    "if": {
+                        "properties": {"type": {"const": "erasure"}}
+                    },
+                    "then": {
+                        "properties": {
+                            "data_chunk_num": {
+                                "type": "integer",
+                                "minimum": 1
+                            },
+                            "coding_chunk_num": {
+                                "type": "integer",
+                                "minimum": 1
+                            },
+                        },
+                        "required": ["data_chunk_num", "coding_chunk_num"]
+                    }
+                },
+            ],
+        },
+    },
+    "additionalProperties": False,
+    "required": ["pool"]
+}
+
+update_pool_schema = {
+    "type": "object",
+    "properties": {
+        "pool": {
+            "type": "object",
+            "properties": {"name": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 32
+            }}, "required": ["name"],
+            "additionalProperties": False
+        },
+    },
+    "required": ["pool"],
+    "additionalProperties": False
+}
+
+update_pool_disk_schema = {
+    "type": "object",
+    "properties": {
+        "pool": {
+            "type": "object",
+            "properties": {
+                "osds": {
+                    "type": "array",
+                    "items": {"type": "integer", "minimum": 1},
+                    "minItems": 1,
+                    "uniqueItems": True
+                }
+            }, "required": ["osds"],
+        },
+    },
+    "required": ["pool"],
+    "additionalProperties": False
+}
+
+update_pool_security_policy_schema = {
+    "type": "object",
+    "properties": {
+        "pool": {
+            "type": "object",
+            "properties": {
+                "replicate_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 6
+                },
+                "failure_domain_type": {
+                    "type": "string",
+                    "enum": ["host", "rack", "datacenter"]
+                },
+            }, "required": ["replicate_size", "failure_domain_type"],
+        },
+    },
+    "required": ["pool"],
+    "additionalProperties": False
+}
 
 
 @URLRegistry.register(r"/pools/")
@@ -155,7 +285,10 @@ class PoolListHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        data = json_decode(self.request.body).get('pool')
+        data = json_decode(self.request.body)
+        validate(data, schema=create_pool_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('pool')
         logger.debug("create pool data: %s", data)
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_create(ctxt, data)
@@ -247,7 +380,10 @@ class PoolHandler(ClusterAPIHandler):
         "200":
           description: successful operation
         """
-        data = json_decode(self.request.body).get('pool')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_pool_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('pool')
         pool_name = data.get('name')
         if not pool_name:
             raise InvalidInput(reason=_("pool: name is none"))
@@ -428,7 +564,10 @@ class PoolIncreaseDiskHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        data = json_decode(self.request.body).get('pool')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_pool_disk_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('pool')
         logger.debug("increase disk: {}".format(data))
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_increase_disk(
@@ -489,7 +628,10 @@ class PoolDecreaseDiskHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        data = json_decode(self.request.body).get('pool')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_pool_disk_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('pool')
         logger.debug("decrease disk: {}".format(data))
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_decrease_disk(
@@ -551,7 +693,10 @@ class PoolPolicyHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        data = json_decode(self.request.body).get('pool')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_pool_security_policy_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('pool')
         logger.debug("update security policy: {}".format(data))
         client = self.get_admin_client(ctxt)
         pool = yield client.pool_update_policy(
