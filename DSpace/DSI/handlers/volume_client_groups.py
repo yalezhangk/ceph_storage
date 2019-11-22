@@ -228,10 +228,15 @@ class VolumeClientGroupListHandler(ClusterAPIHandler, CheckVolumeClientGroup):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
         expected_attrs = ['volume_access_paths', 'volumes', 'volume_clients']
+
+        exact_filters = ['type']
+        fuzzy_filters = ['name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
+
         volume_client_groups = yield client.volume_client_group_get_all(
-            ctxt, expected_attrs=expected_attrs, **page_args)
+            ctxt, expected_attrs=expected_attrs, filters=filters, **page_args)
         volume_client_group_count = \
-            yield client.volume_client_group_get_count(ctxt)
+            yield client.volume_client_group_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "volume_client_group": volume_client_groups,
             "total": volume_client_group_count

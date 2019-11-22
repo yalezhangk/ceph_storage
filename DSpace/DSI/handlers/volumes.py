@@ -58,9 +58,14 @@ class VolumeListHandler(ClusterAPIHandler):
         expected_attrs = ['snapshots', 'pool', 'volume_access_path',
                           'volume_client_groups', 'parent_snap',
                           'volume_clients']
+
+        exact_filters = ['status', 'pool_id']
+        fuzzy_filters = ['display_name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
+
         volumes = yield client.volume_get_all(
-            ctxt, expected_attrs=expected_attrs, **page_args)
-        volume_count = yield client.volume_get_count(ctxt)
+            ctxt, expected_attrs=expected_attrs, filters=filters, **page_args)
+        volume_count = yield client.volume_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "volumes": volumes,
             "total": volume_count
