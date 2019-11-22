@@ -499,18 +499,6 @@ class NodeHandler(AdminBaseHandler):
         node_infos['admin_ip'] = data.get('ip_address')
         return node_infos
 
-    def _validate_ip(self, ip_str):
-        sep = ip_str.split('.')
-        if len(sep) != 4:
-            raise exc.Invalid(_('IP address {} format'
-                                'is incorrect!').format(ip_str))
-        for i, x in enumerate(sep):
-            int_x = int(x)
-            if int_x < 0 or int_x > 255:
-                raise exc.Invalid(_('IP address {} format'
-                                    'is incorrect!').format(ip_str))
-        return True
-
     def node_check(self, ctxt, data):
         check_items = ["hostname", "selinux", "ceph_ports", "ceph_package",
                        "network", "athena_ports", "firewall"]
