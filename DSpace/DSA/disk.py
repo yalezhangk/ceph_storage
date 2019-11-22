@@ -63,20 +63,17 @@ class DiskHandler(AgentBaseHandler):
         step = int(100 / num)
         i = 1
         now = 0
-        steps = ["0%"]
         partitions = []
         if role == s_fields.DiskPartitionRole.MIX:
             db = int(step / 5)
             db_size = disk_size * db / 100
             cache_size = disk_size * (step - db) / 100
             while i <= num:
-                steps.append(str(now + db) + "%")
                 partitions.append({
                     "name": name + str(i * 2 - 1),
                     "size": db_size,
                     "role": "db",
                 })
-                steps.append(str(now + step) + "%")
                 partitions.append({
                     "name": name + str(i * 2),
                     "size": cache_size,
@@ -88,27 +85,25 @@ class DiskHandler(AgentBaseHandler):
             partition_size = disk_size * step / 100
             while i <= num:
                 now += step
-                steps.append(str(now) + "%")
                 partitions.append({
                     "name": name + str(i),
                     "size": partition_size,
                     "role": role,
                 })
                 i += 1
-        logger.debug("Partition steps: {}".format(steps))
-        return steps, partitions
+        return partitions
 
     def disk_partitions_create(self, ctxt, node, disk, values):
-        logger.debug('Make cache disk partition: %s', disk.name)
+        logger.info('Make accelerate disk partition: %s', disk.name)
         executor = self._get_executor()
         disk_tool = DiskTool(executor)
         partition_num = values.get('partition_num')
         partition_role = values.get('partition_role')
-        steps, partitions = self._get_disk_partition_steps(
+        partitions = self._get_disk_partition_steps(
             partition_num, partition_role, disk.name, disk.size)
         try:
             disk_tool.partitions_clear(disk.name)
-            disk_tool.partitions_create(disk.name, steps)
+            disk_tool.partitions_create(disk.name, partitions)
             logger.debug("Partitions: {}".format(partitions))
             return partitions
         except exception.StorException as e:
