@@ -514,7 +514,7 @@ class VolumeAccessPathCreateMappingHandler(ClusterAPIHandler,
 class VolumeAccessPathRemoveMappingHandler(ClusterAPIHandler,
                                            CheckVolumeAccessPath):
     @gen.coroutine
-    def delete(self, id):
+    def post(self, id):
         """移除映射
         {"access_path":{"mapping_list":[
             {"client_group_id":1,"volume_ids":[]},
@@ -817,7 +817,7 @@ class VolumeAccessPathAddVolumeHandler(ClusterAPIHandler,
 class VolumeAccessPathRemoveVolumeHandler(ClusterAPIHandler,
                                           CheckVolumeAccessPath):
     @gen.coroutine
-    def delete(self, id):
+    def post(self, id):
         """往某个映射中移除块存储卷
         {"access_path":{"client_group_id":1, volume_ids":[1,2]}}
 
