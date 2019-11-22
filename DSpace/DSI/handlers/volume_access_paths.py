@@ -217,9 +217,15 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         page_args = self.get_paginated_args()
         expected_attrs = ['volume_gateways', 'volume_client_groups',
                           'nodes', 'volumes', 'volume_clients']
+
+        exact_filters = ['status', 'type']
+        fuzzy_filters = ['name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
+
         volume_access_paths = yield client.volume_access_path_get_all(
-            ctxt, expected_attrs=expected_attrs, **page_args)
-        vap_count = yield client.volume_access_path_get_count(ctxt)
+            ctxt, expected_attrs=expected_attrs, filters=filters, **page_args)
+        vap_count = yield client.volume_access_path_get_count(
+            ctxt, filters=filters)
         self.write(objects.json_encode({
             "volume_access_paths": volume_access_paths,
             "total": vap_count
