@@ -137,3 +137,12 @@ class PrometheusHandler(AdminBaseHandler):
                                                 float(start),
                                                 float(end))
         return data
+
+    def osd_capacity_get(self, ctxt, osd_id):
+        logger.info("Osd capacity get: osd_id: %s.", osd_id)
+        osd = objects.Osd.get_by_id(ctxt, osd_id)
+        prometheus = PrometheusTool(ctxt)
+        osd.metrics = {}
+        prometheus.osd_get_capacity(osd)
+        prometheus.osd_get_bluefs_capacity(osd)
+        return osd.metrics

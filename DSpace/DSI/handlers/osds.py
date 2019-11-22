@@ -519,3 +519,42 @@ class OsdHistoryDiskMetricsHandler(ClusterAPIHandler):
         self.write(json.dumps({
             "osd_history_disk_metrics": data
         }))
+
+
+@URLRegistry.register(r"/osds/([0-9]*)/capacity/")
+class OsdCapacityHandler(ClusterAPIHandler):
+    """
+    ---
+    tags:
+    - osd
+    summary: Osd's Capacity
+    description: return the Capacity of osd by id
+    operationId: osds.api.getOsdCapacity
+    produces:
+    - application/json
+    parameters:
+    - in: header
+      name: X-Cluster-Id
+      description: Cluster ID
+      schema:
+        type: string
+      required: true
+    - in: url
+      name: id
+      description: Osd's id
+      schema:
+        type: integer
+        format: int32
+      required: true
+    responses:
+    "200":
+      description: successful operation
+    """
+    @gen.coroutine
+    def get(self, osd_id):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.osd_capacity_get(ctxt, osd_id=osd_id)
+        self.write(json.dumps({
+            "osd_capacity": data
+        }))

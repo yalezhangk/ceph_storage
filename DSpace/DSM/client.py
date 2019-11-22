@@ -322,6 +322,10 @@ class AdminClient(BaseClient):
             start=start, end=end)
         return response
 
+    def osd_capacity_get(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_capacity_get", osd_id=osd_id)
+        return response
+
     ###################
 
     def datacenter_create(self, ctxt):
