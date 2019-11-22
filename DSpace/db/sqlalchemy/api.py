@@ -2622,8 +2622,10 @@ def disk_destroy(context, disk_id):
 
 @require_context
 def disk_get(context, disk_id, expected_attrs=None):
-    disk = _disk_get(context, disk_id)
-    _disk_load_attr(context, disk, expected_attrs)
+    session = get_session()
+    with session.begin():
+        disk = _disk_get(context, disk_id, session)
+        _disk_load_attr(context, disk, expected_attrs, session)
     return disk
 
 
