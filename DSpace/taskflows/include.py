@@ -215,7 +215,7 @@ class SyncClusterInfo(BaseTask):
             part.status = s_fields.DiskStatus.INUSE
             part.save()
 
-    def _get_disk(ctxt, diskname, node_id):
+    def _get_disk(self, ctxt, diskname, node_id):
         disks = objects.DiskList.get_all(ctxt, filters={
             'name': diskname, "node_id": node_id
         })
@@ -224,7 +224,7 @@ class SyncClusterInfo(BaseTask):
         else:
             raise exception.DiskNotFound(disk_id=diskname)
 
-    def _get_part(ctxt, part_name, node_id):
+    def _get_part(self, ctxt, part_name, node_id):
         parts = objects.DiskPartitionList.get_all(ctxt, filters={
             'name': part_name, "node_id": node_id
         })
