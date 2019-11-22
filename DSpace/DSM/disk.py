@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 class DiskHandler(AdminBaseHandler):
     def disk_get(self, ctxt, disk_id):
-        disk = objects.Disk.get_by_id(ctxt, disk_id,
-                                      expected_attrs=['partition_used'])
+        disk = objects.Disk.get_by_id(
+            ctxt, disk_id, expected_attrs=['partition_used', 'node'])
         return disk
 
     def disk_get_all(self, ctxt, tab=None, marker=None, limit=None,
