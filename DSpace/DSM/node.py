@@ -1,6 +1,8 @@
 import json
 
 import six
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from oslo_log import log as logging
 
 from DSpace import exception as exc
@@ -507,8 +509,53 @@ class NodeHandler(AdminBaseHandler):
         res = self._node_check(ctxt, data, check_items)
         return res
 
+    def _node_check_ip(self, ctxt, data):
+        admin_cidr = objects.sysconfig.sys_config_get(
+            ctxt, key="admin_cidr")
+        public_cidr = objects.sysconfig.sys_config_get(
+            ctxt, key="public_cidr")
+        cluster_cidr = objects.sysconfig.sys_config_get(
+            ctxt, key="cluster_cidr")
+        admin_ip = data.get('ip_address')
+        public_ip = data.get('public_ip')
+        cluster_ip = data.get('cluster_ip')
+        # check ip
+        node = self._node_get_by_ip(ctxt, "ip_address", admin_ip)
+        if node:
+            raise exc.Duplicate(_("Admin ip exists"))
+        if IPAddress(admin_ip) not in IPNetwork(admin_cidr):
+            raise exc.InvalidInput("admin ip not in admin cidr ({})"
+                                   "".format(admin_cidr))
+        # cluster_ip
+        node = self._node_get_by_ip(ctxt, "cluster_ip", cluster_ip)
+        if node:
+            raise exc.Duplicate(_("Cluster ip exists"))
+        if (IPAddress(cluster_ip) not in
+                IPNetwork(cluster_cidr)):
+            raise exc.InvalidInput("cluster ip not in cluster cidr ({})"
+                                   "".format(cluster_cidr))
+        # public_ip
+        node = self._node_get_by_ip(ctxt, "public_ip", public_ip)
+        if node:
+            raise exc.Duplicate(_("Public ip exists"))
+        if (IPAddress(public_ip) not in
+                IPNetwork(public_cidr)):
+            raise exc.InvalidInput("public ip not in public cidr ({})"
+                                   "".format(public_cidr))
+
+    def _nodes_inclusion_check(self, ctxt, datas):
+        include_tag = objects.sysconfig.sys_config_get(ctxt, 'is_import')
+        if include_tag:
+            raise exc.InvalidInput(_("Please Clean First"))
+        for data in datas:
+            self._node_check_ip(self, ctxt, data)
+
     def nodes_inclusion(self, ctxt, datas):
         logger.debug("include nodes: {}", datas)
+        # check
+        self._nodes_inclusion_check(ctxt, datas)
+
+        logger.debug("include nodes check pass: {}", datas)
         t = objects.Task(
             ctxt,
             name="Import Cluster",
@@ -580,6 +627,18 @@ class NodeHandler(AdminBaseHandler):
                 res.append({"port": po, "status": True})
         return res
 
+    def _node_get_by_ip(self, ctxt, key, ip):
+        nodes = objects.NodeList.get_all(
+            ctxt,
+            filters={
+                key: ip
+            }
+        )
+        if nodes:
+            return nodes[0]
+        else:
+            return None
+
     def _node_check_ips(self, ctxt, data):
         res = {}
         admin_ip = data.get('ip_address')
@@ -592,29 +651,14 @@ class NodeHandler(AdminBaseHandler):
         for ip in li_ip:
             validator.validate_ip(ip)
         # admin_ip
-        nodes = objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "ip_address": admin_ip
-            }
-        )
-        res['check_admin_ip'] = False if nodes else True
+        node = self._node_get_by_ip(ctxt, "ip_address", admin_ip)
+        res['check_admin_ip'] = False if node else True
         # cluster_ip
-        nodes = objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "cluster_ip": cluster_ip
-            }
-        )
-        res['check_cluster_ip'] = False if nodes else True
+        node = self._node_get_by_ip(ctxt, "cluster_ip", cluster_ip)
+        res['check_cluster_ip'] = False if node else True
         # public_ip
-        nodes = objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "public_ip": public_ip
-            }
-        )
-        res['check_public_ip'] = False if nodes else True
+        node = self._node_get_by_ip(ctxt, "public_ip", public_ip)
+        res['check_public_ip'] = False if node else True
         # TODO delete it
         res['check_gateway_ip'] = True
         return res
