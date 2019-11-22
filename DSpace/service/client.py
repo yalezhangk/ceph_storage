@@ -60,8 +60,7 @@ class BaseClientManager:
         return endpoints
 
     def get_endpoints(self):
-        if not self.endpoints:
-            self.endpoints = self._get_endpoints_db()
+        self.endpoints = self._get_endpoints_db()
         return self.endpoints
 
     def get_endpoint(self, node_id=None):
