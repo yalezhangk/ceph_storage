@@ -200,10 +200,12 @@ def _collect_osd_detail(osd):
         if file_exists(path, "block.wal"):
             osd['block.wal'] = realpart(path, "block.wal")
         if file_exists(path, "block.t2ce"):
-            osd['block.cache'] = realpart(path, "block.t2ce")
+            osd['block.t2ce'] = realpart(path, "block.t2ce")
     if osd['type'] == 'filestore':
         if file_exists(path, "journal"):
-            osd['journal'] = realpart(path, "journal")
+            journal = realpart(path, "journal")
+            if journal != 'journal':
+                osd['journal'] = realpart(path, "journal")
 
 
 def collect_osd_info():

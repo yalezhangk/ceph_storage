@@ -9,6 +9,7 @@ from taskflow.patterns import linear_flow as lf
 from taskflow.types.failure import Failure
 
 from DSpace import context
+from DSpace import exception
 from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
@@ -175,15 +176,62 @@ class SyncClusterInfo(BaseTask):
         pass
 
     def _update_osd(self, ctxt, osd_info, node):
+        logger.info("sync node_id %s, osd %s", node.id, osd_info)
+        diskname = osd_info.get('disk')
+        disk = self._get_disk(ctxt, diskname)
+
         osd = objects.Osd(
             ctxt, node_id=node.id,
-            fsid="xxx",
+            fsid=osd_info.get('fsid'),
             osd_id=osd_info.get('osd_id'),
             type=osd_info.get('type', s_fields.OsdType.BLUESTORE),
-            disk_type='hdd',
+            disk_type=disk.type,
             status=s_fields.OsdStatus.ACTIVE
         )
         osd.create()
+
+        if "block.db" in osd_info:
+            part_name = osd_info["block.db"]
+            part = self._get_part(part_name)
+            part.role = s_fields.DiskPartitionRole.DB
+            part.status = s_fields.DiskStatus.INUSE
+            part.save()
+        if "block.wal" in osd_info:
+            part_name = osd_info["block.wal"]
+            part = self._get_part(part_name)
+            part.role = s_fields.DiskPartitionRole.WAL
+            part.status = s_fields.DiskStatus.INUSE
+            part.save()
+        if "block.t2ce" in osd_info:
+            part_name = osd_info["block.t2ce"]
+            part = self._get_part(part_name)
+            part.role = s_fields.DiskPartitionRole.CACHE
+            part.status = s_fields.DiskStatus.INUSE
+            part.save()
+        if "journal" in osd_info:
+            part_name = osd_info["journal"]
+            part = self._get_part(part_name)
+            part.role = s_fields.DiskPartitionRole.JOURNAL
+            part.status = s_fields.DiskStatus.INUSE
+            part.save()
+
+    def _get_disk(ctxt, diskname, node_id):
+        disks = objects.DiskList.get_all(ctxt, filters={
+            'name': diskname, "node_id": node_id
+        })
+        if disks:
+            return disks[0]
+        else:
+            raise exception.DiskNotFound(disk_id=diskname)
+
+    def _get_part(ctxt, part_name, node_id):
+        parts = objects.DiskPartitionList.get_all(ctxt, filters={
+            'name': part_name, "node_id": node_id
+        })
+        if parts:
+            return parts[0]
+        else:
+            raise exception.DiskPartitionNotFound(disk_part_id=part_name)
 
 
 class UpdateIncludeFinish(BaseTask):
