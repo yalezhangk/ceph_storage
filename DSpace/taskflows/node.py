@@ -46,8 +46,13 @@ class NodeMixin(object):
                     public_ip]):
             raise exc.Invalid('ip_address,cluster_ip,'
                               'public_ip is required')
-
-        if objects.NodeList.get_all(ctxt, filters={"ip_address": ip_address}):
+        if objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "cluster_id": "*",
+                "ip_address": ip_address
+            }
+        ):
             raise exc.Invalid("ip_address already exists!")
         if IPAddress(ip_address) not in IPNetwork(admin_cidr):
             raise exc.Invalid("admin ip not in admin cidr ({})"

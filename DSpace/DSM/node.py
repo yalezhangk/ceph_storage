@@ -627,11 +627,12 @@ class NodeHandler(AdminBaseHandler):
                 res.append({"port": po, "status": True})
         return res
 
-    def _node_get_by_ip(self, ctxt, key, ip):
+    def _node_get_by_ip(self, ctxt, key, ip, cluster_id):
         nodes = objects.NodeList.get_all(
             ctxt,
             filters={
-                key: ip
+                key: ip,
+                "cluster_id": cluster_id
             }
         )
         if nodes:
@@ -651,13 +652,16 @@ class NodeHandler(AdminBaseHandler):
         for ip in li_ip:
             validator.validate_ip(ip)
         # admin_ip
-        node = self._node_get_by_ip(ctxt, "ip_address", admin_ip)
+        node = self._node_get_by_ip(
+            ctxt, "ip_address", admin_ip, "*")
         res['check_admin_ip'] = False if node else True
         # cluster_ip
-        node = self._node_get_by_ip(ctxt, "cluster_ip", cluster_ip)
+        node = self._node_get_by_ip(
+            ctxt, "cluster_ip", cluster_ip, ctxt.cluster_id)
         res['check_cluster_ip'] = False if node else True
         # public_ip
-        node = self._node_get_by_ip(ctxt, "public_ip", public_ip)
+        node = self._node_get_by_ip(
+            ctxt, "public_ip", public_ip, ctxt.cluster_id)
         res['check_public_ip'] = False if node else True
         # TODO delete it
         res['check_gateway_ip'] = True
