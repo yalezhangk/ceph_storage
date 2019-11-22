@@ -1,5 +1,7 @@
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -10,6 +12,138 @@ from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
+
+
+volume_access_path_schema = {
+    "type": "object",
+    "properties": {
+        "access_path": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["iscsi"]
+                }
+            },
+            "required": ["name"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["access_path"]
+}
+
+update_volume_access_path_gw_schema = {
+    "type": "object",
+    "properties": {
+        "access_path": {
+            "type": "object",
+            "properties": {
+                "node_id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+            },
+            "required": ["node_id"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["access_path"]
+}
+
+update_volume_access_path_mapping_schema = {
+    "type": "object",
+    "properties": {
+        "access_path": {
+            "type": "object",
+            "properties": {
+                "mapping_list": {
+                    "type": "array",
+                    "items": {"type": "integer", "minimum": 1},
+                    "minItems": 1,
+                    "uniqueItems": True
+                },
+            },
+            "required": ["mapping_list"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["access_path"]
+}
+
+volume_access_path_set_chap_schema = {
+    "type": "object",
+    "properties": {
+        "access_path": {
+            "type": "object",
+            "properties": {
+                "chap_enable": {"type": "boolean"},
+            },
+            "if": {
+                "properties": {"chap_enable": {"const": True}}
+            },
+            "then": {
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 32
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 32
+                    },
+                },
+                "required": ["username", "password"]
+            },
+            "required": ["chap_enable"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["access_path"]
+}
+
+vap_change_client_group_schema = {
+    "type": "object",
+    "properties": {
+        "access_path": {
+            "type": "object",
+            "properties": {
+                "client_group_id": {"type": "integer", "minimum": 1},
+                "new_client_group_id": {"type": "integer", "minimum": 1},
+            },
+            "required": ["client_group_id", "new_client_group_id"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["access_path"]
+}
+
+update_access_path_volumes_schema = {
+    "type": "object",
+    "properties": {
+        "access_path": {
+            "type": "object",
+            "properties": {
+                "client_group_id": {"type": "integer", "minimum": 1},
+                "volume_ids": {
+                    "type": "array",
+                    "items": {"type": "integer", "minimum": 1},
+                    "minItems": 1,
+                    "uniqueItems": True
+                },
+            },
+            "required": ["client_group_id", "volume_ids"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["access_path"]
+}
 
 
 class CheckVolumeAccessPath():
@@ -136,7 +270,10 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         client = self.get_admin_client(ctxt)
 
         logger.info("trying to create a new access path")
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=volume_access_path_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if not data:
             logger.error("create access path error, no data access_path input")
             raise exception.InvalidInput(_("no access_path input"))
@@ -246,7 +383,10 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
 
         logger.info("trying to edit access path")
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=volume_access_path_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if not data.get('name'):
             logger.error("edit volume access path error, no name input")
             raise exception.InvalidInput(_("name or type not found"))
@@ -351,8 +491,10 @@ class VolumeAccessPathMountGWHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         client = self.get_admin_client(ctxt)
 
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_volume_access_path_gw_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         logger.info("trying to mount block gateway")
         if not data.get('node_id'):
             logger.error("mount bgw error, no node_id input")
@@ -420,7 +562,10 @@ class VolumeAccessPathUnmountGWHandler(ClusterAPIHandler,
         yield self.check_volume_access_path_by_id(ctxt, client, id)
 
         logger.info("trying to unmount block gateway")
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_volume_access_path_gw_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if not data.get('node_id'):
             raise exception.InvalidInput(_("no node_id input"))
         logger.debug("unmount_gw, data %s", data)
@@ -499,7 +644,10 @@ class VolumeAccessPathCreateMappingHandler(ClusterAPIHandler,
 
         yield self.check_volume_access_path_by_id(ctxt, client, id)
         logger.info("trying to create volume mapping")
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_volume_access_path_mapping_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         mapping_list = data.get("mapping_list")
         logger.debug("create mapping, data {}".format(mapping_list))
         access_path = yield client.volume_access_path_create_mapping(
@@ -577,7 +725,10 @@ class VolumeAccessPathRemoveMappingHandler(ClusterAPIHandler,
 
         logger.info("trying to remove volume mapping")
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_volume_access_path_mapping_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         mapping_list = data.get("mapping_list")
         logger.debug("remove mapping, data {}".format(mapping_list))
         access_path = yield client.volume_access_path_remove_mapping(
@@ -660,7 +811,10 @@ class VolumeAccessPathChapHandler(ClusterAPIHandler,
 
         logger.info("trying to set chap")
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=volume_access_path_set_chap_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if "chap_enable" not in data:
             logger.error("no chap_enable in request body")
             raise exception.InvalidInput(_("no chap_enable input"))
@@ -728,7 +882,10 @@ class VolumeAccessPathChangeClientGroupHandler(ClusterAPIHandler,
         client = self.get_admin_client(ctxt)
         logger.info("trying to change client group")
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=vap_change_client_group_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if "client_group_id" not in data:
             raise exception.InvalidInput(_("no client_group_id input"))
         logger.debug("change client group, data %s", data)
@@ -797,7 +954,10 @@ class VolumeAccessPathAddVolumeHandler(ClusterAPIHandler,
 
         logger.info("trying to add volume to client group")
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_access_path_volumes_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if "volume_ids" not in data:
             logger.error("no volume_ids in request data")
             raise exception.InvalidInput(_("no volume_ids input"))
@@ -869,7 +1029,10 @@ class VolumeAccessPathRemoveVolumeHandler(ClusterAPIHandler,
         client = self.get_admin_client(ctxt)
 
         yield self.check_volume_access_path_by_id(ctxt, client, id)
-        data = json_decode(self.request.body).get('access_path')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_access_path_volumes_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('access_path')
         if "volume_ids" not in data:
             logger.error("no volume_ids in request data")
             raise exception.InvalidInput(_("no volume_ids input"))
