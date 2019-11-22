@@ -150,14 +150,9 @@ class DiskListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
 
-        filters = {}
-        supported_filters = ['node_id', 'role', 'status']
-        for f in supported_filters:
-            value = self.get_query_argument(f, default=None)
-            if value:
-                filters.update({
-                    f: value
-                })
+        exact_filters = ['status', 'type', 'role', 'node_id']
+        fuzzy_filters = ['name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
 
         tab = self.get_query_argument('tab', default="default")
         if tab not in ["default", "io"]:
