@@ -1,8 +1,6 @@
 import copy
-import json
 import uuid
 
-import six
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
@@ -196,8 +194,17 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "CREATED", msg)
 
+    def _check_pool_display_name(self, ctxt, display_name):
+        filters = {"display_name": display_name}
+        pools = objects.PoolList.get_all(ctxt, filters=filters)
+        if pools:
+            logger.error("pool display_name duplicate: %s", display_name)
+            raise exception.PoolExists(pool=display_name)
+
     def pool_create(self, ctxt, data):
         uid = str(uuid.uuid4())
+        pool_display_name = data.get("name")
+        self._check_pool_display_name(ctxt, pool_display_name)
         pool_name = "pool-{}".format(uid.replace('-', ''))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
@@ -208,7 +215,7 @@ class PoolHandler(AdminBaseHandler):
             cluster_id=ctxt.cluster_id,
             status=s_fields.PoolStatus.CREATING,
             pool_name=pool_name,
-            display_name=data.get("name"),
+            display_name=pool_display_name,
             type=data.get("type"),
             role=data.get("role"),
             data_chunk_num=data.get("data_chunk_num"),
@@ -227,88 +234,40 @@ class PoolHandler(AdminBaseHandler):
         return pool
 
     def _pool_delete(self, ctxt, pool):
-        nodes = []
-        osds = []
-        osd_ids = []
-        racks = []
-        datacenters = []
-        crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
-                                                 expected_attrs=['osds'])
-        toplogy_data = crush_rule.content
-        logger.debug("pool delete, get crush rule data: %s", toplogy_data)
-        rule_name = toplogy_data.get("crush_rule_name")
-        root_name = toplogy_data.get("root_name")
-        pool_role = toplogy_data.get("pool_role")
-        failure_domain = toplogy_data.get("fault_domain")
-        crush_rule_name = toplogy_data.get("crush_rule_name")
-        pool_name = toplogy_data.get("pool_name")
-        if pool_name != pool.pool_name:
-            logger.error("pool name don't match %s:<%s>", pool.pool_name,
-                         pool_name)
-            raise exception.ProgrammingError(reason="pool name don't match")
-        logger.debug("crush_rule osds: {}".format(crush_rule.osds))
-        for h, o in six.iteritems(toplogy_data.get('host')):
-            nodes.append(h)
-            for osd in o:
-                oid, oname = osd.split('-')
-                osd_name = "osd.{}".format(oname)
-                osds.append(osd_name)
-                osd_ids.append(oid)
-
-        if failure_domain == "rack":
-            for r, h in six.iteritems(toplogy_data.get('rack')):
-                if r:
-                    racks.append(r)
-        if failure_domain == "datacenter":
-            for d, r in six.iteritems(toplogy_data.get('datacenter')):
-                if d:
-                    datacenters.append(d)
-                    for rack in r:
-                        racks.append(rack)
-        data = {
-            "osds": osds,
-            "nodes": nodes,
-            "racks": racks,
-            "datacenters": datacenters,
-            "root_name": root_name,
-            "pool_role": pool_role,
-            "crush_rule_name": crush_rule_name,
-            "pool_name": pool_name
-        }
-        logger.info("delete pool: %s, send data to client: %s", pool_name,
-                    json.dumps(data))
+        osds = [i.id for i in pool.osds]
+        crush_rule = pool.crush_rule
+        rule_name = crush_rule.rule_name
+        body, _crush_content = self._generate_pool_opdata(ctxt, pool, osds)
+        logger.info("pool delete, body: %s", body)
         try:
             ceph_client = CephTask(ctxt)
-            ceph_client.pool_delete(data)
-            # 不删除默认的replicated_rule
-            if rule_name not in 'replicated_rule':
-                pass
-            if not crush_rule.osds:
-                ceph_client.rule_remove()
+            ceph_client.pool_delete(body)
             status = s_fields.PoolStatus.DELETED
+            if rule_name not in 'replicated_rule':
+                self.crush_rule_delete(ctxt, pool.crush_rule_id)
+                self._update_osd_info(
+                    ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
             msg = _("delete pool success")
+            pool.crush_rule_id = None
+            pool.osd_num = None
         except exception.StorException as e:
-            logger.error("create pool error: {}".format(e))
+            logger.error("delete pool error: %s", e)
             status = s_fields.PoolStatus.ERROR
             msg = _("delete pool error")
-        if rule_name not in 'replicated_rule':
-            self.crush_rule_delete(ctxt, pool.crush_rule_id)
-        self._update_osd_info(ctxt, osd_ids, s_fields.OsdStatus.AVAILABLE,
-                              None)
-        pool.crush_rule_id = None
-        pool.osd_num = None
-        pool.stats = status
+        pool.status = status
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "DELETED", msg)
 
     def pool_delete(self, ctxt, pool_id):
-        pool = self.pool_get(ctxt, pool_id)
+        pool = objects.Pool.get_by_id(
+            ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.DELETE)
         self._pool_delete(ctxt, pool)
         pool.save()
-        pool.destroy()
+        if pool.status != s_fields.PoolStatus.ERROR:
+            pool.destroy()
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))
@@ -440,6 +399,7 @@ class PoolHandler(AdminBaseHandler):
 
     def pool_update_display_name(self, ctxt, id, name):
         pool = objects.Pool.get_by_id(ctxt, id)
+        self._check_pool_display_name(ctxt, name)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.UPDATE)

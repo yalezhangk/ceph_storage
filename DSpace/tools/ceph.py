@@ -973,3 +973,28 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         res = self._send_mon_command(command_str)
         return res.get("osdid")
+
+    def get_pools(self):
+        """
+        {"prefix": "osd lspools", "format": "json"}
+        """
+        cmd = {
+            "prefix": "osd lspools",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("get all pools: %s", res)
+        return res
+
+    def get_crush_rule_info(self, rule_name):
+        logger.info("get info for crush rule: %s", rule_name)
+        cmd = {
+            "prefix": "osd crush rule dump",
+            "name": rule_name,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("crush rule %s, info: %s", rule_name, res)
+        return res

@@ -4068,7 +4068,7 @@ PAGINATION_HELPERS = {
                         process_filters(models.AlertGroup),
                         _alert_group_get),
     models.Pool: (_pool_get_query,
-                  process_filters(models.Datacenter),
+                  process_filters(models.Pool),
                   _pool_get),
     models.AlertLog: (_alert_log_get_query,
                       process_filters(models.AlertLog),
