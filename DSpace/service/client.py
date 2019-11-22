@@ -71,7 +71,7 @@ class BaseClientManager:
         if node_id not in endpoints:
             raise exception.EndpointNotFound(
                 service_name=self.service_name, node_id=node_id)
-        return self.endpoints[node_id]
+        return endpoints[node_id]
 
     def get_stub(self, node_id=None):
         endpoint = self.get_endpoint(node_id)
