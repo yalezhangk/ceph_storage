@@ -67,11 +67,7 @@ class CreateDB(BaseTask):
         return nodes
 
     def revert(self, task_info, result, flow_failures):
-        if isinstance(result, Failure):
-            return
-        for node in result:
-            node.status = s_fields.NodeStatus.ERROR
-            node.save()
+        pass
 
 
 class InstallService(BaseTask):
@@ -101,9 +97,13 @@ class InstallService(BaseTask):
         })
         taskflow.engines.run(wf, store=kwargs)
         logger.info("Install Service flow run success")
+        return True
 
-    def revert(self, task_info, result, flow_failures):
-        pass
+    def revert(self, nodes, result, flow_failures):
+        if isinstance(result, Failure):
+            for node in nodes:
+                node.status = s_fields.NodeStatus.ERROR
+                node.save()
 
     def get_ssh_executor(self, node):
         return SSHExecutor(hostname=str(node.ip_address),
