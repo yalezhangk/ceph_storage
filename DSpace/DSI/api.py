@@ -35,7 +35,8 @@ class WebSocketHandler(object):
             'resource_type': obj.obj_name() if obj else None,
             'operation_type': op_type
         }
-        self.ioloop.add_callback(lambda: self.sio.emit("NOTIFY", message))
+        self.ioloop.add_callback(lambda: self.sio.emit("ASYNC_RESPONSE",
+                                                       message))
 
 
 class WebSocketService(ServiceBase):
