@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 create_rack_schame = {
     "type": "object",
     "properties": {
-        "datacenter": {
+        "datacenter_id": {
             "type": "integer",
             "minimum": 1
         },
     },
-    "required": ["datacenter"],
+    "required": ["datacenter_id"],
 }
 
 update_rack_schame = {
@@ -32,14 +32,14 @@ update_rack_schame = {
         "rack": {
             "type": "object",
             "properties": {
-                "datacenter": {"type": "integer", "minimum": 1},
+                "datacenter_id": {"type": "integer", "minimum": 1},
                 "name": {
                     "type": "string",
                     "minLength": 5,
                     "maxLength": 32
                 }
             },
-            "anyOf": [{"required": ["datacenter"]}, {"required": ["name"]}]
+            "anyOf": [{"required": ["datacenter_id"]}, {"required": ["name"]}]
         },
     },
     "required": ["rack"]
