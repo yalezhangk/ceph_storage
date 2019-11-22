@@ -1,5 +1,7 @@
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -11,6 +13,132 @@ from DSpace.i18n import _
 from DSpace.utils.normalize_wwn import normalize_wwn
 
 logger = logging.getLogger(__name__)
+
+
+create_volume_client_group_schema = {
+    "type": "object",
+    "properties": {
+        "volume_client_group": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["iscsi"]
+                },
+                "chap_name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "chap_password": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "clients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["iqn"]
+                            },
+                            "iqn": {"type": "string"}
+                        },
+                        "required": ["type", "iqn"]
+                    },
+                    "minItems": 1,
+                    "uniqueItems": True
+                },
+            },
+            "required": ["name", "type", "clients"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["volume_client_group"]
+}
+
+update_volume_client_group_schema = {
+    "type": "object",
+    "properties": {
+        "volume_client_group": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["iscsi"]
+                },
+                "clients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["iqn"]
+                            },
+                            "iqn": {"type": "string"}
+                        },
+                        "required": ["type", "iqn"]
+                    },
+                    "minItems": 1,
+                    "uniqueItems": True
+                },
+            },
+            "required": ["name"],
+            "dependencies": {
+                "type": ["clients"],
+                "clients": ["type"]
+            }
+        }
+    },
+    "additionalProperties": False,
+    "required": ["volume_client_group"]
+}
+
+vcp_set_mutual_chap_schema = {
+    "type": "object",
+    "properties": {
+        "volume_client_group": {
+            "type": "object",
+            "properties": {
+                "mutual_chap_enable": {"type": "boolean"},
+            },
+            "if": {
+                "properties": {"mutual_chap_enable": {"const": True}}
+            },
+            "then": {
+                "properties": {
+                    "mutual_username": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 32
+                    },
+                    "mutual_password": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 32
+                    },
+                },
+                "required": ["mutual_username", "mutual_password"]
+            },
+            "required": ["mutual_chap_enable"]
+        }
+    },
+    "additionalProperties": False,
+    "required": ["volume_client_group"]
+}
 
 
 class CheckVolumeClientGroup():
@@ -116,6 +244,9 @@ class VolumeClientGroupListHandler(ClusterAPIHandler, CheckVolumeClientGroup):
             "volume_client_group": {
                 "name":"client-group-001",
                 "type":"iscsi",
+                "chap_enable": false,
+                "chap_name": "chap_name",
+                "chap_password": "chap_password",
                 "clients": [
                     {
                         "type": "iqn",
@@ -184,8 +315,10 @@ class VolumeClientGroupListHandler(ClusterAPIHandler, CheckVolumeClientGroup):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        volume_client_group = json_decode(
-            self.request.body).get('volume_client_group')
+        data = json_decode(self.request.body)
+        validate(data, schema=create_volume_client_group_schema,
+                 format_checker=draft7_format_checker)
+        volume_client_group = data.get('volume_client_group')
         volume_clients = volume_client_group.pop("clients")
 
         # 验证
@@ -332,8 +465,10 @@ class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        client_group = json_decode(self.request.body).get(
-            'volume_client_group')
+        data = json_decode(self.request.body)
+        validate(data, schema=update_volume_client_group_schema,
+                 format_checker=draft7_format_checker)
+        client_group = data.get('volume_client_group')
         if "name" not in client_group:
             logger.error("no name in request data")
             raise exception.InvalidInput(_("no name input"))
@@ -506,7 +641,10 @@ class VolumeClientGroupSetMutualChapHandler(ClusterAPIHandler,
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        data = json_decode(self.request.body).get('volume_client_group')
+        data = json_decode(self.request.body)
+        validate(data, schema=vcp_set_mutual_chap_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('volume_client_group')
         logger.debug("set client group mutual chap, data %s", data)
         if "mutual_chap_enable" not in data:
             logger.error("no mutual_chap_enable in request body")
