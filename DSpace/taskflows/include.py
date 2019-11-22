@@ -177,6 +177,8 @@ class SyncClusterInfo(BaseTask):
 
     def _update_osd(self, ctxt, osd_info, node):
         logger.info("sync node_id %s, osd %s", node.id, osd_info)
+        # TODO: sync osd
+        return
         diskname = osd_info.get('disk')
         disk = self._get_disk(ctxt, diskname, node.id)
 
