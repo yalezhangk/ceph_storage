@@ -1,10 +1,7 @@
 import json
 import logging
-import threading
-import time
 from concurrent import futures
 
-import etcd3
 import grpc
 from oslo_config import cfg
 
@@ -82,10 +79,10 @@ class ServiceBase(object):
         self.rpc_ip = rpc_ip if rpc_ip else CONF.my_ip
         port_conf = "{}_port".format(self.service_name)
         self.rpc_port = rpc_port if rpc_port else getattr(CONF, port_conf)
-        self.rpc_endpoint = json.dumps({
+        self.rpc_endpoint = {
             "ip": self.rpc_ip,
             "port": self.rpc_port
-        })
+        }
         logger.debug(self.rpc_endpoint)
 
     def start_rpc(self):
@@ -101,39 +98,8 @@ class ServiceBase(object):
     def stop_rpc(self):
         self.server.stop(0)
 
-    def _register_endpoint(self):
-        etcd = etcd3.client(host='127.0.0.1', port=2379)
-        lease = etcd.lease(ttl=3)
-        logger.debug("etcd server(%s) cluster_id(%s) service_name(%s)" % (
-            "127.0.0.1", self.cluster_id, self.service_name
-        ))
-        etcd.put(
-            '/dspace/service/{}/{}/{}'.format(
-                self.cluster_id,
-                self.service_name, self.hostname),
-            self.rpc_endpoint, lease=lease)
-        return lease
-
-    def register_endpoint(self):
-        lease = None
-
-        while True:
-            if not lease:
-                lease = self._register_endpoint()
-            time.sleep(2)
-            res = lease.refresh()[0]
-            if res.TTL == 0:
-                lease = None
-            # logger.debug("lease refresh")
-
-    def start_heartbeat(self):
-        thread = threading.Thread(target=self.register_endpoint, args=())
-        thread.daemon = True
-        thread.start()
-
     def start(self):
         self.start_rpc()
-        # self.start_heartbeat()
 
     def stop(self):
         self.stop_rpc()

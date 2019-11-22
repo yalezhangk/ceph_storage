@@ -64,7 +64,7 @@ class PrometheusTool(object):
             if not endpoints:
                 raise exception.PrometheusEndpointNotFound(
                     service_name='prometheus', cluster_id=self.ctxt.cluster_id)
-            endpoint = json.loads(endpoints[0].endpoint)
+            endpoint = endpoints[0].endpoint
             self.prometheus_url = "http://{}:{}".format(endpoint['ip'],
                                                         endpoint['port'])
 

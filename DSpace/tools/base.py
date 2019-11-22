@@ -66,6 +66,9 @@ class SSHExecutor(Executor):
         :param password: ssh password
         :param pkey: the file-like object to read from
         """
+        logger.info("try ssh connect: ip(%s), port(%s), user(%s), "
+                    "password(%s), pkey(%s)",
+                    hostname, port, user, password, pkey)
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         kwargs = {}

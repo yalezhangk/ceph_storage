@@ -7,6 +7,7 @@ from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -18,7 +19,7 @@ class RPCService(base.StorPersistentObject, base.StorObject,
         'service_name': fields.StringField(nullable=True),
         'hostname': fields.StringField(nullable=True),
         'cluster_id': fields.StringField(nullable=True),
-        'endpoint': fields.StringField(nullable=True),
+        'endpoint': s_fields.DictOfNullableField(),
         'node_id': fields.IntegerField(nullable=True),
     }
 

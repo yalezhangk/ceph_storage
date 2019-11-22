@@ -54,7 +54,7 @@ class BaseClientManager:
         )
         if not services:
             return {}
-        endpoints = {v.node_id: json.loads(v.endpoint) for v in services}
+        endpoints = {v.node_id: v.endpoint for v in services}
         logger.debug("endpints: %s", endpoints)
         return endpoints
 
