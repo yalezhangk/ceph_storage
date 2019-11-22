@@ -922,18 +922,6 @@ def node_get(context, node_id, expected_attrs=None):
     return node
 
 
-@apply_like_filters(models.Node)
-def _process_node_filters(query, filters):
-    if filters:
-        filters_dict = {}
-        for key, value in filters.items():
-            filters_dict[key] = value
-
-        if filters_dict:
-            query = query.filter_by(**filters_dict)
-    return query
-
-
 @require_context
 def node_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
@@ -970,7 +958,7 @@ def node_get_count(context, filters=None):
     with session.begin():
         # Generate the query
         query = _node_get_query(context, session)
-        query = _process_node_filters(query, filters)
+        query = process_filters(models.Node)(query, filters)
         return query.count()
 
 
@@ -4002,6 +3990,7 @@ def is_valid_model_filters(model, filters, exclude_list=None):
 
 
 def process_filters(model):
+    @apply_like_filters(model)
     def _process_filters(query, filters):
         if filters:
             # Ensure that filters' keys exist on the model
@@ -4020,7 +4009,7 @@ def process_filters(model):
 
 PAGINATION_HELPERS = {
     models.Volume: (_volume_get_query, _process_volume_filters, _volume_get),
-    models.Node: (_node_get_query, _process_node_filters, _node_get),
+    models.Node: (_node_get_query, process_filters(models.Node), _node_get),
     models.Osd: (_osd_get_query, process_filters(models.Osd), _osd_get),
     models.Cluster: (_cluster_get_query, _process_cluster_filters,
                      _cluster_get),

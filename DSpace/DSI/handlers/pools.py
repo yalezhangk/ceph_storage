@@ -61,14 +61,19 @@ class PoolListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
 
+        exact_filters = ['role', 'type', 'status', 'speed_type']
+        fuzzy_filters = ['display_name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
+
         tab = self.get_query_argument('tab', default="default")
         if tab not in ["default", "io"]:
             raise InvalidInput(_("this tab is not supported"))
 
         expected_attrs = ['crush_rule', 'osds', 'volumes']
-        pools = yield client.pool_get_all(ctxt, expected_attrs=expected_attrs,
-                                          tab=tab, **page_args)
-        pool_count = yield client.pool_get_count(ctxt)
+        pools = yield client.pool_get_all(
+            ctxt, expected_attrs=expected_attrs, tab=tab,
+            filters=filters, **page_args)
+        pool_count = yield client.pool_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "pools": pools,
             "total": pool_count
