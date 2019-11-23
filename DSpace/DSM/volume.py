@@ -145,7 +145,7 @@ class VolumeHandler(AdminBaseHandler):
 
     def _verify_volume_del(self, ctxt, volume):
         self._check_volume_status(volume)
-        has_snap = objects.VolumeSnapshot.get_all(ctxt, filters={
+        has_snap = objects.VolumeSnapshotList.get_all(ctxt, filters={
             'volume_id': volume.id})
         if has_snap:
             raise exception.InvalidInput(
