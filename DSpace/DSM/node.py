@@ -57,7 +57,6 @@ class NodeHandler(AdminBaseHandler):
             network.destroy()
 
     def _node_delete(self, ctxt, node):
-        node_id = node.id
         try:
             if node.role_monitor:
                 self._mon_uninstall(ctxt, node)
@@ -85,7 +84,6 @@ class NodeHandler(AdminBaseHandler):
             logger.exception("node delete error: %s", e)
             msg = _("Node remove error!")
 
-        node = objects.Node.get_by_id(ctxt, node_id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "DELETED", msg)
 
