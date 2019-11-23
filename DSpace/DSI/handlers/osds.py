@@ -99,7 +99,7 @@ class OsdListHandler(ClusterAPIHandler):
                           'wal_partition', 'cache_partition',
                           'journal_partition']
 
-        exact_filters = ['status', 'type', 'disk_type', 'node_id']
+        exact_filters = ['status', 'type', 'disk_type', 'node_id', 'disk_id']
         fuzzy_filters = ['osd_id']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
 
