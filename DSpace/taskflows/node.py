@@ -455,13 +455,37 @@ class NodeTask(object):
 
         admin_node = objects.NodeList.get_all(
             self.ctxt, filters={'role_admin': 1})
+
+        if service == 'node_exporter':
+            targets = []
+            for node in admin_node:
+                targets.append({
+                    "targets": [str(node.ip_address) + ":" + port],
+                    "labels": {
+                        "hostname": node.hostname
+                    }
+                })
+
         for node in admin_node:
             client = AgentClientManager(
                 self.ctxt, cluster_id=self.node.cluster_id
             ).get_client(node_id=node.id)
+
             if action == "add":
                 logger.info("Add to %s prometheus target file: %s, %s",
                             node.hostname, ip, port)
+                if service == 'node_exporter':
+                    targets.append({
+                        "targets": [str(ip) + ":" + port],
+                        "labels": {
+                            "hostname": hostname
+                        }
+                    })
+                    client.prometheus_target_add_all(
+                        self.ctxt, new_targets=targets,
+                        path=path + '/prometheus/targets/targets.json')
+                    continue
+
                 client.prometheus_target_add(
                     self.ctxt, ip=str(ip), port=port,
                     hostname=hostname,
