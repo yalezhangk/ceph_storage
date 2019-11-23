@@ -245,7 +245,7 @@ class OsdHandler(AdminBaseHandler):
             osd.wal_partition.save()
 
     def _osd_delete(self, ctxt, node, osd):
-        osd_id = osd.id
+        logger.info("trying to delete osd.%s", osd.osd_id)
         try:
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_uninstall(osd)
@@ -253,15 +253,17 @@ class OsdHandler(AdminBaseHandler):
             self._osd_clear_partition_role(osd)
             osd.destroy()
             msg = _("Osd uninstall!")
+            logger.info("delete osd.%s success", osd.osd_id)
         except exception.StorException as e:
-            logger.error(e)
+            logger.error("delete osd.%s error: %s", osd.osd_id, e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             msg = _("Osd create error!")
 
-        osd = objects.Osd.get_by_id(ctxt, osd_id, read_deleted='yes')
+        logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, "DELETED", msg)
+        logger.debug("send websocket msg: %s", msg)
 
     def osd_delete(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
