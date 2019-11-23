@@ -177,13 +177,14 @@ class DiskPartitionTypeField(BaseEnumField):
 
 
 class DiskPartitionRole(BaseStorEnum):
+    DATA = 'data'
     CACHE = 'cache'
     DB = 'db'
     WAL = 'wal'
     JOURNAL = 'journal'
     MIX = 'mix'
 
-    ALL = (CACHE, DB, WAL, JOURNAL, MIX)
+    ALL = (DATA, CACHE, DB, WAL, JOURNAL, MIX)
 
 
 class DiskPartitionRoleField(BaseEnumField):

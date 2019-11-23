@@ -322,6 +322,7 @@ class SyncClusterInfo(BaseTask):
         logger.info("sync node_id %s, osd %s", node.id, osd_info)
         diskname = osd_info.get('disk')
         disk = self._get_disk(ctxt, diskname, node.id)
+        disk.status = s_fields.DiskStatus.INUSE
 
         osd = objects.Osd(
             ctxt, node_id=node.id,
@@ -329,7 +330,8 @@ class SyncClusterInfo(BaseTask):
             osd_id=osd_info.get('osd_id'),
             type=osd_info.get('type', s_fields.OsdType.BLUESTORE),
             disk_type=disk.type,
-            status=s_fields.OsdStatus.ACTIVE
+            status=s_fields.OsdStatus.ACTIVE,
+            disk_id=disk.id
         )
         osd.create()
 
@@ -339,23 +341,39 @@ class SyncClusterInfo(BaseTask):
             part.role = s_fields.DiskPartitionRole.DB
             part.status = s_fields.DiskStatus.INUSE
             part.save()
+            osd.db_partition_id = part.id
         if "block.wal" in osd_info:
             part_name = osd_info["block.wal"]
             part = self._get_part(ctxt, part_name, node.id)
             part.role = s_fields.DiskPartitionRole.WAL
             part.status = s_fields.DiskStatus.INUSE
             part.save()
+            osd.wal_partition_id = part.id
         if "block.t2ce" in osd_info:
             part_name = osd_info["block.t2ce"]
             part = self._get_part(ctxt, part_name, node.id)
             part.role = s_fields.DiskPartitionRole.CACHE
             part.status = s_fields.DiskStatus.INUSE
             part.save()
+            osd.cache_partition_id = part.id
         if "journal" in osd_info:
             part_name = osd_info["journal"]
             part = self._get_part(ctxt, part_name, node.id)
             part.role = s_fields.DiskPartitionRole.JOURNAL
             part.status = s_fields.DiskStatus.INUSE
+            part.save()
+            osd.journal_partition_id = part.id
+        osd.save()
+
+    def _mark_part_used(self, ctxt, disk_id):
+        parts = objects.DiskPartitionList.get_all(ctxt, filters={
+            "disk_id": disk_id
+        })
+        if not parts:
+            return
+        for part in parts:
+            part.status = s_fields.DiskStatus.INUSE
+            part.role = s_fields.DiskPartitionRole.DATA
             part.save()
 
     def _get_disk(self, ctxt, diskname, node_id):
@@ -420,6 +438,7 @@ class CleanIncludeCluster(BaseTask, CleanDataMixin):
         self._clean_disk(ctxt)
         self._clean_network(ctxt)
         self._clean_node(ctxt)
+        self._clean_ceph_config(ctxt)
 
         # mark finish
         objects.sysconfig.sys_config_set(

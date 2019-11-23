@@ -36,3 +36,6 @@ class CleanDataMixin(object):
 
     def _clean_node(self, ctxt):
         self._clean_data(ctxt, objects.NodeList)
+
+    def _clean_ceph_config(self, ctxt):
+        self._clean_data(ctxt, objects.CephConfigList)
