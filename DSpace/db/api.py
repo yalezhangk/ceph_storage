@@ -315,6 +315,11 @@ def osd_get(context, osd_id, expected_attrs=None):
                         expected_attrs=expected_attrs)
 
 
+def osd_get_by_osd_id(context, osd_id, expected_attrs=None):
+    return IMPL.osd_get_by_osd_id(
+        context, osd_id, expected_attrs=expected_attrs)
+
+
 def osd_get_all(context, filters, marker, limit,
                 offset, sort_keys, sort_dirs,
                 expected_attrs=None):

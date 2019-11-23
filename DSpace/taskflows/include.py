@@ -204,13 +204,12 @@ class SyncClusterInfo(BaseTask):
             logger.info(osd_infos)
             for info in osd_infos:
                 self._update_osd(ctxt, info, node)
-            # TODO Probe pool info, sync to db
-            self.pool_probe(ctxt)
+        self.pool_probe(ctxt)
 
     def revert(self, task_info, result, flow_failures):
         pass
 
-    def _pool_osd_info(self, ceph_client, fault_domain, root_buckets):
+    def _get_osds_from_crush(self, ceph_client, fault_domain, root_buckets):
         osds = []
         if fault_domain == "host":
             hosts = root_buckets
@@ -235,6 +234,28 @@ class SyncClusterInfo(BaseTask):
                         osds.extend(host_osds)
         return osds
 
+    def _get_crush_info(self, ctxt, ceph_client, rule_name):
+        rule_info = ceph_client.get_crush_rule_info(rule_name)
+        root_name = None
+        fault_domain = None
+        if "steps" in rule_info:
+            for op_info in rule_info.get("steps"):
+                if op_info.get("op") == "take":
+                    root_name = op_info.get("item_name")
+                elif op_info.get("op") == "chooseleaf_firstn":
+                    fault_domain = op_info.get("type")
+        root_buckets = ceph_client.get_bucket_info(root_name)
+        osds = self._get_osds_from_crush(ceph_client, fault_domain,
+                                         root_buckets)
+        crush_rule_info = {
+            "rule_name": rule_name,
+            "rule_id": rule_info.get("rule_id"),
+            "type": fault_domain,
+            "osds": osds,
+            "osd_num": len(osds)
+        }
+        return crush_rule_info
+
     def _probe_pool_info(self, ctxt):
         logger.info("trying to probe cluster pool info")
         try:
@@ -242,65 +263,65 @@ class SyncClusterInfo(BaseTask):
             all_pools = ceph_client.get_pools()
             logger.info("get all pools: %s", all_pools)
             pool_infos = []
-            crush_rule_infos = []
+            crush_rule_infos = {}
             for pool in all_pools:
+                # TODO: EC pool get info
                 pool_id = pool.get("poolnum")
                 pool_name = pool.get("poolname")
                 pool_info = ceph_client.get_pool_info(pool_name, "crush_rule")
-                logger.info("pool_info: %s", pool_info)
+                logger.info("rados get pool info: %s", pool_info)
 
                 # {'pool': 'rbd', 'pool_id': 2, 'size': 3}
                 pool_size = ceph_client.get_pool_info(pool_name, "size")
                 rep_size = pool_size.get("size")
                 rule_name = pool_info.get("crush_rule")
-                rule_info = ceph_client.get_crush_rule_info(rule_name)
-                root_name = None
-                fault_domain = None
-                rule_id = rule_info.get("rule_id")
-                if "steps" in rule_info:
-                    for op_info in rule_info.get("steps"):
-                        if op_info.get("op") == "take":
-                            root_name = op_info.get("item_name")
-                        elif op_info.get("op") == "chooseleaf_firstn":
-                            fault_domain = op_info.get("type")
-                root_buckets = ceph_client.get_bucket_info(root_name)
-                osds = self._pool_osd_info(ceph_client, fault_domain,
-                                           root_buckets)
+                if rule_name not in crush_rule_infos:
+                    rule_info = self._get_crush_info(
+                        ctxt, ceph_client, rule_name)
+                    crush_rule_infos[rule_name] = rule_info
+                else:
+                    rule_info = crush_rule_infos[rule_name]
+                logger.info("rados get rule info: %s", rule_info)
                 pool_info = {
                     "pool_name": pool_name,
                     "pool_id": pool_id,
                     "crush_rule": rule_name,
-                    "fault_domain": fault_domain,
+                    "fault_domain": rule_info['type'],
                     "rep_size": rep_size,
-                    "osds": osds,
-                    "osd_num": len(osds)
-                }
-                crush_rule_info = {
-                    "rule_name": rule_name,
-                    "rule_id": rule_id,
-                    "type": fault_domain
+                    "osd_num": rule_info['osd_num']
                 }
                 pool_infos.append(pool_info)
-                crush_rule_infos.append(crush_rule_info)
         except exception.StorException as e:
             logger.error("pool probe error: {}".format(e))
             return None
         return pool_infos, crush_rule_infos
 
+    def _update_osd_crush_info(self, ctxt, crush_rule, crush_rule_info):
+        osds = crush_rule_info['osds']
+        for osd_id in osds:
+            osd = objects.Osd.get_by_osd_id(ctxt, osd_id.replace("osd.", ""))
+            osd.crush_rule_id = crush_rule.id
+            osd.save()
+
     def pool_probe(self, ctxt):
         pool_infos, crush_rule_infos = self._probe_pool_info(ctxt)
-        for crush_rule_info in crush_rule_infos:
+        logger.info("probe pools info: %s", pool_infos)
+        logger.info("probe crush info: %s", crush_rule_infos)
+        for _ign, crush_rule_info in six.iteritems(crush_rule_infos):
             crush_rule = objects.CrushRule(
                 ctxt, cluster_id=ctxt.cluster_id,
                 rule_name=crush_rule_info.get("rule_name"),
                 type=crush_rule_info.get("type"),
                 content=None)
             crush_rule.create()
+            self._update_osd_crush_info(ctxt, crush_rule, crush_rule_info)
         for pool_info in pool_infos:
             rule_name = pool_info.get("crush_rule")
-            crush_rule = objects.CrushRuleList(
+            crush_rule = objects.CrushRuleList.get_all(
                 ctxt, filters={"rule_name": rule_name})
             crush_rule_id = crush_rule[0].id
+            # TODO: EC pool get info
+            # TODO: update pool meta in web
             pool = objects.Pool(
                 ctxt, crush_rule_id=crush_rule_id,
                 cluster_id=ctxt.cluster_id,
@@ -311,7 +332,7 @@ class SyncClusterInfo(BaseTask):
                 role="data",
                 data_chunk_num=None,
                 coding_chunk_num=None,
-                osd_num=len(pool_info.get("osds")),
+                osd_num=pool_info['osd_num'],
                 speed_type="hdd",
                 replicate_size=pool_info.get("rep_size"),
                 failure_domain_type=pool_info.get("fault_domain")
