@@ -56,7 +56,7 @@ class DatacenterHandler(AdminBaseHandler):
 
     def datacenter_tree(self, ctxt):
         # nodes
-        nodes = objects.NodeList.get_all(ctxt)
+        nodes = objects.NodeList.get_all(ctxt, expected_attrs=['osds'])
         rack_ids = {}
         for node in nodes:
             if node.rack_id not in rack_ids:
