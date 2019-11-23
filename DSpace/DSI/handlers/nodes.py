@@ -57,7 +57,7 @@ update_node_schema = {
         "node": {
             "type": "object",
             "properties": {
-                "rack_id": {"type": "integer", "minimum": 1},
+                "rack_id": {"type": ["integer", "null"]},
                 "name": {
                     "type": "string",
                     "minLength": 5,
