@@ -470,34 +470,37 @@ class PoolHandler(AdminBaseHandler):
         return {}
 
     def _generate_osd_tree(self, ctxt, osds):
-        node_ids = {}
+        node_osds = {}
+        node_ids = set([i.node_id for i in osds])
         for osd in osds:
-            if osd.node_id not in node_ids:
-                node_ids[osd.node_id] = []
-            node_ids[osd.node_id].append(osd)
+            if osd.node_id not in node_osds:
+                node_osds[osd.node_id] = []
+            node_osds[osd.node_id].append(osd)
 
         # nodes
-        nodes = objects.NodeList.get_all(ctxt)
-        rack_ids = {}
+        nodes = objects.NodeList.get_all(ctxt, filters={"id": node_ids})
+        rack_nodes = {}
         for node in nodes:
-            if node.rack_id not in rack_ids:
-                rack_ids[node.rack_id] = []
-            rack_ids[node.rack_id].append(node)
-            node.osds = node_ids.get(node.id, [])
+            if node.rack_id not in rack_nodes:
+                rack_nodes[node.rack_id] = []
+            rack_nodes[node.rack_id].append(node)
+            node.osds = node_osds.get(node.id, [])
 
         # racks
-        racks = objects.RackList.get_all(ctxt)
-        dc_ids = {}
+        rack_ids = set([i.rack_id for i in nodes])
+        racks = objects.RackList.get_all(ctxt, filters={"id": rack_ids})
+        dc_racks = {}
         for rack in racks:
-            if rack.datacenter_id not in dc_ids:
-                dc_ids[rack.datacenter_id] = []
-            dc_ids[rack.datacenter_id].append(rack)
-            rack.nodes = rack_ids.get(rack.id, [])
+            if rack.datacenter_id not in dc_racks:
+                dc_racks[rack.datacenter_id] = []
+            dc_racks[rack.datacenter_id].append(rack)
+            rack.nodes = rack_nodes.get(rack.id, [])
 
         # datacenters
-        dcs = objects.DatacenterList.get_all(ctxt)
+        dc_ids = set([i.datacenter_id for i in racks])
+        dcs = objects.DatacenterList.get_all(ctxt, filters={"id": dc_ids})
         for dc in dcs:
-            dc.racks = dc_ids.get(dc.id, [])
+            dc.racks = dc_racks.get(dc.id, [])
         if not dcs and racks:
             return racks
         return dcs
