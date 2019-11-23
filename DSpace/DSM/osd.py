@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from oslo_log import log as logging
@@ -35,6 +36,7 @@ class OsdHandler(AdminBaseHandler):
             mapping = {}
             if capacity:
                 osd_capacity = capacity.get('nodes') + capacity.get('stray')
+                logger.info("get osd_capacity: %s", json.dumps(osd_capacity))
                 for c in osd_capacity:
                     mapping[str(c['id'])] = c
             for osd in osds:
@@ -44,6 +46,10 @@ class OsdHandler(AdminBaseHandler):
                     osd.metrics.update({'kb': [0, size['kb']]})
                     osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
                     osd.metrics.update({'kb_used': [0, size['kb_used']]})
+                # TODO OSD实时容量数据放到定时任务中
+                osd.size = int(size['kb']) * 1024
+                osd.used = int(size['kb_used']) * 1024
+                osd.save()
                 prometheus = PrometheusTool(ctxt)
                 prometheus.osd_get_pg_state(osd)
 
