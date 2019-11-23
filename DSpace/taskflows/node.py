@@ -454,7 +454,7 @@ class NodeTask(object):
         hostname = self.node.hostname
 
         admin_node = objects.NodeList.get_all(
-            self.ctxt, filters={'role_admin': 1})
+            self.ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
 
         if service == 'node_exporter':
             targets = []
