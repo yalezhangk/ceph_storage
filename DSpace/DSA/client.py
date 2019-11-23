@@ -166,6 +166,11 @@ class AgentClient(BaseClient):
                              ip=ip, port=port, hostname=hostname, path=path)
         return response
 
+    def prometheus_target_add_all(self, ctxt, new_targets, path):
+        response = self.call(ctxt, 'prometheus_target_add_all',
+                             new_targets=new_targets, path=path)
+        return response
+
     def prometheus_target_remove(self, ctxt, ip, port, hostname, path):
         response = self.call(ctxt, 'prometheus_target_remove',
                              ip=ip, port=port, hostname=hostname, path=path)

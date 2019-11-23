@@ -8,15 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class PrometheusHandler(AgentBaseHandler):
-    def prometheus_target_add(self, ctxt, ip, port, hostname, path):
-        logger.info("Add to prometheus target file: %s, %s, %s",
-                    ip, port, hostname)
-        target = {
-            "targets": [ip + ":" + port],
-            "labels": {
-                "hostname": hostname
-            }
-        }
+
+    def _add_to_target_file(self, target, path):
         if os.path.exists(path):
             file = open(path, 'r')
             r = file.read()
@@ -36,6 +29,22 @@ class PrometheusHandler(AgentBaseHandler):
         file = open(path, 'w')
         file.write(json.dumps(targets))
         file.close()
+
+    def prometheus_target_add(self, ctxt, ip, port, hostname, path):
+        logger.info("Add to prometheus target file: %s, %s, %s",
+                    ip, port, hostname)
+        target = {
+            "targets": [ip + ":" + port],
+            "labels": {
+                "hostname": hostname
+            }
+        }
+        self._add_to_target_file(target, path)
+
+    def prometheus_target_add_all(self, ctxt, new_targets, path):
+        logger.info("Add to prometheus target file: %s", new_targets)
+        for target in new_targets:
+            self._add_to_target_file(target, path)
 
     def prometheus_target_remove(self, ctxt, ip, port, hostname, path):
         logger.info("Remove from prometheus target file: %s, %s, %s",
