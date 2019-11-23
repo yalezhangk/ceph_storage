@@ -57,14 +57,14 @@ update_node_schema = {
         "node": {
             "type": "object",
             "properties": {
-                "rack": {"type": "integer", "minimum": 1},
+                "rack_id": {"type": "integer", "minimum": 1},
                 "name": {
                     "type": "string",
                     "minLength": 5,
                     "maxLength": 32
                 }
             },
-            "anyOf": [{"required": ["rack"]}, {"required": ["name"]}]
+            "anyOf": [{"required": ["rack_id"]}, {"required": ["name"]}]
         },
     },
     "required": ["node"]
