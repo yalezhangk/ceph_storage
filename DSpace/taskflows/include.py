@@ -323,6 +323,8 @@ class SyncClusterInfo(BaseTask):
         diskname = osd_info.get('disk')
         disk = self._get_disk(ctxt, diskname, node.id)
         disk.status = s_fields.DiskStatus.INUSE
+        disk.role = s_fields.DiskRole.DATA
+        disk.save()
 
         osd = objects.Osd(
             ctxt, node_id=node.id,
@@ -342,6 +344,9 @@ class SyncClusterInfo(BaseTask):
             part.status = s_fields.DiskStatus.INUSE
             part.save()
             osd.db_partition_id = part.id
+            disk = self._get_disk_by_part(ctxt, part_name, node.id)
+            disk.role = s_fields.DiskRole.ACCELERATE
+            disk.save()
         if "block.wal" in osd_info:
             part_name = osd_info["block.wal"]
             part = self._get_part(ctxt, part_name, node.id)
@@ -349,6 +354,9 @@ class SyncClusterInfo(BaseTask):
             part.status = s_fields.DiskStatus.INUSE
             part.save()
             osd.wal_partition_id = part.id
+            disk = self._get_disk_by_part(ctxt, part_name, node.id)
+            disk.role = s_fields.DiskRole.ACCELERATE
+            disk.save()
         if "block.t2ce" in osd_info:
             part_name = osd_info["block.t2ce"]
             part = self._get_part(ctxt, part_name, node.id)
@@ -356,6 +364,9 @@ class SyncClusterInfo(BaseTask):
             part.status = s_fields.DiskStatus.INUSE
             part.save()
             osd.cache_partition_id = part.id
+            disk = self._get_disk_by_part(ctxt, part_name, node.id)
+            disk.role = s_fields.DiskRole.ACCELERATE
+            disk.save()
         if "journal" in osd_info:
             part_name = osd_info["journal"]
             part = self._get_part(ctxt, part_name, node.id)
@@ -363,6 +374,9 @@ class SyncClusterInfo(BaseTask):
             part.status = s_fields.DiskStatus.INUSE
             part.save()
             osd.journal_partition_id = part.id
+            disk = self._get_disk_by_part(ctxt, part_name, node.id)
+            disk.role = s_fields.DiskRole.ACCELERATE
+            disk.save()
         osd.save()
 
     def _mark_part_used(self, ctxt, disk_id):
@@ -384,6 +398,11 @@ class SyncClusterInfo(BaseTask):
             return disks[0]
         else:
             raise exception.DiskNotFound(disk_id=diskname)
+
+    def _get_disk_by_part(self, ctxt, part_name, node_id):
+        while part_name[-1].isdigit():
+            part_name = part_name[:-1]
+        return self._get_disk(ctxt, part_name, node_id)
 
     def _get_part(self, ctxt, part_name, node_id):
         parts = objects.DiskPartitionList.get_all(ctxt, filters={
