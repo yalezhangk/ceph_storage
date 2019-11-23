@@ -1200,6 +1200,20 @@ def osd_get(context, osd_id, **kwargs):
 
 
 @require_context
+def osd_get_by_osd_id(context, osd_id, **kwargs):
+    expected_attrs = kwargs.pop("expected_attrs", None)
+    session = get_session()
+    with session.begin():
+        osd = _osd_get_query(
+            context, session, **kwargs
+        ).filter_by(osd_id=osd_id).first()
+        if not osd:
+            raise exception.OsdNotFound(osd_id=osd_id)
+        _osd_load_attr(osd, expected_attrs)
+        return osd
+
+
+@require_context
 def osd_get_all(context, marker=None, limit=None, sort_keys=None,
                 sort_dirs=None, filters=None, offset=None,
                 expected_attrs=None):

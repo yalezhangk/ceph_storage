@@ -72,6 +72,11 @@ class Osd(base.StorPersistentObject, base.StorObject,
         self.obj_reset_changes(updated_values.keys())
 
     @classmethod
+    def get_by_osd_id(cls, context, osd_id):
+        db_osd = db.osd_get_by_osd_id(context, osd_id)
+        return cls._from_db_object(context, cls(context), db_osd)
+
+    @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         expected_attrs = expected_attrs or []
         if 'node' in expected_attrs:
