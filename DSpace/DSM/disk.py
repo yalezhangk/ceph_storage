@@ -128,7 +128,13 @@ class DiskHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, disk, "REMOVED", msg)
 
     def disk_partitions_remove(self, ctxt, disk_id, values):
-        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        disk = objects.Disk.get_by_id(
+            ctxt, disk_id, expected_attrs=['partition_used'])
+        # 分区不为0，不可被删
+        if disk.partition_used:
+            raise exception.InvalidInput(
+                reason=_('current disk:{} partition has used, '
+                         'can not del').format(disk.name))
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         self.task_submit(self._disk_partitions_remove, ctxt, node, disk,
                          values)
