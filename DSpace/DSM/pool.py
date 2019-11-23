@@ -418,10 +418,6 @@ class PoolHandler(AdminBaseHandler):
             action=AllActionType.POOL_UPDATE_POLICY)
         rep_size = data.get('replicate_size')
         fault_domain = data.get('failure_domain_type')
-        if int(rep_size) < int(pool.replicate_size):
-            logger.error("can't set pool size from %s to %s",
-                         pool.replicate_size, rep_size)
-            raise exception.InvalidInput(reason="can't set lower rep size")
         if pool.failure_domain_type == "rack" and fault_domain == "host":
             logger.error("can't set fault_domain from rack to host")
             raise exception.InvalidInput(
