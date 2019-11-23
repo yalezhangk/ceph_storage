@@ -556,8 +556,14 @@ class NodeHandler(AdminBaseHandler):
         self.task_submit(include_flow, ctxt, t, datas)
         return t
 
+    def _nodes_inclusion_clean_check(self, ctxt):
+        include_tag = objects.sysconfig.sys_config_get(ctxt, 'is_import')
+        if not include_tag:
+            raise exc.InvalidInput(_("Please Import First"))
+
     def nodes_inclusion_clean(self, ctxt):
         logger.debug("include delete nodes")
+        self._nodes_inclusion_clean_check(ctxt)
         t = objects.Task(
             ctxt,
             name="Clean Import Cluster",
