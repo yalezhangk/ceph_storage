@@ -55,6 +55,7 @@ def get_routers():
     __import__('DSpace.DSI.handlers.pools')
     __import__('DSpace.DSI.handlers.probe')
     __import__('DSpace.DSI.handlers.racks')
+    __import__('DSpace.DSI.handlers.service')
     __import__('DSpace.DSI.handlers.rpc_service')
     __import__('DSpace.DSI.handlers.sysinfos')
     __import__('DSpace.DSI.handlers.tasks')
