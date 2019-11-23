@@ -12,18 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class DiskTool(ToolBase):
-    host_prefix = None
 
     def __init__(self, *args, **kwargs):
-        self.host_prefix = kwargs.pop("host_prefix", None)
         super(DiskTool, self).__init__(*args, **kwargs)
-
-    def _wapper(self, path):
-        if not self.host_prefix:
-            return path
-        if path[0] == os.path.sep:
-            path = path[1:]
-        return os.path.join(self.host_prefix, path)
 
     def _get_disk_mounts(self):
         cmd = ["lsblk", "-P", "-o", "NAME,MOUNTPOINT,TYPE"]

@@ -17,7 +17,7 @@ class TestDiskTool(test.TestCase):
     def test_partations_create(self, uuid4, run_command):
         run_command.return_value = (0, "", "")
         diskname = "sdg"
-        tool = DiskTool(Executor(), host_prefix="/host")
+        tool = DiskTool(Executor())
         tool.partitions_create(
             diskname, [{'name': 'sdg1', 'size': 1998998994944.0, 'role': 'db'}]
         )
@@ -33,7 +33,7 @@ class TestDiskTool(test.TestCase):
     def test_partations_clear(self, run_command):
         run_command.return_value = (0, "", "")
         diskname = "sdb"
-        tool = DiskTool(Executor(), host_prefix="/host")
+        tool = DiskTool(Executor())
         tool.partitions_clear(diskname)
         run_command.assert_called_once_with(
             ['wipefs', '/host/dev/sdb', '-a']
