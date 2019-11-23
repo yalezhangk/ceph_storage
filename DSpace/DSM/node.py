@@ -107,7 +107,12 @@ class NodeHandler(AdminBaseHandler):
         if node.role_storage:
             self._storage_uninstall_check(ctxt, node)
         disk_partition_num = objects.DiskPartitionList.get_count(
-            ctxt, filters={"node_id": node.id}
+            ctxt, filters={"node_id": node.id, "role": [
+                s_fields.DiskPartitionRole.CACHE,
+                s_fields.DiskPartitionRole.DB,
+                s_fields.DiskPartitionRole.WAL,
+                s_fields.DiskPartitionRole.JOURNAL,
+            ]}
         )
         if disk_partition_num:
             raise exc.InvalidInput(_("Please remove disk partition first!"))

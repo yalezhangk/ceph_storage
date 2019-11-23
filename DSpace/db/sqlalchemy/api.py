@@ -4002,9 +4002,20 @@ def process_filters(model):
             if not is_valid_model_filters(model, filters):
                 return
 
-            # Apply exact matches
-            if filters:
-                query = query.filter_by(**filters)
+            filter_dict = {}
+            for key, value in filters.items():
+                if isinstance(value, (list, tuple, set, frozenset)):
+                    # Looking for values in a list; apply to query directly
+                    column_attr = getattr(model, key)
+                    query = query.filter(column_attr.in_(value))
+                else:
+                    # OK, simple exact match; save for later
+                    filter_dict[key] = value
+
+            # Apply simple exact matches
+            if filter_dict:
+                query = query.filter_by(**filter_dict)
+
         return query
     return _process_filters
 
