@@ -30,6 +30,7 @@ from DSpace.taskflows.node import InstallDocker
 from DSpace.taskflows.utils import CleanDataMixin
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.probe import ProbeTool
+from DSpace.tools.system import System as SystemTool
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,15 @@ class CreateDB(BaseTask):
         return nodes
 
 
+class SyncNodeInfo(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(SyncNodeInfo, self).execute(task_info)
+        sys_tool = SystemTool(node.executer)
+        node_infos = sys_tool.get_node_baseinfo()
+        node.hostname = node_infos.get('hostname')
+        node.save()
+
+
 class MarkNodeActive(BaseTask):
     def execute(self, ctxt, node, task_info):
         super(MarkNodeActive, self).execute(task_info)
@@ -86,6 +96,9 @@ class InstallService(BaseTask):
             node.executer = self.get_ssh_executor(node)
             arg = "node-%s" % node.id
             node_install_flow = lf.Flow('Node Install %s' % node.id)
+            node_install_flow.add(SyncNodeInfo(
+                "Sync Node Info %s" % node.id,
+                rebind={'node': arg}))
             node_install_flow.add(InstallDocker(
                 "Intall Docker %s" % node.id,
                 rebind={'node': arg}))
