@@ -167,11 +167,12 @@ class SyncCephConfig(BaseTask):
             logger.info(ceph_configs)
             for section in ceph_configs:
                 for key, value in six.iteritems(ceph_configs.get(section)):
-                    self._update_config(section, key, value)
+                    key = key.replace(" ", "_")
+                    self._update_config(ctxt, section, key, value)
 
-    def _update_config(ctxt, section, key, value):
+    def _update_config(self, ctxt, section, key, value):
         objs = objects.CephConfigList.get_all(
-            filters={"section": section, "key": key}
+            ctxt, filters={"section": section, "key": key}
         )
         if objs:
             obj = objs[0]
@@ -204,7 +205,7 @@ class SyncClusterInfo(BaseTask):
             for info in osd_infos:
                 self._update_osd(ctxt, info, node)
             # TODO Probe pool info, sync to db
-            self.pool_probe()
+            self.pool_probe(ctxt)
 
     def revert(self, task_info, result, flow_failures):
         pass
@@ -319,8 +320,6 @@ class SyncClusterInfo(BaseTask):
 
     def _update_osd(self, ctxt, osd_info, node):
         logger.info("sync node_id %s, osd %s", node.id, osd_info)
-        # TODO: sync osd
-        return
         diskname = osd_info.get('disk')
         disk = self._get_disk(ctxt, diskname, node.id)
 
@@ -474,7 +473,7 @@ def include_clean_flow(ctxt, t):
             "task": t,
         }
     })
-    logger.info("Include flow run success")
+    logger.info("Include Clean flow run success")
 
 
 def main():

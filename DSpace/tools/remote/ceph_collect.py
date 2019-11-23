@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import configparser
+import ConfigParser
 import errno
 import json
 import os
@@ -239,12 +239,12 @@ def collect_osd_info():
 
 def collect_ceph_config():
     configs = {}
-    config = configparser.ConfigParser()
+    config = ConfigParser.ConfigParser()
     config.read('/etc/ceph/ceph.conf')
     for section in config.sections():
         configs[section] = {}
-        for key in config[section]:
-            configs[section][key] = config[section][key]
+        for key in config.options(section):
+            configs[section][key] = config.get(section, key)
     return configs
 
 

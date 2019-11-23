@@ -101,7 +101,7 @@ class Docker(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def image_load(self, filename):
-        logger.debug("Docker load rm: {}".format(filename))
+        logger.debug("Docker load image: {}".format(filename))
         cmd = ["docker", "load", "-i", filename]
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:

@@ -227,7 +227,7 @@ class DiskHandler(AdminBaseHandler):
                 logger.info("Create node_id %s disk %s: %s",
                             node_id, name, data)
             # TODO don't use now
-            # self.disk_partitions_reporter(ctxt, partitions, disk)
+            self.disk_partitions_reporter(ctxt, partitions, disk)
         for name, disk in six.iteritems(all_disks):
             logger.warning("Remove node_id %s, disk %s", node_id, name)
             disk.destroy()
