@@ -468,7 +468,7 @@ class NodeTask(object):
 
         for node in admin_node:
             client = AgentClientManager(
-                self.ctxt, cluster_id=self.node.cluster_id
+                self.ctxt, cluster_id=node.cluster_id
             ).get_client(node_id=node.id)
 
             if action == "add":
