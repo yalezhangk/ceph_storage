@@ -7,6 +7,7 @@ import six
 import taskflow.engines
 from oslo_log import log as logging
 from taskflow.patterns import linear_flow as lf
+from taskflow.patterns import unordered_flow as uf
 from taskflow.types.failure import Failure
 
 from DSpace import context
@@ -68,36 +69,46 @@ class CreateDB(BaseTask):
             nodes.append(node)
         return nodes
 
-    def revert(self, task_info, result, flow_failures):
-        pass
+
+class MarkNodeActive(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(MarkNodeActive, self).execute(task_info)
+        node.status = s_fields.NodeStatus.ACTIVE
+        node.save()
 
 
 class InstallService(BaseTask):
     def execute(self, ctxt, nodes, task_info):
         super(InstallService, self).execute(task_info)
-        wf = lf.Flow('TaskFlow')
+        all_node_install_wf = uf.Flow('Nodes Install')
         kwargs = {}
         for node in nodes:
             node.executer = self.get_ssh_executor(node)
             arg = "node-%s" % node.id
-            wf.add(InstallDocker(
+            node_install_flow = lf.Flow('Node Install %s' % node.id)
+            node_install_flow.add(InstallDocker(
                 "Intall Docker %s" % node.id,
                 rebind={'node': arg}))
-            wf.add(DSpaceChronyInstall(
+            node_install_flow.add(DSpaceChronyInstall(
                 "DSpace Chrony Intall %s" % node.id,
                 rebind={'node': arg}))
-            wf.add(DSpaceExpoterInstall(
+            node_install_flow.add(DSpaceExpoterInstall(
                 "DSpace Exporter Intall %s" % node.id,
                 rebind={'node': arg}))
-            wf.add(DSpaceAgentInstall(
+            node_install_flow.add(DSpaceAgentInstall(
                 "DSpace Agent Intall %s" % node.id,
                 rebind={'node': arg}))
+            node_install_flow.add(MarkNodeActive(
+                "Mark node active  %s" % node.id,
+                rebind={'node': arg}))
+            all_node_install_wf.add(node_install_flow)
             kwargs[arg] = node
         kwargs.update({
             "ctxt": ctxt,
             'task_info': {}
         })
-        taskflow.engines.run(wf, store=kwargs)
+        taskflow.engines.run(all_node_install_wf, store=kwargs,
+                             engine='parallel')
         logger.info("Install Service flow run success")
         return True
 
@@ -144,18 +155,6 @@ class UninstallService(BaseTask):
     def get_ssh_executor(self, node):
         return SSHExecutor(hostname=str(node.ip_address),
                            password=node.password)
-
-
-class MakeNodeActive(BaseTask):
-    def execute(self, ctxt, nodes, task_info):
-        super(MakeNodeActive, self).execute(task_info)
-        for node in nodes:
-            node.status = s_fields.NodeStatus.ACTIVE
-            node.save()
-        return nodes
-
-    def revert(self, task_info, result, flow_failures):
-        pass
 
 
 class SyncCephConfig(BaseTask):
@@ -499,7 +498,6 @@ def include_flow(ctxt, t, datas):
     wf.add(PrepareTask("Task prepare"))
     wf.add(CreateDB("Database add info"))
     wf.add(InstallService("Install Services"))
-    wf.add(MakeNodeActive("Mark Node Active"))
     wf.add(SyncCephConfig("Sync Ceph Config"))
     wf.add(SyncClusterInfo("Sync Cluster Info"))
     wf.add(UpdateIncludeFinish("Update Include Finish"))
