@@ -14,13 +14,16 @@ def _bytes2str(string):
 
 
 def run_command(args, timeout=None):
-    cmd = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-    stdout, stderr = cmd.communicate()
-    rc = cmd.returncode
-    return (rc, _bytes2str(stdout), _bytes2str(stderr))
+    try:
+        cmd = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        stdout, stderr = cmd.communicate()
+        rc = cmd.returncode
+        return (rc, _bytes2str(stdout), _bytes2str(stderr))
+    except Exception:
+        return (1, "", "Command failed %s" % args)
 
 
 def read_one_line(parent, name):
@@ -74,14 +77,16 @@ def _get_networks():
     cmd = ["ceph-conf", "--lookup", "public_network"]
     rc, out, err = run_command(cmd)
     if rc:
-        raise Exception("Cmd run failed: %s", cmd)
-    public_network = out.strip()
+        public_network = None
+    else:
+        public_network = out.strip()
 
     cmd = ["ceph-conf", "--lookup", "cluster_network"]
     rc, out, err = run_command(cmd)
     if rc:
-        raise Exception("Cmd run failed: %s", cmd)
-    cluster_network = out.strip()
+        cluster_network = None
+    else:
+        cluster_network = out.strip()
     return {
         "public_network": public_network,
         "cluster_network": cluster_network,
@@ -89,10 +94,10 @@ def _get_networks():
 
 
 def _collect_mon_nodes():
-    cmd = ["ceph", "mon", "dump", "--format", "json"]
+    cmd = ["ceph", "mon", "dump", "--connect-timeout", "1", "--format", "json"]
     rc, out, err = run_command(cmd)
     if rc:
-        raise Exception("Cmd run failed: %s", cmd)
+        return []
     res = json.loads(out)
     mons = res.get('mons')
     if not mons:
@@ -108,10 +113,10 @@ def _collect_mon_nodes():
 
 
 def _collect_mgr_nodes():
-    cmd = ["ceph", "mgr", "dump", "--format", "json"]
+    cmd = ["ceph", "mgr", "dump", "--connect-timeout", "1", "--format", "json"]
     rc, out, err = run_command(cmd)
     if rc:
-        raise Exception("Cmd run failed: %s", cmd)
+        return []
     res = json.loads(out)
     mgr_addr = res.get('active_addr')
     if not mgr_addr or mgr_addr == '-':
@@ -125,10 +130,10 @@ def _collect_mgr_nodes():
 
 
 def _collect_osd_nodes():
-    cmd = ["ceph", "osd", "dump", "--format", "json"]
+    cmd = ["ceph", "osd", "dump", "--connect-timeout", "1", "--format", "json"]
     rc, out, err = run_command(cmd)
     if rc:
-        raise Exception("Cmd run failed: %s", cmd)
+        return []
     res = json.loads(out)
     osds = res.get('osds')
     if not osds:
