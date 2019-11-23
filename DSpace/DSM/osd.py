@@ -179,7 +179,8 @@ class OsdHandler(AdminBaseHandler):
         disk = self._osd_create_disk_check(ctxt, disk_id)
         # db
         self._osd_create_partition_check(
-            ctxt, data, 'db_partition_id', s_fields.DiskPartitionRole.DB, disk)
+            ctxt, data, 'db_partition_id',
+            s_fields.DiskPartitionRole.DB, disk)
         # wal
         self._osd_create_partition_check(
             ctxt, data, 'wal_partition_id',
