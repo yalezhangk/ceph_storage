@@ -28,10 +28,9 @@ create_osd_schema = {
                 "cache_partition_id": {"type": ["integer", "null"]},
                 "db_partition_id": {"type": ["integer", "null"]},
                 "wal_partition_id": {"type": ["integer", "null"]},
-                "jounal_partition_id": {"type": ["integer", "null"]},
+                "journal_partition_id": {"type": ["integer", "null"]},
             },
             "required": ["type", "disk_id"],
-            "additionalProperties": False
         }
     },
     "type": "object",
