@@ -44,6 +44,17 @@ class Rack(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+        if "nodes" in expected_attrs:
+            nodes = db_obj.get('nodes', [])
+            obj.nodes = [objects.Node._from_db_object(
+                context, objects.Node(context), node
+            ) for node in nodes]
+
+        return super(Rack, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class RackList(base.ObjectListBase, base.StorObject):

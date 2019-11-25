@@ -366,9 +366,8 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "rack_create", datacenter_id=datacenter_id)
         return response
 
-    def rack_get(self, ctxt, rack_id):
-        response = self.call(ctxt, "rack_get",
-                             rack_id=rack_id)
+    def rack_get(self, ctxt, rack_id, **kwargs):
+        response = self.call(ctxt, "rack_get", rack_id=rack_id, **kwargs)
         return response
 
     def rack_delete(self, ctxt, rack_id):
@@ -378,11 +377,11 @@ class AdminClient(BaseClient):
 
     def rack_get_all(self, ctxt, marker=None, limit=None,
                      sort_keys=None, sort_dirs=None,
-                     filters=None, offset=None):
+                     filters=None, offset=None, expected_attrs=None):
         response = self.call(ctxt, "rack_get_all", marker=marker,
                              limit=limit, sort_keys=sort_keys,
                              sort_dirs=sort_dirs, filters=filters,
-                             offset=offset)
+                             offset=offset, expected_attrs=expected_attrs)
         return response
 
     def rack_update_name(self, ctxt, rack_id, rack_name):

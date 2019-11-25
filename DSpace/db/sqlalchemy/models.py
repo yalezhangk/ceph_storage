@@ -84,6 +84,7 @@ class Rack(BASE, StorBase):
     name = Column(String(255))
     datacenter_id = Column(Integer, ForeignKey('datacenters.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _nodes = relationship("Node", backref="_rack")
 
 
 class Node(BASE, StorBase):

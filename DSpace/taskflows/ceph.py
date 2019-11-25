@@ -255,9 +255,11 @@ class CephTask(object):
         rule_name = data.get('crush_rule_name')
         pool_role = data.get('pool_role')
         with RADOSClient(self.rados_args()) as rados_client:
-            if pool_name not in rados_client.pool_list():
-                raise exc.PoolNameNotFound(pool=pool_name)
-            rados_client.pool_delete(pool_name)
+            pool_list = rados_client.pool_list()
+            if pool_name in pool_list:
+                rados_client.pool_delete(pool_name)
+            else:
+                logger.debug("pool %s not exists, ignore it", pool_name)
             if pool_role == 'gateway':
                 rgw_pools = ['.rgw.root', 'default.rgw.control',
                              'default.rgw.meta', 'default.rgw.log',
@@ -265,7 +267,11 @@ class CephTask(object):
                              'default.rgw.buckets.non-ec',
                              'default.rgw.buckets.data']
                 for pool in rgw_pools:
-                    rados_client.pool_delete(pool)
+                    if pool in pool_list:
+                        rados_client.pool_delete(pool)
+                    else:
+                        logger.debug("pool %s not exists, ignore it",
+                                     pool)
             if rule_name != "replicated_rule":
                 rados_client.rule_remove(rule_name)
             if 'host' in data:

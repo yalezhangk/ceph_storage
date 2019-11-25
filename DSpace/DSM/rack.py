@@ -22,8 +22,9 @@ class RackHandler(AdminBaseHandler):
         rack.create()
         return rack
 
-    def rack_get(self, ctxt, rack_id):
-        return objects.Rack.get_by_id(ctxt, rack_id)
+    def rack_get(self, ctxt, rack_id, expected_attrs=None):
+        return objects.Rack.get_by_id(ctxt, rack_id,
+                                      expected_attrs=expected_attrs)
 
     def rack_delete(self, ctxt, rack_id):
         rack = self.rack_get(ctxt, rack_id)
@@ -53,14 +54,20 @@ class RackHandler(AdminBaseHandler):
         rack.save()
         return rack
 
-    def rack_have_osds(self, ctxt, rack_id):
-        # TODO 检查机架中的OSD是否在一个存储池中
-        pass
-
     def rack_update_toplogy(self, ctxt, id, datacenter_id):
-        rack = objects.Rack.get_by_id(ctxt, id)
-        if self.rack_have_osds(ctxt, id):
-            return rack
+        rack = objects.Rack.get_by_id(ctxt, id, expected_attrs=['nodes'])
+        rack_nodes = rack.nodes
+        logger.info("rack %s has nodes: %s", rack.name, rack_nodes)
+        for rack_node in rack_nodes:
+            node = objects.Node.get_by_id(ctxt, rack_node.id,
+                                          expected_attrs=['osds'])
+            osd_crush_rule_ids = [i.crush_rule_id for i in node.osds]
+            logger.info("rack_update_toplogy, osd_crush_rule_ids: %s",
+                        osd_crush_rule_ids)
+            if any(osd_crush_rule_ids):
+                logger.error("node %s has osds already in a pool, can't move",
+                             node.hostname)
+                raise exception.RackMoveNotAllow(rack=rack.name)
         rack.datacenter_id = datacenter_id
         rack.save()
         return rack
