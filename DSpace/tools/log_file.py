@@ -16,7 +16,7 @@ class LogFile(ToolBase):
             logger.error('get_log_file_metadata error,out:%s', out)
             raise RunCommandError(cmd=cmd, return_code=code,
                                   stdout=out, stderr=err)
-        ssh_result = str(out, encoding='utf-8').split('\n')[:-1]
+        ssh_result = out.split('\n')[:-1]
         log_info_list = []
         for one_file in ssh_result:
             per_file = {}
