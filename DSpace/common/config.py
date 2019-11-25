@@ -68,3 +68,5 @@ global_opts = [
 CONF.register_cli_opts(core_opts)
 CONF.register_opts(core_opts)
 CONF.register_opts(global_opts)
+
+CONF.logging_user_identity_format = '%(user)s %(cluster_id)s'

@@ -15,9 +15,10 @@ class BaseObjectsTestCase(test.TestCase):
         super(BaseObjectsTestCase, self).setUp(*args, **kwargs)
         self.user_id = 'fake-user'
         self.project_id = 'fake-project'
-        self.context = context.RequestContext(self.user_id,
-                                              self.project_id,
-                                              is_admin=False)
+        self.context = context.RequestContext(
+            user_id=self.user_id,
+            project_id=self.project_id,
+            is_admin=False)
         # We only test local right now.
         # TODO(mriedem): Testing remote would be nice...
         self.assertIsNone(obj_base.StorObject.indirection_api)
