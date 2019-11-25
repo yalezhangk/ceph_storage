@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class VolumeSnapshotHandler(AdminBaseHandler):
+
     def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,
                                 sort_keys=None, sort_dirs=None, filters=None,
                                 offset=None, expected_attrs=None):
@@ -28,6 +29,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         return objects.VolumeSnapshotList.get_count(ctxt, filters=filters)
 
     def _check_snap_create(self, ctxt, data):
+        self.check_mon_host(ctxt)
         display_name = data.get('display_name')
         is_exist = objects.VolumeSnapshotList.get_all(
             ctxt, filters={'display_name': display_name})
@@ -140,6 +142,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, snap, 'DELETED', msg)
 
     def _check_del_snap(self, ctxt, volume_snapshot_id):
+        self.check_mon_host(ctxt)
         expected_attrs = ['child_volumes']
         snap = objects.VolumeSnapshot.get_by_id(ctxt, volume_snapshot_id,
                                                 expected_attrs=expected_attrs)
