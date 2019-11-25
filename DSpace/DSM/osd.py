@@ -17,14 +17,39 @@ logger = logging.getLogger(__name__)
 
 
 class OsdHandler(AdminBaseHandler):
+    def _osds_get_by_accelerate_disk(self, ctxt, disk_id, expected_attrs=None):
+        disk_partitions = objects.DiskPartitionList.get_all(
+            ctxt, filters={'disk_id': disk_id})
+        res = []
+        for partition in disk_partitions:
+            if partition.role == s_fields.DiskPartitionRole.DB:
+                filters = {'db_partition_id': partition.id}
+            if partition.role == s_fields.DiskPartitionRole.WAL:
+                filters = {'wal_partition_id': partition.id}
+            if partition.role == s_fields.DiskPartitionRole.CACHE:
+                filters = {'cache_partition_id': partition.id}
+            if partition.role == s_fields.DiskPartitionRole.JOURNAL:
+                filters = {'journal_partition_id': partition.id}
+            osds = objects.OsdList.get_all(
+                ctxt, filters=filters, expected_attrs=expected_attrs)
+            for osd in osds:
+                if osd in res:
+                    continue
+                res.append(osd)
+        return res
 
     def osd_get_all(self, ctxt, tab=None, marker=None, limit=None,
                     sort_keys=None, sort_dirs=None, filters=None, offset=None,
                     expected_attrs=None):
-        osds = objects.OsdList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=expected_attrs)
+        disk_id = filters.get('disk_id')
+        if disk_id:
+            osds = self._osds_get_by_accelerate_disk(
+                ctxt, disk_id, expected_attrs=expected_attrs)
+        else:
+            osds = objects.OsdList.get_all(
+                ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+                sort_dirs=sort_dirs, filters=filters, offset=offset,
+                expected_attrs=expected_attrs)
 
         if not osds:
             return osds
