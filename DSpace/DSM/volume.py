@@ -51,6 +51,7 @@ class VolumeHandler(AdminBaseHandler):
                     display_name))
 
     def volume_create(self, ctxt, data):
+        self.check_mon_host(ctxt)
         self._check_volume_size(ctxt, data)
         self._check_name_exist(ctxt, data)
         batch_create = data.get('batch_create')
@@ -144,6 +145,7 @@ class VolumeHandler(AdminBaseHandler):
             raise exception.VolumeStatusNotAllowAction()
 
     def _verify_volume_del(self, ctxt, volume):
+        self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         has_snap = objects.VolumeSnapshotList.get_all(ctxt, filters={
             'volume_id': volume.id})
@@ -197,6 +199,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         data.update({'pool_id': volume.pool_id})
         self._check_volume_size(ctxt, data)
@@ -245,6 +248,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         data.update({'pool_id': volume.pool_id})
         # size can not more than pool size
@@ -267,6 +271,7 @@ class VolumeHandler(AdminBaseHandler):
                                           expected_attrs=expected_attrs)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         snap_id = data.get('volume_snapshot_id')
         snap = objects.VolumeSnapshot.get_by_id(ctxt, snap_id)
@@ -318,6 +323,7 @@ class VolumeHandler(AdminBaseHandler):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         if not volume.is_link_clone:
             raise exception.Invalid(
@@ -390,6 +396,7 @@ class VolumeHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, new_volume, 'VOLUME_CLONE', msg)
 
     def _verify_clone_data(self, ctxt, snapshot_id, data):
+        self.check_mon_host(ctxt)
         display_name = data.get('display_name')
         is_exist = objects.VolumeList.get_all(
             ctxt, filters={'display_name': display_name})
