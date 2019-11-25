@@ -66,7 +66,6 @@ class CronHandler(AgentBaseHandler):
             "role_admin": {
                 "PROMETHEUS": self.container_namespace + "_prometheus",
                 "ETCD": self.container_namespace + "_etcd",
-                "PORTAL": self.container_namespace + "_portal",
                 "NGINX": self.container_namespace + "_nginx",
                 "DSM": self.container_namespace + "_dsm",
                 "DSI": self.container_namespace + "_dsi",
