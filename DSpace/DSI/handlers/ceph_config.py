@@ -36,7 +36,7 @@ update_ceph_config_schema = {
                     "properties": {
                         "group": {"type": "string"},
                         "key": {"type": "string"},
-                        "value": {"type": "string"},
+                        "value": {"type": ["string", "integer", "boolean"]},
                         "value_type": {"emum": ["int", "string", "bool"]}
                     },
                     "required": ["group", "key", "value"],
@@ -142,13 +142,14 @@ class CephConfigActionHandler(ClusterAPIHandler):
         detail = cluster_config.cluster_configs.get(values['key'])
         if not detail:
             raise exception.InvalidInput(
-                reason=_("{} do not support to modify".format(values['key']))
+                reason=_("{} do not support to modify").format(values['key'])
             )
         if action == 'update':
             if values['value_type'] != detail.get('type'):
                 raise exception.InvalidInput(
-                    reason=_("Type of config is error, it needs to be".format(
-                        detail.get('type')))
+                    reason=_(
+                        "Type of config is error, it needs to be {}").format(
+                            detail.get('type'))
                 )
         if action == 'reset':
             values.update({'value': detail.get('default')})
