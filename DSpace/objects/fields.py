@@ -124,9 +124,9 @@ class NetworkTypeField(BaseEnumField):
 
 class ConfigType(BaseStorEnum):
     STRING = 'string'
-    NUMBER = 'number'
+    INT = 'int'
     BOOL = 'bool'
-    ALL = (STRING, NUMBER, BOOL)
+    ALL = (STRING, INT, BOOL)
 
 
 class ConfigTypeField(BaseEnumField):
