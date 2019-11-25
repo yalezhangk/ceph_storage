@@ -119,9 +119,14 @@ class NodeNotFound(NotFound):
     message = _("Node %(node_id)s could not be found.")
 
 
-class NodeStatusNotAllow(StorException):
+class NodeMoveNotAllow(StorException):
     code = 400
-    message = _('node status must in [active, error]')
+    message = _("node: %(node)s osd already in a pool, can't move")
+
+
+class RackMoveNotAllow(StorException):
+    code = 400
+    message = _("rack: %(rack)s osd already in a pool, can't move")
 
 
 class DatacenterNotFound(NotFound):

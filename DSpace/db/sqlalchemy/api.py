@@ -1090,9 +1090,19 @@ def rack_destroy(context, rack_id):
     return updated_values
 
 
+def _rack_load_attr(rack, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'nodes' in expected_attrs:
+        rack.nodes = [node for node in rack._nodes if not node.deleted]
+
+
 @require_context
 def rack_get(context, rack_id, expected_attrs=None):
-    return _rack_get(context, rack_id)
+    session = get_session()
+    with session.begin():
+        rack = _rack_get(context, rack_id, session)
+        _rack_load_attr(rack, expected_attrs)
+    return rack
 
 
 @require_context

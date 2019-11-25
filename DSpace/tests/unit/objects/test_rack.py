@@ -28,8 +28,10 @@ class TestRack(test_objects.BaseObjectsTestCase):
         rack_get.assert_called_once_with(
             self.context, "Rack", fake_rack['id'])
 
+    @mock.patch('DSpace.db.sqlalchemy.api.get_session')
     @mock.patch('DSpace.db.sqlalchemy.api.model_query')
-    def test_get_by_id_no_existing_id(self, model_query):
+    def test_get_by_id_no_existing_id(self, model_query, get_session):
+        get_session().return_value = mock.MagicMock()
         model_query().filter_by().first.return_value = None
         self.assertRaises(exception.RackNotFound,
                           objects.Rack.get_by_id,

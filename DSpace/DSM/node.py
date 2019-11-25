@@ -88,7 +88,14 @@ class NodeHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, node, "DELETED", msg)
 
     def node_update_rack(self, ctxt, node_id, rack_id):
-        node = objects.Node.get_by_id(ctxt, node_id)
+        node = objects.Node.get_by_id(ctxt, node_id, expected_attrs=['osds'])
+        osd_crush_rule_ids = set([i.crush_rule_id for i in node.osds])
+        logger.info("node_update_rack, osd_crush_rule_ids: %s",
+                    osd_crush_rule_ids)
+        if any(osd_crush_rule_ids):
+            logger.error("node %s has osds already in a pool, can't move",
+                         node.hostname)
+            raise exc.NodeMoveNotAllow(node=node.hostname)
         node.rack_id = rack_id
         node.save()
         return node

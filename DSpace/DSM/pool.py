@@ -202,6 +202,7 @@ class PoolHandler(AdminBaseHandler):
             raise exception.PoolExists(pool=display_name)
 
     def pool_create(self, ctxt, data):
+        self.check_mon_host(ctxt)
         uid = str(uuid.uuid4())
         pool_display_name = data.get("name")
         self._check_pool_display_name(ctxt, pool_display_name)
@@ -259,6 +260,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, pool, "DELETED", msg)
 
     def pool_delete(self, ctxt, pool_id):
+        self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
         begin_action = self.begin_action(
@@ -302,6 +304,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, pool, "INCREASE_DISK", msg)
 
     def pool_increase_disk(self, ctxt, id, data):
+        self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
@@ -383,6 +386,7 @@ class PoolHandler(AdminBaseHandler):
                 reason="can't remove osds more than pool's available domain")
 
     def pool_decrease_disk(self, ctxt, id, data):
+        self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, id, expected_attrs=['crush_rule', 'osds'])
         begin_action = self.begin_action(
@@ -412,6 +416,7 @@ class PoolHandler(AdminBaseHandler):
         return pool
 
     def pool_update_policy(self, ctxt, id, data):
+        self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
