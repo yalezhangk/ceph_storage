@@ -119,6 +119,9 @@ class CephConfigHandler(AdminBaseHandler):
             pass
 
         if temp_configs:
+            has_mon = self.has_monitor_host(ctxt)
+            if not has_mon:
+                return []
             ceph_client = CephTask(ctxt)
             try:
                 ceph_client.config_set(temp_configs)

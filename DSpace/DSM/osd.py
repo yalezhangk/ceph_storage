@@ -31,8 +31,12 @@ class OsdHandler(AdminBaseHandler):
 
         if tab == "default":
             logger.debug("Get osd metrics: tab=default")
-            ceph_client = CephTask(ctxt)
-            capacity = ceph_client.get_osd_df()
+            has_mon_host = self.has_monitor_host(ctxt)
+            if has_mon_host:
+                ceph_client = CephTask(ctxt)
+                capacity = ceph_client.get_osd_df()
+            else:
+                capacity = None
             mapping = {}
             if capacity:
                 osd_capacity = capacity.get('nodes') + capacity.get('stray')
