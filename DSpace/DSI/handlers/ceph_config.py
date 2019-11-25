@@ -36,10 +36,10 @@ update_ceph_config_schema = {
                     "properties": {
                         "group": {"type": "string"},
                         "key": {"type": "string"},
-                        "value": {"type": "string"}
+                        "value": {"type": "string"},
+                        "value_type": {"emum": ["int", "string", "bool"]}
                     },
                     "required": ["group", "key", "value"],
-                    "additionalProperties": False
                 }}
             }
         }, {

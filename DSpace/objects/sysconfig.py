@@ -79,7 +79,7 @@ def sys_config_get(ctxt, key, default=None):
         return default
     if obj.value_type == s_fields.ConfigType.STRING:
         return obj.value
-    elif obj.value_type == s_fields.ConfigType.NUMBER:
+    elif obj.value_type == s_fields.ConfigType.INT:
         return int(obj.value)
     elif obj.value_type == s_fields.ConfigType.BOOL:
         return strutils.bool_from_string(obj.value)
@@ -92,7 +92,7 @@ def sys_config_set(ctxt, key, value, value_type=None):
         if isinstance(value, bool):
             value_type = s_fields.ConfigType.BOOL
         elif isinstance(value, int):
-            value_type = s_fields.ConfigType.NUMBER
+            value_type = s_fields.ConfigType.INT
         else:
             value_type = s_fields.ConfigType.STRING
     objs = SysConfigList.get_all(ctxt, filters={"key": key})
