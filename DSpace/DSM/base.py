@@ -3,8 +3,11 @@ from concurrent import futures
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
+from DSpace import exception as exc
 from DSpace import objects
 from DSpace.common.config import CONF
+from DSpace.i18n import _
+from DSpace.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
 
@@ -58,3 +61,21 @@ class AdminBaseHandler(object):
         logger.debug('finish action:%s-%s,status:%s', resource_name, action,
                      finish_data['status'])
         begin_action.save()
+
+    def has_monitor_host(self, ctxt):
+        filters = {'status': s_fields.NodeStatus.ACTIVE,
+                   'role_monitor': True}
+        mon_host = objects.NodeList.get_all(ctxt, filters=filters)
+        cluster_id = ctxt.cluster_id
+        if not mon_host:
+            logger.info('has not active mon host, cluster_id={}'.format(
+                cluster_id))
+            return False
+        return True
+
+    def check_mon_host(self, ctxt):
+        has_mon_host = self.has_monitor_host(ctxt)
+        if not has_mon_host:
+            raise exc.InvalidInput(
+                reason=_('has not active mon host, can not do any '
+                         'ceph actions'))
