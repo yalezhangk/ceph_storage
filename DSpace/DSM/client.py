@@ -284,6 +284,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "osd_create", data=data)
         return response
 
+    def get_disk_info(self, ctxt, data):
+        response = self.call(ctxt, "get_disk_info", data=data)
+        return response
+
     def osd_delete(self, ctxt, osd_id):
         response = self.call(ctxt, "osd_delete", osd_id=osd_id)
         return response

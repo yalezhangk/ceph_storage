@@ -319,3 +319,10 @@ class OsdHandler(AdminBaseHandler):
             osd = self.osd_get(ctxt, osd_id)
             osd.crush_rule_id = crush_rule_id
             osd.save()
+
+    def get_disk_info(self, ctxt, data):
+        disk_id = data.get('disk_id')
+        disk = objects.Disk.get_by_id(ctxt, disk_id, expected_attrs=['node'])
+        disk_name = disk.name
+        hostname = disk.node.hostname
+        return {'hostname': hostname, 'disk_name': disk_name}

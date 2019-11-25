@@ -10,9 +10,10 @@ from DSpace.service import BaseClientManager
 
 class WebSocketClient(BaseClient):
 
-    def send_message(self, ctxt, obj, op_type, msg):
+    def send_message(self, ctxt, obj, op_type, msg, resource_type=None):
         response = self.call(ctxt, method="send_message", obj=obj,
-                             op_type=op_type, msg=msg)
+                             op_type=op_type, msg=msg,
+                             resource_type=resource_type)
         return response
 
 
