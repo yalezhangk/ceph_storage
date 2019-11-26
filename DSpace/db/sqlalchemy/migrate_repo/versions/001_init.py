@@ -542,6 +542,7 @@ def define_tables(meta):
         Column('resource_type', String(32)),
         Column('resource_data', Text()),
         Column('status', String(32), default='under way'),
+        Column('err_msg', String(512), default=None),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'

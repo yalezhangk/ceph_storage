@@ -502,6 +502,7 @@ class ActionLog(BASE, StorBase):
     resource_type = Column(String(32))
     resource_data = Column(Text())
     status = Column(String(32), default='under way')  # success/under way/fail
+    err_msg = Column(String(512), default=None)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 

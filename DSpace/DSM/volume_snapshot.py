@@ -84,15 +84,18 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             logger.info('create snapshot success,%s/%s@%s',
                         pool_name, volume_name, snap_name)
             msg = 'volume_snapshot create success'
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeSnapshotStatus.ERROR
             logger.error('create snapshot error,%s/%s@%s,reason:%s',
                          pool_name, volume_name, snap_name, str(e))
             msg = 'volume_snapshot create error'
+            err_msg = str(e)
         snap.status = status
         snap.save()
         self.finish_action(begin_action, snap.id, snap.display_name,
-                           objects.json_encode(snap), status)
+                           objects.json_encode(snap), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, snap, "CREATED", msg)
@@ -129,6 +132,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             status = 'success'
             logger.info('snapshot_delete success,snap_name=%s', snap_name)
             msg = _("delete snapshot success")
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeSnapshotStatus.ERROR
             snap.status = status
@@ -136,8 +140,10 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             logger.error('snapshot_delete error,%s/%s@%s,reason:%s',
                          pool_name, volume_name, snap_name, str(e))
             msg = _('delete snapshot error')
+            err_msg = str(e)
         self.finish_action(begin_action, snap.id, snap.display_name,
-                           objects.json_encode(snap), status)
+                           objects.json_encode(snap), status,
+                           err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, snap, 'DELETED', msg)
 

@@ -22,6 +22,7 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
         'resource_type': fields.StringField(nullable=True),
         'resource_data': fields.StringField(nullable=True),
         'status': fields.StringField(),
+        'err_msg': fields.StringField(nullable=True),
         'cluster_id': fields.UUIDField(),
     }
 
