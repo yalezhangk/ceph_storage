@@ -8,6 +8,7 @@ from oslo_utils import encodeutils
 from DSpace.exception import CephException
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
+from DSpace.utils import retry
 
 try:
     import rados
@@ -120,6 +121,7 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    @retry(RunCommandError)
     def disk_active(self, diskname):
         cmd = ["dspace-disk", "activate", "/dev/%s1" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
