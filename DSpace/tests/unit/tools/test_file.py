@@ -22,8 +22,8 @@ class TestFileTool(test.TestCase):
     def test_mkdir(self, run_command):
         run_command.return_value = (0, "", "")
         dirname = "test"
-        tool = File(Executor())
+        tool = File(Executor("/a"))
         tool.mkdir(dirname)
         run_command.assert_called_once_with(
-            ['mkdir', '-p', dirname]
+            ['mkdir', '-p', "/a/" + dirname]
         )
