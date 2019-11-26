@@ -107,15 +107,17 @@ class OsdHandler(AdminBaseHandler):
             osd.status = s_fields.OsdStatus.AVAILABLE
             osd.save()
             logger.info("Osd %s create success.", osd.osd_id)
+            op_type = 'CREATED'
         except exception.StorException as e:
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             msg = _("Osd create error!")
             logger.info("Osd %s create error.", osd.osd_id)
+            op_type = 'OSD_CREATE_FAILED'
 
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, osd, "CREATED", msg)
+        wb_client.send_message(ctxt, osd, op_type, msg)
 
     def _set_osd_partation_role(self, ctxt, osd):
         osd.disk.status = s_fields.DiskStatus.INUSE
