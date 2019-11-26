@@ -98,6 +98,11 @@ class AgentClient(BaseClient):
                              directory=directory, filename=filename)
         return response
 
+    def read_log_file_content(self, ctxt, node, directory, filename):
+        response = self.call(ctxt, 'read_log_file_content', node=node,
+                             directory=directory, filename=filename)
+        return response
+
     def mount_bgw(self, ctxt, access_path, node):
         response = self.call(ctxt, "mount_bgw", access_path=access_path,
                              node=node)

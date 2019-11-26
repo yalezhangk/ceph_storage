@@ -876,6 +876,11 @@ class AdminClient(BaseClient):
                              log_file_id=log_file_id)
         return response
 
+    def download_log_file(self, ctxt, log_file_id=None):
+        response = self.call(ctxt, "download_log_file",
+                             log_file_id=log_file_id)
+        return response
+
     ###################
 
     def volume_snapshot_get_all(self, ctxt, marker=None, limit=None,

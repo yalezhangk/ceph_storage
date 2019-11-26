@@ -12,6 +12,7 @@ from DSpace.DSA.disk import DiskHandler
 from DSpace.DSA.iscsi import IscsiHandler
 from DSpace.DSA.network import NetworkHandler
 from DSpace.DSA.prometheus import PrometheusHandler
+from DSpace.i18n import _
 from DSpace.service import ServiceBase
 from DSpace.tools.log_file import LogFile as LogFileTool
 from DSpace.tools.service import Service as ServiceTool
@@ -48,6 +49,18 @@ class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
             logger.exception("get_logfile_metadata error:%s", e)
             metadata = None
         return metadata
+
+    def read_log_file_content(self, ctxt, node, directory, filename):
+        logger.info('begin read_log_file_content, file_name:%s', filename)
+        executor = self._get_executor()
+        log_file_tool = LogFileTool(executor)
+        try:
+            content = log_file_tool.read_log_file_content(directory, filename)
+            logger.info('read log_file success, file_name:%s', filename)
+        except Exception as e:
+            logger.exception('read log_file error:%s', e)
+            raise exception.DownloadFileError(reason=_(str(e)))
+        return content
 
 
 class AgentService(ServiceBase):

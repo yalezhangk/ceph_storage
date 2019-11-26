@@ -412,3 +412,7 @@ class AccessPathMappingVolumeExists(Duplicate):
 
 class AccessPathDeleteError(StorException):
     message = _("can't delete access path: %(reason)s")
+
+
+class DownloadFileError(StorException):
+    message = _('download file error: %(reason)s')

@@ -113,3 +113,22 @@ class LogFileHandler(AdminBaseHandler):
         log_file = self.log_file_get(ctxt, log_file_id)
         log_file.destroy()
         return log_file
+
+    def download_log_file(self, ctxt, log_file_id):
+        logger.debug('begin download_log_file, id:%s', log_file_id)
+        # 1 参数校验
+        log_file = objects.LogFile.get_by_id(ctxt, log_file_id)
+        if not log_file:
+            raise exception.LogFileNotFound(log_file_id=log_file_id)
+        node_id = log_file.node_id
+        node = objects.Node.get_by_id(ctxt, node_id)
+        directory = log_file.directory
+        filename = log_file.filename
+        # 2 agent获取日志文件的base64的content
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node_id=int(node_id))
+        content = client.read_log_file_content(
+            ctxt, node, directory, filename)
+        logger.info('download_log_file success, id:%s', log_file_id)
+        return {'file_name': filename, 'content': content}

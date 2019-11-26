@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import base64
 import logging
-import os
 
 from tornado import gen
 from tornado.escape import json_decode
@@ -128,22 +127,15 @@ class LogFileHandler(ClusterAPIHandler):
         # 日志文件下载
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        file_path = yield client.log_file_get(ctxt, log_file_id)
-        filename = file_path.split('/')[-1]
+        file_message = yield client.download_log_file(ctxt, log_file_id)
+        file_name = file_message['file_name']
+        file_content = file_message['content']
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
-                        'attachment; filename={}'.format(filename))
-        with open(file_path, 'rb') as f:
-            while True:
-                data = f.read(512)
-                if not data:
-                    # del log file
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                    break
-                self.write(data)
+                        'attachment; filename={}'.format(file_name))
+        file_content = base64.b64decode(file_content)
         # todo stream 传输
-        self.finish()
+        self.write(file_content)
 
     @gen.coroutine
     def put(self, log_file_id):
