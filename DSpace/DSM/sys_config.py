@@ -1,8 +1,9 @@
 from oslo_log import log as logging
 
+from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
-from DSpace.objects import fields as s_fields
+from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
 
@@ -22,41 +23,50 @@ class SysConfigHandler(AdminBaseHandler):
                 result[sysconf.key] = sysconf.value
         return result
 
-    def update_chrony(self, ctxt, chrony_server):
-        sysconf = objects.SysConfig(
-            ctxt, key="chrony_server", value=chrony_server,
-            value_type=s_fields.ConfigType.STRING)
-        sysconf.create()
+    def _update_chrony(self, ctxt, chrony_server):
+        nodes = objects.NodeList.get_all(ctxt)
+        if not nodes:
+            logger.error("no nodes to update chrony server")
+        for node in nodes:
+            try:
+                task = NodeTask(ctxt, node)
+                # TODO Use ordered taskflow to execute update chrony
+                self.task_submit(task.chrony_update())
+            except exception.StorException as e:
+                logger.error("update chrony server error: %s", e)
+                raise e
 
-    def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
-                       cluster_cidr, gateway_cidr):
-        # TODO check a object exists
-        sysconf = None
+    def update_sysinfo(self, ctxt, sysinfos):
+        gateway_cidr = sysinfos.get('gateway_cidr')
+        cluster_cidr = sysinfos.get('cluster_cidr')
+        public_cidr = sysinfos.get('public_cidr')
+        admin_cidr = sysinfos.get('admin_cidr')
+        chrony_server = sysinfos.get('chrony_server')
+        cluster_name = sysinfos.get('cluster_name')
+        if chrony_server:
+            old_chrony = objects.sysconfig.sys_config_get(
+                ctxt, "chrony_server")
+            if old_chrony != chrony_server:
+                logger.info("trying to update chrony_server from %s to %s",
+                            old_chrony, chrony_server)
+                objects.sysconfig.sys_config_set(ctxt, 'chrony_server',
+                                                 chrony_server)
+                self.task_submit(self._update_chrony, ctxt, chrony_server)
         if cluster_name:
-            sysconf = objects.SysConfig(
-                ctxt, key="cluster_name", value=cluster_name,
-                value_type=s_fields.ConfigType.STRING)
-            sysconf.create()
+            objects.sysconfig.sys_config_set(ctxt, 'cluster_name',
+                                             cluster_name)
         if admin_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="admin_cidr", value=admin_cidr,
-                value_type=s_fields.ConfigType.STRING)
-            sysconf.create()
+            objects.sysconfig.sys_config_set(ctxt, 'admin_cidr',
+                                             admin_cidr)
         if public_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="public_cidr", value=public_cidr,
-                value_type=s_fields.ConfigType.STRING)
-            sysconf.create()
+            objects.sysconfig.sys_config_set(ctxt, 'public_cidr',
+                                             public_cidr)
         if cluster_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="cluster_cidr", value=cluster_cidr,
-                value_type=s_fields.ConfigType.STRING)
-            sysconf.create()
+            objects.sysconfig.sys_config_set(ctxt, 'cluster_cidr',
+                                             cluster_cidr)
         if gateway_cidr:
-            sysconf = objects.SysConfig(
-                ctxt, key="gateway_cidr", value=gateway_cidr,
-                value_type=s_fields.ConfigType.STRING)
-            sysconf.create()
+            objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
+                                             cluster_cidr)
 
     def image_namespace_get(self, ctxt):
         image_namespace = objects.sysconfig.sys_config_get(ctxt,

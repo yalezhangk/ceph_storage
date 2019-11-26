@@ -257,17 +257,8 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "image_namespace_get")
         return response
 
-    def update_chrony(self, ctxt, chrony_server):
-        response = self.call(ctxt, "update_chrony",
-                             chrony_server=chrony_server)
-        return response
-
-    def update_sysinfo(self, ctxt, cluster_name, admin_cidr, public_cidr,
-                       cluster_cidr, gateway_cidr):
-        response = self.call(
-            ctxt, "update_sysinfo", cluster_name=cluster_name,
-            admin_cidr=admin_cidr, public_cidr=public_cidr,
-            cluster_cidr=cluster_cidr, gateway_cidr=gateway_cidr)
+    def update_sysinfo(self, ctxt, sysinfos):
+        response = self.call(ctxt, "update_sysinfo", sysinfos=sysinfos)
         return response
 
     def network_reporter(self, ctxt, networks, node_id):
