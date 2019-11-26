@@ -134,6 +134,13 @@ class ConfigTypeField(BaseEnumField):
 
 
 class DiskStatus(BaseStorEnum):
+    """
+    Disk without partitions and don't be mounted, AVAILABLE
+    Disk without partitions and is mounted, UNAVAILABLE
+    Disk with partitions, UNAVAILABLE
+    Disk with partitions and is used by osd or accelerate disk, INUSE
+    System Disk, INUSE
+    """
     AVAILABLE = 'available'
     UNAVAILABLE = 'unavailable'
     INUSE = 'inuse'
