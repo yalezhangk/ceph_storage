@@ -189,7 +189,9 @@ class DiskHandler(AdminBaseHandler):
 
     def disk_reporter(self, ctxt, disks, node_id):
         all_disk_objs = objects.DiskList.get_all(
-            ctxt, filters={'node_id': node_id})
+            ctxt, filters={'node_id': node_id},
+            expected_attrs=['partition_used']
+        )
         all_disks = {
             disk.name: disk for disk in all_disk_objs
         }
@@ -198,10 +200,42 @@ class DiskHandler(AdminBaseHandler):
             partitions = data.get("partitions")
             if name in all_disks:
                 disk = all_disks.pop(name)
+                osds = objects.OsdList.get_all(
+                    ctxt, filters={'disk_id': disk.id})
+                osd_disk = False
+                if osds:
+                    osd_disk = True
+
                 disk.size = int(data.get('size'))
                 disk.partition_num = len(partitions)
-                if len(partitions) or data.get('mounted'):
-                    disk.status = s_fields.DiskStatus.INUSE
+                if disk.partition_num:
+                    for k, v in six.iteritems(partitions):
+                        part = objects.DiskPartitionList.get_all(
+                            ctxt, filters={'name': k, 'node_id': node_id})
+                        if not part:
+                            continue
+                        if part[0].role in [s_fields.DiskPartitionRole.CACHE,
+                                            s_fields.DiskPartitionRole.DB,
+                                            s_fields.DiskPartitionRole.JOURNAL,
+                                            s_fields.DiskPartitionRole.WAL]:
+                            if disk.partition_used < disk.partition_num:
+                                disk.status = s_fields.DiskStatus.AVAILABLE
+                            else:
+                                disk.status = s_fields.DiskStatus.INUSE
+                        elif osd_disk:
+                            disk.status = s_fields.DiskStatus.INUSE
+                            parts = objects.DiskPartitionList.get_all(
+                                ctxt, filters={'disk_id': osds[0].disk_id})
+                            for part in parts:
+                                part.status = s_fields.DiskStatus.INUSE
+                                part.role = s_fields.DiskPartitionRole.DATA
+                                part.save()
+                        elif data.get('is_sys_dev'):
+                            disk.status = s_fields.DiskStatus.INUSE
+                        else:
+                            disk.status = s_fields.DiskStatus.UNAVAILABLE
+                elif data.get('mounted'):
+                    disk.status = s_fields.DiskStatus.UNAVAILABLE
                 else:
                     disk.status = s_fields.DiskStatus.AVAILABLE
                 disk.save()
@@ -211,11 +245,12 @@ class DiskHandler(AdminBaseHandler):
                 if data.get('is_sys_dev'):
                     status = s_fields.DiskStatus.INUSE
                     role = s_fields.DiskRole.SYSTEM
+                elif len(partitions) or data.get('mounted'):
+                    status = s_fields.DiskStatus.UNAVAILABLE
+                    role = s_fields.DiskRole.DATA
                 else:
                     status = s_fields.DiskStatus.AVAILABLE
                     role = s_fields.DiskRole.DATA
-                if len(partitions) or data.get('mounted'):
-                    status = s_fields.DiskStatus.INUSE
 
                 disk = objects.Disk(
                     ctxt,
