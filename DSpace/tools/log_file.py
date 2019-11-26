@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import base64
 import logging
 
 from DSpace.exception import RunCommandError
@@ -26,3 +27,10 @@ class LogFile(ToolBase):
             per_file['directory'] = '/var/log/ceph/'
             log_info_list.append(per_file)
         return log_info_list
+
+    def read_log_file_content(self, directory, filename):
+        file_path = self._wapper('{}{}'.format(directory, filename))
+        with open(file_path, 'rb') as file:
+            con_byte = file.read()
+            content = base64.b64encode(con_byte).decode('utf-8')
+        return content
