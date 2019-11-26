@@ -307,13 +307,14 @@ class NodeListHandler(ClusterAPIHandler):
                     node = yield client.node_create(ctxt, data)
                     nodes.append(node)
                 except Exception as e:
-                    node_info = {'hostname': data['hostname']}
+                    hostname = data['hostname']
+                    err_msg = _('node:{} create error').format(hostname)
                     logger.exception(
-                        'node:%s create error:%s', node_info['hostname'], e)
+                        'node:%s create error:%s', hostname, e)
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
                     wb_client.send_message(
-                        ctxt, data, "NODE_CREATE_FAILED", node_info,
+                        ctxt, data, "NODE_CREATE_FAILED", err_msg,
                         resource_type='Node')
 
             self.write(objects.json_encode({
