@@ -155,6 +155,9 @@ class PoolHandler(AdminBaseHandler):
         return body, crush_content
 
     def _pool_create(self, ctxt, pool, osds):
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.CREATE)
         crush_rule_name = "rule-{}".format(pool.id)
         body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
         ceph_version = objects.sysconfig.sys_config_get(
@@ -194,6 +197,9 @@ class PoolHandler(AdminBaseHandler):
         pool.save()
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "CREATED", msg)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
 
     def _check_pool_display_name(self, ctxt, display_name):
         filters = {"display_name": display_name}
@@ -208,9 +214,6 @@ class PoolHandler(AdminBaseHandler):
         pool_display_name = data.get("name")
         self._check_pool_display_name(ctxt, pool_display_name)
         pool_name = "pool-{}".format(uid.replace('-', ''))
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.CREATE)
         osds = data.get('osds')
         pool = objects.Pool(
             ctxt,
@@ -229,13 +232,13 @@ class PoolHandler(AdminBaseHandler):
             data_pool=data.get("data_pool")
         )
         pool.create()
-        self._pool_create(ctxt, pool, osds)
-        self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
-                           resource_data=objects.json_encode(pool))
+        self.task_submit(self._pool_create, ctxt, pool, osds)
         return pool
 
     def _pool_delete(self, ctxt, pool):
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.DELETE)
         osds = [i.id for i in pool.osds]
         crush_rule = pool.crush_rule
         rule_name = crush_rule.rule_name
@@ -257,23 +260,22 @@ class PoolHandler(AdminBaseHandler):
             status = s_fields.PoolStatus.ERROR
             msg = _("delete pool error")
         pool.status = status
+        pool.save()
+        if pool.status != s_fields.PoolStatus.ERROR:
+            pool.destroy()
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "DELETED", msg)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
 
     def pool_delete(self, ctxt, pool_id):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.DELETE)
-        self._pool_delete(ctxt, pool)
+        pool.status = s_fields.PoolStatus.DELETING
         pool.save()
-        if pool.status != s_fields.PoolStatus.ERROR:
-            pool.destroy()
-        self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
-                           resource_data=objects.json_encode(pool))
+        self.task_submit(self._pool_delete, ctxt, pool)
         return pool
 
     def _pool_increase_disk(self, ctxt, pool, osds):
