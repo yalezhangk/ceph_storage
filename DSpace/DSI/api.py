@@ -23,14 +23,15 @@ class WebSocketHandler(object):
         self.ioloop = ioloop
         self.sio = sio
 
-    def send_message(self, ctxt, obj, op_type, msg):
+    def send_message(self, ctxt, obj, op_type, msg, resource_type=None):
         """Send WebSocket Message"""
         message = {
             'msg': msg,
             'cluster_id': ctxt.cluster_id,
             'refresh': True,
             'payload': obj,
-            'resource_type': obj.obj_name() if obj else None,
+            'resource_type':
+                resource_type if resource_type else obj.obj_name(),
             'operation_type': op_type
         }
         self.ioloop.add_callback(lambda: self.sio.emit("ASYNC_RESPONSE",
