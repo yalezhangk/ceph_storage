@@ -152,7 +152,8 @@ class CephTask(object):
                         for rack_name in r:
                             rados_client.rack_add(rack_name)
                             rados_client.rack_move_to_datacenter(rack_name, d)
-                        rados_client.datacenter_move(d, default_root_name)
+                        rados_client.datacenter_move_to_root(
+                            d, default_root_name)
                 if 'rack' in pool_data:
                     for r, h in six.iteritems(pool_data.get('rack')):
                         rados_client.rack_add(r)
@@ -325,7 +326,6 @@ class CephTask(object):
     """
     # 1. Add osd to host
     # 2. Move osd to host, move host to rack...
-    # XXX crush_rule_name will not be used
     def pool_add_disk(self, data):
         logger.debug("data: {}".format(json.dumps(data)))
         osds = []
@@ -340,13 +340,12 @@ class CephTask(object):
             if fault_domain == "datacenter":
                 if 'datacenter' in data:
                     for d, r in six.iteritems(data.get('datacenter')):
-                        # FIXME datacenter may be exists,
-                        #  but add once again is ok
                         rados_client.datacenter_add(d)
                         for rack_name in r:
                             rados_client.rack_add(rack_name)
                             rados_client.rack_move_to_datacenter(rack_name, d)
-                        rados_client.datacenter_move(d, default_root_name)
+                        rados_client.datacenter_move_to_root(
+                            d, default_root_name)
                 if 'rack' in data:
                     for r, h in six.iteritems(data.get('rack')):
                         rados_client.rack_add(r)
@@ -400,7 +399,6 @@ class CephTask(object):
                 rados_client.set_pool_info(pool_name, 'pg_num', new_pg_num)
                 rados_client.set_pool_info(pool_name, 'pgp_num', new_pg_num)
 
-    # TODO remove osd, if it's parent is None, also remove parent
     def pool_del_disk(self, data):
         logger.debug("pool_data: {}".format(data))
         with RADOSClient(self.rados_args()) as rados_client:
@@ -443,7 +441,8 @@ class CephTask(object):
                 if 'datacenter' in data:
                     for d, r in six.iteritems(data.get('datacenter')):
                         rados_client.datacenter_add(d)
-                        rados_client.datacenter_move(d, root_name)
+                        rados_client.datacenter_move_to_root(
+                            d, root_name)
                         for rack_name in r:
                             rados_client.rack_add(rack_name)
                             rados_client.rack_move_to_datacenter(rack_name, d)

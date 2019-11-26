@@ -486,91 +486,6 @@ class RADOSClient(object):
     def osd_list(self, host_name=None, rack_name=None, pool_name=None):
         pass
 
-    def datacenter_move(self, datacenter_name, root_name):
-        """
-        Move a datacenter to a specified root
-        {
-            "prefix": "osd crush move",
-            "args": ["root=root-test"],
-            "name": "datacenter-1"
-        }
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["root=%(root_name)s"], "name": "%(datacenter_name)s"}'\
-            % {'root_name': root_name, 'datacenter_name': datacenter_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                datacenter_name, root_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def rack_move_to_root(self, rack_name, root_name):
-        """
-        Move a rack to a root
-        {
-            "prefix": "osd crush move",
-            "args": ["root=root-test"],
-            "name": "rack-test"
-        }
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["root=%(root_name)s"], "name": "%(rack_name)s"}'\
-                % {'root_name': root_name, 'rack_name': rack_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                rack_name, root_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def rack_move_to_datacenter(self, rack_name, datacenter_name):
-        """
-        Move a rack to a datacenter
-        {
-            "prefix": "osd crush move",
-            "args": ["datacenter=datacenter-1"],
-            "name": "rack-test"
-        }
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["datacenter=%(datacenter)s"], "name": "%(rack_name)s"}'\
-                % {'datacenter': datacenter_name, 'rack_name': rack_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                rack_name, datacenter_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def host_move_to_root(self, host_name, root_name):
-        """
-        Move a host to a specified rack
-        ceph osd crush move ceph-3 root=root-default
-        {
-            "prefix": "osd crush move",
-            "args": ["root=root-default"],
-            "name": "ceph-3"
-        }
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["root=%(root_name)s"], "name": "%(host_name)s"}'\
-                % {'root_name': root_name, 'host_name': host_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                host_name, root_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
     def bucket_remove(self, bucket, ancestor=None):
         """
         Remove a bucket
@@ -618,62 +533,45 @@ class RADOSClient(object):
         bucket_info = self._send_mon_command(command_str)
         return bucket_info
 
+    def _bucket_move(self, bucket_name, ancestor_type, ancestor_name):
+        """
+        {
+            "prefix": "osd crush move",
+            "args": "[<ancestor_type>=<ancestor_name>]",
+            "name": "<bucket_name>"
+        }
+        """
+        cmd = {
+            "prefix": "osd crush move",
+            "args": [
+                "{}={}".format(ancestor_type, ancestor_name)
+            ],
+            "name": bucket_name
+        }
+        command_str = json.dumps(cmd)
+        logger.info('bucket move, command_str: {}'.format(command_str))
+        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
+        if ret:
+            logger.error("bcuket move, from %s to %s error: %s", bucket_name,
+                         ancestor_name, mon_dump_outbuf)
+            raise CephException(
+                message="execute command failed: {}".format(command_str))
+        logger.debug(mon_dump_outbuf)
+
+    def datacenter_move_to_root(self, datacenter_name, root_name):
+        self._bucket_move(datacenter_name, "root", root_name)
+
+    def rack_move_to_root(self, rack_name, root_name):
+        self._bucket_move(rack_name, "root", root_name)
+
+    def rack_move_to_datacenter(self, rack_name, datacenter_name):
+        self._bucket_move(rack_name, "datacenter", datacenter_name)
+
+    def host_move_to_root(self, host_name, root_name):
+        self._bucket_move(host_name, "root", root_name)
+
     def host_move_to_rack(self, host_name, rack_name):
-        """
-        Move a host to a specified rack
-        ceph osd crush move ceph-3 rack=rack-xxx
-        [{"prefix": "osd crush move", "args": ["rack=rack-xxx"],
-          "name": "ceph-3"}]
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["rack=%(rack_name)s"], "name": "%(host_name)s"}'\
-                % {'rack_name': rack_name, 'host_name': host_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                host_name, rack_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def osd_move_to_root(self, osd_name, root_name='default'):
-        """
-        Move a osd to a default root
-        ceph osd crush move osd.1 root=default
-        '[{"prefix": "osd crush move", "args" : ["root=default"], \
-            "name": "osd.4"}]'
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["root=%(root_name)s"], "name": "%(osd_name)s"}'\
-                % {'osd_name': osd_name, 'root_name': root_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                osd_name, root_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def osd_move(self, osd_name, host_name):
-        """
-        Move a osd to a specified host
-        ceph osd crush move osd.1 host=ceph-3
-        '[{"prefix": "osd crush move", "args" : ["host=ceph-3.1"], \
-            "name": "osd.4"}]'
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["host=%(host_name)s"], "name": "%(osd_name)s"}'\
-                % {'osd_name': osd_name, 'host_name': host_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("{} move to {} error: {}".format(
-                osd_name, host_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
+        self._bucket_move(host_name, "rack", rack_name)
 
     def osd_add(self, osd_id, osd_size, host_name):
         """
@@ -696,95 +594,40 @@ class RADOSClient(object):
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
 
-    def root_add(self, root_name):
-        """
-        ceph osd crush add-bucket root-xxx root
-        [{"prefix": "osd crush add-bucket", "type": "root",
-          "name": "root-xxx"}]
-        """
-        command_str = '{"prefix": "osd crush add-bucket", "type": "root", \
-            "name": "%(root_name)s"}' % {'root_name': root_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("root add {} error: {}".format(
-                root_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def datacenter_add(self, datacenter_name):
+    def _bucket_add(self, bucket_type, bucket_name):
         """
         {
             "prefix": "osd crush add-bucket",
-            "type": "datacenter",
-            "name": "datacenter-1"
+            "type": "<bucket type>",
+            "name": "<bucket name>"
         }
         """
-        command_str = '{"prefix": "osd crush add-bucket", \
-            "type": "datacenter", "name": "%(datacenter_name)s"}' \
-            % {'datacenter_name': datacenter_name}
+        cmd = {
+            "prefix": "osd crush add-bucket",
+            "type": bucket_type,
+            "name": bucket_name
+        }
+        command_str = json.dumps(cmd)
         logger.debug('command_str: {}'.format(command_str))
         ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
         if ret:
-            logger.error("datacenter add {} error: {}".format(
-                datacenter_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
-
-    def rack_add(self, rack_name):
-        """
-        Add a rack bucket type
-        ceph osd crush add-bucket rack-xxx rack
-        [{"prefix": "osd crush add-bucket", "type": "rack",
-          "name": "rack-xxx"}]
-        """
-        command_str = '{"prefix": "osd crush add-bucket", "type": "rack", \
-            "name": "%(rack_name)s"}' % {'rack_name': rack_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("rack add {} error: {}".format(
-                rack_name, mon_dump_outbuf))
+            logger.error("bcuket add %s %s error: %s", bucket_type,
+                         bucket_name, mon_dump_outbuf)
             raise CephException(
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
 
     def host_add(self, host_name):
-        """
-        Add a host bucket type
-        ceph osd crush add host-xxx host
-        [{"prefix": "osd crush add-bucket", "type": "host",
-          "name": "host-xxxx"}]
-        """
-        command_str = '{"prefix": "osd crush add-bucket", "type": "host", \
-            "name": "%(host_name)s"}' % {'host_name': host_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("host add {} error: {}".format(
-                host_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
+        self._bucket_add("host", host_name)
 
-    def osd_rm(self, osd_name, root_name='default'):
-        """
-        XXX
-        Just move it to default, so it will not in any host
-        """
-        command_str = '{"prefix": "osd crush move", "args" : \
-            ["root=%(root_name)s"], "name": "%(osd_name)s"}'\
-                % {'osd_name': osd_name, 'root_name': root_name}
-        logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
-        if ret:
-            logger.error("remove osd {} error: {}".format(
-                osd_name, mon_dump_outbuf))
-            raise CephException(
-                message="execute command failed: {}".format(command_str))
-        logger.debug(mon_dump_outbuf)
+    def rack_add(self, rack_name):
+        self._bucket_add("rack", rack_name)
+
+    def datacenter_add(self, datacenter_name):
+        self._bucket_add("datacenter", datacenter_name)
+
+    def root_add(self, root_name):
+        self._bucket_add("root", root_name)
 
     def _send_mon_command(self, command_str):
         ret, outbuf, _ign = self.client.mon_command(command_str, '')

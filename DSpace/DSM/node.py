@@ -246,6 +246,7 @@ class NodeHandler(AdminBaseHandler):
                 'fsid': {'type': 'string', 'value': ctxt.cluster_id},
                 'mon_host': {'type': 'string',
                              'value': str(node.public_ip)},
+                'osd_objectstore': {'type': 'string', 'value': 'bluestor'},
                 'mon_initial_members': {'type': 'string',
                                         'value': node.hostname},
                 'public_network': {'type': 'string', 'value': public_network},

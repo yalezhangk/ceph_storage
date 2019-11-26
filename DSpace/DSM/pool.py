@@ -157,7 +157,8 @@ class PoolHandler(AdminBaseHandler):
     def _pool_create(self, ctxt, pool, osds):
         crush_rule_name = "rule-{}".format(pool.id)
         body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
-        ceph_version = objects.sysconfig.sys_config_get(ctxt, 'ceph_version')
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, 'ceph_version_name')
         if (ceph_version == s_fields.CephVersion.T2STOR):
             logger.info("ceph version is: %s, can specified replicate size "
                         "while creating pool", ceph_version)
