@@ -117,21 +117,37 @@ class OsdHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, "CREATED", msg)
 
-    def _set_osd_partation_role(self, osd):
+    def _set_osd_partation_role(self, ctxt, osd):
         osd.disk.status = s_fields.DiskStatus.INUSE
         osd.disk.save()
+        accelerate_disk = []
         if osd.db_partition_id:
             osd.db_partition.status = s_fields.DiskStatus.INUSE
             osd.db_partition.save()
+            accelerate_disk.append(osd.db_partition.disk_id)
         if osd.cache_partition_id:
             osd.cache_partition.status = s_fields.DiskStatus.INUSE
             osd.cache_partition.save()
+            accelerate_disk.append(osd.cache_partition.disk_id)
         if osd.journal_partition_id:
             osd.journal_partition.status = s_fields.DiskStatus.INUSE
             osd.journal_partition.save()
+            accelerate_disk.append(osd.journal_partition.disk_id)
         if osd.wal_partition_id:
             osd.wal_partition.status = s_fields.DiskStatus.INUSE
             osd.wal_partition.save()
+            accelerate_disk.append(osd.wal_partition.disk_id)
+        accelerate_disk = set(accelerate_disk)
+        if accelerate_disk:
+            ac_disk = objects.DiskList.get_all(
+                ctxt, filters={'id': accelerate_disk},
+                expected_attrs=['partition_used'])
+            for disk in ac_disk:
+                if disk.partition_used < disk.partition_num:
+                    disk.status = s_fields.DiskStatus.AVAILABLE
+                else:
+                    disk.status = s_fields.DiskStatus.INUSE
+                disk.save()
 
     def _osd_get_free_id(self, ctxt, osd_fsid):
         task = CephTask(ctxt)
@@ -248,7 +264,7 @@ class OsdHandler(AdminBaseHandler):
         )
         osd.create()
         osd = objects.Osd.get_by_id(ctxt, osd.id, joined_load=True)
-        self._set_osd_partation_role(osd)
+        self._set_osd_partation_role(ctxt, osd)
         self._osd_config_set(ctxt, osd)
 
         # apply async
@@ -266,22 +282,35 @@ class OsdHandler(AdminBaseHandler):
             for cfg in osd_cfgs:
                 cfg.destroy()
 
-    def _osd_clear_partition_role(self, osd):
+    def _osd_clear_partition_role(self, ctxt, osd):
         logger.debug("osd clear partition role")
         osd.disk.status = s_fields.DiskStatus.AVAILABLE
         osd.disk.save()
+
+        accelerate_disk = []
         if osd.db_partition_id:
             osd.db_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.db_partition.save()
+            accelerate_disk.append(osd.db_partition.disk_id)
         if osd.cache_partition_id:
             osd.cache_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.cache_partition.save()
+            accelerate_disk.append(osd.cache_partition.disk_id)
         if osd.journal_partition_id:
             osd.journal_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.journal_partition.save()
+            accelerate_disk.append(osd.journal_partition.disk_id)
         if osd.wal_partition_id:
             osd.wal_partition.status = s_fields.DiskStatus.AVAILABLE
             osd.wal_partition.save()
+            accelerate_disk.append(osd.wal_partition.disk_id)
+        accelerate_disk = set(accelerate_disk)
+        if accelerate_disk:
+            ac_disk = objects.DiskList.get_all(
+                ctxt, filters={'id': accelerate_disk})
+            for disk in ac_disk:
+                disk.status = s_fields.DiskStatus.AVAILABLE
+                disk.save()
 
     def _osd_delete(self, ctxt, node, osd):
         logger.info("trying to delete osd.%s", osd.osd_id)
@@ -289,7 +318,7 @@ class OsdHandler(AdminBaseHandler):
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_uninstall(osd)
             self._osd_config_remove(ctxt, osd)
-            self._osd_clear_partition_role(osd)
+            self._osd_clear_partition_role(ctxt, osd)
             osd.destroy()
             msg = _("Osd uninstall!")
             logger.info("delete osd.%s success", osd.osd_id)
