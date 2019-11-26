@@ -162,6 +162,14 @@ class NodeTask(object):
             'task_info': {}
         })
 
+    def get_chrony_conf(self, ctxt, ip):
+        chrony_server = objects.sysconfig.sys_config_get(ctxt,
+                                                         "chrony_server")
+        tpl = template.get('chrony.conf.j2')
+        chrony_conf = tpl.render(chrony_server=chrony_server,
+                                 ip_address=str(ip))
+        return chrony_conf
+
     def chrony_update(self):
         ssh = self.get_ssh_executor()
         # install package
@@ -170,7 +178,7 @@ class NodeTask(object):
                                                            "image_namespace")
         file_tool = FileTool(ssh)
         file_tool.write("{}/chrony.conf".format(config_dir),
-                        self.get_chrony_conf())
+                        self.get_chrony_conf(self.ctxt, self.node.ip_address))
 
         # restart container
         docker_tool = DockerTool(ssh)
@@ -706,7 +714,7 @@ class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
             logger.warning("remove chrony config failed, %s", e)
 
 
-class DSpaceChronyInstall(BaseTask):
+class DSpaceChronyInstall(BaseTask, NodeTask):
     def execute(self, ctxt, node, task_info):
         super(DSpaceChronyInstall, self).execute(task_info)
 
@@ -736,14 +744,6 @@ class DSpaceChronyInstall(BaseTask):
             volumes=[(config_dir, config_dir_container),
                      (log_dir, log_dir_container)]
         )
-
-    def get_chrony_conf(self, ctxt, ip):
-        chrony_server = objects.sysconfig.sys_config_get(ctxt,
-                                                         "chrony_server")
-        tpl = template.get('chrony.conf.j2')
-        chrony_conf = tpl.render(chrony_server=chrony_server,
-                                 ip_address=str(ip))
-        return chrony_conf
 
 
 class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin):

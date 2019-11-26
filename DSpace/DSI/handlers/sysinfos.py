@@ -111,29 +111,12 @@ class SysInfoHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        data = json_decode(self.request.body).get('data')
-        logger.error(data)
-        if not data:
+        sysinfos = json_decode(self.request.body).get('data')
+        logger.info("set sysinfos: %s", sysinfos)
+        if not sysinfos:
             raise InvalidInput(reason=_("sysconf: post data is none"))
-        gateway_cidr = data.get('gateway_cidr')
-        cluster_cidr = data.get('cluster_cidr')
-        public_cidr = data.get('public_cidr')
-        admin_cidr = data.get('admin_cidr')
-        chrony_server = data.get('chrony_server')
-        cluster_name = data.get('cluster_name')
-
         client = self.get_admin_client(ctxt)
-
-        if chrony_server:
-            if len(str(chrony_server).split('.')) < 3:
-                raise InvalidInput(reason=_("chrony_server is not a IP"))
-            yield client.update_chrony(ctxt, chrony_server)
-        else:
-            yield client.update_sysinfo(
-                ctxt, cluster_name, admin_cidr, public_cidr,
-                cluster_cidr, gateway_cidr)
-
-        # TODO agent设置Chrony服务器
+        yield client.update_sysinfo(ctxt, sysinfos)
 
 
 @URLRegistry.register(r"/sysconfs/smtp/")
