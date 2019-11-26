@@ -10,7 +10,7 @@ from tornado.web import RequestHandler
 from DSpace import exception
 from DSpace import objects
 from DSpace.context import RequestContext
-from DSpace.DSI.session import Session
+from DSpace.DSI.session import get_session
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
 
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class BaseAPIHandler(RequestHandler):
 
     def initialize(self):
+        Session = get_session()
         self.session = Session(self)
 
     def set_default_headers(self):
@@ -47,7 +48,7 @@ class BaseAPIHandler(RequestHandler):
         fake_user = self.request.headers.get("X-Fake-User", None)
         if not self.current_user and not fake_user:
             raise exception.NotAuthorized()
-        user_id = fake_user or self.current_user.id
+        user_id = fake_user or self.current_user
         ctxt = RequestContext(user_id=user_id, is_admin=False)
         logger.debug("Context: %s", ctxt.to_dict())
         client_ip = (self.request.headers.get("X-Real-IP") or
@@ -84,8 +85,8 @@ class BaseAPIHandler(RequestHandler):
                 reason=_("get_metrics_history_args: start and end required"))
 
     def get_current_user(self):
-        logger.debug("User: %s", self.session['user'])
-        return self.session['user']
+        logger.debug("User: %s", self.session['user_id'])
+        return self.session['user_id']
 
     def write_error(self, status_code, **kwargs):
         """Override to implement custom error pages.

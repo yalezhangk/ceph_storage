@@ -63,6 +63,9 @@ global_opts = [
     cfg.StrOpt('host_prefix',
                default="/host",
                help="Host prefix"),
+    cfg.StrOpt('session_url',
+               default=None,
+               help="Session url"),
 ]
 
 CONF.register_cli_opts(core_opts)

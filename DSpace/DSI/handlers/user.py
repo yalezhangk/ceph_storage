@@ -266,8 +266,8 @@ class UserLoginHandler(PermissionMixin):
         r = check_encrypted_password(password, user.password)
         if not r:
             raise exception.PasswordError()
-        self.session['user'] = user
-        self.current_user = user
+        self.session['user_id'] = user.id
+        self.current_user = user.id
         ctxt.user_id = user.id
         permission = yield self.get_permission(ctxt, user)
         self.write(objects.json_encode(permission))
