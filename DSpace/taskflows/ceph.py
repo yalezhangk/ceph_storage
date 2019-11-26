@@ -242,6 +242,9 @@ class CephTask(object):
         if not osd_num:
             return 0
         pg_num = (100 * osd_num) / rep_size
+        # mon_max_pg_per_osd
+        if (pg_num * 3 / osd_num) >= 250:
+            pg_num = 250 * (osd_num / 3)
         pg_log2 = int(math.floor(math.log(pg_num, 2)))
         logger.debug("osd_num: {}, rep_size: {}, pg_log2: {}".format(
             osd_num, rep_size, pg_log2))
