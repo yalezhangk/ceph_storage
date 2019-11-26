@@ -14,6 +14,7 @@ from taskflow.patterns import linear_flow as lf
 
 from DSpace import exception as exc
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
 from DSpace.taskflows.base import BaseTask
@@ -103,10 +104,10 @@ class NodeMixin(object):
 class NodeTask(object):
     ctxt = None
     node = None
-    host_perfix = None
 
     def __init__(self, ctxt, node, host_prefix=None):
-        self.host_prefix = host_prefix
+        if not host_prefix:
+            self.host_prefix = CONF.host_prefix
         self.ctxt = ctxt
         self.node = node
 

@@ -228,9 +228,18 @@ class CephTask(object):
     def config_set(self, cluster_temp_configs):
         with RADOSClient(self.rados_args()) as rados_client:
             for config in cluster_temp_configs:
-                rados_client.config_set(config['service'],
+                service = config['service']
+                osd_list = None
+                if service.startswith('osd'):
+                    osd_id = service.split('.')[1]
+                    if osd_id == '*':
+                        osd_list = objects.OsdList.get_all(self.ctxt)
+                    else:
+                        osd_list = [int(osd_id)]
+                rados_client.config_set(service,
                                         config['key'],
-                                        config['value'])
+                                        config['value'],
+                                        osd_list)
 
     def rule_get(self, rule_name):
         with RADOSClient(self.rados_args()) as rados_client:
