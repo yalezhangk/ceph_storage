@@ -143,6 +143,11 @@ class CephTool(ToolBase):
         return True
 
     def osd_remove_from_cluster(self, osd_id):
+        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
         cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc:
