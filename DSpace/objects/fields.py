@@ -135,9 +135,10 @@ class ConfigTypeField(BaseEnumField):
 
 class DiskStatus(BaseStorEnum):
     AVAILABLE = 'available'
+    UNAVAILABLE = 'unavailable'
     INUSE = 'inuse'
 
-    ALL = (AVAILABLE, INUSE)
+    ALL = (AVAILABLE, UNAVAILABLE, INUSE)
 
 
 class DiskStatusField(BaseEnumField):
