@@ -459,16 +459,17 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         self._send_mon_command(command_str)
 
-    def config_set(self, service, key, value):
+    def config_set(self, service, key, value, osd_list=None):
         cmd = {
             "prefix": "config set",
             "key": key,
             "value": value
         }
         command_str = json.dumps(cmd)
-        if value.get('service').startswith('osd'):
-            self._send_osd_command(service, command_str)
-        if value.get('service').startswith('mon'):
+        if service.startswith('osd'):
+            for osd in osd_list:
+                self._send_osd_command(int(osd.osd_id), command_str)
+        if service.startswith('mon'):
             self._send_mon_command(command_str)
 
     def conf_get(self, key):

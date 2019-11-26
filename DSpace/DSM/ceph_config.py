@@ -61,7 +61,7 @@ class CephConfigHandler(AdminBaseHandler):
     def _get_config_nodes(self, ctxt, values):
         group = values['group']
         key = values['key']
-        value = values['value']
+        value = str(values['value'])
 
         nodes = []
         temp_configs = {}
@@ -173,14 +173,14 @@ class CephConfigHandler(AdminBaseHandler):
             _success = self._ceph_confg_update(ctxt, nodes, values)
             msg = _('Ceph config update failed')
             if _success:
-                self._ceph_config_db(ctxt, values)
+                cephconf = self._ceph_config_db(ctxt, values)
                 msg = _('Ceph config update successful')
         else:
             msg = _('Ceph config update failed')
 
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, values, "UPDATED", msg)
+        wb_client.send_message(ctxt, cephconf, "UPDATED", msg)
 
     def ceph_config_set(self, ctxt, values):
         self.task_submit(self._ceph_config_set, ctxt, values)
