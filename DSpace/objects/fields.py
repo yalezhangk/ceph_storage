@@ -308,10 +308,11 @@ class AllResourceType(BaseStorEnum):
     VOLUME = 'volume'
     SNAPSHOT = 'snapshot'
     ALERT_LOG = 'alert_log'
-    SMTP_SYSCONFS = 'smtp__sysconfs'
+    SMTP_SYSCONFS = 'smtp_sysconfs'
     DISK = 'disk'
+    SYSCONFIG = 'sysconfig'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK)
+           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG)
 
 
 class AllActionType(BaseStorEnum):
@@ -335,10 +336,13 @@ class AllActionType(BaseStorEnum):
     CLUSTER_INCLUDE = 'cluster_include'
     CHANGE_DISK_TYPE = 'change_disk_type'
     DISK_LIGHT = 'disk_light'
+    UPDATE_CLOCK_SERVER = 'update_clock_server'
+    UPDATE_GATEWAY_CIDR = 'update_gateway_cidr'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
-           CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT)
+           CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
+           UPDATE_GATEWAY_CIDR)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -406,7 +410,11 @@ class ResourceAction(object):
 
             AllResourceType.DISK:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.CHANGE_DISK_TYPE, AllActionType.DISK_LIGHT]
+                 AllActionType.CHANGE_DISK_TYPE, AllActionType.DISK_LIGHT],
+
+            AllResourceType.SYSCONFIG:
+                [AllActionType.UPDATE_CLOCK_SERVER,
+                 AllActionType.UPDATE_GATEWAY_CIDR]
 
         }
         return relation
