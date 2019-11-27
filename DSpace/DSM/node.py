@@ -103,8 +103,12 @@ class NodeHandler(AdminBaseHandler):
             logger.error("node %s has osds already in a pool, can't move",
                          node.hostname)
             raise exc.NodeMoveNotAllow(node=node.hostname)
+        begin_action = self.begin_action(ctxt, Resource.NODE,
+                                         Action.NODE_UPDATE_RACK)
         node.rack_id = rack_id
         node.save()
+        self.finish_action(begin_action, node_id, node.hostname,
+                           objects.json_encode(node))
         return node
 
     def _node_delete_check(self, ctxt, node):

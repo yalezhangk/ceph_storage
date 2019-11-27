@@ -6,12 +6,16 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 
 logger = logging.getLogger(__name__)
 
 
 class RackHandler(AdminBaseHandler):
     def rack_create(self, ctxt, datacenter_id):
+        begin_action = self.begin_action(ctxt, Resource.RACK,
+                                         Action.CREATE)
         uid = str(uuid.uuid4())
         rack_name = "rack-{}".format(uid[0:8])
         rack = objects.Rack(
@@ -20,6 +24,8 @@ class RackHandler(AdminBaseHandler):
             name=rack_name
         )
         rack.create()
+        self.finish_action(begin_action, rack.id, rack_name,
+                           objects.json_encode(rack))
         return rack
 
     def rack_get(self, ctxt, rack_id, expected_attrs=None):
@@ -28,7 +34,11 @@ class RackHandler(AdminBaseHandler):
 
     def rack_delete(self, ctxt, rack_id):
         rack = self.rack_get(ctxt, rack_id)
+        begin_action = self.begin_action(ctxt, Resource.RACK,
+                                         Action.DELETE)
         rack.destroy()
+        self.finish_action(begin_action, rack_id, rack.name,
+                           objects.json_encode(rack))
         return rack
 
     def rack_get_all(self, ctxt, marker=None, limit=None,
@@ -50,8 +60,12 @@ class RackHandler(AdminBaseHandler):
     def rack_update_name(self, ctxt, id, name):
         rack = objects.Rack.get_by_id(ctxt, id)
         self._check_rack_by_name(ctxt, name)
+        begin_action = self.begin_action(ctxt, Resource.RACK,
+                                         Action.UPDATE)
         rack.name = name
         rack.save()
+        self.finish_action(begin_action, id, name,
+                           objects.json_encode(rack))
         return rack
 
     def rack_update_toplogy(self, ctxt, id, datacenter_id):
@@ -68,6 +82,10 @@ class RackHandler(AdminBaseHandler):
                 logger.error("node %s has osds already in a pool, can't move",
                              node.hostname)
                 raise exception.RackMoveNotAllow(rack=rack.name)
+        begin_action = self.begin_action(ctxt, Resource.RACK,
+                                         Action.RACK_UPDATE_TOPLOGY)
         rack.datacenter_id = datacenter_id
         rack.save()
+        self.finish_action(begin_action, id, rack.name,
+                           objects.json_encode(rack))
         return rack
