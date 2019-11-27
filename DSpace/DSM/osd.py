@@ -9,6 +9,8 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.prometheus import PrometheusTool
@@ -99,7 +101,7 @@ class OsdHandler(AdminBaseHandler):
         return objects.Osd.get_by_id(ctxt, osd_id,
                                      expected_attrs=expected_attrs)
 
-    def _osd_create(self, ctxt, node, osd):
+    def _osd_create(self, ctxt, node, osd, begin_action=None):
         try:
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_install(osd)
@@ -108,6 +110,7 @@ class OsdHandler(AdminBaseHandler):
             osd.save()
             logger.info("Osd %s create success.", osd.osd_id)
             op_type = 'CREATED'
+            err_msg = None
         except exception.StorException as e:
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
@@ -115,7 +118,10 @@ class OsdHandler(AdminBaseHandler):
             msg = _("Osd create error!")
             logger.info("Osd %s create error.", osd.osd_id)
             op_type = 'OSD_CREATE_FAILED'
-
+            err_msg = str(e)
+        self.finish_action(begin_action, osd.id, 'osd.{}'.format(osd.osd_id),
+                           objects.json_encode(node), osd.status,
+                           err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, op_type, msg)
 
@@ -251,6 +257,7 @@ class OsdHandler(AdminBaseHandler):
         # db create
         node_id = disk.node_id
         node = objects.Node.get_by_id(ctxt, node_id)
+        begin_action = self.begin_action(ctxt, Resource.OSD, Action.CREATE)
         osd = objects.Osd(
             ctxt, node_id=node_id,
             fsid=osd_fsid,
@@ -270,7 +277,7 @@ class OsdHandler(AdminBaseHandler):
         self._osd_config_set(ctxt, osd)
 
         # apply async
-        self.task_submit(self._osd_create, ctxt, node, osd)
+        self.task_submit(self._osd_create, ctxt, node, osd, begin_action)
         logger.debug("Osd create task apply.")
 
         return osd
@@ -314,7 +321,7 @@ class OsdHandler(AdminBaseHandler):
                 disk.status = s_fields.DiskStatus.AVAILABLE
                 disk.save()
 
-    def _osd_delete(self, ctxt, node, osd):
+    def _osd_delete(self, ctxt, node, osd, begin_action=None):
         logger.info("trying to delete osd.%s", osd.osd_id)
         try:
             task = NodeTask(ctxt, node)
@@ -324,12 +331,18 @@ class OsdHandler(AdminBaseHandler):
             osd.destroy()
             msg = _("Osd uninstall!")
             logger.info("delete osd.%s success", osd.osd_id)
+            status = 'success'
+            err_msg = None
         except exception.StorException as e:
             logger.error("delete osd.%s error: %s", osd.osd_id, e)
-            osd.status = s_fields.OsdStatus.ERROR
+            status = s_fields.OsdStatus.ERROR
+            osd.status = status
             osd.save()
             msg = _("Osd create error!")
-
+            err_msg = str(e)
+        self.finish_action(begin_action, osd.id, 'osd.{}'.format(osd.osd_id),
+                           objects.json_encode(osd), status,
+                           err_msg=err_msg)
         logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, "DELETED", msg)
@@ -340,9 +353,10 @@ class OsdHandler(AdminBaseHandler):
         if osd.status not in [s_fields.OsdStatus.AVAILABLE,
                               s_fields.OsdStatus.ERROR]:
             raise exception.InvalidInput(_('Osd status is %s') % osd.status)
+        begin_action = self.begin_action(ctxt, Resource.OSD, Action.DELETE)
         osd.status = s_fields.OsdStatus.DELETING
         osd.save()
-        self.task_submit(self._osd_delete, ctxt, osd.node, osd)
+        self.task_submit(self._osd_delete, ctxt, osd.node, osd, begin_action)
         return osd
 
     def _update_osd_crush_id(self, ctxt, osds, crush_rule_id):
