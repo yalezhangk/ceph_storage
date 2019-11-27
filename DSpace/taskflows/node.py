@@ -1,4 +1,3 @@
-import configparser
 import logging
 import socket
 import time
@@ -334,15 +333,6 @@ class NodeTask(object):
             "node": self.node,
             'task_info': {}
         })
-
-    def ceph_config_update(self, values):
-        path = self._wapper('/etc/ceph/ceph.conf')
-        configer = configparser.ConfigParser()
-        configer.read(path)
-        if not configer.has_section(values['group']):
-            configer.add_section(values['group'])
-        configer.set(values['group'], values['key'], str(values['value']))
-        configer.write(open(path, 'w'))
 
     def pull_logfile(self, directory, filename, LOCAL_LOGFILE_DIR):
         try:

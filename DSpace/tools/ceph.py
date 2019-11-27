@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import configparser
 import json
 import logging
 
@@ -171,6 +172,15 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         return True
+
+    def ceph_config_update(self, values):
+        path = self._wapper('/etc/ceph/ceph.conf')
+        configer = configparser.ConfigParser()
+        configer.read(path)
+        if not configer.has_section(values['group']):
+            configer.add_section(values['group'])
+        configer.set(values['group'], values['key'], str(values['value']))
+        configer.write(open(path, 'w'))
 
 
 def get_json_output(json_databuf):
@@ -478,9 +488,15 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         if service.startswith('osd'):
             for osd in osd_list:
-                self._send_osd_command(int(osd.osd_id), command_str)
+                try:
+                    self._send_osd_command(int(osd.osd_id), command_str)
+                except CephException:
+                    pass
         if service.startswith('mon'):
-            self._send_mon_command(command_str)
+            try:
+                self._send_mon_command(command_str)
+            except CephException:
+                pass
 
     def conf_get(self, key):
         return self.client.conf_get(key)

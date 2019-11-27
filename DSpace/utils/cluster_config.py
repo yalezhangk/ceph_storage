@@ -1,11 +1,14 @@
 
 # cluster configs
+# TODO add other configs
 cluster_sys_configs = ['chrony_server', 'cluster_name', 'mon_available']
 
 cluster_osd_restart_configs = ['bluestore_cache_size',
                                'bluestore_cache_size_ssd',
                                'bluestore_cache_size_hdd',
-                               'osd_crush_update_on_start']
+                               'osd_crush_update_on_start',
+                               'osd_pool_default_type',
+                               'backend_type']
 
 cluster_mon_restart_configs = []
 
