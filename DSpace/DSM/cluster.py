@@ -13,6 +13,7 @@ from DSpace.taskflows.cluster import cluster_delete_flow
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
+from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
 
@@ -354,3 +355,32 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         else:
             capacity = None
         return capacity
+
+    def cluster_pg_status_get(self, ctxt):
+        _pools = objects.PoolList.get_all(ctxt)
+        pg_states = {}
+        pg_states["pools"] = []
+        prometheus = PrometheusTool(ctxt)
+        total = {
+            "total": {
+                "healthy": 0,
+                "recovering": 0,
+                "degraded": 0,
+                "unactive": 0
+            }
+        }
+        for pool in _pools:
+            pool.metrics = {}
+            prometheus.pool_get_pg_state(pool)
+            pg_state = pool.metrics.get("pg_state")
+            pg_state.update({
+                "pool_id": pool.pool_id,
+                "id": pool.id,
+                "display_name": pool.display_name})
+            pg_states["pools"].append(pg_state)
+            total["total"]["healthy"] += pg_state["healthy"]
+            total["total"]["recovering"] += pg_state["recovering"]
+            total["total"]["degraded"] += pg_state["degraded"]
+            total["total"]["unactive"] += pg_state["unactive"]
+        pg_states.update(total)
+        return pg_states
