@@ -23,6 +23,7 @@ class File(ToolBase):
         self.executor.write(filename, content)
 
     def mkdir(self, dirname):
+        dirname = self._wapper(dirname)
         cmd = ["mkdir", "-p", dirname]
         rc, stdout, stderr = self.executor.run_command(cmd)
         if not rc:
