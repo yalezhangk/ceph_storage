@@ -82,6 +82,10 @@ I18n
   # delete commit
   sed -i "/^#/d" DSpace/locale/zh_CN/LC_MESSAGES/dspace.po
 
+  # build msg
+  msgfmt  DSpace/locale/zh_CN/LC_MESSAGES/dspace.po \
+    -o DSpace/locale/zh_CN/LC_MESSAGES/dspace.mo
+
 
 
 Tests
