@@ -116,15 +116,17 @@ class DiskHandler(AdminBaseHandler):
                 partition.create()
             disk.save()
             msg = _("create disk partitions success")
+            op_status = "CREATE_PART_SUCCESS"
             status = 'success'
         else:
             msg = _("create disk partitions failed")
             status = 'fail'
-        self.finish_action(begin_action, disk.id, disk.name,
-                           objects.json_encode(disk), status)
+            op_status = "CREATE_PART_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, "CREATED", msg)
+        wb_client.send_message(ctxt, disk, op_status, msg)
+        self.finish_action(begin_action, disk.id, disk.name,
+                           objects.json_encode(disk), status)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
         begin_action = self.begin_action(ctxt, Resource.DISK, Action.CREATE)
@@ -154,15 +156,17 @@ class DiskHandler(AdminBaseHandler):
             disk.status = status
             disk.save()
             msg = _("remove disk partitions success")
+            op_status = "REMOVE_PART_SUCCESS"
         else:
             logger.error("Disk partitions remove: Failed")
             msg = _("remove disk partitions failed")
             status = 'fail'
-        self.finish_action(begin_action, disk.id, disk.name,
-                           objects.json_encode(disk), status)
+            self.finish_action(begin_action, disk.id, disk.name,
+                               objects.json_encode(disk), status)
+            op_status = "REMOVE_PART_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, "REMOVED", msg)
+        wb_client.send_message(ctxt, disk, op_status, msg)
 
     def disk_partitions_remove(self, ctxt, disk_id, values):
         disk = objects.Disk.get_by_id(
