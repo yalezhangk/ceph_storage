@@ -154,49 +154,31 @@ class PoolHandler(AdminBaseHandler):
             body.update(m=m)
         return body, crush_content
 
-    def _pool_create(self, ctxt, pool, osds):
+    def _pool_create(self, ctxt, pool, crush_rule, pool_op_data):
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.CREATE)
-        crush_rule_name = "rule-{}".format(pool.id)
-        body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
-        ceph_version = objects.sysconfig.sys_config_get(
-            ctxt, 'ceph_version_name')
-        if (ceph_version == s_fields.CephVersion.T2STOR):
-            logger.info("ceph version is: %s, can specified replicate size "
-                        "while creating pool", ceph_version)
-            # can specified replicate size
-            body.update(specified_rep=True)
-        else:
-            logger.info("ceph version is: %s, can't specified replicate size "
-                        "while creating pool", ceph_version)
-            body.update(specified_rep=False)
-        crush_rule = self.crush_rule_create(
-            ctxt, crush_rule_name, pool.failure_domain_type, crush_content)
-        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
-                              crush_rule.id)
-        pool.crush_rule_id = crush_rule.id
-        pool.save()
-        logger.debug("create pool, body: %s", body)
         try:
             ceph_client = CephTask(ctxt)
-            db_pool_id = ceph_client.pool_create(body)
-            rule_id = ceph_client.rule_get(crush_rule_name).get('rule_id')
+            db_pool_id = ceph_client.pool_create(pool_op_data)
+            rule_id = ceph_client.rule_get(crush_rule.rule_name).get('rule_id')
             status = s_fields.PoolStatus.ACTIVE
-            msg = _("create pool success")
+            msg = _("create pool success: {}").format(pool.display_name)
+            op_status = "CREATE_SUCCESS"
         except exception.StorException as e:
             logger.error("create pool error: {}".format(e))
             db_pool_id = None
             rule_id = None
             status = s_fields.PoolStatus.ERROR
-            msg = _("create pool error")
+            msg = _("create pool error: {}").format(pool.display_name)
+            op_status = "CREATE_ERROR"
         crush_rule.rule_id = rule_id
         crush_rule.save()
         pool.pool_id = db_pool_id
         pool.status = status
         pool.save()
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, "CREATED", msg)
+        wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))
@@ -232,7 +214,28 @@ class PoolHandler(AdminBaseHandler):
             data_pool=data.get("data_pool")
         )
         pool.create()
-        self.task_submit(self._pool_create, ctxt, pool, osds)
+        crush_rule_name = "rule-{}".format(pool.id)
+        body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
+        crush_rule = self.crush_rule_create(
+            ctxt, crush_rule_name, pool.failure_domain_type, crush_content)
+        self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
+                              crush_rule.id)
+        pool.crush_rule_id = crush_rule.id
+        pool.save()
+
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, 'ceph_version_name')
+        if (ceph_version == s_fields.CephVersion.T2STOR):
+            logger.info("ceph version is: %s, can specified replicate size "
+                        "while creating pool", ceph_version)
+            # can specified replicate size
+            body.update(specified_rep=True)
+        else:
+            logger.info("ceph version is: %s, can't specified replicate size "
+                        "while creating pool", ceph_version)
+            body.update(specified_rep=False)
+        logger.debug("create pool, body: %s", body)
+        self.task_submit(self._pool_create, ctxt, pool, crush_rule, body)
         return pool
 
     def _pool_delete(self, ctxt, pool):
@@ -252,19 +255,21 @@ class PoolHandler(AdminBaseHandler):
                 self.crush_rule_delete(ctxt, pool.crush_rule_id)
                 self._update_osd_info(
                     ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
-            msg = _("delete pool success")
+            msg = _("delete pool success: {}").format(pool.display_name)
+            op_status = "DELETE_SUCCESS"
             pool.crush_rule_id = None
             pool.osd_num = None
         except exception.StorException as e:
             logger.error("delete pool error: %s", e)
             status = s_fields.PoolStatus.ERROR
-            msg = _("delete pool error")
+            msg = _("delete pool error: {}").format(pool.display_name)
+            op_status = "DELETE_ERROR"
         pool.status = status
         pool.save()
         if pool.status != s_fields.PoolStatus.ERROR:
             pool.destroy()
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, "DELETED", msg)
+        wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))
@@ -287,14 +292,16 @@ class PoolHandler(AdminBaseHandler):
         try:
             ceph_client = CephTask(ctxt)
             ceph_client.pool_add_disk(body)
-            msg = _("{} increase disk success").format(pool.pool_name)
+            msg = _("pool {} increase disk success").format(pool.display_name)
             pool.osd_num += len(osds)
             pool.status = s_fields.PoolStatus.ACTIVE
+            op_status = "INCREASE_DISK_SUCCESS"
         except exception.StorException as e:
             logger.error("increase disk error: {}".format(e))
-            msg = _("{} increase disk error").format(pool.pool_name)
+            msg = _("pool {} increase disk error").format(pool.display_name)
             status = s_fields.PoolStatus.ERROR
             pool.status = status
+            op_status = "INCREASE_DISK_ERROR"
         crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
                                                  expected_attrs=['osds'])
         crush_osds = [osd.id for osd in crush_rule.osds]
@@ -308,7 +315,7 @@ class PoolHandler(AdminBaseHandler):
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
                               crush_rule.id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, "INCREASE_DISK", msg)
+        wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))
@@ -330,12 +337,14 @@ class PoolHandler(AdminBaseHandler):
             ceph_client = CephTask(ctxt)
             ceph_client.pool_del_disk(body)
             pool.status = s_fields.PoolStatus.ACTIVE
-            msg = _("{} decrease disk success").format(pool.pool_name)
+            msg = _("{} decrease disk success").format(pool.display_name)
+            op_status = "DECREASE_DISK_SUCCESS"
         except exception.StorException as e:
             logger.error("increase disk error: {}".format(e))
-            msg = _("{} decrease disk error").format(pool.pool_name)
+            msg = _("{} decrease disk error").format(pool.display_name)
             status = s_fields.PoolStatus.ERROR
             pool.status = status
+            op_status = "DECREASE_DISK_ERROR"
         crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
                                                  expected_attrs=['osds'])
         crush_osds = [osd.id for osd in crush_rule.osds]
@@ -348,7 +357,7 @@ class PoolHandler(AdminBaseHandler):
         pool.save()
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, "DECREASE_DISK", msg)
+        wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))
@@ -432,18 +441,20 @@ class PoolHandler(AdminBaseHandler):
             ceph_client = CephTask(ctxt)
             new_rule_id = ceph_client.update_pool_policy(body).get('rule_id')
             crush_rule.rule_id = new_rule_id
-            msg = _("{} update policy success").format(pool.pool_name)
+            msg = _("{} update policy success").format(pool.display_name)
             status = s_fields.PoolStatus.ACTIVE
+            op_status = "UPDATE_POLICY_SUCCESS"
         except exception.StorException as e:
             logger.error("update pool policy error: {}".format(e))
-            msg = _("{} update policy error").format(pool.pool_name)
+            msg = _("{} update policy error").format(pool.display_name)
             status = s_fields.PoolStatus.ERROR
+            op_status = "UPDATE_POLICY_ERROR"
         pool.status = status
         crush_rule.content = crush_content
         crush_rule.save()
         pool.save()
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, "UPDATE_POLICY", msg)
+        wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.pool_name,
                            resource_data=objects.json_encode(pool))

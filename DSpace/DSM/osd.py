@@ -105,25 +105,25 @@ class OsdHandler(AdminBaseHandler):
         try:
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_install(osd)
-            msg = _("Osd created!")
             osd.status = s_fields.OsdStatus.AVAILABLE
             osd.save()
             logger.info("Osd %s create success.", osd.osd_id)
-            op_type = 'CREATED'
+            op_status = 'CREATE_SUCCESS'
+            msg = _("osd create success: {}").format(osd.osd_id)
             err_msg = None
         except exception.StorException as e:
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
-            msg = _("Osd create error!")
             logger.info("Osd %s create error.", osd.osd_id)
-            op_type = 'OSD_CREATE_FAILED'
+            msg = _("osd create error: {}").format(osd.osd_id)
+            op_status = 'CREATE_ERROR'
             err_msg = str(e)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, osd, op_status, msg)
         self.finish_action(begin_action, osd.id, 'osd.{}'.format(osd.osd_id),
                            objects.json_encode(node), osd.status,
                            err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, osd, op_type, msg)
 
     def _set_osd_partation_role(self, ctxt, osd):
         osd.disk.status = s_fields.DiskStatus.INUSE
@@ -329,9 +329,10 @@ class OsdHandler(AdminBaseHandler):
             self._osd_config_remove(ctxt, osd)
             self._osd_clear_partition_role(ctxt, osd)
             osd.destroy()
-            msg = _("Osd uninstall!")
+            msg = _("delete success: {}").format(osd.osd_id)
             logger.info("delete osd.%s success", osd.osd_id)
             status = 'success'
+            op_status = "DELETE_SUCCESS"
             err_msg = None
         except exception.StorException as e:
             logger.error("delete osd.%s error: %s", osd.osd_id, e)
@@ -340,13 +341,15 @@ class OsdHandler(AdminBaseHandler):
             osd.save()
             msg = _("Osd create error!")
             err_msg = str(e)
+            msg = _("delete error: {}").format(osd.osd_id)
+            op_status = "DELETE_ERROR"
+        logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, osd, op_status, msg)
+        logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, osd.id, 'osd.{}'.format(osd.osd_id),
                            objects.json_encode(osd), status,
                            err_msg=err_msg)
-        logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, osd, "DELETED", msg)
-        logger.debug("send websocket msg: %s", msg)
 
     def osd_delete(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)

@@ -79,20 +79,22 @@ class NodeHandler(AdminBaseHandler):
 
             node.destroy()
             logger.info("node delete success")
-            msg = _("Node removed!")
+            msg = _("node remove success: {}").format(node.hostname)
             status = 'success'
             err_msg = None
+            op_status = "DELETE_SUCCESS"
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
             node.status = status
             node.save()
             logger.exception("node delete error: %s", e)
-            msg = _("Node remove error!")
+            msg = _("node remove error: {}").format(node.hostname)
             err_msg = str(e)
+            op_status = "DELETE_ERROR"
         self.finish_action(begin_action, node.id, node.hostname,
                            objects.json_encode(node), status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, "DELETED", msg)
+        wb_client.send_message(ctxt, node, op_status, msg)
 
     def node_update_rack(self, ctxt, node_id, rack_id):
         node = objects.Node.get_by_id(ctxt, node_id, expected_attrs=['osds'])
@@ -259,6 +261,7 @@ class NodeHandler(AdminBaseHandler):
                 'mon_host': {'type': 'string',
                              'value': str(node.public_ip)},
                 'osd_objectstore': {'type': 'string', 'value': 'bluestore'},
+                'mon_pg_warn_min_per_osd': {'type': 'int', 'value': 0},
                 'debug_mon': {'type': 'int', 'value': 10},
                 'mon_initial_members': {'type': 'string',
                                         'value': node.hostname},
@@ -392,13 +395,15 @@ class NodeHandler(AdminBaseHandler):
                 func(ctxt, node)
             status = s_fields.NodeStatus.ACTIVE
             logger.info('set node roles success')
-            msg = _("set node roles")
+            msg = _("set roles success: {}").format(node.hostname)
             err_msg = None
+            op_status = "SET_ROLES_SUCCESS"
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
             logger.exception('set node roles failed %s', e)
-            msg = _("set node roles error, reason: {}".format(str(e)))
+            msg = _("set roles error {}".format(str(e)))
             err_msg = str(e)
+            op_status = "SET_ROLES_ERROR"
         node.status = status
         node.save()
         # send ws message
@@ -406,7 +411,7 @@ class NodeHandler(AdminBaseHandler):
                            objects.json_encode(node), status,
                            err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, "REMOVED", msg)
+        wb_client.send_message(ctxt, node, op_status, msg)
 
     def node_roles_set(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
@@ -443,7 +448,8 @@ class NodeHandler(AdminBaseHandler):
                          begin_action)
         return node
 
-    def _node_create(self, ctxt, node, data, begin_action):
+    def _node_create(self, ctxt, node, data):
+        begin_action = self.begin_action(ctxt, Resource.NODE, Action.CREATE)
         try:
             node_task = NodeTask(ctxt, node)
             node_task.dspace_agent_install()
@@ -469,6 +475,7 @@ class NodeHandler(AdminBaseHandler):
             logger.info('create node success, node ip: {}'.format(
                         node.ip_address))
             msg = _("node create success")
+            op_status = "CREATE_SUCCESS"
             err_msg = None
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
@@ -476,6 +483,7 @@ class NodeHandler(AdminBaseHandler):
                              node.ip_address, e)
             msg = _("node create error, reason: {}".format(str(e)))
             err_msg = str(e)
+            op_status = "CREATE_ERROR"
         node.status = status
         node.save()
 
@@ -486,7 +494,7 @@ class NodeHandler(AdminBaseHandler):
                            err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, "CREATED", msg)
+        wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
     def node_create(self, ctxt, data):
@@ -498,7 +506,6 @@ class NodeHandler(AdminBaseHandler):
         if role_monitor:
             self._mon_install_check(ctxt)
 
-        begin_action = self.begin_action(ctxt, Resource.NODE, Action.CREATE)
         node = objects.Node(
             ctxt, ip_address=data.get('ip_address'),
             hostname=data.get('hostname'),
@@ -507,8 +514,7 @@ class NodeHandler(AdminBaseHandler):
             public_ip=data.get('public_ip'),
             status=s_fields.NodeStatus.CREATING)
         node.create()
-
-        self.task_submit(self._node_create, ctxt, node, data, begin_action)
+        self.task_submit(self._node_create, ctxt, node, data)
         return node
 
     def node_get_infos(self, ctxt, data):
