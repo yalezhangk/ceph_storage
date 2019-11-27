@@ -549,6 +549,11 @@ class InstallDocker(BaseTask):
         ssh = node.executer
         # write config
         file_tool = FileTool(ssh)
+        # backup repo
+        file_tool.mkdir("/etc/yum.repos.d/bak")
+        file_tool.mv("/etc/yum.repos.d/*.repo",
+                     "/etc/yum.repos.d/bak/")
+        # set repo
         file_tool.write("/etc/yum.repos.d/dspace.repo",
                         self.get_dspace_repo(ctxt))
         # install docker
