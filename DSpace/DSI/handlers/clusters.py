@@ -34,7 +34,7 @@ create_cluster_schema = {
 
 
 @URLRegistry.register(r"/clusters/")
-class ClusterHandler(BaseAPIHandler):
+class ClusterListHandler(BaseAPIHandler):
     @gen.coroutine
     def get(self):
         """
@@ -96,6 +96,86 @@ class ClusterHandler(BaseAPIHandler):
         client = self.get_admin_client(ctxt)
 
         cluster = yield client.cluster_create(ctxt, cluster_data)
+        self.write(objects.json_encode({
+            "cluster": cluster
+        }))
+
+
+@URLRegistry.register(r"/clusters/([0-9a-fA-F\-]{36})/")
+class ClusterHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, cluster_id):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Detail of the cluster
+        description: Return detail infomation of cluster by cluster_id
+        operationId: clusters.api.clusterDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        cluster = yield client.cluster_get(ctxt, cluster_id)
+        self.write(objects.json_encode({
+            "cluster": cluster
+        }))
+
+    @gen.coroutine
+    def delete(self, cluster_id):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Delete the cluster by cluster_id
+        description: delete cluster by cluster_id
+        operationId: clusters.api.deleteCluster
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Cluster's id
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: clean_ceph
+          description: Clean ceph when delete cluster
+          type: bool
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        clean_ceph = bool(self.get_argument('clean_ceph'))
+        client = self.get_admin_client(ctxt)
+        cluster = yield client.cluster_delete(
+            ctxt, cluster_id, clean_ceph=clean_ceph)
         self.write(objects.json_encode({
             "cluster": cluster
         }))

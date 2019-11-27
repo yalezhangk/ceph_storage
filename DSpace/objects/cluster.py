@@ -9,6 +9,7 @@ from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         'display_name': fields.StringField(nullable=True),
         'display_description': fields.StringField(nullable=True),
         'is_admin': fields.BooleanField(),
+        'status': s_fields.ClusterStatusField(),
 
     }
 

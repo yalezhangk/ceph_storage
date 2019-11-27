@@ -402,7 +402,7 @@ class NodeHandler(AdminBaseHandler):
                            objects.json_encode(node), status,
                            err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, "DEPLOYED", msg)
+        wb_client.send_message(ctxt, node, "REMOVED", msg)
 
     def node_roles_set(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
@@ -411,6 +411,8 @@ class NodeHandler(AdminBaseHandler):
                                      "role(host_name: %s)" % node.hostname))
         i_roles = data.get('install_roles')
         u_roles = data.get('uninstall_roles')
+        if len(list(set(i_roles).intersection(u_roles))):
+            raise exc.InvalidInput(_("Can't not set and unset the same role"))
         install_check_role_map = {
             'monitor': self._mon_install_check,
             'storage': self._storage_install_check,

@@ -42,6 +42,11 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
 
         self.obj_reset_changes()
 
+    def destroy(self):
+        updated_values = db.action_log_destroy(self._context, self.id)
+        self.update(updated_values)
+        self.obj_reset_changes(updated_values.keys())
+
 
 @base.StorObjectRegistry.register
 class ActionLogList(base.ObjectListBase, base.StorObject):

@@ -13,6 +13,20 @@ class BaseStorEnum(Enum):
         super(BaseStorEnum, self).__init__(valid_values=self.__class__.ALL)
 
 
+class ClusterStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVE = 'active'
+    DELETING = 'deleting'
+    ERROR = 'error'
+    IMPORTING = 'importing'
+
+    ALL = (CREATING, ACTIVE, DELETING, ERROR, IMPORTING)
+
+
+class ClusterStatusField(BaseEnumField):
+    AUTO_TYPE = ClusterStatus()
+
+
 class VolumeStatus(BaseStorEnum):
     CREATING = 'creating'
     AVAILABLE = 'available'

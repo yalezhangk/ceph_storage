@@ -1,6 +1,5 @@
 import configparser
 import logging
-import os
 import socket
 import time
 from pathlib import Path
@@ -14,7 +13,6 @@ from taskflow.patterns import linear_flow as lf
 
 from DSpace import exception as exc
 from DSpace import objects
-from DSpace.common.config import CONF
 from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
 from DSpace.taskflows.base import BaseTask
@@ -105,18 +103,9 @@ class NodeTask(object):
     ctxt = None
     node = None
 
-    def __init__(self, ctxt, node, host_prefix=None):
-        if not host_prefix:
-            self.host_prefix = CONF.host_prefix
+    def __init__(self, ctxt, node):
         self.ctxt = ctxt
         self.node = node
-
-    def _wapper(self, path):
-        if not self.host_prefix:
-            return path
-        if path[0] == os.path.sep:
-            path = path[1:]
-        return os.path.join(self.host_prefix, path)
 
     def get_ssh_executor(self):
         return SSHExecutor(hostname=str(self.node.ip_address),
@@ -757,6 +746,54 @@ class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin):
         ssh = node.executer
         self._node_remove_container(ctxt, ssh, "node_exporter",
                                     "node_exporter")
+
+
+class NodeBaseTask(BaseTask):
+    def _get_agent(self, ctxt, node):
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node.id)
+        return client
+
+
+class OsdUninstall(NodeBaseTask):
+    def execute(self, ctxt, osd, task_info):
+        super(OsdUninstall, self).execute(task_info)
+        logger.info("uninstall ceph osd %s on node %s", osd.id, osd.node.id)
+        agent = self._get_agent(ctxt, osd.node)
+        osd = agent.ceph_osd_destroy(ctxt, osd)
+        osd.destroy()
+
+
+class MonUninstall(NodeBaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(MonUninstall, self).execute(task_info)
+        logger.info("uninstall ceph mon on node %s", node.id)
+        agent = self._get_agent(ctxt, node)
+        agent.ceph_mon_remove(ctxt, last_mon=True)
+        node.role_monitor = False
+        node.save()
+
+
+class StorageUninstall(NodeBaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(StorageUninstall, self).execute(task_info)
+        logger.info("uninstall ceph osd package on node %s", node.id)
+        agent = self._get_agent(ctxt, node)
+        agent.ceph_osd_package_uninstall(ctxt)
+        node.role_storage = False
+        node.save()
+
+
+class CephPackageUninstall(NodeBaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(CephPackageUninstall, self).execute(task_info)
+        logger.info("uninstall ceph package on node %s", node.id)
+        try:
+            agent = self._get_agent(ctxt, node)
+            agent.ceph_package_uninstall(ctxt)
+        except Exception as e:
+            logger.warning("uninstall ceph package failed: %s", e)
 
 
 class DSpaceExpoterInstall(BaseTask):

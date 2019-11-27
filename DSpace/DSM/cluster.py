@@ -3,11 +3,13 @@ from oslo_log import log as logging
 
 from DSpace import exception as exc
 from DSpace import objects
+from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.alert_rule import AlertRuleInitMixin
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
+from DSpace.taskflows.cluster import cluster_delete_flow
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
@@ -16,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
+
+    def cluster_get(self, ctxt, cluster_id):
+        cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+        return cluster
+
     def ceph_cluster_info(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
         if not has_mon_host:
@@ -196,6 +203,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster = objects.Cluster(
             ctxt,
             is_admin=data.get('admin_create'),
+            status=s_fields.ClusterStatus.ACTIVE,
             display_name=data.get('cluster_name'))
         cluster.create()
 
@@ -209,6 +217,53 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
         self.task_submit(self.init_alert_rule, ctxt, cluster.id)
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
+        return cluster
+
+    def _cluster_delete(self, ctxt, cluster, src_cluster_id, clean_ceph=False):
+        logger.info("trying to delete cluster-%s", cluster.id)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        try:
+            t = objects.Task(
+                ctxt,
+                name="Delete Cluster",
+                description="Delete Cluster",
+                current="",
+                step_num=0,
+                status=s_fields.TaskStatus.RUNNING,
+                step=0
+            )
+            t.create()
+            cluster_delete_flow(ctxt, t, clean_ceph)
+            cluster.destroy()
+            msg = _("Cluster delete success")
+            action = "CLUSTER_DELETED"
+            logger.info("delete cluster-%s success", cluster.id)
+        except Exception as e:
+            logger.exception("delete cluster-%s error: %s", cluster.id, e)
+            cluster.status = s_fields.ClusterStatus.ERROR
+            cluster.save()
+            msg = _("Cluster delete error!")
+            action = "CLUSTER_DELETE_FAILED"
+
+        ctxt.cluster_id = src_cluster_id
+        logger.debug("delete cluster %s finish: %s", cluster.id, msg)
+        wb_client.send_message(ctxt, cluster, action, msg)
+
+    def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
+        logger.debug("delete cluster %s start", cluster_id)
+        src_cluster_id = ctxt.cluster_id
+        ctxt.cluster_id = cluster_id
+        cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+        if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
+                                  s_fields.ClusterStatus.ERROR]:
+            raise exc.InvalidInput(_('Cluster is %s') % cluster.status)
+        cluster.status = s_fields.ClusterStatus.DELETING
+        cluster.save()
+        self.task_submit(self._cluster_delete,
+                         ctxt,
+                         cluster,
+                         src_cluster_id,
+                         clean_ceph=clean_ceph)
         return cluster
 
     def cluster_install_agent(self, ctxt, ip_address, password):
