@@ -352,6 +352,16 @@ class RADOSClient(object):
             "mons": mons
         }
 
+    # ceph df ==> ceph & pool size
+    def get_ceph_df(self):
+        ret, df_outbuf, __ = self.client.mon_command(
+            '{"prefix":"df", "format":"json"}', '')
+        if ret:
+            return None
+        df_outbuf = encodeutils.safe_decode(df_outbuf)
+        df_data = json.loads(df_outbuf)
+        return df_data
+
     # ceph osd df ==> osd size
     def get_osd_df(self):
         ret, df_outbuf, __ = self.client.mon_command(

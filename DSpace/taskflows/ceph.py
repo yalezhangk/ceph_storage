@@ -45,6 +45,10 @@ class CephTask(object):
         with open(self.conf_file, 'w') as f:
             f.write(ceph_config_str)
 
+    def get_ceph_df(self):
+        with RADOSClient(self.rados_args(), timeout='2') as rados_client:
+            return rados_client.get_ceph_df()
+
     def pool_add_osd(self):
         pass
 

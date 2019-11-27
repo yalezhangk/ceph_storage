@@ -290,3 +290,12 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 num += v
         status["progress"] = num
         return status
+
+    def cluster_capacity_status_get(self, ctxt):
+        has_mon_host = self.has_monitor_host(ctxt)
+        if has_mon_host:
+            ceph_client = CephTask(ctxt)
+            capacity = ceph_client.get_ceph_df()
+        else:
+            capacity = None
+        return capacity
