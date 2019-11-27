@@ -6,12 +6,16 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 
 logger = logging.getLogger(__name__)
 
 
 class DatacenterHandler(AdminBaseHandler):
     def datacenter_create(self, ctxt):
+        begin_action = self.begin_action(ctxt, Resource.DATACENTER,
+                                         Action.CREATE)
         uid = str(uuid.uuid4())
         datacenter_name = "datacenter-{}".format(uid[0:8])
         datacenter = objects.Datacenter(
@@ -19,6 +23,8 @@ class DatacenterHandler(AdminBaseHandler):
             name=datacenter_name
         )
         datacenter.create()
+        self.finish_action(begin_action, datacenter.id, datacenter_name,
+                           objects.json_encode(datacenter))
         return datacenter
 
     def datacenter_get(self, ctxt, datacenter_id):
@@ -26,7 +32,11 @@ class DatacenterHandler(AdminBaseHandler):
 
     def datacenter_delete(self, ctxt, datacenter_id):
         datacenter = self.datacenter_get(ctxt, datacenter_id)
+        begin_action = self.begin_action(ctxt, Resource.DATACENTER,
+                                         Action.DELETE)
         datacenter.destroy()
+        self.finish_action(begin_action, datacenter_id, datacenter.name,
+                           objects.json_encode(datacenter))
         return datacenter
 
     def datacenter_get_all(self, ctxt, marker=None, limit=None,
@@ -50,8 +60,12 @@ class DatacenterHandler(AdminBaseHandler):
     def datacenter_update(self, ctxt, id, name):
         datacenter = objects.Datacenter.get_by_id(ctxt, id)
         self._check_datacenter_by_name(ctxt, name)
+        begin_action = self.begin_action(ctxt, Resource.DATACENTER,
+                                         Action.UPDATE)
         datacenter.name = name
         datacenter.save()
+        self.finish_action(begin_action, datacenter.id, name,
+                           objects.json_encode(datacenter))
         return datacenter
 
     def datacenter_tree(self, ctxt):

@@ -311,8 +311,11 @@ class AllResourceType(BaseStorEnum):
     SMTP_SYSCONFS = 'smtp_sysconfs'
     DISK = 'disk'
     SYSCONFIG = 'sysconfig'
+    DATACENTER = 'datacenter'
+    RACK = 'rack'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG)
+           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG,
+           DATACENTER, RACK)
 
 
 class AllActionType(BaseStorEnum):
@@ -338,11 +341,14 @@ class AllActionType(BaseStorEnum):
     DISK_LIGHT = 'disk_light'
     UPDATE_CLOCK_SERVER = 'update_clock_server'
     UPDATE_GATEWAY_CIDR = 'update_gateway_cidr'
+    RACK_UPDATE_TOPLOGY = 'rack_update_toplogy'
+    NODE_UPDATE_RACK = 'node_update_rack'
+
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
-           UPDATE_GATEWAY_CIDR)
+           UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -403,7 +409,7 @@ class ResourceAction(object):
 
             AllResourceType.NODE:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.SET_ROLES],
+                 AllActionType.SET_ROLES, AllActionType.NODE_UPDATE_RACK],
 
             AllResourceType.OSD:
                 [AllActionType.CREATE, AllActionType.DELETE],
@@ -414,7 +420,15 @@ class ResourceAction(object):
 
             AllResourceType.SYSCONFIG:
                 [AllActionType.UPDATE_CLOCK_SERVER,
-                 AllActionType.UPDATE_GATEWAY_CIDR]
+                 AllActionType.UPDATE_GATEWAY_CIDR],
+
+            AllResourceType.DATACENTER:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE],
+
+            AllResourceType.RACK:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.RACK_UPDATE_TOPLOGY],
 
         }
         return relation
