@@ -126,6 +126,15 @@ class DiskTool(ToolBase):
                                   stdout=out, stderr=err)
         return True
 
+    def partprobe(self):
+        logger.info('Running cmd: partprobe')
+        cmd = ["partprobe"]
+        code, out, err = self.run_command(cmd)
+        if code:
+            raise RunCommandError(cmd=cmd, return_code=code,
+                                  stdout=out, stderr=err)
+        return True
+
 
 if __name__ == '__main__':
     from DSpace.tools.base import Executor
