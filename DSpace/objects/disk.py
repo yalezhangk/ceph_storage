@@ -36,9 +36,13 @@ class Disk(base.StorPersistentObject, base.StorObject,
         'node': fields.ObjectField("Node", nullable=True),
         'partition_used': fields.IntegerField(nullable=True),
         'metrics': s_field.DictOfNullableField(nullable=True),
+        'partitions': fields.ListOfObjectsField("DiskPartition",
+                                                nullable=True),
+        'accelerate_type': fields.StringField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('node', 'partition_used', 'metrics')
+    OPTIONAL_FIELDS = ('node', 'partition_used', 'metrics', 'partitions',
+                       'accelerate_type')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -71,6 +75,11 @@ class Disk(base.StorPersistentObject, base.StorObject,
             )
         if 'partition_used' in expected_attrs:
             obj.partition_used = db_obj.get('partition_used', None)
+        if 'partitions' in expected_attrs:
+            partitions = db_obj.get('partitions', [])
+            obj.partitions = [objects.DiskPartition._from_db_object(
+                context, objects.DiskPartition(context), partition
+            ) for partition in partitions]
         return super(Disk, cls)._from_db_object(context, obj, db_obj)
 
 

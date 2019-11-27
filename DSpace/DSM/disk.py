@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 class DiskHandler(AdminBaseHandler):
     def disk_get(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(
-            ctxt, disk_id, expected_attrs=['partition_used', 'node'])
+            ctxt, disk_id, expected_attrs=['partition_used', 'node',
+                                           'partitions'])
         return disk
 
     def disk_get_all(self, ctxt, tab=None, marker=None, limit=None,
@@ -25,11 +26,24 @@ class DiskHandler(AdminBaseHandler):
         disks = objects.DiskList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=['node', 'partition_used'])
+            expected_attrs=['node', 'partition_used', 'partitions'])
         if tab == "io":
             prometheus = PrometheusTool(ctxt)
             for disk in disks:
                 prometheus.disk_get_perf(disk)
+        if filters.get("role") == "accelerate":
+            for disk in disks:
+                if not disk.partitions:
+                    disk.accelerate_type = None
+                else:
+                    accelerate_role = []
+                    for partition in disk.partitions:
+                        if partition.role not in accelerate_role:
+                            accelerate_role.append(partition.role)
+                    if len(accelerate_role) > 1:
+                        disk.accelerate_type = s_fields.DiskPartitionRole.MIX
+                    else:
+                        disk.accelerate_type = accelerate_role[0]
         return disks
 
     def disk_get_count(self, ctxt, filters=None):
