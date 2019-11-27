@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class CephHandler(AgentBaseHandler):
     def ceph_conf_write(self, context, content):
         logger.debug("Write Ceph Conf")
-        client = self._get_ssh_executor()
+        client = self._get_executor()
         file_tool = FileTool(client)
         file_tool.mkdir("/etc/ceph")
         file_tool.write("/etc/ceph/ceph.conf", content)

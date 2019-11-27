@@ -19,6 +19,7 @@ class File(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def write(self, filename, content):
+        filename = self._wapper(filename)
         self.executor.write(filename, content)
 
     def mkdir(self, dirname):

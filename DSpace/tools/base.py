@@ -22,9 +22,9 @@ class Executor(object):
     ssh = None
     host_prefix = None
 
-    def __init__(self):
+    def __init__(self, host_prefix=None):
         """Command executor"""
-        self.host_prefix = CONF.host_prefix
+        self.host_prefix = host_prefix or CONF.host_prefix
 
     def run_command(self, args, timeout=None):
         logger.debug("Run Command: {}".format(args))
@@ -39,8 +39,8 @@ class Executor(object):
         rc = cmd.returncode
         return (rc, _bytes2str(stdout), _bytes2str(stderr))
 
-    def write(self, filename, content):
-        f = open(filename, "w")
+    def write(self, filename, content, mode="w"):
+        f = open(filename, mode)
         f.write(content)
         f.close()
 
