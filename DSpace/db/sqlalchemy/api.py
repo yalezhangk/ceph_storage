@@ -2602,7 +2602,8 @@ def _disk_load_attr(context, disk, expected_attrs=None, session=None):
         ).filter_by(status='inuse', disk_id= disk.id)
         disk.partition_used = parts.count()
     if "partitions" in expected_attrs:
-        disk.partitions = disk._partitions
+        disk.partitions = [part for part in disk._partitions
+                           if not part.deleted]
 
 
 def _disk_get_query(context, session=None):
