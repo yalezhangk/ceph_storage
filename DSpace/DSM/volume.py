@@ -110,15 +110,18 @@ class VolumeHandler(AdminBaseHandler):
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_create success,volume_name=%s', volume_name)
             msg = _("create volume success")
+            err_msg = None
         except exception.StorException as e:
             logger.error('volume_create error,volume_name=%s,reason:%s',
                          volume, str(e))
             status = s_fields.VolumeStatus.ERROR
             msg = _("create volume error")
+            err_msg = str(e)
         volume.status = status
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status)
+                           objects.json_encode(volume), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, "CREATED", msg)
@@ -181,6 +184,7 @@ class VolumeHandler(AdminBaseHandler):
             msg = _("delete volume success")
             status = 'success'
             volume.destroy()
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_delete error,volume_name=%s,reason:%s',
@@ -188,8 +192,10 @@ class VolumeHandler(AdminBaseHandler):
             msg = _("delete volume error")
             volume.status = status
             volume.save()
+            err_msg = str(e)
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status)
+                           objects.json_encode(volume), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'DELETED', msg)
@@ -228,17 +234,20 @@ class VolumeHandler(AdminBaseHandler):
                         volume_name, size)
             now_size = size
             msg = _("volume resize success")
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_resize error,volume_name=%s,reason:%s',
                          volume_name, str(e))
             now_size = old_size
             msg = _("volume resize error")
+            err_msg = str(e)
         volume.status = status
         volume.size = now_size
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status)
+                           objects.json_encode(volume), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_RESIZE', msg)
@@ -306,15 +315,18 @@ class VolumeHandler(AdminBaseHandler):
             logger.info('vulume_rollback success,%s@%s',
                         volume_name, snap_name)
             msg = _("volume rollback success")
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_rollback error,%s@%s,reason:%s',
                          volume_name, snap_name, str(e))
             msg = _("volume rollback error")
+            err_msg = str(e)
         volume.status = status
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status)
+                           objects.json_encode(volume), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_ROLLBACK', msg)
@@ -348,17 +360,20 @@ class VolumeHandler(AdminBaseHandler):
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_unlink success,%s/%s', pool_name, volume_name)
             msg = _("volume unlink success")
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_unlink error,%s/%s,reason:%s',
                          pool_name, volume_name, str(e))
             msg = _("volume unlink error")
+            err_msg = str(e)
         if status == s_fields.VolumeStatus.ACTIVE:
             volume.is_link_clone = False  # 断开关系链
         volume.status = status
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status)
+                           objects.json_encode(volume), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, volume, 'VOLUME_UNLINK', msg)
@@ -381,16 +396,19 @@ class VolumeHandler(AdminBaseHandler):
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume clone success, volume_name=%s', c_volume_name)
             msg = 'volume clone success'
+            err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume clone error, volume_name=%s,reason:%s',
                          c_volume_name, str(e))
             msg = 'volume clone error'
+            err_msg = str(e)
         new_volume.status = status
         new_volume.save()
         self.finish_action(begin_action, new_volume.id,
                            new_volume.display_name,
-                           objects.json_encode(new_volume), status)
+                           objects.json_encode(new_volume), status,
+                           err_msg=err_msg)
         # send msg
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, new_volume, 'VOLUME_CLONE', msg)
