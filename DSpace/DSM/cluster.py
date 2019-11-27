@@ -8,6 +8,8 @@ from DSpace.DSM.alert_rule import AlertRuleInitMixin
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.cluster import cluster_delete_flow
 from DSpace.taskflows.node import NodeTask
@@ -201,6 +203,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         """Deploy a new cluster"""
         logger.debug("Create a new cluster")
         self._cluster_create_check(ctxt, data)
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.CREATE)
         cluster = objects.Cluster(
             ctxt,
             is_admin=data.get('admin_create'),
@@ -217,10 +220,13 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             sysconf.create()
 
         self.task_submit(self.init_alert_rule, ctxt, cluster.id)
+        self.finish_action(begin_action, cluster.id, cluster.display_name,
+                           objects.json_encode(cluster))
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
         return cluster
 
-    def _cluster_delete(self, ctxt, cluster, src_cluster_id, clean_ceph=False):
+    def _cluster_delete(self, ctxt, cluster, src_cluster_id, clean_ceph=False,
+                        begin_action=None):
         logger.info("trying to delete cluster-%s", cluster.id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         try:
@@ -239,13 +245,20 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             msg = _("Cluster delete success")
             action = "CLUSTER_DELETED"
             logger.info("delete cluster-%s success", cluster.id)
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception("delete cluster-%s error: %s", cluster.id, e)
-            cluster.status = s_fields.ClusterStatus.ERROR
+            status = s_fields.ClusterStatus.ERROR
+            cluster.status = status
             cluster.save()
             msg = _("Cluster delete error!")
             action = "CLUSTER_DELETE_FAILED"
+            err_msg = str(e)
 
+        self.finish_action(begin_action, cluster.id, cluster.display_name,
+                           objects.json_encode(cluster), status,
+                           err_msg=err_msg)
         ctxt.cluster_id = src_cluster_id
         logger.debug("delete cluster %s finish: %s", cluster.id, msg)
         wb_client.send_message(ctxt, cluster, action, msg)
@@ -258,13 +271,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
                                   s_fields.ClusterStatus.ERROR]:
             raise exc.InvalidInput(_('Cluster is %s') % cluster.status)
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.DELETE)
         cluster.status = s_fields.ClusterStatus.DELETING
         cluster.save()
         self.task_submit(self._cluster_delete,
                          ctxt,
                          cluster,
                          src_cluster_id,
-                         clean_ceph=clean_ceph)
+                         clean_ceph=clean_ceph, begin_action=begin_action)
         return cluster
 
     def cluster_install_agent(self, ctxt, ip_address, password):
