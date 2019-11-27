@@ -203,7 +203,6 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         """Deploy a new cluster"""
         logger.debug("Create a new cluster")
         self._cluster_create_check(ctxt, data)
-        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.CREATE)
         cluster = objects.Cluster(
             ctxt,
             is_admin=data.get('admin_create'),
@@ -212,6 +211,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster.create()
 
         ctxt.cluster_id = cluster.id
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.CREATE)
         # TODO check key value
         for key, value in six.iteritems(data):
             sysconf = objects.SysConfig(
