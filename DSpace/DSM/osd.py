@@ -107,7 +107,7 @@ class OsdHandler(AdminBaseHandler):
             osd = task.ceph_osd_install(osd)
             osd.status = s_fields.OsdStatus.AVAILABLE
             osd.save()
-            logger.info("Osd %s create success.", osd.osd_id)
+            logger.info("osd.%s create success", osd.osd_id)
             op_status = 'CREATE_SUCCESS'
             msg = _("osd create success: {}").format(osd.osd_id)
             err_msg = None
@@ -115,7 +115,7 @@ class OsdHandler(AdminBaseHandler):
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
-            logger.info("Osd %s create error.", osd.osd_id)
+            logger.info("osd.%s create error", osd.osd_id)
             msg = _("osd create error: {}").format(osd.osd_id)
             op_status = 'CREATE_ERROR'
             err_msg = str(e)
@@ -329,7 +329,7 @@ class OsdHandler(AdminBaseHandler):
             self._osd_config_remove(ctxt, osd)
             self._osd_clear_partition_role(ctxt, osd)
             osd.destroy()
-            msg = _("delete success: {}").format(osd.osd_id)
+            msg = _("delete osd.{} success").format(osd.osd_id)
             logger.info("delete osd.%s success", osd.osd_id)
             status = 'success'
             op_status = "DELETE_SUCCESS"
@@ -339,9 +339,9 @@ class OsdHandler(AdminBaseHandler):
             status = s_fields.OsdStatus.ERROR
             osd.status = status
             osd.save()
-            msg = _("Osd create error!")
+            msg = _("delete osd.{} error")
             err_msg = str(e)
-            msg = _("delete error: {}").format(osd.osd_id)
+            msg = _("delete osd.{} error").format(osd.osd_id)
             op_status = "DELETE_ERROR"
         logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
