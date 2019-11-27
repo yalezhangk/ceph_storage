@@ -399,3 +399,32 @@ class ClusterOsdStatus(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         osd_status = yield client.cluster_osd_status_get(ctxt)
         self.write(json.dumps({"osd_status": osd_status}))
+
+
+@URLRegistry.register(r"/clusters/capacity_status/")
+class ClusterCapacityStatus(ClusterAPIHandler):
+    def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster capacity status overview
+        description: Lists the capacity of the cluster or any pools
+        operationId: cluster.api.clusterCapacity
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        capacity_status = yield client.cluster_capacity_status_get(ctxt)
+        self.write(json.dumps({"capacity_status": capacity_status}))
