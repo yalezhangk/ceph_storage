@@ -9,6 +9,8 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.include import include_clean_flow
 from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodeMixin
@@ -56,7 +58,7 @@ class NodeHandler(AdminBaseHandler):
         for network in networks:
             network.destroy()
 
-    def _node_delete(self, ctxt, node):
+    def _node_delete(self, ctxt, node, begin_action):
         try:
             if node.role_monitor:
                 self._mon_uninstall(ctxt, node)
@@ -78,12 +80,17 @@ class NodeHandler(AdminBaseHandler):
             node.destroy()
             logger.info("node delete success")
             msg = _("Node removed!")
+            status = 'success'
+            err_msg = None
         except Exception as e:
-            node.status = s_fields.NodeStatus.ERROR
+            status = s_fields.NodeStatus.ERROR
+            node.status = status
             node.save()
             logger.exception("node delete error: %s", e)
             msg = _("Node remove error!")
-
+            err_msg = str(e)
+        self.finish_action(begin_action, node.id, node.hostname,
+                           objects.json_encode(node), status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "DELETED", msg)
 
@@ -126,9 +133,10 @@ class NodeHandler(AdminBaseHandler):
         node = objects.Node.get_by_id(ctxt, node_id)
         # judge node could be delete
         self._node_delete_check(ctxt, node)
+        begin_action = self.begin_action(ctxt, Resource.NODE, Action.DELETE)
         node.status = s_fields.NodeStatus.DELETING
         node.save()
-        self.task_submit(self._node_delete, ctxt, node)
+        self.task_submit(self._node_delete, ctxt, node, begin_action)
         return node
 
     def _node_get_metrics_overall(self, ctxt, nodes):
@@ -356,7 +364,7 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
-    def _node_roles_set(self, ctxt, node, i_roles, u_roles):
+    def _node_roles_set(self, ctxt, node, i_roles, u_roles, begin_action):
         install_role_map = {
             'monitor': self._mon_install,
             'storage': self._storage_install,
@@ -381,13 +389,18 @@ class NodeHandler(AdminBaseHandler):
             status = s_fields.NodeStatus.ACTIVE
             logger.info('set node roles success')
             msg = _("set node roles")
+            err_msg = None
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
             logger.exception('set node roles failed %s', e)
             msg = _("set node roles error, reason: {}".format(str(e)))
+            err_msg = str(e)
         node.status = status
         node.save()
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           objects.json_encode(node), status,
+                           err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "DEPLOYED", msg)
 
@@ -418,12 +431,13 @@ class NodeHandler(AdminBaseHandler):
         for role in u_roles:
             func = uninstall_check_role_map.get(role)
             func(ctxt, node)
-
+        begin_action = self.begin_action(ctxt, Resource.NODE, Action.SET_ROLES)
         logger.info('node %s roles check pass', node.hostname)
-        self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles)
+        self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles,
+                         begin_action)
         return node
 
-    def _node_create(self, ctxt, node, data):
+    def _node_create(self, ctxt, node, data, begin_action):
         try:
             node_task = NodeTask(ctxt, node)
             node_task.dspace_agent_install()
@@ -449,17 +463,21 @@ class NodeHandler(AdminBaseHandler):
             logger.info('create node success, node ip: {}'.format(
                         node.ip_address))
             msg = _("node create success")
+            err_msg = None
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
             logger.exception('create node error, node ip: %s, reason: %s',
                              node.ip_address, e)
             msg = _("node create error, reason: {}".format(str(e)))
+            err_msg = str(e)
         node.status = status
         node.save()
 
         node_task.prometheus_target_config(action='add',
                                            service='node_exporter')
-
+        self.finish_action(begin_action, node.id, node.hostname,
+                           objects.json_encode(node), status,
+                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, "CREATED", msg)
@@ -474,6 +492,7 @@ class NodeHandler(AdminBaseHandler):
         if role_monitor:
             self._mon_install_check(ctxt)
 
+        begin_action = self.begin_action(ctxt, Resource.NODE, Action.CREATE)
         node = objects.Node(
             ctxt, ip_address=data.get('ip_address'),
             hostname=data.get('hostname'),
@@ -483,7 +502,7 @@ class NodeHandler(AdminBaseHandler):
             status=s_fields.NodeStatus.CREATING)
         node.create()
 
-        self.task_submit(self._node_create, ctxt, node, data)
+        self.task_submit(self._node_create, ctxt, node, data, begin_action)
         return node
 
     def node_get_infos(self, ctxt, data):

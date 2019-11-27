@@ -316,9 +316,12 @@ class AllActionType(BaseStorEnum):
     POOL_UPDATE_POLICY = 'pool_update_policy'
     CLONE = 'clone'
     SET_ALL_READED = 'set_all_readed'
+    SET_ROLES = 'set_roles'
+    CLUSTER_INCLUDE = 'cluster_include'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
-           VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE)
+           VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
+           CLUSTER_INCLUDE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -376,6 +379,11 @@ class ResourceAction(object):
                  AllActionType.DELETE, AllActionType.POOL_ADD_DISK,
                  AllActionType.POOL_DEL_DISK,
                  AllActionType.POOL_UPDATE_POLICY],
+
+            AllResourceType.NODE:
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.SET_ROLES]
+
         }
         return relation
 
