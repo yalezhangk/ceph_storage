@@ -531,7 +531,7 @@ class NodeHandler(AdminBaseHandler):
 
     def node_check(self, ctxt, data):
         check_items = ["hostname", "selinux", "ceph_ports", "ceph_package",
-                       "network", "athena_ports", "firewall"]
+                       "network", "athena_ports", "firewall", "container"]
         # TODO delete it
         data['ip_address'] = data.get('admin_ip')
         res = self._node_check(ctxt, data, check_items)
@@ -823,6 +823,8 @@ class NodeHandler(AdminBaseHandler):
             res['check_roles'] = self._node_check_roles(roles, services)
         if "firewall" in items:
             res['check_firewall'] = node_task.check_firewall()
+        if "container" in items:
+            res['check_container'] = node_task.check_container()
         return res
 
     def nodes_inclusion_check(self, ctxt, datas):
@@ -847,7 +849,8 @@ class NodeHandler(AdminBaseHandler):
                 "network",
                 "roles",
                 "athena_ports",
-                "firewall"
+                "firewall",
+                "container"
             ])
             res['admin_ip'] = admin_ip
             status['nodes'].append(res)

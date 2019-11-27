@@ -398,6 +398,24 @@ class NodeTask(object):
         result = sys_tool.check_firewall()
         return result
 
+    def check_container(self):
+        ssh = self.get_ssh_executor()
+        service_tool = ServiceTool(ssh)
+        if service_tool.status('docker') == 'active':
+            image_namespace = objects.sysconfig.sys_config_get(
+                self.ctxt, "image_namespace")
+            dspace_containers = [
+                "{}_dsa".format(image_namespace),
+                "{}_chrony".format(image_namespace),
+                "{}_node_exporter".format(image_namespace)
+            ]
+            docker_tool = DockerTool(ssh)
+            for container in dspace_containers:
+                status = docker_tool.status(container)
+                if status == 'active':
+                    return False
+        return True
+
     def get_ceph_service(self):
         ssh = self.get_ssh_executor()
         sys_tool = SystemTool(ssh)
