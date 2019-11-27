@@ -906,9 +906,9 @@ def node_destroy(context, node_id):
 def _node_load_attr(node, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'disks' in expected_attrs:
-        node.disks = [disk for disk in node._disks]
+        node.disks = [disk for disk in node._disks if disk.deleted is False]
     if 'networks' in expected_attrs:
-        node.networks = [net for net in node._networks]
+        node.networks = [net for net in node._networks if net.deleted is False]
     if 'osds' in expected_attrs:
         node.osds = [osd for osd in node._osds if osd.deleted is False]
 
@@ -1154,23 +1154,27 @@ def _osd_get(context, osd_id, session=None, **kwargs):
 def _osd_load_attr(osd, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'node' in expected_attrs:
-        osd.node = osd._node
+        osd.node = [node for node in osd._node if not node.deleted]
     if 'disk' in expected_attrs:
-        osd.disk = osd._disk
+        osd.disk = [disk for disk in osd._disk if not disk.deleted]
     if 'pools' in expected_attrs:
-        crush = osd._crush_rule
+        crush = [rule for rule in osd._crush_rule if not rule.deleted]
         if crush:
-            osd.pools = crush._pools
+            osd.pools = [pool for pool in crush._pools if not pool.deleted]
         else:
             osd.pools = []
     if 'cache_partition' in expected_attrs:
-        osd.cache_partition = osd._cache_partition
+        osd.cache_partition = [part for part in osd._cache_partition
+                               if not part.deleted]
     if 'db_partition' in expected_attrs:
-        osd.db_partition = osd._db_partition
+        osd.db_partition = [part for part in osd._db_partition
+                            if not part.deleted]
     if 'wal_partition' in expected_attrs:
-        osd.wal_partition = osd._wal_partition
+        osd.wal_partition = [part for part in osd._wal_partition
+                             if not part.deleted]
     if 'journal_partition' in expected_attrs:
-        osd.journal_partition = osd._journal_partition
+        osd.journal_partition = [part for part in osd._journal_partition
+                                 if not part.deleted]
 
 
 @require_context
@@ -1316,13 +1320,14 @@ def pool_destroy(context, pool_id):
 def _pool_load_attr(ctxt, pool, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'crush_rule' in expected_attrs:
-        pool.crush_rule = pool._crush_rule
+        pool.crush_rule = [rule for rule in pool._crush_rule
+                           if not rule.deleted]
     if 'osds' in expected_attrs:
-        pool.osds = [osd for osd in pool.crush_rule._osds]
+        pool.osds = [osd for osd in pool.crush_rule._osds if not osd.deleted]
     if 'volumes' in expected_attrs:
         filters = {"pool_id": pool.id}
         volumes = volume_get_all(ctxt, filters=filters)
-        pool.volumes = [volume for volume in volumes]
+        pool.volumes = [volume for volume in volumes if not volume.deleted]
 
 
 @require_context
@@ -1559,7 +1564,8 @@ def _volume_access_path_load_attr(ctxt, vap, session, expected_attrs=None):
         if vol_id not in vol_ids:
             vol_ids.append(vol_id)
     if 'volume_gateways' in expected_attrs:
-        vap.volume_gateways = vap._volume_gateways
+        vap.volume_gateways = [vgw for vgw in vap._volume_gateways
+                               if not vgw.deleted]
     if 'volume_client_groups' in expected_attrs:
         column_attr = getattr(models.VolumeClientGroup, "id")
         cgs = _volume_client_group_get_query(
@@ -2186,7 +2192,7 @@ def _volume_client_group_load_attr(ctxt, vcg, session, expected_attrs=None):
         vaps = _volume_access_path_get_query(
             ctxt, session).filter(column_attr.in_(vap_ids))
         if vaps:
-            vcg.volume_access_paths = [vap for vap in vaps]
+            vcg.volume_access_paths = [vap for vap in vaps if not vap.deleted]
         else:
             vcg.volume_access_paths = None
     if 'volume_clients' in expected_attrs:
@@ -2595,7 +2601,8 @@ def alert_rule_get_count(context, filters=None):
 def _disk_load_attr(context, disk, expected_attrs=None, session=None):
     expected_attrs = expected_attrs or []
     if 'node' in expected_attrs:
-        disk.node = disk._node
+        disk.node = [node for node in disk._node
+                     if not node.deleted]
     if "partition_used" in expected_attrs:
         parts = model_query(
             context, models.DiskPartition, session=session
@@ -2774,9 +2781,11 @@ def disk_partition_destroy(context, disk_part_id):
 def _disk_pattition_load_attr(partition, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'disk' in expected_attrs:
-        partition.disk = partition._disk
+        partition.disk = [disk for disk in partition._disk
+                          if not disk.deleted]
     if 'node' in expected_attrs:
-        partition.node = partition._disk._node
+        partition.node = [node for node in partition._disk._node
+                          if not node.deleted]
 
 
 @require_context
@@ -2934,10 +2943,12 @@ def alert_group_update(context, alert_group_id, values):
 def _alert_group_load_attr(ctxt, ale_group, expected_attrs, session=None):
     expected_attrs = expected_attrs or []
     if 'alert_rules' in expected_attrs:
-        ale_group.alert_rules = [al_rule for al_rule in ale_group.alert_rules]
+        ale_group.alert_rules = [al_rule for al_rule in ale_group.alert_rules
+                                 if not al_rule.deleted]
     if 'email_groups' in expected_attrs:
         ale_group.email_groups = [
             al_email for al_email in ale_group.email_groups
+            if not al_email.deleted
         ]
 
 
@@ -3046,7 +3057,8 @@ def _email_group_load_attr(context, email_group, expected_attrs, session):
     expected_attrs = expected_attrs or []
     if 'alert_groups' in expected_attrs:
         email_group.alert_groups = [al_group for al_group in
-                                    email_group.alert_groups]
+                                    email_group.alert_groups
+                                    if not al_group.deleted]
 
 
 @require_context
@@ -3335,7 +3347,7 @@ def _volume_snapshot_get(context, volume_snapshot_id, session=None):
 def _snap_load_attr(ctxt, snap, expected_attrs=None, session=None):
     expected_attrs = expected_attrs or []
     if 'volume' in expected_attrs:
-        snap.volume = snap._volume
+        snap.volume = [vol for vol in snap._volume if not vol.deleted]
     if 'pool' in expected_attrs:
         p_volume = _volume_get(ctxt, snap.volume_id, session)
         snap.pool = _pool_get(ctxt, p_volume.pool_id, session)
@@ -3343,7 +3355,8 @@ def _snap_load_attr(ctxt, snap, expected_attrs=None, session=None):
         child_volumes = model_query(
             ctxt, models.Volume, session=session).filter_by(
             snapshot_id=snap.id, is_link_clone=True)
-        snap.child_volumes = [child_volume for child_volume in child_volumes]
+        snap.child_volumes = [child_volume for child_volume in child_volumes
+                              if not child_volume.deleted]
 
 
 @require_context
@@ -3702,7 +3715,7 @@ def crush_rule_destroy(context, crush_rule_id):
 def _crush_rule_load_attr(crush_rule, expected_attrs=None):
     expected_attrs = expected_attrs or []
     if 'osds' in expected_attrs:
-        crush_rule.osds = [osd for osd in crush_rule._osds]
+        crush_rule.osds = [osd for osd in crush_rule._osds if not osd.deleted]
 
 
 @require_context
