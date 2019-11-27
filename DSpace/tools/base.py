@@ -55,6 +55,7 @@ class SSHExecutor(Executor):
         super(SSHExecutor, self).__init__()
         self.connect(hostname=hostname, port=port, user=user,
                      password=password, pkey=pkey)
+        self.host_prefix = None
 
     def connect(self, hostname=None, port=22, user='root', password=None,
                 pkey=None):
