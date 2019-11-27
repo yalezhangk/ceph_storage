@@ -2601,6 +2601,8 @@ def _disk_load_attr(context, disk, expected_attrs=None, session=None):
             context, models.DiskPartition, session=session
         ).filter_by(status='inuse', disk_id= disk.id)
         disk.partition_used = parts.count()
+    if "partitions" in expected_attrs:
+        disk.partitions = disk._partitions
 
 
 def _disk_get_query(context, session=None):
