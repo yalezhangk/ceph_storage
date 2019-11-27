@@ -580,12 +580,29 @@ class NodeHandler(AdminBaseHandler):
         for data in datas:
             self._node_check_ip(ctxt, data)
 
+    def _nodes_inclusion(self, t, ctxt, datas, begin_action=None):
+        try:
+            include_flow(ctxt, t, datas)
+            status = 'success'
+            err_msg = None
+        except Exception as e:
+            status = 'fail'
+            err_msg = str(e)
+        cluster_id = ctxt.cluster_id
+        cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+        cluster_name = cluster.display_name
+        self.finish_action(begin_action, cluster_id, cluster_name,
+                           objects.json_encode(cluster), status,
+                           err_msg=err_msg)
+
     def nodes_inclusion(self, ctxt, datas):
         logger.debug("include nodes: {}", datas)
         # check
         self._nodes_inclusion_check(ctxt, datas)
 
         logger.debug("include nodes check pass: {}", datas)
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER,
+                                         Action.CLUSTER_INCLUDE)
         t = objects.Task(
             ctxt,
             name="Import Cluster",
@@ -596,7 +613,7 @@ class NodeHandler(AdminBaseHandler):
             step=0
         )
         t.create()
-        self.task_submit(include_flow, ctxt, t, datas)
+        self.task_submit(self._nodes_inclusion, ctxt, t, datas, begin_action)
         return t
 
     def _nodes_inclusion_clean_check(self, ctxt):
@@ -604,9 +621,26 @@ class NodeHandler(AdminBaseHandler):
         if not include_tag:
             raise exc.InvalidInput(_("Please Import First"))
 
+    def _nodes_inclusion_clean(self, ctxt, t, begin_action=None):
+        try:
+            include_clean_flow(ctxt, t)
+            status = 'success'
+            err_msg = None
+        except Exception as e:
+            status = 'fail'
+            err_msg = str(e)
+        cluster_id = ctxt.cluster_id
+        cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+        cluster_name = cluster.display_name
+        self.finish_action(begin_action, cluster_id, cluster_name,
+                           objects.json_encode(cluster), status,
+                           err_msg=err_msg)
+
     def nodes_inclusion_clean(self, ctxt):
         logger.debug("include delete nodes")
         self._nodes_inclusion_clean_check(ctxt)
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER,
+                                         Action.CLUSTER_INCLUDE)
         t = objects.Task(
             ctxt,
             name="Clean Import Cluster",
@@ -617,7 +651,8 @@ class NodeHandler(AdminBaseHandler):
             step=0
         )
         t.create()
-        self.task_submit(include_clean_flow, ctxt, t)
+        self.task_submit(
+            self._nodes_inclusion_clean, ctxt, t, begin_action)
         return t
 
     def _nodes_inclusion_check_admin_ips(self, ctxt, datas):

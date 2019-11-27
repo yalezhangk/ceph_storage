@@ -338,6 +338,7 @@ class AllActionType(BaseStorEnum):
     SET_ALL_READED = 'set_all_readed'
     SET_ROLES = 'set_roles'
     CLUSTER_INCLUDE = 'cluster_include'
+    CLUSTER_INCLUDE_CLEAN = 'cluster_include_clean'
     CHANGE_DISK_TYPE = 'change_disk_type'
     DISK_LIGHT = 'disk_light'
     UPDATE_CLOCK_SERVER = 'update_clock_server'
@@ -349,7 +350,8 @@ class AllActionType(BaseStorEnum):
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
-           UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK)
+           UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
+           CLUSTER_INCLUDE_CLEAN)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -432,7 +434,9 @@ class ResourceAction(object):
                  AllActionType.DELETE, AllActionType.RACK_UPDATE_TOPLOGY],
 
             AllResourceType.CLUSTER:
-                [AllActionType.CREATE, AllActionType.DELETE],
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.CLUSTER_INCLUDE,
+                 AllActionType.CLUSTER_INCLUDE_CLEAN],
 
             AllResourceType.CEPH_CONFIG:
                 [AllActionType.UPDATE],
