@@ -239,8 +239,6 @@ class CephTask(object):
                     osd_id = service.split('.')[1]
                     if osd_id == '*':
                         osd_list = objects.OsdList.get_all(self.ctxt)
-                    else:
-                        osd_list = [int(osd_id)]
                 rados_client.config_set(service,
                                         config['key'],
                                         config['value'],

@@ -487,11 +487,18 @@ class RADOSClient(object):
         }
         command_str = json.dumps(cmd)
         if service.startswith('osd'):
-            for osd in osd_list:
+            if not osd_list:
                 try:
-                    self._send_osd_command(int(osd.osd_id), command_str)
+                    self._send_osd_command(int(service.split('.')[1]),
+                                           command_str)
                 except CephException:
                     pass
+            else:
+                for osd in osd_list:
+                    try:
+                        self._send_osd_command(int(osd.osd_id), command_str)
+                    except CephException:
+                        pass
         if service.startswith('mon'):
             try:
                 self._send_mon_command(command_str)
