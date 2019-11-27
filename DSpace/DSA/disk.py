@@ -104,6 +104,7 @@ class DiskHandler(AgentBaseHandler):
         try:
             disk_tool.partitions_clear(disk.name)
             disk_tool.partitions_create(disk.name, partitions)
+            disk_tool.partprobe()
             logger.debug("Partitions: {}".format(partitions))
             return partitions
         except exception.StorException as e:
@@ -116,6 +117,7 @@ class DiskHandler(AgentBaseHandler):
         disk_tool = DiskTool(executor)
         try:
             _success = disk_tool.partitions_clear(name)
+            disk_tool.partprobe()
         except exception.StorException as e:
             logger.error("Create partitions error: {}".format(e))
             _success = False
