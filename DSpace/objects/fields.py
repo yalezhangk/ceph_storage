@@ -295,8 +295,9 @@ class AllResourceType(BaseStorEnum):
     SNAPSHOT = 'snapshot'
     ALERT_LOG = 'alert_log'
     SMTP_SYSCONFS = 'smtp__sysconfs'
+    DISK = 'disk'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS)
+           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK)
 
 
 class AllActionType(BaseStorEnum):
@@ -318,10 +319,12 @@ class AllActionType(BaseStorEnum):
     SET_ALL_READED = 'set_all_readed'
     SET_ROLES = 'set_roles'
     CLUSTER_INCLUDE = 'cluster_include'
+    CHANGE_DISK_TYPE = 'change_disk_type'
+    DISK_LIGHT = 'disk_light'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
-           CLUSTER_INCLUDE)
+           CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -382,7 +385,14 @@ class ResourceAction(object):
 
             AllResourceType.NODE:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.SET_ROLES]
+                 AllActionType.SET_ROLES],
+
+            AllResourceType.OSD:
+                [AllActionType.CREATE, AllActionType.DELETE],
+
+            AllResourceType.DISK:
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.CHANGE_DISK_TYPE, AllActionType.DISK_LIGHT]
 
         }
         return relation

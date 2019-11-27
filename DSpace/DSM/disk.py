@@ -8,6 +8,8 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
@@ -51,8 +53,12 @@ class DiskHandler(AdminBaseHandler):
 
     def disk_update(self, ctxt, disk_id, disk_type):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
+        begin_action = self.begin_action(ctxt, Resource.DISK,
+                                         Action.CHANGE_DISK_TYPE)
         disk.type = disk_type
         disk.save()
+        self.finish_action(begin_action, disk_id, disk.name,
+                           objects.json_encode(disk))
         return disk
 
     def disk_light(self, ctxt, disk_id, led):
@@ -62,6 +68,8 @@ class DiskHandler(AdminBaseHandler):
                 raise exception.InvalidInput(
                     reason=_("disk: repeated actions, led is {}".format(led)))
             node = objects.Node.get_by_id(ctxt, disk.node_id)
+            begin_action = self.begin_action(ctxt, Resource.DISK,
+                                             Action.DISK_LIGHT)
             client = AgentClientManager(
                 ctxt, cluster_id=disk.cluster_id
             ).get_client(node_id=disk.node_id)
@@ -70,11 +78,17 @@ class DiskHandler(AdminBaseHandler):
             if _success:
                 disk.led = led
                 disk.save()
+                status = 'success'
+            else:
+                status = 'fail'
+            self.finish_action(begin_action, disk_id, disk.name,
+                               objects.json_encode(disk), status)
         else:
             raise exception.LedNotSupport(disk_id=disk_id)
         return disk
 
-    def _disk_partitions_create(self, ctxt, node, disk, values):
+    def _disk_partitions_create(self, ctxt, node, disk, values,
+                                begin_action=None):
         client = AgentClientManager(
             ctxt, cluster_id=disk.cluster_id
         ).get_client(node_id=disk.node_id)
@@ -102,21 +116,26 @@ class DiskHandler(AdminBaseHandler):
                 partition.create()
             disk.save()
             msg = _("create disk partitions success")
+            status = 'success'
         else:
             msg = _("create disk partitions failed")
-
+            status = 'fail'
+        self.finish_action(begin_action, disk.id, disk.name,
+                           objects.json_encode(disk), status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, "CREATED", msg)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
+        begin_action = self.begin_action(ctxt, Resource.DISK, Action.CREATE)
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         self.task_submit(self._disk_partitions_create, ctxt, node, disk,
-                         values)
+                         values, begin_action)
         return disk
 
-    def _disk_partitions_remove(self, ctxt, node, disk, values):
+    def _disk_partitions_remove(self, ctxt, node, disk, values,
+                                begin_action=None):
         client = AgentClientManager(
             ctxt, cluster_id=disk.cluster_id
         ).get_client(node_id=disk.node_id)
@@ -131,12 +150,16 @@ class DiskHandler(AdminBaseHandler):
                     part.destroy()
             disk.partition_num = 0
             disk.role = values['role']
-            disk.status = "available"
+            status = 'available'
+            disk.status = status
             disk.save()
             msg = _("remove disk partitions success")
         else:
             logger.error("Disk partitions remove: Failed")
             msg = _("remove disk partitions failed")
+            status = 'fail'
+        self.finish_action(begin_action, disk.id, disk.name,
+                           objects.json_encode(disk), status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, "REMOVED", msg)
@@ -150,8 +173,9 @@ class DiskHandler(AdminBaseHandler):
                 reason=_('current disk:{} partition has used, '
                          'can not del').format(disk.name))
         node = objects.Node.get_by_id(ctxt, disk.node_id)
+        begin_action = self.begin_action(ctxt, Resource.DISK, Action.DELETE)
         self.task_submit(self._disk_partitions_remove, ctxt, node, disk,
-                         values)
+                         values, begin_action)
         return disk
 
     def disk_smart_get(self, ctxt, disk_id):
