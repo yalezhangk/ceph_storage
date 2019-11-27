@@ -91,9 +91,14 @@ class DiskTool(ToolBase):
             size = part["size"] / 1024
             partition_guid = "--partition-guid={}:{}".format(order,
                                                              str(uuid.uuid4()))
+            if len(partitions) == order:
+                partition_size = "--largest-new={}".format(order)
+            else:
+                partition_size = "--new={}:0:+{}K".format(order, int(size))
+
             type_code = "--typecode={}:{}"\
                 .format(order, PTYPE['regular'][role]['ready'])
-            cmd = ["sgdisk", "--new={}:0:+{}K".format(order, size),
+            cmd = ["sgdisk", partition_size,
                    "--change-name='{}:ceph {}'".format(order, role),
                    partition_guid, type_code, "--mbrtogpt", "--", disk]
             code, out, err = self.run_command(cmd)
