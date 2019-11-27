@@ -279,6 +279,9 @@ class PoolHandler(AdminBaseHandler):
         return pool
 
     def _pool_increase_disk(self, ctxt, pool, osds):
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_ADD_DISK)
         body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
         logger.debug("increase disk body: {}".format(body))
         try:
@@ -301,26 +304,26 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.content = content
         logger.debug("crush_rule content{}".format(crush_rule.content))
         crush_rule.save()
+        pool.save()
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.ACTIVE,
                               crush_rule.id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "INCREASE_DISK", msg)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
 
     def pool_increase_disk(self, ctxt, id, data):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.POOL_ADD_DISK)
         osds = data.get('osds')
-        self._pool_increase_disk(ctxt, pool, osds)
-        pool.save()
-        self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
-                           resource_data=objects.json_encode(pool))
+        self.task_submit(self._pool_increase_disk, ctxt, pool, osds)
         return pool
 
     def _pool_decrease_disk(self, ctxt, pool, osds):
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_DEL_DISK)
         body, crush_content = self._generate_pool_opdata(ctxt, pool, osds)
         logger.debug("decrease disk body: {}".format(body))
         try:
@@ -342,9 +345,13 @@ class PoolHandler(AdminBaseHandler):
         crush_rule.content = content
         logger.debug("crush_content {}".format(crush_rule.content))
         crush_rule.save()
+        pool.save()
         self._update_osd_info(ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "DECREASE_DISK", msg)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
 
     def _get_osd_fault_domains(self, ctxt, fault_domain, osd_ids):
         nodes = []
@@ -392,16 +399,9 @@ class PoolHandler(AdminBaseHandler):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, id, expected_attrs=['crush_rule', 'osds'])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.POOL_DEL_DISK)
         osds = data.get('osds')
         self._check_data_lost(ctxt, pool, osds)
-        self._pool_decrease_disk(ctxt, pool, osds)
-        self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
-                           resource_data=objects.json_encode(pool))
-        pool.save()
+        self.task_submit(self._pool_decrease_disk, ctxt, pool, osds)
         return pool
 
     def pool_update_display_name(self, ctxt, id, name):
@@ -418,20 +418,10 @@ class PoolHandler(AdminBaseHandler):
                            resource_data=objects.json_encode(pool))
         return pool
 
-    def pool_update_policy(self, ctxt, id, data):
-        self.check_mon_host(ctxt)
-        pool = objects.Pool.get_by_id(ctxt, id)
+    def _pool_update_policy(self, ctxt, pool):
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.POOL_UPDATE_POLICY)
-        rep_size = data.get('replicate_size')
-        fault_domain = data.get('failure_domain_type')
-        if pool.failure_domain_type == "rack" and fault_domain == "host":
-            logger.error("can't set fault_domain from rack to host")
-            raise exception.InvalidInput(
-                reason="can't set fault_domain from rack to host")
-        pool.failure_domain_type = fault_domain
-        pool.replicate_size = rep_size
         crush_rule = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
                                                  expected_attrs=["osds"])
         osds = [osd.id for osd in crush_rule.osds]
@@ -448,16 +438,29 @@ class PoolHandler(AdminBaseHandler):
             logger.error("update pool policy error: {}".format(e))
             msg = _("{} update policy error").format(pool.pool_name)
             status = s_fields.PoolStatus.ERROR
-            pool.status = status
-            return None
+        pool.status = status
         crush_rule.content = crush_content
         crush_rule.save()
-        self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
-                           resource_data=objects.json_encode(pool))
         pool.save()
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, "UPDATE_POLICY", msg)
+        self.finish_action(begin_action, resource_id=pool.id,
+                           resource_name=pool.pool_name,
+                           resource_data=objects.json_encode(pool))
+
+    def pool_update_policy(self, ctxt, id, data):
+        self.check_mon_host(ctxt)
+        pool = objects.Pool.get_by_id(ctxt, id)
+        rep_size = data.get('replicate_size')
+        fault_domain = data.get('failure_domain_type')
+        if pool.failure_domain_type == "rack" and fault_domain == "host":
+            logger.error("can't set fault_domain from rack to host")
+            raise exception.InvalidInput(
+                reason="can't set fault_domain from rack to host")
+        pool.failure_domain_type = fault_domain
+        pool.replicate_size = rep_size
+        pool.save()
+        self.task_submit(self._pool_update_policy, ctxt, pool)
         return pool
 
     def pool_fact_total_size_bytes(self, ctxt, pool_id):
