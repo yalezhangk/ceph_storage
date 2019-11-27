@@ -539,3 +539,15 @@ class ClusterPgStatus(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         pg_status = yield client.cluster_pg_status_get(ctxt)
         self.write(json.dumps({"pg_status": pg_status}))
+
+
+@URLRegistry.register(r"/clusters/switch/")
+class ClusterSwitch(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        cluster_id = data.get('cluster_id')
+        result = yield client.cluster_switch(ctxt, cluster_id)
+        self.write(json.dumps({"cluster_id": result}))

@@ -143,6 +143,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "cluster_pg_status_get")
         return response
 
+    def cluster_switch(self, ctxt, cluster_id):
+        response = self.call(ctxt, "cluster_switch", cluster_id=cluster_id)
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
