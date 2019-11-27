@@ -64,6 +64,26 @@ Example:
   Support deploy osd, include cache, wal, db, journal.
 
 
+I18n
+====
+
+.. code-block:: shell
+
+  # create msg file
+  pybabel extract     --add-comments Translators:  \
+    -k "_C:1c,2" -k "_P:1,2"     --project=space --version=1.0 \
+    -o DSpace/locale/dspace.pot DSpace/
+
+  # merge msg
+  msgmerge -o DSpace/locale/zh_CN/LC_MESSAGES/dspace.po \
+    DSpace/locale/zh_CN/LC_MESSAGES/dspace.po \
+    DSpace/locale/dspace.pot
+
+  # delete commit
+  sed -i "/^#/d" DSpace/locale/zh_CN/LC_MESSAGES/dspace.po
+
+
+
 Tests
 =====
 Simple unit test file
