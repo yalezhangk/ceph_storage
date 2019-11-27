@@ -430,6 +430,9 @@ class ResourceAction(object):
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.RACK_UPDATE_TOPLOGY],
 
+            AllResourceType.CLUSTER:
+                [AllActionType.CREATE, AllActionType.DELETE]
+
         }
         return relation
 
