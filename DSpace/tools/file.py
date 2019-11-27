@@ -39,6 +39,16 @@ class File(ToolBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def mv(self, src_path, dest_path):
+        src_path = self._wapper(src_path)
+        dest_path = self._wapper(dest_path)
+        cmd = ["mv", "-f", src_path, dest_path]
+        rc, stdout, stderr = self.executor.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
     def exist(self, path):
         cmd = ["ls", path]
         rc, stdout, stderr = self.executor.run_command(cmd)
