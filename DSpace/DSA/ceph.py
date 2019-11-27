@@ -195,9 +195,10 @@ class CephHandler(AgentBaseHandler):
 
     def ceph_config_update(self, ctxt, values):
         logger.debug('Update ceph config for this node')
-        node_task = NodeTask(ctxt, node=None)
+        client = self._get_executor()
+        ceph_tool = CephTool(client)
         try:
-            node_task.ceph_config_update(values)
+            ceph_tool.ceph_config_update(values)
         except exception.StorException as e:
             logger.error('Update ceph config error: {}'.format(e))
             return False

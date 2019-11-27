@@ -44,10 +44,10 @@ class CephConfigHandler(AdminBaseHandler):
         else:
             osd = objects.OsdList.get_all(
                 ctxt, filters={
-                    'osd_id': osd_name, 'cluster_id':
-                    ctxt.cluster_id
+                    'osd_id': osd_name,
+                    'cluster_id': ctxt.cluster_id
                 })[0]
-            node.append(osd.id)
+            node.append(osd.node_id)
         return node
 
     def _get_all_node(self, ctxt):
@@ -176,6 +176,7 @@ class CephConfigHandler(AdminBaseHandler):
                 cephconf = self._ceph_config_db(ctxt, values)
                 msg = _('Ceph config update successful')
         else:
+            cephconf = None
             msg = _('Ceph config update failed')
 
         # send ws message
