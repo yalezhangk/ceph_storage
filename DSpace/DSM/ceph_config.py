@@ -6,6 +6,8 @@ from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.ceph import CephTask
 from DSpace.utils import cluster_config as ClusterConfg
 
@@ -167,7 +169,7 @@ class CephConfigHandler(AdminBaseHandler):
             cephconf.save()
         return cephconf
 
-    def _ceph_config_set(self, ctxt, values):
+    def _ceph_config_set(self, ctxt, values, begin_action=None):
         nodes = self._get_config_nodes(ctxt, values)
         if nodes:
             _success = self._ceph_confg_update(ctxt, nodes, values)
@@ -175,13 +177,18 @@ class CephConfigHandler(AdminBaseHandler):
             if _success:
                 cephconf = self._ceph_config_db(ctxt, values)
                 msg = _('Ceph config update successful')
+            status = 'success'
         else:
             msg = _('Ceph config update failed')
-
+            status = 'fail'
+        self.finish_action(begin_action, None, Resource.CEPH_CONFIG, values,
+                           status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cephconf, "UPDATED", msg)
 
     def ceph_config_set(self, ctxt, values):
-        self.task_submit(self._ceph_config_set, ctxt, values)
+        begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
+                                         Action.UPDATE)
+        self.task_submit(self._ceph_config_set, ctxt, values, begin_action)
         return values

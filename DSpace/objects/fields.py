@@ -313,9 +313,10 @@ class AllResourceType(BaseStorEnum):
     SYSCONFIG = 'sysconfig'
     DATACENTER = 'datacenter'
     RACK = 'rack'
+    CEPH_CONFIG = 'ceph_config'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG,
-           DATACENTER, RACK)
+           DATACENTER, RACK, CEPH_CONFIG)
 
 
 class AllActionType(BaseStorEnum):
@@ -431,7 +432,10 @@ class ResourceAction(object):
                  AllActionType.DELETE, AllActionType.RACK_UPDATE_TOPLOGY],
 
             AllResourceType.CLUSTER:
-                [AllActionType.CREATE, AllActionType.DELETE]
+                [AllActionType.CREATE, AllActionType.DELETE],
+
+            AllResourceType.CEPH_CONFIG:
+                [AllActionType.UPDATE],
 
         }
         return relation
