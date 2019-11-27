@@ -1,7 +1,6 @@
-
 import oslo_i18n as i18n
 
-DOMAIN = 'stor'
+DOMAIN = 'dspace'
 
 _translators = i18n.TranslatorFactory(domain=DOMAIN)
 
