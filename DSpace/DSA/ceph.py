@@ -98,8 +98,16 @@ class CephHandler(AgentBaseHandler):
         logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
-        ceph_tool.osd_deactivate(osd.disk.name)
-        logger.info("osd %s(osd.%s), deactivate success", osd.id, osd.osd_id)
+        # mark oud
+        ceph_tool.osd_mark_out(osd.osd_id)
+        logger.info("osd %s(osd.%s), mark out", osd.id, osd.osd_id)
+        # stop
+        ceph_tool.osd_stop(osd.osd_id)
+        logger.info("osd %s(osd.%s), service stop", osd.id, osd.osd_id)
+        # unmount
+        ceph_tool.osd_umount(osd.osd_id)
+        logger.info("osd %s(osd.%s), umount", osd.id, osd.osd_id)
+        # clean data
         ceph_tool.osd_zap(osd.disk.name)
         logger.info("osd %s(osd.%s), zap success", osd.id, osd.osd_id)
         ceph_tool.osd_remove_from_cluster(osd.osd_id)
