@@ -180,7 +180,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
+                           resource_name=pool.display_name,
                            resource_data=objects.json_encode(pool))
 
     def _check_pool_display_name(self, ctxt, display_name):
@@ -271,7 +271,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
+                           resource_name=pool.display_name,
                            resource_data=objects.json_encode(pool))
 
     def pool_delete(self, ctxt, pool_id):
@@ -317,7 +317,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
+                           resource_name=pool.display_name,
                            resource_data=objects.json_encode(pool))
 
     def pool_increase_disk(self, ctxt, id, data):
@@ -359,7 +359,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
+                           resource_name=pool.display_name,
                            resource_data=objects.json_encode(pool))
 
     def _get_osd_fault_domains(self, ctxt, fault_domain, osd_ids):
@@ -423,7 +423,7 @@ class PoolHandler(AdminBaseHandler):
         pool.display_name = name
         pool.save()
         self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
+                           resource_name=pool.display_name,
                            resource_data=objects.json_encode(pool))
         return pool
 
@@ -456,7 +456,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
-                           resource_name=pool.pool_name,
+                           resource_name=pool.display_name,
                            resource_data=objects.json_encode(pool))
 
     def pool_update_policy(self, ctxt, id, data):
