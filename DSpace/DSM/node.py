@@ -617,7 +617,7 @@ class NodeHandler(AdminBaseHandler):
         for data in datas:
             self._node_check_ip(ctxt, data)
 
-    def _nodes_inclusion(self, t, ctxt, datas, begin_action=None):
+    def _nodes_inclusion(self, ctxt, t, datas, begin_action=None):
         try:
             include_flow(ctxt, t, datas)
             status = 'success'
