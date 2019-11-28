@@ -74,7 +74,7 @@ class PrometheusTool(object):
             self.ctxt, filters={"node_id": node_id, "role": "system",
                                 "cluster_id": self.ctxt.cluster_id})
         if len(disks) == 0:
-            logger.error("prometheus: cannot find sys disk: %s", node_id)
+            logger.warning("prometheus: cannot find sys disk: %s", node_id)
             return None
         disk_name = disks[0].name
         logger.debug("prometheus: get sys disk name for node %s: %s",
@@ -88,8 +88,8 @@ class PrometheusTool(object):
             'cluster_id': self.ctxt.cluster_id,
         })
         if len(network) == 0:
-            logger.error("prometheus: cannot find network: node %s ip %s",
-                         node_id, ipaddr)
+            logger.warning("prometheus: cannot find network: node %s ip %s",
+                           node_id, ipaddr)
             return None
         net_name = network[0].name
         logger.debug("prometheus: get network name for node %s and ip %s: %s",
@@ -161,7 +161,8 @@ class PrometheusTool(object):
             metric_method = 'node_{}'.format(metric)
             data = self.get_node_exporter_metric(
                 metric_method, filter={'hostname': node.hostname,
-                                       'device': net_name})
+                                       'device': net_name,
+                                       'cluster_id': node.cluster_id})
             metrics.update({metric: data})
         return metrics
 
@@ -169,21 +170,25 @@ class PrometheusTool(object):
         sys_disk_name = self._get_sys_disk(node.id)
         metrics = {
             "cpu_rate": self.get_node_exporter_metric(
-                "node_cpu_rate", filter={'hostname': node.hostname}),
+                "node_cpu_rate", filter={'hostname': node.hostname,
+                                         'cluster_id': node.cluster_id}),
             "memory_rate": self.get_node_exporter_metric(
-                "node_memory_rate", filter={'hostname': node.hostname}),
+                "node_memory_rate", filter={'hostname': node.hostname,
+                                            'cluster_id': node.cluster_id}),
             "load5": self.get_node_exporter_metric("node_load5", filter={
-                'hostname': node.hostname}),
+                'hostname': node.hostname, 'cluster_id': node.cluster_id}),
             "disk_io_rate": self.get_node_exporter_metric(
                 "node_disk_io_rate", filter={'hostname': node.hostname,
-                                             'device': sys_disk_name})
+                                             'device': sys_disk_name,
+                                             'cluster_id': node.cluster_id})
         }
         net_name = self._get_net_name(node.id, node.ip_address)
         for m in network_attrs:
             metric_method = 'node_{}'.format(m)
             data = self.get_node_exporter_metric(
                 metric_method, filter={'hostname': node.hostname,
-                                       'device': net_name})
+                                       'device': net_name,
+                                       'cluster_id': node.cluster_id})
             metrics.update({m: data})
         return metrics
 
@@ -191,17 +196,22 @@ class PrometheusTool(object):
         sys_disk_name = self._get_sys_disk(node.id)
         metrics = {
             "cpu_rate": self.get_node_exporter_metric(
-                "node_cpu_rate", filter={'hostname': node.hostname},
+                "node_cpu_rate", filter={'hostname': node.hostname,
+                                         'cluster_id': node.cluster_id},
                 graph=True, start=start, end=end),
             "memory_rate": self.get_node_exporter_metric(
-                "node_memory_rate", filter={'hostname': node.hostname},
+                "node_memory_rate", filter={'hostname': node.hostname,
+                                            'cluster_id': node.cluster_id},
                 graph=True, start=start, end=end),
             "load5": self.get_node_exporter_metric(
-                "node_load5", filter={'hostname': node.hostname},
+                "node_load5", filter={'hostname': node.hostname,
+                                      'cluster_id': node.cluster_id},
                 graph=True, start=start, end=end),
             "disk_io_rate": self.get_node_exporter_metric(
                 "node_disk_io_rate",
-                filter={'hostname': node.hostname, 'device': sys_disk_name},
+                filter={'hostname': node.hostname,
+                        'device': sys_disk_name,
+                        'cluster_id': node.cluster_id},
                 graph=True, start=start, end=end)
         }
         net_name = self._get_net_name(node.id, node.ip_address)
@@ -209,7 +219,9 @@ class PrometheusTool(object):
             metric_method = 'node_{}'.format(m)
             data = self.get_node_exporter_metric(
                 metric_method,
-                filter={'hostname': node.hostname, 'device': net_name},
+                filter={'hostname': node.hostname,
+                        'device': net_name,
+                        'cluster_id': node.cluster_id},
                 graph=True, start=start, end=end)
             metrics.update({m: data})
         return metrics
@@ -220,7 +232,9 @@ class PrometheusTool(object):
             metric_method = 'node_{}'.format(metric)
             data = self.get_node_exporter_metric(
                 metric_method,
-                filter={'hostname': node.hostname, 'device': net_name},
+                filter={'hostname': node.hostname,
+                        'device': net_name,
+                        'cluster_id': node.cluster_id},
                 graph=True, start=start, end=end)
             metrics.update({metric: data})
         return metrics
@@ -237,18 +251,23 @@ class PrometheusTool(object):
                 data = self.get_node_exporter_metric(
                     metric_method, filter={
                         'hostname': node.hostname,
-                        'device': net_name})
+                        'device': net_name,
+                        'cluster_id': node.cluster_id})
             elif metric in disk_attrs:
                 data = self.get_node_exporter_metric(
                     metric_method, filter={
-                        'hostname': node.hostname, 'device': sys_disk_name})
+                        'hostname': node.hostname,
+                        'device': sys_disk_name,
+                        'cluster_id': node.cluster_id})
             elif metric in fs_attrs:
                 data = self.get_node_exporter_metric(
                     metric_method, filter={
-                        'hostname': node.hostname, 'mountpoint': '/'})
+                        'hostname': node.hostname,
+                        'mountpoint': '/',
+                        'cluster_id': node.cluster_id})
             else:
                 data = self.get_node_exporter_metric(metric_method, filter={
-                    'hostname': node.hostname})
+                    'hostname': node.hostname, 'cluster_id': node.cluster_id})
             node.metrics.update({metric: data})
 
     def disk_get_perf(self, disk):
@@ -262,7 +281,8 @@ class PrometheusTool(object):
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(
                 metric_method, filter={'hostname': node.hostname,
-                                       'device': disk.name})
+                                       'device': disk.name,
+                                       'cluster_id': disk.cluster_id})
             disk.metrics.update({m: data})
 
     def disk_get_histroy_perf(self, disk, start, end):
@@ -276,7 +296,9 @@ class PrometheusTool(object):
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(
                 metric_method,
-                filter={'hostname': node.hostname, 'device': disk.name},
+                filter={'hostname': node.hostname,
+                        'device': disk.name,
+                        'cluster_id': disk.cluster_id},
                 graph=True, start=start, end=end)
             metrics.update({m: data})
         return metrics
@@ -319,7 +341,8 @@ class PrometheusTool(object):
         for m in pool_perf:
             metric = "ceph_pool_" + m
             value = self.prometheus_get_metric(
-                metric, filter={"pool_id": pool.pool_id})
+                metric, filter={"pool_id": pool.pool_id,
+                                'cluster_id': pool.cluster_id})
             pool.metrics.update({m: value})
 
     def pool_get_histroy_perf(self, pool, start, end, metrics):
@@ -327,19 +350,22 @@ class PrometheusTool(object):
             metric = "ceph_pool_" + m
             value = self.prometheus_get_histroy_metric(
                 metric, start=start, end=end, filter={
-                    "pool_id": pool.pool_id})
+                    "pool_id": pool.pool_id,
+                    'cluster_id': pool.cluster_id})
             metrics.update({m: value})
 
     def pool_get_capacity(self, pool):
         for m in pool_capacity:
             metric = "ceph_pool_" + m
             value = self.prometheus_get_metric(
-                metric, filter={"pool_id": pool.pool_id})
+                metric, filter={"pool_id": pool.pool_id,
+                                'cluster_id': pool.cluster_id})
             pool.metrics.update({m: value})
         total_map = pool_total_perf_map
         for pool_key in total_map:
             value = self.prometheus_get_metric(
-                total_map[pool_key], filter={'pool_id': pool.pool_id})
+                total_map[pool_key], filter={'pool_id': pool.pool_id,
+                                             'cluster_id': pool.cluster_id})
             pool.metrics.update({pool_key: value})
 
     def pool_get_histroy_capacity(self, pool, start, end, metrics):
@@ -347,7 +373,9 @@ class PrometheusTool(object):
             metric = "ceph_pool_" + m
             value = self.prometheus_get_histroy_metric(
                 metric, start=start, end=end, filter={
-                    "pool_id": pool.pool_id})
+                    "pool_id": pool.pool_id,
+                    'cluster_id': pool.cluster_id
+                })
             metrics.update({m: value})
 
     def pool_get_pg_state(self, pool):
@@ -356,7 +384,9 @@ class PrometheusTool(object):
             pg_value = json.loads(
                 prometheus.query(
                     metric='ceph_pg_metadata', filter={
-                        'pool_id': pool.pool_id}))['data']['result']
+                        'pool_id': pool.pool_id,
+                        'cluster_id': pool.cluster_id
+                    }))['data']['result']
             healthy = 0
             degraded = 0
             recovering = 0
@@ -390,7 +420,9 @@ class PrometheusTool(object):
         for m in osd_capacity:
             metric = "ceph_osd_capacity_" + m
             value = self.prometheus_get_metric(metric, filter={
-                "osd_id": int(osd.osd_id or '-1')})
+                "osd_id": int(osd.osd_id or '-1'),
+                'cluster_id': osd.cluster_id
+            })
             osd.metrics.update({m: value})
 
     def osd_get_bluefs_capacity(self, osd):
@@ -398,7 +430,9 @@ class PrometheusTool(object):
         for m in bluefs_capacity:
             metric = "ceph_bluefs_" + m
             value = self.prometheus_get_metric(metric, filter={
-                "ceph_daemon": "osd.{}".format(osd.osd_id)})
+                "ceph_daemon": "osd.{}".format(osd.osd_id),
+                'cluster_id': osd.cluster_id
+            })
             osd.metrics.update({m: value})
 
     def osd_get_histroy_capacity(self, osd, start, end, metrics):
@@ -406,7 +440,8 @@ class PrometheusTool(object):
             metric = "ceph_osd_capacity_" + m
             value = self.prometheus_get_histroy_metric(
                 metric, start=start, end=end, filter={
-                    "osd_id": int(osd.osd_id or '-1')
+                    "osd_id": int(osd.osd_id or '-1'),
+                    'cluster_id': osd.cluster_id
                 })
             metrics.update({m: value})
 
@@ -414,7 +449,9 @@ class PrometheusTool(object):
         for m in osd_rate:
             metric = "ceph_osd_rate_" + m
             value = self.prometheus_get_metric(metric, filter={
-                "osd_id": int(osd.osd_id or '-1')})
+                "osd_id": int(osd.osd_id or '-1'),
+                'cluster_id': osd.cluster_id
+            })
             osd.metrics.update({m: value})
         self.osd_get_capacity(osd)
         return osd.metrics
@@ -425,7 +462,9 @@ class PrometheusTool(object):
             metric = "ceph_osd_rate_" + m
             value = self.prometheus_get_histroy_metric(
                 metric, start=start, end=end, filter={
-                    "osd_id": int(osd.osd_id or '-1')})
+                    "osd_id": int(osd.osd_id or '-1'),
+                    'cluster_id': osd.cluster_id
+                })
             metrics.update({m: value})
         self.osd_get_histroy_capacity(osd, start, end, metrics)
         return metrics
@@ -441,7 +480,8 @@ class PrometheusTool(object):
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(
                 metric_method, filter={'hostname': node.hostname,
-                                       'device': disk.name})
+                                       'device': disk.name,
+                                       'cluster_id': osd.cluster_id})
             osd.metrics.update({m: data})
             if osd.cache_partition:
                 data = self.get_node_exporter_metric(
@@ -462,7 +502,9 @@ class PrometheusTool(object):
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(
                 metric_method,
-                filter={'hostname': node.hostname, 'device': disk.name},
+                filter={'hostname': node.hostname,
+                        'device': disk.name,
+                        'cluster_id': osd.cluster_id},
                 graph=True, start=start, end=end)
             metrics.update({m: data})
             if osd.cache_partition:
@@ -479,10 +521,9 @@ class PrometheusTool(object):
     def osd_get_pg_state(self, osd):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
-            node = objects.Node.get_by_id(self.ctxt, osd.node_id)
             filters = {
                 'osd_id': int(osd.osd_id or '-1'),
-                'hostname': node.hostname
+                'cluster_id': osd.cluster_id
             }
             pg_value = json.loads(prometheus.query(
                 metric='ceph_pg_metadata', filter=filters))['data']['result']

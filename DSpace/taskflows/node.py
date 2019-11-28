@@ -468,7 +468,8 @@ class NodeTask(object):
                 targets.append({
                     "targets": [str(node.ip_address) + ":" + port],
                     "labels": {
-                        "hostname": node.hostname
+                        "hostname": node.hostname,
+                        "cluster_id": node.cluster_id
                     }
                 })
 
@@ -484,7 +485,8 @@ class NodeTask(object):
                     targets.append({
                         "targets": [str(ip) + ":" + port],
                         "labels": {
-                            "hostname": hostname
+                            "hostname": hostname,
+                            "cluster_id": self.node.cluster_id
                         }
                     })
                     client.prometheus_target_add_all(
