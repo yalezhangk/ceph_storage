@@ -170,6 +170,13 @@ class OsdHandler(AdminBaseHandler):
                 value_type=s_fields.ConfigType.STRING
             )
             ceph_cfg.create()
+        ceph_cfg = objects.CephConfig(
+            ctxt, group="osd.%s" % osd.osd_id,
+            key='osd_objectstore',
+            value=osd.type,
+            value_type=s_fields.ConfigType.STRING
+        )
+        ceph_cfg.create()
 
     def _osd_create_disk_check(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
