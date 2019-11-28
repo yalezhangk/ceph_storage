@@ -79,7 +79,7 @@ class RedisSession(Session):
         socket_timeout = query.get("socket_timeout")
 
         if socket_timeout:
-            kwargs['socket_timeout'] = socket_timeout[0]
+            kwargs['socket_timeout'] = int(socket_timeout[0])
         else:
             kwargs['socket_timeout'] = None
 
