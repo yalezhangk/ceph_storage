@@ -3,6 +3,7 @@
 import logging
 
 from DSpace.exception import RunCommandError
+from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,6 @@ class Service(ToolBase):
                "awk", "'{{print $2}}'"]
         rc, stdout, stderr = self.run_command(cmd)
         status = stdout.strip()
-        if status != "active":
-            status = "inactive"
+        if status != s_fields.ServiceStatus.ACTIVE:
+            status = s_fields.ServiceStatus.INACTIVE
         return status

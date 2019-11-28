@@ -18,6 +18,7 @@ class Service(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'name': fields.StringField(nullable=True),
         'status': s_fields.ServiceStatusField(),
+        'counter': fields.IntegerField(),
         'node_id': fields.IntegerField(),
         'cluster_id': fields.StringField(),
     }
