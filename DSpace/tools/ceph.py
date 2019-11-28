@@ -154,6 +154,27 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def osd_remove_active(self, osd_id):
+        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def osd_deactivate_flag(self, osd_id):
+        mount = "/var/lib/ceph/osd/ceph-%s/" % osd_id
+        for f in ['active', 'ready']:
+            cmd = ["rm", "-rf", mount + f]
+            rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        flag = mount + "deactive"
+        cmd = ["su", "-", "ceph", "-s", "/bin/bash"  "-c", "'touch %s'" % flag]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc == 1 and "No such file" in stderr:
+            return
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
     def osd_stop(self, osd_id):
         cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
@@ -162,16 +183,22 @@ class CephTool(ToolBase):
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
-        cmd = ["systemctl", "stop", "ceph-osd@%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
-               "'id %s'" % osd_id]
-        retrys = 10
+        # check command
+        check_cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
+                     "'id %s'" % osd_id]
+        retrys = 12
         while True:
-            rc, stdout, stderr = self.run_command(cmd, timeout=5)
+            # stop
+            cmd = ["systemctl", "stop", "ceph-osd@%s" % osd_id]
+            rc, stdout, stderr = self.run_command(cmd, timeout=35)
+            if rc == 1 and "canceled" in stderr:
+                logger.warning("wait stop: code(%s), out(%s), err(%s)",
+                               rc, stdout, stderr)
+            elif rc:
+                raise RunCommandError(cmd=cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+            # check
+            rc, stdout, stderr = self.run_command(check_cmd, timeout=5)
             logger.debug("wait stop: code(%s), out(%s), err(%s)",
                          rc, stdout, stderr)
             if "ceph-osd" in stdout:
