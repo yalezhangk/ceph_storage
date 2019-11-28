@@ -538,8 +538,10 @@ class InstallCephRepo(BaseTask):
 
     def get_ceph_repo(self, ctxt):
         ceph_repo = objects.sysconfig.sys_config_get(ctxt, "ceph_repo")
+        logger.info("ceph_repo: %s", ceph_repo)
         tpl = template.get('ceph.repo.j2')
         repo = tpl.render(ceph_repo=ceph_repo)
+        logger.info("ceph_repo content: %s", repo)
         return repo
 
 
