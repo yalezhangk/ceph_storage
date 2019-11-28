@@ -374,7 +374,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         status = {s_fields.OsdStatus.ACTIVE: 0,
                   s_fields.OsdStatus.ERROR: 0,
                   s_fields.OsdStatus.INACTIVE: 0,
-                  s_fields.OsdStatus.INUSE: 0}
+                  s_fields.OsdStatus.AVAILABLE: 0}
         for [k, v] in query_all:
             if k == s_fields.OsdStatus.AVAILABLE:
                 status[s_fields.OsdStatus.AVAILABLE] = v
@@ -382,8 +382,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 status[s_fields.OsdStatus.INACTIVE] = v
             elif k == s_fields.OsdStatus.ERROR:
                 status[s_fields.OsdStatus.ERROR] = v
-            elif k == s_fields.OsdStatus.INUSE:
-                status[s_fields.OsdStatus.INUSE] = v
+            elif k == s_fields.OsdStatus.ACTIVE:
+                status[s_fields.OsdStatus.ACTIVE] = v
             else:
                 num += v
         status["progress"] = num
