@@ -192,7 +192,7 @@ class CephTool(ToolBase):
                                   stdout=stdout, stderr=stderr)
         # check command
         check_cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
-                     "'id %s'" % osd_id]
+                     "'id %s '" % osd_id]
         retrys = 12
         while True:
             # stop
