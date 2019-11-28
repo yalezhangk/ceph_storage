@@ -186,7 +186,9 @@ class NodeHandler(AdminBaseHandler):
             cephconf.save()
         return cephconf
 
-    def _mon_install_check(self, ctxt):
+    def _mon_install_check(self, ctxt, node=None):
+        if node.role_monitor:
+            raise exc.InvalidInput(_("The monitor role has been installed."))
         public_network = objects.sysconfig.sys_config_get(
             ctxt, key="public_cidr"
         )
@@ -205,6 +207,9 @@ class NodeHandler(AdminBaseHandler):
             raise exc.InvalidInput(_("Max monitor num is %s" % max_mon_num))
 
     def _mon_uninstall_check(self, ctxt, node):
+        if not node.role_monitor:
+            raise exc.InvalidInput(_(
+                "The monitor role has not yet been installed"))
         osd_num = objects.OsdList.get_count(ctxt)
         mon_num = objects.NodeList.get_count(
             ctxt, filters={"role_monitor": True}
@@ -212,33 +217,48 @@ class NodeHandler(AdminBaseHandler):
         if osd_num and mon_num == 1:
             raise exc.InvalidInput(_("Please remove osd first!"))
 
-    def _storage_install_check(self, ctxt):
-        pass
+    def _storage_install_check(self, ctxt, node):
+        if node.role_storage:
+            raise exc.InvalidInput(_("The storage role has been installed."))
 
     def _storage_uninstall_check(self, ctxt, node):
+        if not node.role_storage:
+            raise exc.InvalidInput(_(
+                "The storage role has not yet been installed"))
         node_osds = objects.OsdList.get_count(
             ctxt, filters={"node_id": node.id}
         )
         if node_osds:
             raise exc.InvalidInput(_("Node %s has osd!" % node.hostname))
 
-    def _mds_install_check(self, ctxt):
-        pass
+    def _mds_install_check(self, ctxt, node):
+        if node.role_admin:
+            raise exc.InvalidInput(_("The admin role has been installed."))
 
     def _mds_uninstall_check(self, ctxt, node):
-        pass
+        if not node.role_admin:
+            raise exc.InvalidInput(_(
+                "The admin role has not yet been installed"))
 
-    def _rgw_install_check(self, ctxt):
-        pass
+    def _rgw_install_check(self, ctxt, node):
+        if node.role_object_gateway:
+            raise exc.InvalidInput(_(
+                "The object gateway role has been installed."))
 
     def _rgw_uninstall_check(self, ctxt, node):
-        pass
+        if not node.role_object_gateway:
+            raise exc.InvalidInput(_(
+                "The object gateway role has not yet been installed"))
 
-    def _bgw_install_check(self, ctxt):
-        pass
+    def _bgw_install_check(self, ctxt, node):
+        if node.role_block_gateway:
+            raise exc.InvalidInput(_(
+                "The block gateway role has been installed."))
 
     def _bgw_uninstall_check(self, ctxt, node):
-        pass
+        if not node.role_block_gateway:
+            raise exc.InvalidInput(_(
+                "The block gateway role has not yet been installed"))
 
     def _mon_install(self, ctxt, node):
         node.status = s_fields.NodeStatus.DEPLOYING_ROLE
@@ -418,9 +438,9 @@ class NodeHandler(AdminBaseHandler):
         if node.status != s_fields.NodeStatus.ACTIVE:
             raise exc.InvalidInput(_("Only host's status is active can set"
                                      "role(host_name: %s)" % node.hostname))
-        i_roles = data.get('install_roles')
-        u_roles = data.get('uninstall_roles')
-        if len(list(set(i_roles).intersection(u_roles))):
+        i_roles = set(data.get('install_roles'))
+        u_roles = set(data.get('uninstall_roles'))
+        if len(list(i_roles.intersection(u_roles))):
             raise exc.InvalidInput(_("Can't not set and unset the same role"))
         install_check_role_map = {
             'monitor': self._mon_install_check,
@@ -438,7 +458,7 @@ class NodeHandler(AdminBaseHandler):
         }
         for role in i_roles:
             func = install_check_role_map.get(role)
-            func(ctxt)
+            func(ctxt, node)
         for role in u_roles:
             func = uninstall_check_role_map.get(role)
             func(ctxt, node)
