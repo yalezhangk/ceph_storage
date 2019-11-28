@@ -167,8 +167,9 @@ class NodeHandler(AdminBaseHandler):
     def node_get_count(self, ctxt, filters=None):
         return objects.NodeList.get_count(ctxt, filters=filters)
 
-    def _set_ceph_conf(self, ctxt, key, value, value_type, group="global",
+    def _set_ceph_conf(self, ctxt, key, value, value_type, group=None,
                        display_description=None):
+        group = group or "global"
         filters = {
             "group": group,
             "key": key
@@ -285,7 +286,8 @@ class NodeHandler(AdminBaseHandler):
                 'fsid': {'type': 'string', 'value': ctxt.cluster_id},
                 'mon_host': {'type': 'string',
                              'value': mon_host},
-                'osd_objectstore': {'type': 'string', 'value': 'bluestore'},
+                'osd_objectstore': {'type': 'string', 'value': 'bluestore',
+                                    'group': 'mon'},
                 'mon_pg_warn_min_per_osd': {'type': 'int', 'value': 0},
                 'debug_mon': {'type': 'int', 'value': 10},
                 'mon_initial_members': {'type': 'string',
@@ -298,6 +300,7 @@ class NodeHandler(AdminBaseHandler):
             configs.update(new_cluster_config)
             for key, value in configs.items():
                 self._set_ceph_conf(ctxt,
+                                    group=value.get('group'),
                                     key=key,
                                     value=value.get('value'),
                                     value_type=value.get('type'))
