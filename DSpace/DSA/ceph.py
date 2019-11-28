@@ -43,6 +43,7 @@ class CephHandler(AgentBaseHandler):
 
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
+        ceph_tool.disk_clear_partition_table(osd.disk.name)
         ceph_tool.disk_prepare(**kwargs)
         return True
 

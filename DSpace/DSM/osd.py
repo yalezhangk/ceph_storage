@@ -295,12 +295,11 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_config_remove(self, ctxt, osd):
         logger.debug("osd clear config")
-        if osd.cache_partition_id:
-            osd_cfgs = objects.CephConfigList.get_all(
-                ctxt, filters={'group': "osd.%s" % osd.osd_id}
-            )
-            for cfg in osd_cfgs:
-                cfg.destroy()
+        osd_cfgs = objects.CephConfigList.get_all(
+            ctxt, filters={'group': "osd.%s" % osd.osd_id}
+        )
+        for cfg in osd_cfgs:
+            cfg.destroy()
 
     def _osd_clear_partition_role(self, ctxt, osd):
         logger.debug("osd clear partition role")

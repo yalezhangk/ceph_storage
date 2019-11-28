@@ -98,6 +98,13 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def disk_clear_partition_table(self, diskname):
+        cmd = ['sgdisk', '-o', "/dev/%s" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
     def disk_prepare(self, backend, diskname, db_partition=None,
                      wal_partition=None, cache_partition=None,
                      journal_partition=None, fsid=None, osd_id=None):
