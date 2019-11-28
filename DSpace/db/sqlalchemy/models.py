@@ -498,12 +498,12 @@ class ActionLog(BASE, StorBase):
     client_ip = Column(String(64))
     user_id = Column(String(32))
     action = Column(String(32))
-    resource_id = Column(String(32))
+    resource_id = Column(String(36))
     resource_name = Column(String(64))
     resource_type = Column(String(32))
     resource_data = Column(Text())
     status = Column(String(32), default='under way')  # success/under way/fail
-    err_msg = Column(String(512), default=None)
+    err_msg = Column(Text())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
