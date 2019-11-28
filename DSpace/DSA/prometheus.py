@@ -36,7 +36,8 @@ class PrometheusHandler(AgentBaseHandler):
         target = {
             "targets": [ip + ":" + port],
             "labels": {
-                "hostname": hostname
+                "hostname": hostname,
+                "cluster_id": ctxt.cluster_id
             }
         }
         self._add_to_target_file(target, path)
@@ -52,7 +53,8 @@ class PrometheusHandler(AgentBaseHandler):
         target = {
             "targets": [ip + ":" + port],
             "labels": {
-                "hostname": hostname
+                "hostname": hostname,
+                "cluster_id": ctxt.cluster_id
             }
         }
         if os.path.exists(path):
