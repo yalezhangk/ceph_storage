@@ -6,7 +6,6 @@ from concurrent import futures
 import grpc
 from oslo_config import cfg
 
-from DSpace import context
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
@@ -32,8 +31,7 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
         self.handler = handler
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
-        ctxt = context.get_context()
-        self.debug_mode = objects.sysconfig.sys_config_get(ctxt, 'debug_mode')
+        self.debug_mode = kwargs.get('debug_mode', False)
 
     def call(self, request, context):
         logger.debug("get rpc call: ctxt(%s), method(%s), kwargs(%s),"
