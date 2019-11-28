@@ -4,13 +4,13 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.ceph import CephTask
+from DSpace.taskflows.node import NodeTask
 from DSpace.utils import cluster_config as ClusterConfg
 
 logger = logging.getLogger(__name__)
@@ -30,37 +30,25 @@ class CephConfigHandler(AdminBaseHandler):
             ctxt, filters=filters)
 
     def _get_mon_node(self, ctxt):
-        mons = objects.ServiceList.get_all(
-            ctxt, filters={'name': 'mon', 'cluster_id': ctxt.cluster_id})
-        node = []
-        for mon in mons:
-            node.append(mon.node_id)
-        return node
+        mon_nodes = objects.NodeList.get_all(
+            ctxt, filters={"role_monitor": True}
+        )
+        return mon_nodes
 
     def _get_osd_node(self, ctxt, osd_name):
-        node = []
         if osd_name == "*":
             nodes = objects.NodeList.get_all(
                 ctxt, filters={'cluster_id': ctxt.cluster_id,
                                'role_storage': True})
-            for n in nodes:
-                node.append(n.id)
+            return nodes
         else:
             osd = objects.OsdList.get_all(
-                ctxt, filters={
-                    'osd_id': osd_name,
-                    'cluster_id': ctxt.cluster_id
-                })[0]
-            node.append(osd.node_id)
-        return node
+                ctxt, filters={'osd_id': osd_name}, expected_attrs=['node'])[0]
+            return [osd.node]
 
     def _get_all_node(self, ctxt):
-        node = []
-        nodes = objects.NodeList.get_all(
-            ctxt, filters={'cluster_id': ctxt.cluster_id})
-        for n in nodes:
-            node.append(n.id)
-        return node
+        nodes = objects.NodeList.get_all(ctxt)
+        return nodes
 
     def _get_config_nodes(self, ctxt, values):
         group = values['group']
@@ -137,9 +125,8 @@ class CephConfigHandler(AdminBaseHandler):
 
     def _ceph_confg_update(self, ctxt, nodes, values):
         for n in nodes:
-            client = AgentClientManager(
-                ctxt, cluster_id=ctxt.cluster_id).get_client(node_id=n)
-            _success = client.ceph_config_update(ctxt, values)
+            node_task = NodeTask(ctxt, n)
+            _success = node_task.ceph_config_update(ctxt, values)
             if not _success:
                 logger.error(
                     'Ceph config update failed, node id: {}'.format(n)
