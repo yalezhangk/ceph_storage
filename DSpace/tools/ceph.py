@@ -931,3 +931,17 @@ class RADOSClient(object):
         res = self._send_mon_command(command_str)
         logger.info("crush rule %s, info: %s", rule_name, res)
         return res
+
+    def set_pool_application(self, pool_name, app_name):
+        """
+        {"prefix": "osd pool application enable", "app": "rbd", "pool": "rbd"}
+        """
+        logger.info("set pool %s application to %s", pool_name, app_name)
+        cmd = {
+            "prefix": "osd pool application enable",
+            "app": app_name,
+            "pool": pool_name
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res

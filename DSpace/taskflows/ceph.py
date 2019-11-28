@@ -234,6 +234,7 @@ class CephTask(object):
                                      pg_num=pg_num,
                                      pgp_num=pg_num,
                                      rep_size=pool_rep_size)
+            rados_client.set_pool_application(pool_name, "rbd")
             if not can_specified_rep:
                 rados_client.pool_set_replica_size(
                     pool_name=pool_name, rep_size=rep_size)
@@ -251,6 +252,7 @@ class CephTask(object):
                                              pg_num=pg_num,
                                              pgp_num=pg_num,
                                              rep_size=pool_rep_size)
+                    rados_client.set_pool_application(pool, "rgw")
                     if not can_specified_rep:
                         rados_client.pool_set_replica_size(
                             pool_name=pool, rep_size=rep_size)

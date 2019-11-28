@@ -99,12 +99,15 @@ class NodeHandler(AdminBaseHandler):
     def node_update_rack(self, ctxt, node_id, rack_id):
         node = objects.Node.get_by_id(ctxt, node_id, expected_attrs=['osds'])
         osd_crush_rule_ids = set([i.crush_rule_id for i in node.osds])
+        pools = objects.PoolList.get_all(
+            ctxt, filters={"crush_rule_id": osd_crush_rule_ids})
         logger.info("node_update_rack, osd_crush_rule_ids: %s",
                     osd_crush_rule_ids)
-        if any(osd_crush_rule_ids):
-            logger.error("node %s has osds already in a pool, can't move",
-                         node.hostname)
-            raise exc.NodeMoveNotAllow(node=node.hostname)
+        if pools:
+            logger.error("node %s has osds already in pool %s, can't move",
+                         node.hostname, pools[0].display_name)
+            raise exc.NodeMoveNotAllow(node=node.hostname,
+                                       pool=pools[0].display_name)
         begin_action = self.begin_action(ctxt, Resource.NODE,
                                          Action.NODE_UPDATE_RACK)
         node.rack_id = rack_id
