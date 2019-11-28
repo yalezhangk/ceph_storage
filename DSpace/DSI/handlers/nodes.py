@@ -127,14 +127,14 @@ check_node_schema = {
         "type": "object",
         "properties": {
             "hostname": {"type": "string", "format": "hostname"},
-            "admin_ip": {"type": "string", "format": "ipv4"},
+            "ip_address": {"type": "string", "format": "ipv4"},
             "password": {"type": ["string", "null"]},
             "cluster_ip": {"type": "string", "format": "ipv4"},
             "public_ip": {"type": "string", "format": "ipv4"},
             "gateway_ip": {"type": "string", "format": "ipv4"},
             "roles": {"type": "string"},
         },
-        "required": ["admin_ip", "cluster_ip", "public_ip"],
+        "required": ["ip_address", "cluster_ip", "public_ip"],
     },
     "minItems": 1,
 }
@@ -887,7 +887,7 @@ class NodeCheckHandler(ClusterAPIHandler):
             items:
               type: object
               properties:
-                admin_ip:
+                ip_address:
                   type: string
                   description: node's admin ip
                 password:

@@ -101,6 +101,25 @@ class PermissionMixin(BaseAPIHandler):
             "pools",
         ]
 
+    def import_page(self):
+        return [
+            "cluster",
+            "object-storage",
+            "download",
+            "object-router",
+            "cache",
+            "storage",
+            "alarm_center",
+            "event_center",
+            "settopology",
+            "topology",
+            "email_groups",
+            "license",
+            "server",
+            "cluster-plan",
+            "pools",
+        ]
+
     def add_page(self, permission, page):
         permission['permissions']['stor'][page] = True
 
@@ -136,7 +155,12 @@ class PermissionMixin(BaseAPIHandler):
                 cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
                 if cluster.is_admin:
                     self.add_page(permission, "manage-cluster")
-            for p in self.default_page():
+            include_tag = objects.sysconfig.sys_config_get(ctxt, 'is_import')
+            if include_tag:
+                pages = self.import_page()
+            else:
+                pages = self.default_page()
+            for p in pages:
                 self.add_page(permission, p)
         else:
             self.add_page(permission, "set-system-info")

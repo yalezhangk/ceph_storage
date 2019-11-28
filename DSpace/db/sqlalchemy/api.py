@@ -691,7 +691,7 @@ def node_status_get(context):
     with session.begin():
         query = session.query(models.Node.status, func.count(
             models.Node.id)).group_by(models.Node.status).filter_by(deleted=0)
-        query = query.filter_by(filters)
+        query = process_filters(models.Node)(query, filters)
     return query.all()
 
 
@@ -704,7 +704,7 @@ def pool_status_get(context):
     with session.begin():
         query = session.query(models.Pool.status, func.count(
             models.Pool.id)).group_by(models.Pool.status).filter_by(deleted=0)
-        query = query.filter_by(filters)
+        query = process_filters(models.Pool)(query, filters)
     return query.all()
 
 
@@ -717,7 +717,7 @@ def osd_status_get(context):
     with session.begin():
         query = session.query(models.Osd.status, func.count(
             models.Osd.id)).group_by(models.Osd.status).filter_by(deleted=0)
-        query = query.filter_by(filters)
+        query = process_filters(models.Osd)(query, filters)
     return query.all()
 
 
