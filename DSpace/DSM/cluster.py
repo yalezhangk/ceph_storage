@@ -411,6 +411,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 "unactive": 0
             }
         }
+        len_pool = len(_pools)
         for pool in _pools:
             pool.metrics = {}
             prometheus.pool_get_pg_state(pool)
@@ -420,10 +421,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 "id": pool.id,
                 "display_name": pool.display_name})
             pg_states["pools"].append(pg_state)
-            total["total"]["healthy"] += pg_state["healthy"]
-            total["total"]["recovering"] += pg_state["recovering"]
-            total["total"]["degraded"] += pg_state["degraded"]
-            total["total"]["unactive"] += pg_state["unactive"]
+            total["total"]["healthy"] += pg_state["healthy"] / len_pool
+            total["total"]["recovering"] += pg_state["recovering"] / len_pool
+            total["total"]["degraded"] += pg_state["degraded"] / len_pool
+            total["total"]["unactive"] += pg_state["unactive"] / len_pool
         pg_states.update(total)
         return pg_states
 
