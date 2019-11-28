@@ -609,6 +609,7 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True),
         Column('name', String(64)),
         Column('password', String(255)),
+        Column('current_cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
