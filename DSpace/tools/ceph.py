@@ -174,11 +174,11 @@ class CephTool(ToolBase):
             rc, stdout, stderr = self.run_command(cmd, timeout=5)
             logger.debug("wait stop: code(%s), out(%s), err(%s)",
                          rc, stdout, stderr)
-            if "osd" in stdout:
-                time.sleep(1)
+            if "ceph-osd" in stdout:
+                time.sleep(10)
                 retrys = retrys - 1
                 if retrys < 0:
-                    raise ActionTimeoutError(reason="Stop osd.%d" % osd_id)
+                    raise ActionTimeoutError(reason="Stop osd.%s" % osd_id)
             else:
                 return
 
