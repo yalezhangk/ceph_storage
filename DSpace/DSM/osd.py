@@ -109,14 +109,14 @@ class OsdHandler(AdminBaseHandler):
             osd.save()
             logger.info("osd.%s create success", osd.osd_id)
             op_status = 'CREATE_SUCCESS'
-            msg = _("osd create success: {}").format(osd.osd_id)
+            msg = _("create success: osd.{}").format(osd.osd_id)
             err_msg = None
         except exception.StorException as e:
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             logger.info("osd.%s create error", osd.osd_id)
-            msg = _("osd create error: {}").format(osd.osd_id)
+            msg = _("create error: osd.{}").format(osd.osd_id)
             op_status = 'CREATE_ERROR'
             err_msg = str(e)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -339,7 +339,6 @@ class OsdHandler(AdminBaseHandler):
             status = s_fields.OsdStatus.ERROR
             osd.status = status
             osd.save()
-            msg = _("delete osd.{} error")
             err_msg = str(e)
             msg = _("delete osd.{} error").format(osd.osd_id)
             op_status = "DELETE_ERROR"
