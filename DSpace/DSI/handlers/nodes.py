@@ -314,7 +314,7 @@ class NodeListHandler(ClusterAPIHandler):
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
                     wb_client.send_message(
-                        ctxt, data, "NODE_CREATE_FAILED", err_msg,
+                        ctxt, data, "CREATE_ERROR", err_msg,
                         resource_type='Node')
 
             self.write(objects.json_encode({

@@ -121,7 +121,7 @@ class NodeNotFound(NotFound):
 
 class NodeMoveNotAllow(StorException):
     code = 400
-    message = _("node: %(node)s osd already in a pool, can't move")
+    message = _("node: %(node)s osd already in pool %(pool)s, can't move")
 
 
 class RackMoveNotAllow(StorException):

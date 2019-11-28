@@ -165,8 +165,8 @@ class PoolHandler(AdminBaseHandler):
             status = s_fields.PoolStatus.ACTIVE
             msg = _("create pool success: {}").format(pool.display_name)
             op_status = "CREATE_SUCCESS"
-        except exception.StorException as e:
-            logger.error("create pool error: {}".format(e))
+        except Exception as e:
+            logger.exception("create pool error: %s", e)
             db_pool_id = None
             rule_id = None
             status = s_fields.PoolStatus.ERROR
