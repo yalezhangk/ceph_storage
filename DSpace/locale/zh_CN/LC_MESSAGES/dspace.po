@@ -1,0 +1,758 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: space 1.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2019-11-27 12:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+msgid "read_deleted can only be one of 'no', 'yes' or 'only', not %r"
+msgstr "read_deleted只能是 'no', 'yes' or 'only', 不能是 %r"
+
+msgid "An unknown exception occurred."
+msgstr "未知的异常"
+
+msgid "Programming error in Stor: %(reason)s"
+msgstr "程序错误: %(reason)s"
+
+msgid "Not authorized."
+msgstr "用户信息异常"
+
+msgid "User or password was error."
+msgstr "用户名或密码错误"
+
+msgid "Resource could not be found."
+msgstr "资源找不到"
+
+msgid "User %(user_id)s could not be found."
+msgstr "用户 %(user_id)s 未找到"
+
+msgid "Sys Config %(sys_config_id)s could not be found."
+msgstr "系统配置 %(sys_config_id)s 未找到"
+
+msgid "Volume %(volume_id)s could not be found."
+msgstr "卷 %(volume_id)s 未找到"
+
+msgid "Cluster %(cluster_id)s could not be found."
+msgstr "集群 %(cluster_id)s 未找到"
+
+msgid "RPCService %(rpc_service_id)s could not be found."
+msgstr "服务 %(rpc_service_id)s 未找到"
+
+msgid "Node %(node_id)s could not be found."
+msgstr "节点 %(node_id)s 未找到"
+
+msgid "node: %(node)s osd already in a pool, can't move"
+msgstr "节点  %(node)s 上的硬盘已经加入存储池，不能移动"
+
+msgid "rack: %(rack)s osd already in a pool, can't move"
+msgstr "机架  %(rack)s 上的硬盘已经加入存储池，不能移动"
+
+msgid "Datacenter %(datacenter_id)s could not be found."
+msgstr "数据中心  %(datacenter_id)s 未找到"
+
+msgid "Rack %(rack_id)s could not be found."
+msgstr "机架 %(rack_id)s 未找到"
+
+msgid "Osd %(osd_id)s could not be found."
+msgstr "硬盘 %(osd_id)s 未找到"
+
+msgid "Pool %(pool_id)s could not be found."
+msgstr "存储池 %(pool_id)s 未找到"
+
+msgid "Network %(net_id)s could not be found."
+msgstr "网路 %(net_id)s 未找到"
+
+msgid "Disk %(disk_id)s could not be found."
+msgstr "磁盘 %(disk_id)s 未找到"
+
+msgid "Disk partition %(disk_part_id)s could not be found."
+msgstr "分区 %(disk_part_id)s 未找到"
+
+msgid "Service %(service_id)s could not be found."
+msgstr "服务 %(service_id)s 未找到"
+
+msgid "Cluster ID could not be found."
+msgstr "集群未找到"
+
+msgid "Endpoint for %(service_name)s:%(node_id)s could not be found."
+msgstr "接入点 %(service_name)s:%(node_id)s 未找到"
+
+msgid "Endpoint for %(service_name)s:%(cluster_id)s could not be found."
+msgstr "接入点 %(service_name)s:%(cluster_id)s 未找到"
+
+msgid "Cluster %(cluster_id)s already exists."
+msgstr "集群 %(cluster_id)s 已经存在"
+
+msgid "Method %(method)s not found."
+msgstr "方法 %(method)s 未找到"
+
+msgid ""
+"Command: %(cmd)s ReturnCode: %(return_code)s Stderr: %(stderr)s Stdout: "
+"%(stdout)s."
+msgstr "命令 %(cmd)s， 执行结果 %(return_code)s 错误输出  %(stderr)s  标准输出 %(stdout)s"
+
+msgid "Argument 'args' to run_command must be list or string"
+msgstr "参数必须是字符串"
+
+msgid "Ceph exception"
+msgstr "Ceph 异常"
+
+msgid "%(msg)s"
+msgstr "%(msg)s"
+
+msgid "SSH Authentication failed: ip(%(ip)s) password(%(password)s)"
+msgstr "远程连接认证异常: 地址(%(ip)s) 密码(%(password)s)"
+
+msgid "VolumeAccessPath %(access_path_id)s could not be found."
+msgstr ""
+
+msgid "VolumeGateway %(gateway_id)s could not be found."
+msgstr ""
+
+msgid "VolumeClient %(volume_client_id)s could not be found."
+msgstr ""
+
+msgid "VolumeClientGroup %(client_group_id)s could not be found."
+msgstr ""
+
+msgid "iqn %(iqn)s already exists."
+msgstr ""
+
+msgid "VolumeClientGroup %(volume_client_group_name)s already exists."
+msgstr ""
+
+msgid "no mapping attached to this client group: %(volume_client_group)s"
+msgstr ""
+
+msgid ""
+"access path %(access_path)s don't enable chap, can't enable mutual chap "
+"for client group %(volume_client_group)s"
+msgstr ""
+
+msgid "License %(license_id)s could not be found."
+msgstr ""
+
+msgid "Invalid input received: %(reason)s"
+msgstr ""
+
+msgid "AlertRule %(alert_rule_id)s could not be found."
+msgstr ""
+
+msgid "EmailGroup %(email_group_id)s could not be found."
+msgstr ""
+
+msgid "CephConfig %(ceph_config_id)s could not be found."
+msgstr ""
+
+msgid "CephConfig %(group)s: %(key)s could not be found."
+msgstr ""
+
+msgid "AlertGroup %(alert_group_id)s could not be found."
+msgstr ""
+
+msgid "can not delete email_group used by alert_group"
+msgstr ""
+
+msgid "AlertLog %(alert_log_id)s could not be found."
+msgstr ""
+
+msgid "LogFile %(log_file_id)s could not be found."
+msgstr ""
+
+msgid "Disk %(disk_id)s do not support led light"
+msgstr ""
+
+msgid "VolumeSnapshot %(volume_snapshot_id)s could not be found."
+msgstr ""
+
+msgid "Volume Action %(action)s must in'extend,shrink,rollback,unlink'"
+msgstr ""
+
+msgid "Disk Action %(action)s do not support"
+msgstr ""
+
+msgid "CrushRule %(crush_rule_id)s could not be found."
+msgstr ""
+
+msgid "VolumeSnapshot Action %(action)s must in 'clone'"
+msgstr ""
+
+msgid "a pool named %(pool)s is exists"
+msgstr ""
+
+msgid "a pool named %(pool)s not found"
+msgstr ""
+
+msgid "volume status must in [active, error]"
+msgstr ""
+
+msgid "ActionLog %(action_log_id)s could not be found."
+msgstr ""
+
+msgid "%(access_path)s could not be found."
+msgstr ""
+
+msgid "iscsi target operation error: %(action)s"
+msgstr ""
+
+msgid "iscsi target %(iqn)s already exists."
+msgstr ""
+
+msgid "iscsi target %(iqn)s not found."
+msgstr ""
+
+msgid "iscsi acl %(iqn)s already exists."
+msgstr ""
+
+msgid "iscsi backstore %(disk_name)s already exists."
+msgstr ""
+
+msgid "iscsi backstore %(disk_name)s not found."
+msgstr ""
+
+msgid "iscsi acl %(iqn_initiator)s not found."
+msgstr ""
+
+msgid ""
+"iscsi acl %(iqn_initiator)s can't find a mapped lun attached to "
+"%(disk_name)s"
+msgstr ""
+
+msgid "AlertLog Action %(action)s must in'all_readed,del_alert_logs'"
+msgstr ""
+
+msgid "a volume gateway already mount in node %(node)s."
+msgstr ""
+
+msgid "access path already has volume %(volume)s."
+msgstr ""
+
+msgid "access path %(access_path)s no volume gateway."
+msgstr ""
+
+msgid "access path %(access_path)s no such mapping."
+msgstr ""
+
+msgid "can't unmount bgw: %(reason)s"
+msgstr ""
+
+msgid "access path %(access_path)s no more volumes, can't remove."
+msgstr ""
+
+msgid "access path %(access_path)s no such volume: %(volume)s."
+msgstr ""
+
+msgid "volume mapping %(volume_mapping_id)s not exists."
+msgstr ""
+
+msgid ""
+"access path mapping %(access_path)s:%(client_group)s already has volume "
+"%(volume)s."
+msgstr ""
+
+msgid "can't delete access path: %(reason)s"
+msgstr ""
+
+msgid "download file error: %(reason)s"
+msgstr ""
+
+msgid "resource_type:{} not exist"
+msgstr ""
+
+msgid "level:{} not exist"
+msgstr ""
+
+msgid "get_metrics_history_args: start and end required"
+msgstr ""
+
+msgid "Ceph config: missing required arguments!"
+msgstr ""
+
+msgid "{} do not support to modify"
+msgstr ""
+
+msgid "Type of config is error, it needs to be {}"
+msgstr ""
+
+msgid "Ceph config: action is none"
+msgstr ""
+
+msgid "Ceph config: config is none!"
+msgstr ""
+
+msgid "datacenter: name is none"
+msgstr ""
+
+msgid "Disk partition role is required"
+msgstr ""
+
+msgid "this tab not support"
+msgstr ""
+
+msgid "disk: disk type is none"
+msgstr ""
+
+msgid "disk: missing required arguments!"
+msgstr ""
+
+msgid "disk: partition_num must be greater than zero!"
+msgstr ""
+
+msgid "disk: action is none"
+msgstr ""
+
+msgid "can not get file_metas"
+msgstr ""
+
+msgid "File too large"
+msgstr ""
+
+msgid "the license.key is invalid"
+msgstr ""
+
+msgid "file_name not exist"
+msgstr ""
+
+msgid "file not yet generate or file path is error"
+msgstr ""
+
+msgid "node:{} create error"
+msgstr ""
+
+msgid "node_metrics_network: net_name required"
+msgstr ""
+
+msgid "node_metrics_histroy_network: net_name required"
+msgstr ""
+
+msgid "IP Range %s format error"
+msgstr ""
+
+msgid "Osd type err"
+msgstr ""
+
+msgid "BlueStore not support journal"
+msgstr ""
+
+msgid "FileStore not support DB, WAL or Cache"
+msgstr ""
+
+msgid "osd:hostname={},disk_name={} create error"
+msgstr ""
+
+msgid "this tab is not supported"
+msgstr ""
+
+msgid "pool: name is none"
+msgstr ""
+
+msgid "sysconf: post data is none"
+msgstr ""
+
+msgid "smtp: post data is none"
+msgstr ""
+
+msgid "smtp could not be found."
+msgstr ""
+
+msgid "smtp_context could not be found."
+msgstr ""
+
+msgid "volume_access_path: {} is already exists!"
+msgstr ""
+
+msgid "no username or password input"
+msgstr ""
+
+msgid "username or password too short"
+msgstr ""
+
+msgid "username or password too long"
+msgstr ""
+
+msgid "no access_path input"
+msgstr ""
+
+msgid "name or type not found"
+msgstr ""
+
+msgid "no node_id input"
+msgstr ""
+
+msgid "no chap_enable input"
+msgstr ""
+
+msgid "no client_group_id input"
+msgstr ""
+
+msgid "no volume_ids input"
+msgstr ""
+
+msgid "iqn: {} is not allowed!"
+msgstr ""
+
+msgid "no mutual_username or  mutual_password input"
+msgstr ""
+
+msgid "mutual_username or mutual_passwordtoo short"
+msgstr ""
+
+msgid "mutual_username or mutual_passwordtoo long"
+msgstr ""
+
+msgid "no name input"
+msgstr ""
+
+msgid "no mutual_chap_enable input"
+msgstr ""
+
+msgid "has not active mon host, can not do any ceph actions"
+msgstr ""
+
+msgid "Ceph config update failed"
+msgstr ""
+
+msgid "Ceph config update successful"
+msgstr ""
+
+msgid "Admin cluster exists"
+msgstr ""
+
+msgid "Cluster name exists"
+msgstr ""
+
+msgid "Cluster delete success"
+msgstr ""
+
+msgid "Cluster delete error!"
+msgstr ""
+
+msgid "Cluster is %s"
+msgstr ""
+
+msgid "datacenter: {} is already exists!"
+msgstr ""
+
+msgid "disk: repeated actions, led is {}"
+msgstr ""
+
+msgid "create disk partitions success"
+msgstr ""
+
+msgid "create disk partitions failed"
+msgstr ""
+
+msgid "remove disk partitions success"
+msgstr ""
+
+msgid "remove disk partitions failed"
+msgstr ""
+
+msgid "current disk:{} partition has used, can not del"
+msgstr ""
+
+msgid "node_id {} is not monitor role"
+msgstr ""
+
+msgid "node_id {} is not storage role"
+msgstr ""
+
+msgid "service_type must is mon orosd"
+msgstr ""
+
+msgid "node remove success: {}"
+msgstr ""
+
+msgid "node remove error: {}"
+msgstr ""
+
+msgid "Node status not allow!"
+msgstr ""
+
+msgid "admin role could not delete!"
+msgstr ""
+
+msgid "Please remove disk partition first!"
+msgstr ""
+
+msgid "Please set network planning"
+msgstr ""
+
+msgid "Max monitor num is %s"
+msgstr ""
+
+msgid "Please remove osd first!"
+msgstr ""
+
+msgid "Node %s has osd!"
+msgstr ""
+
+msgid "set roles success: {}"
+msgstr ""
+
+msgid "set roles error {}"
+msgstr ""
+
+msgid "Only host's status is active can setrole(host_name: %s)"
+msgstr ""
+
+msgid "Can't not set and unset the same role"
+msgstr ""
+
+msgid "node create success"
+msgstr ""
+
+msgid "node create error, reason: {}"
+msgstr ""
+
+msgid "Admin ip exists"
+msgstr ""
+
+msgid "Cluster ip exists"
+msgstr ""
+
+msgid "Public ip exists"
+msgstr ""
+
+msgid "Please Clean First"
+msgstr ""
+
+msgid "Please Import First"
+msgstr ""
+
+msgid "admin_ip,cluster_ip,public_ip is required"
+msgstr ""
+
+msgid "osd create success: {}"
+msgstr ""
+
+msgid "osd create error: {}"
+msgstr ""
+
+msgid "Disk %s not available"
+msgstr ""
+
+msgid "Disk %s not for data"
+msgstr ""
+
+msgid "The partition %s not available"
+msgstr ""
+
+msgid "The partition %s not for data"
+msgstr ""
+
+msgid "The partition is not on the same machine as the disk"
+msgstr ""
+
+msgid "%s not support filestore"
+msgstr ""
+
+msgid "No active monitor"
+msgstr ""
+
+msgid "Max osd num is %s"
+msgstr ""
+
+msgid "delete success: {}"
+msgstr ""
+
+msgid "Osd create error!"
+msgstr ""
+
+msgid "delete error: {}"
+msgstr ""
+
+msgid "Osd status is %s"
+msgstr ""
+
+msgid "create pool success: {}"
+msgstr ""
+
+msgid "create pool error: {}"
+msgstr ""
+
+msgid "delete pool success: {}"
+msgstr ""
+
+msgid "delete pool error: {}"
+msgstr ""
+
+msgid "pool {} increase disk success"
+msgstr ""
+
+msgid "pool {} increase disk error"
+msgstr ""
+
+msgid "{} decrease disk success"
+msgstr ""
+
+msgid "{} decrease disk error"
+msgstr ""
+
+msgid "{} update policy success"
+msgstr ""
+
+msgid "{} update policy error"
+msgstr ""
+
+msgid "rack: {} is already exists!"
+msgstr ""
+
+msgid "Volume name {} already exists!"
+msgstr ""
+
+msgid "create volume success"
+msgstr ""
+
+msgid "create volume error"
+msgstr ""
+
+msgid "The volume {} has snapshot"
+msgstr ""
+
+msgid "The volume {} has related access_path"
+msgstr ""
+
+msgid "delete volume success"
+msgstr ""
+
+msgid "delete volume error"
+msgstr ""
+
+msgid "volume resize success"
+msgstr ""
+
+msgid "volume resize error"
+msgstr ""
+
+msgid "The volume_id {} has not the snap_id {}"
+msgstr ""
+
+msgid "The volume {} has access_path, can not rollback"
+msgstr ""
+
+msgid "volume rollback success"
+msgstr ""
+
+msgid "volume rollback error"
+msgstr ""
+
+msgid "the volume_name {} has not relate_snap"
+msgstr ""
+
+msgid "volume unlink success"
+msgstr ""
+
+msgid "volume unlink error"
+msgstr ""
+
+msgid "snap name {} already exists!"
+msgstr ""
+
+msgid "delete snapshot success"
+msgstr ""
+
+msgid "delete snapshot error"
+msgstr ""
+
+msgid "snapshot {} has clone volume, can not del"
+msgstr ""
+
+msgid "Version should be less than or equal to %(max_version)d."
+msgstr ""
+
+msgid "Must supply a positive value for age"
+msgstr ""
+
+msgid "Maximum age is count of days since epoch."
+msgstr ""
+
+msgid "Purge command failed, check stor-manage logs for more details."
+msgstr ""
+
+msgid "Error attempting to run %(method)s"
+msgstr ""
+
+msgid "%(found)i rows matched query %(meth)s, %(done)i migrated"
+msgstr ""
+
+msgid "Must supply a positive value for max_count."
+msgstr ""
+
+msgid "Running batches of %i until complete."
+msgstr ""
+
+msgid "Migration"
+msgstr ""
+
+msgid "Total Needed"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Some migrations failed unexpectedly. Check log for details."
+msgstr ""
+
+msgid ""
+"Failed to reset active backend for host %s, check stor-manage logs for "
+"more details."
+msgstr ""
+
+msgid "Available categories:"
+msgstr ""
+
+msgid "\t%s"
+msgstr ""
+
+msgid "Invalid directory: %s"
+msgstr ""
+
+msgid "Failed to read configuration file(s): %s"
+msgstr ""
+
+msgid "Unknown sort direction, must be 'desc' or 'asc'"
+msgstr ""
+
+msgid "Condition has no field."
+msgstr ""
+
+msgid "Error writing field to database"
+msgstr ""
+
+msgid "Unrecognized read_deleted value '%s'"
+msgstr ""
+
+msgid "Model %s doesn't support counting resource."
+msgstr ""
+
+msgid "Unknown sort direction, must be 'desc' or 'asc'."
+msgstr ""
+
+msgid "Sort direction array size exceeds sort key array size."
+msgstr ""
+
+msgid "attribute %s not lazy-loadable"
+msgstr ""
+
+msgid "Invalid config type"
+msgstr ""
+
+msgid "SSH Error: %s"
+msgstr ""
+
+msgid "old style configuration can use only dictionary or memcached backends"
+msgstr ""
+
+msgid "Coordinator uninitialized."
+msgstr ""
+
+msgid "IP address {} format is incorrect!"
+msgstr ""
+

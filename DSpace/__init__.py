@@ -3,3 +3,4 @@
 import os
 
 ROOT = os.path.dirname(__file__)
+os.environ["DSPACE_LOCALEDIR"] = ROOT + "/locale"
