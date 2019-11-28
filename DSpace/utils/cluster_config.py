@@ -44,7 +44,6 @@ cluster_configs = {
 
 default_cluster_configs = {
     'mon_allow_pool_delete': {'type': 'bool', 'value': True},
-    'backend_type': {'type': 'string', 'value': 'kernel'},
     'auth_cluster_required': {'type': 'string', 'value': 'none'},
     'auth_service_required': {'type': 'string', 'value': 'none'},
     'auth_client_required': {'type': 'string', 'value': 'none'},
