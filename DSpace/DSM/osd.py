@@ -77,10 +77,10 @@ class OsdHandler(AdminBaseHandler):
                     osd.metrics.update({'kb': [0, size['kb']]})
                     osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
                     osd.metrics.update({'kb_used': [0, size['kb_used']]})
-                # TODO OSD实时容量数据放到定时任务中
-                osd.size = int(size['kb']) * 1024
-                osd.used = int(size['kb_used']) * 1024
-                osd.save()
+                    # TODO OSD实时容量数据放到定时任务中
+                    osd.size = int(size['kb']) * 1024
+                    osd.used = int(size['kb_used']) * 1024
+                    osd.save()
                 prometheus = PrometheusTool(ctxt)
                 prometheus.osd_get_pg_state(osd)
 
