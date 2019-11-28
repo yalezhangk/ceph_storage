@@ -42,8 +42,6 @@ class DatacenterHandler(AdminBaseHandler):
     def datacenter_get_all(self, ctxt, marker=None, limit=None,
                            sort_keys=None, sort_dirs=None, filters=None,
                            offset=None):
-        filters = filters or {}
-        filters['cluster_id'] = ctxt.cluster_id
         return objects.DatacenterList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
