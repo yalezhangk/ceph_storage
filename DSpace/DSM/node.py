@@ -859,3 +859,15 @@ class NodeHandler(AdminBaseHandler):
             if node['admin_ip'] not in extras:
                 node['check_Installation_package'] = True
         return status
+
+    def node_reporter(self, ctxt, node_summary, node_id):
+        logger.info("node_reporter: %s", node_summary)
+        node = objects.Node.get_by_id(ctxt, node_id)
+        node.cpu_num = node_summary.get("cpu_num")
+        node.cpu_model = node_summary.get("cpu_model")
+        node.cpu_core_num = node_summary.get("cpu_core_num")
+        node.vendor = node_summary.get("vendor")
+        node.sys_type = node_summary.get("sys_type")
+        node.sys_version = node_summary.get("sys_version")
+        node.mem_size = node_summary.get("memsize")
+        node.save()

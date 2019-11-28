@@ -283,6 +283,11 @@ class AdminClient(BaseClient):
                              networks=networks, node_id=node_id)
         return response
 
+    def node_reporter(self, ctxt, node_summary, node_id):
+        response = self.call(ctxt, "node_reporter",
+                             node_summary=node_summary, node_id=node_id)
+        return response
+
     ###################
     def osd_get(self, ctxt, osd_id, **kwargs):
         response = self.call(ctxt, "osd_get", osd_id=osd_id, **kwargs)
