@@ -139,7 +139,10 @@ class PrometheusTool(object):
         try:
             value = json.loads(function(**kwargs))
         except BaseException:
-            return [time.time(), 0]
+            if graph:
+                return None
+            else:
+                return [time.time(), 0]
 
         if len(value['data']['result']):
             if graph:
@@ -147,7 +150,10 @@ class PrometheusTool(object):
             else:
                 return value['data']['result'][0]['value']
         else:
-            return [time.time(), 0]
+            if graph:
+                return None
+            else:
+                return [time.time(), 0]
 
     def node_get_metrics_network(self, node, net_name):
         metrics = {}
