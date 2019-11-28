@@ -269,6 +269,29 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
                                   s_fields.ClusterStatus.ERROR]:
             raise exc.InvalidInput(_('Cluster is %s') % cluster.status)
+        # check if there are any nodes doing task
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={
+                "status": [
+                    s_fields.NodeStatus.CREATING,
+                    s_fields.NodeStatus.DELETING,
+                    s_fields.NodeStatus.DEPLOYING_ROLE,
+                    s_fields.NodeStatus.REMOVING_ROLE
+                ]
+            }
+        )
+        if len(nodes):
+            raise exc.InvalidInput(_('Cluster has nodes in doing task'))
+        osds = objects.OsdList.get_all(
+            ctxt, filters={
+                "status": [
+                    s_fields.OsdStatus.CREATING,
+                    s_fields.OsdStatus.DELETING
+                ]
+            }
+        )
+        if len(osds):
+            raise exc.InvalidInput(_('Cluster has osds in doing task'))
 
     def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
         logger.debug("delete cluster %s start", cluster_id)
