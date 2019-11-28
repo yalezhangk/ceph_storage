@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 from prometheus_http_client import NodeExporter
 from prometheus_http_client import Prometheus as PrometheusClient
@@ -138,7 +139,7 @@ class PrometheusTool(object):
         try:
             value = json.loads(function(**kwargs))
         except BaseException:
-            return None
+            return [time.time(), 0]
 
         if len(value['data']['result']):
             if graph:
@@ -146,7 +147,7 @@ class PrometheusTool(object):
             else:
                 return value['data']['result'][0]['value']
         else:
-            return None
+            return [time.time(), 0]
 
     def node_get_metrics_network(self, node, net_name):
         metrics = {}
@@ -472,9 +473,13 @@ class PrometheusTool(object):
     def osd_get_pg_state(self, osd):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
+            node = objects.Node.get_by_id(self.ctxt, osd.node_id)
+            filters = {
+                'osd_id': int(osd.osd_id or '-1'),
+                'hostname': node.hostname
+            }
             pg_value = json.loads(prometheus.query(
-                metric='ceph_pg_metadata', filter={
-                    'osd_id': int(osd.osd_id or '-1')}))['data']['result']
+                metric='ceph_pg_metadata', filter=filters))['data']['result']
             healthy = 0
             degraded = 0
             recovering = 0
