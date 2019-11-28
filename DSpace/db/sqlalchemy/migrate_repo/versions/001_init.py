@@ -578,6 +578,7 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True),
         Column('name', String(32)),
         Column('status', String(32)),
+        Column('counter', BigInteger),
         Column('node_id', Integer, ForeignKey('nodes.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',

@@ -9,6 +9,7 @@ import six
 from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.DSA.base import AgentBaseHandler
+from DSpace.objects import fields as s_fields
 from DSpace.tools.docker import Docker as DockerTool
 from DSpace.tools.service import Service as ServiceTool
 
@@ -108,7 +109,7 @@ class CronHandler(AgentBaseHandler):
                         status = service_tool.status(name=v)
                 except exception.StorException as e:
                     logger.error("Get service status error: {}".format(e))
-                    status = 'inactive'
+                    status = s_fields.ServiceStatus.INACTIVE
                 services.append({
                     "name": k,
                     "status": status,

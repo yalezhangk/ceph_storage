@@ -183,6 +183,7 @@ class Service(BASE, StorBase):
     name = Column(String(32), index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     status = Column(String(32))
+    counter = Column(BigInteger, default=0)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 
