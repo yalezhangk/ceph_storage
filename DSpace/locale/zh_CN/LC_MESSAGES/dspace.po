@@ -2,12 +2,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-27 12:28+0800\n"
+"POT-Creation-Date: 2019-11-28 10:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
@@ -95,7 +96,9 @@ msgstr "方法 %(method)s 未找到"
 msgid ""
 "Command: %(cmd)s ReturnCode: %(return_code)s Stderr: %(stderr)s Stdout: "
 "%(stdout)s."
-msgstr "命令 %(cmd)s， 执行结果 %(return_code)s 错误输出  %(stderr)s  标准输出 %(stdout)s"
+msgstr ""
+"命令 %(cmd)s， 执行结果 %(return_code)s 错误输出  %(stderr)s  标准输出 "
+"%(stdout)s"
 
 msgid "Argument 'args' to run_command must be list or string"
 msgstr "参数必须是字符串"
@@ -131,8 +134,8 @@ msgid "no mapping attached to this client group: %(volume_client_group)s"
 msgstr ""
 
 msgid ""
-"access path %(access_path)s don't enable chap, can't enable mutual chap "
-"for client group %(volume_client_group)s"
+"access path %(access_path)s don't enable chap, can't enable mutual chap for "
+"client group %(volume_client_group)s"
 msgstr ""
 
 msgid "License %(license_id)s could not be found."
@@ -220,8 +223,7 @@ msgid "iscsi acl %(iqn_initiator)s not found."
 msgstr ""
 
 msgid ""
-"iscsi acl %(iqn_initiator)s can't find a mapped lun attached to "
-"%(disk_name)s"
+"iscsi acl %(iqn_initiator)s can't find a mapped lun attached to %(disk_name)s"
 msgstr ""
 
 msgid "AlertLog Action %(action)s must in'all_readed,del_alert_logs'"
@@ -433,8 +435,11 @@ msgstr ""
 msgid "Cluster delete error!"
 msgstr ""
 
+msgid "Admin node cannot be delete"
+msgstr "管理节点不能被删除"
+
 msgid "Cluster is %s"
-msgstr ""
+msgstr "集群%s"
 
 msgid "datacenter: {} is already exists!"
 msgstr ""
@@ -491,7 +496,7 @@ msgid "Please remove osd first!"
 msgstr ""
 
 msgid "Node %s has osd!"
-msgstr ""
+msgstr "节点%s还有硬盘存在"
 
 msgid "set roles success: {}"
 msgstr ""
@@ -529,11 +534,11 @@ msgstr ""
 msgid "admin_ip,cluster_ip,public_ip is required"
 msgstr ""
 
-msgid "osd create success: {}"
-msgstr ""
+msgid "create success: osd.{}"
+msgstr "创建硬盘成功：osd.{}"
 
-msgid "osd create error: {}"
-msgstr ""
+msgid "create error: osd.{}"
+msgstr "创建硬盘失败：osd.{}"
 
 msgid "Disk %s not available"
 msgstr ""
@@ -559,35 +564,32 @@ msgstr ""
 msgid "Max osd num is %s"
 msgstr ""
 
-msgid "delete success: {}"
-msgstr ""
+msgid "delete osd.{} success"
+msgstr "删除硬盘成功：osd.{}"
 
-msgid "Osd create error!"
-msgstr ""
-
-msgid "delete error: {}"
-msgstr ""
+msgid "delete osd.{} error"
+msgstr "删除硬盘失败：osd.{}"
 
 msgid "Osd status is %s"
-msgstr ""
+msgstr "硬盘状态：%s"
 
 msgid "create pool success: {}"
-msgstr ""
+msgstr "创建存储池成功：{}"
 
 msgid "create pool error: {}"
-msgstr ""
+msgstr "创建存储池失败：{}"
 
 msgid "delete pool success: {}"
-msgstr ""
+msgstr "删除存储池成功：{}"
 
 msgid "delete pool error: {}"
-msgstr ""
+msgstr "删除存储池失败：{}"
 
 msgid "pool {} increase disk success"
-msgstr ""
+msgstr "存储池{}添加硬盘成功"
 
 msgid "pool {} increase disk error"
-msgstr ""
+msgstr "存储池{}添加硬盘失败"
 
 msgid "{} decrease disk success"
 msgstr ""
@@ -701,8 +703,8 @@ msgid "Some migrations failed unexpectedly. Check log for details."
 msgstr ""
 
 msgid ""
-"Failed to reset active backend for host %s, check stor-manage logs for "
-"more details."
+"Failed to reset active backend for host %s, check stor-manage logs for more "
+"details."
 msgstr ""
 
 msgid "Available categories:"
@@ -755,4 +757,3 @@ msgstr ""
 
 msgid "IP address {} format is incorrect!"
 msgstr ""
-
