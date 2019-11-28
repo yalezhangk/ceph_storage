@@ -167,11 +167,13 @@ class CephTool(ToolBase):
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
-        cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--", "--id",
-               osd_id]
+        cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
+               "'id %s'" % osd_id]
         retrys = 10
         while True:
             rc, stdout, stderr = self.run_command(cmd, timeout=5)
+            logger.debug("wait stop: code(%s), out(%s), err(%s)",
+                         rc, stdout, stderr)
             if "osd" in stdout:
                 time.sleep(1)
                 retrys = retrys - 1
