@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-28 10:28+0800\n"
+"POT-Creation-Date: 2019-11-28 14:03+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,426 +113,456 @@ msgid "SSH Authentication failed: ip(%(ip)s) password(%(password)s)"
 msgstr "远程连接认证异常: 地址(%(ip)s) 密码(%(password)s)"
 
 msgid "VolumeAccessPath %(access_path_id)s could not be found."
-msgstr ""
+msgstr "访问路径 %(access_path_id)s 未找到"
 
 msgid "VolumeGateway %(gateway_id)s could not be found."
-msgstr ""
+msgstr "块存储网关 %(gateway_id)s 未找到"
 
 msgid "VolumeClient %(volume_client_id)s could not be found."
-msgstr ""
+msgstr "客户端 %(volume_client_id)s 未找到"
 
 msgid "VolumeClientGroup %(client_group_id)s could not be found."
-msgstr ""
+msgstr "客户端组 %(client_group_id)s 未找到"
 
 msgid "iqn %(iqn)s already exists."
-msgstr ""
+msgstr "IQN %(iqn)s 已存在"
 
 msgid "VolumeClientGroup %(volume_client_group_name)s already exists."
-msgstr ""
+msgstr "客户端组 %(volume_client_group_name)s 已存在"
 
 msgid "no mapping attached to this client group: %(volume_client_group)s"
-msgstr ""
+msgstr "没有与客户端组 %(volume_client_group)s 关联的映射"
 
 msgid ""
 "access path %(access_path)s don't enable chap, can't enable mutual chap for "
 "client group %(volume_client_group)s"
-msgstr ""
+msgstr "访问路径 %(access_path)s 未开启chap认证，无法开启客户端组 %(volume_client_group)s 的双向chap认证"
 
 msgid "License %(license_id)s could not be found."
-msgstr ""
+msgstr "证书 %(license_id)s 未找到"
 
 msgid "Invalid input received: %(reason)s"
-msgstr ""
+msgstr "不合法的输入： %(reason)s"
 
 msgid "AlertRule %(alert_rule_id)s could not be found."
-msgstr ""
+msgstr "告警规则 %(alert_rule_id)s 未找到"
 
 msgid "EmailGroup %(email_group_id)s could not be found."
-msgstr ""
+msgstr "通知列表 %(email_group_id)s 未找到"
 
 msgid "CephConfig %(ceph_config_id)s could not be found."
-msgstr ""
+msgstr "Ceph配置 %(ceph_config_id)s 未找到"
 
 msgid "CephConfig %(group)s: %(key)s could not be found."
-msgstr ""
+msgstr "Ceph配置 %(ceph_config_id)s 未找到"
 
 msgid "AlertGroup %(alert_group_id)s could not be found."
-msgstr ""
+msgstr "告警通知 %(alert_group_id)s 未找到"
 
 msgid "can not delete email_group used by alert_group"
-msgstr ""
+msgstr "无法删除被告警通知使用中的通知列表"
 
 msgid "AlertLog %(alert_log_id)s could not be found."
-msgstr ""
+msgstr "告警记录 %(alert_log_id)s 未找到"
 
 msgid "LogFile %(log_file_id)s could not be found."
-msgstr ""
+msgstr "日志文件 %(log_file_id)s 未找到"
 
 msgid "Disk %(disk_id)s do not support led light"
-msgstr ""
+msgstr "磁盘 %(disk_id)s 不支持点灯"
 
 msgid "VolumeSnapshot %(volume_snapshot_id)s could not be found."
-msgstr ""
+msgstr "卷快照 %(volume_snapshot_id)s 未找到"
 
 msgid "Volume Action %(action)s must in'extend,shrink,rollback,unlink'"
-msgstr ""
+msgstr "卷操作 %(action)s 只支持 'extend'、'shrink'、'rollback'或'unlink'"
 
 msgid "Disk Action %(action)s do not support"
-msgstr ""
+msgstr "磁盘操作 %(action)s 不支持"
 
 msgid "CrushRule %(crush_rule_id)s could not be found."
-msgstr ""
+msgstr "CrushRule %(crush_rule_id)s 未找到"
 
 msgid "VolumeSnapshot Action %(action)s must in 'clone'"
-msgstr ""
+msgstr "卷快照操作 %(action)s 只支持 'clone' "
 
 msgid "a pool named %(pool)s is exists"
-msgstr ""
+msgstr "存储池名称 %(pool)s 已存在"
 
 msgid "a pool named %(pool)s not found"
-msgstr ""
+msgstr "存储池名称 %(pool)s 未找到"
 
 msgid "volume status must in [active, error]"
-msgstr ""
+msgstr "卷状态只支持 'active'或'error'"
 
 msgid "ActionLog %(action_log_id)s could not be found."
-msgstr ""
+msgstr "操作日志  %(action_log_id)s 未找到"
 
 msgid "%(access_path)s could not be found."
-msgstr ""
+msgstr "访问路径 %(access_path)s 未找到"
 
 msgid "iscsi target operation error: %(action)s"
-msgstr ""
+msgstr "ISCSI 操作 %(action)s 错误"
 
 msgid "iscsi target %(iqn)s already exists."
-msgstr ""
+msgstr "ISCSI iqn %(iqn)s 已存在"
 
 msgid "iscsi target %(iqn)s not found."
-msgstr ""
+msgstr "ISCSI iqn %(iqn)s 未找到"
 
 msgid "iscsi acl %(iqn)s already exists."
-msgstr ""
+msgstr "ISCSI ACL IQN %(iqn)s 已存在"
 
 msgid "iscsi backstore %(disk_name)s already exists."
-msgstr ""
+msgstr "ISCSI 存储磁盘 %(disk_name)s 已存在"
 
 msgid "iscsi backstore %(disk_name)s not found."
-msgstr ""
+msgstr "ISCSI 存储磁盘 %(disk_name)s 未找到"
 
 msgid "iscsi acl %(iqn_initiator)s not found."
-msgstr ""
+msgstr "ISCSI ACL IQN %(iqn_initiator)s 未找到"
 
 msgid ""
 "iscsi acl %(iqn_initiator)s can't find a mapped lun attached to %(disk_name)s"
-msgstr ""
+msgstr "ISCSI ACL IQN %(iqn_initiator)s 无法找到已映射到磁盘 %(disk_name)s 的路径"
 
 msgid "AlertLog Action %(action)s must in'all_readed,del_alert_logs'"
-msgstr ""
+msgstr "告警记录操作 %(action)s 只支持 'all_readed'或'del_alert_logs'"
 
 msgid "a volume gateway already mount in node %(node)s."
-msgstr ""
+msgstr "节点 %(node)s 已挂载一个块存储网关"
 
 msgid "access path already has volume %(volume)s."
-msgstr ""
+msgstr "访问路径已映射块存储卷 %(volume)s"
 
 msgid "access path %(access_path)s no volume gateway."
-msgstr ""
+msgstr "访问路径 %(access_path)s 没有块存储网关"
 
 msgid "access path %(access_path)s no such mapping."
-msgstr ""
+msgstr "访问路径 %(access_path)s 没有此映射"
 
 msgid "can't unmount bgw: %(reason)s"
-msgstr ""
+msgstr "无法解除挂载块存储网关: %(reason)s"
 
 msgid "access path %(access_path)s no more volumes, can't remove."
-msgstr ""
+msgstr "访问路径 %(access_path)s 无多余的块存储卷，无法移除"
 
 msgid "access path %(access_path)s no such volume: %(volume)s."
-msgstr ""
+msgstr "访问路径 %(access_path)s 无此块存储卷"
 
 msgid "volume mapping %(volume_mapping_id)s not exists."
-msgstr ""
+msgstr "块存储卷映射 %(volume_mapping_id)s 不存在"
 
 msgid ""
 "access path mapping %(access_path)s:%(client_group)s already has volume "
 "%(volume)s."
-msgstr ""
+msgstr "访问路径映射  %(access_path)s:%(client_group)s 已存在块存储卷"
 
 msgid "can't delete access path: %(reason)s"
-msgstr ""
+msgstr "无法删除访问路径：%(reason)s"
 
 msgid "download file error: %(reason)s"
-msgstr ""
+msgstr "下载文件错误：%(reason)s"
 
 msgid "resource_type:{} not exist"
-msgstr ""
+msgstr "资源类型 {} 不存在"
 
 msgid "level:{} not exist"
-msgstr ""
+msgstr "级别 {} 不存在"
 
 msgid "get_metrics_history_args: start and end required"
-msgstr ""
+msgstr "获取历史监控参数需要 'start' 和 'end'"
 
 msgid "Ceph config: missing required arguments!"
-msgstr ""
+msgstr "Ceph配置：缺少必要的参数"
 
 msgid "{} do not support to modify"
-msgstr ""
+msgstr "{} 不支持修改"
 
 msgid "Type of config is error, it needs to be {}"
-msgstr ""
+msgstr "配置类型错误，仅支持 {} 类型"
 
 msgid "Ceph config: action is none"
-msgstr ""
+msgstr "Ceph配置需要参数 'action'"
 
 msgid "Ceph config: config is none!"
-msgstr ""
+msgstr "Ceph配置需要参数 'config'"
 
 msgid "datacenter: name is none"
-msgstr ""
+msgstr "数据中心需要参数 'name'"
 
 msgid "Disk partition role is required"
-msgstr ""
+msgstr "缓存盘分区需要参数 'role'"
 
 msgid "this tab not support"
-msgstr ""
+msgstr "不支持此标签页"
 
 msgid "disk: disk type is none"
-msgstr ""
+msgstr "磁盘需要参数 'type'"
 
 msgid "disk: missing required arguments!"
-msgstr ""
+msgstr "磁盘缺少必要的参数"
 
 msgid "disk: partition_num must be greater than zero!"
-msgstr ""
+msgstr "磁盘 'partition_num' 必须大于 0"
 
 msgid "disk: action is none"
-msgstr ""
+msgstr "磁盘需要参数 'action'"
 
 msgid "can not get file_metas"
-msgstr ""
+msgstr "无法获取文件"
 
 msgid "File too large"
-msgstr ""
+msgstr "文件超过大小限制"
 
 msgid "the license.key is invalid"
-msgstr ""
+msgstr "此证书不合法"
 
 msgid "file_name not exist"
-msgstr ""
+msgstr "文件名不存在"
 
 msgid "file not yet generate or file path is error"
-msgstr ""
+msgstr "文件没有生成或文件路径错误"
 
 msgid "node:{} create error"
-msgstr ""
+msgstr "节点 {} 创建错误"
 
 msgid "node_metrics_network: net_name required"
-msgstr ""
+msgstr "节点网络监控需要参数 'net_name'"
 
 msgid "node_metrics_histroy_network: net_name required"
-msgstr ""
+msgstr "节点网络历史监控需要参数 'net_name'"
 
 msgid "IP Range %s format error"
-msgstr ""
+msgstr "IP范围 %s 格式错误"
 
 msgid "Osd type err"
-msgstr ""
+msgstr "硬盘类型错误"
 
 msgid "BlueStore not support journal"
-msgstr ""
+msgstr "'BlueStore' 不支持 'journal' 类型"
 
 msgid "FileStore not support DB, WAL or Cache"
-msgstr ""
+msgstr "'FileStore' 不支持 'DB', 'WAL' 或 'Cache'类型"
 
 msgid "osd:hostname={},disk_name={} create error"
-msgstr ""
+msgstr "主机{}上的硬盘{}创建错误"
 
 msgid "this tab is not supported"
-msgstr ""
+msgstr "不支持此标签页"
 
 msgid "pool: name is none"
-msgstr ""
+msgstr "存储池需要参数 'name'"
 
 msgid "sysconf: post data is none"
-msgstr ""
+msgstr "系统配置未传入数据"
 
 msgid "smtp: post data is none"
-msgstr ""
+msgstr "邮件服务未传入数据"
 
 msgid "smtp could not be found."
-msgstr ""
+msgstr "参数 'smtp' 未找到"
 
 msgid "smtp_context could not be found."
-msgstr ""
+msgstr "参数 'smtp_context' 未找到"
 
 msgid "volume_access_path: {} is already exists!"
-msgstr ""
+msgstr "访问路径 {} 已存在"
 
 msgid "no username or password input"
-msgstr ""
+msgstr "用户名或密码未输入"
 
 msgid "username or password too short"
-msgstr ""
+msgstr "用户名或密码长度不够"
 
 msgid "username or password too long"
-msgstr ""
+msgstr "用户名或密码过长"
 
 msgid "no access_path input"
-msgstr ""
+msgstr "缺少参数 'access_path'"
 
 msgid "name or type not found"
-msgstr ""
+msgstr "参数 'name' 或 'type' 未找到"
 
 msgid "no node_id input"
-msgstr ""
+msgstr "缺少参数 'node_id'"
 
 msgid "no chap_enable input"
-msgstr ""
+msgstr "缺少参数 'chap_enable'"
 
 msgid "no client_group_id input"
-msgstr ""
+msgstr "缺少参数 'client_group_id'"
 
 msgid "no volume_ids input"
-msgstr ""
+msgstr "缺少参数 'volume_ids'"
 
 msgid "iqn: {} is not allowed!"
-msgstr ""
+msgstr "IQN {} 格式错误"
 
 msgid "no mutual_username or  mutual_password input"
-msgstr ""
+msgstr "缺少参数 'mutual_username'或'mutual_password'"
 
 msgid "mutual_username or mutual_passwordtoo short"
-msgstr ""
+msgstr "参数 'mutual_username'或'mutual_password' 长度不够"
 
 msgid "mutual_username or mutual_passwordtoo long"
-msgstr ""
+msgstr "参数 'mutual_username'或'mutual_password' 过长"
 
 msgid "no name input"
-msgstr ""
+msgstr "缺少参数 'name'"
 
 msgid "no mutual_chap_enable input"
-msgstr ""
+msgstr "缺少参数 'mutual_chap_enable'"
 
 msgid "has not active mon host, can not do any ceph actions"
-msgstr ""
+msgstr "健康状态监控节点不存在，无法进行任何Ceph操作"
 
 msgid "Ceph config update failed"
-msgstr ""
+msgstr "Ceph配置修改失败"
 
 msgid "Ceph config update successful"
-msgstr ""
+msgstr "Ceph配置修改成功"
 
 msgid "Admin cluster exists"
-msgstr ""
+msgstr "管理节点已存在"
 
 msgid "Cluster name exists"
-msgstr ""
+msgstr "集群名字已存在"
 
 msgid "Cluster delete success"
-msgstr ""
+msgstr "集群删除成功"
 
 msgid "Cluster delete error!"
-msgstr ""
+msgstr "集群删除错误"
 
 msgid "Admin node cannot be delete"
-msgstr "管理节点不能被删除"
+msgstr "管理节点无法删除"
 
 msgid "Cluster is %s"
 msgstr "集群%s"
 
 msgid "datacenter: {} is already exists!"
-msgstr ""
+msgstr "数据中心 {} 已存在"
 
 msgid "disk: repeated actions, led is {}"
-msgstr ""
+msgstr "磁盘重复操作， 磁盘灯状态为 {}"
 
 msgid "create disk partitions success"
-msgstr ""
+msgstr "创建磁盘分区成功"
 
 msgid "create disk partitions failed"
-msgstr ""
+msgstr "创建磁盘分区失败"
 
 msgid "remove disk partitions success"
-msgstr ""
+msgstr "移除磁盘分区成功"
 
 msgid "remove disk partitions failed"
-msgstr ""
+msgstr "移除磁盘分区失败"
 
 msgid "current disk:{} partition has used, can not del"
-msgstr ""
+msgstr "当前磁盘 {} 分区使用中，无法删除"
 
 msgid "node_id {} is not monitor role"
-msgstr ""
+msgstr "节点 {} 不是监控节点"
 
 msgid "node_id {} is not storage role"
-msgstr ""
+msgstr "节点 {} 不是存储节点"
 
 msgid "service_type must is mon orosd"
-msgstr ""
+msgstr "服务类型只支持 'mon'或'osd'"
 
 msgid "node remove success: {}"
-msgstr ""
+msgstr "节点 {} 移除成功"
 
 msgid "node remove error: {}"
-msgstr ""
+msgstr "节点 {} 移除失败"
 
 msgid "Node status not allow!"
-msgstr ""
+msgstr "节点状态不支持此操作"
 
 msgid "admin role could not delete!"
-msgstr ""
+msgstr "管理角色无法被删除"
 
 msgid "Please remove disk partition first!"
-msgstr ""
+msgstr "请先移除磁盘分区"
+
+msgid "The monitor role has been installed."
+msgstr "主控角色已被安装"
 
 msgid "Please set network planning"
-msgstr ""
+msgstr "请先设置网络规划"
 
 msgid "Max monitor num is %s"
-msgstr ""
+msgstr "最大主控角色数量为 %s"
+
+msgid "The monitor role has not yet been installed"
+msgstr "主控角色还未安装"
 
 msgid "Please remove osd first!"
-msgstr ""
+msgstr "请先移除硬盘"
+
+msgid "The storage role has been installed."
+msgstr "存储角色已被安装"
+
+msgid "The storage role has not yet been installed"
+msgstr "存储角色还未安装"
 
 msgid "Node %s has osd!"
 msgstr "节点%s还有硬盘存在"
 
+msgid "The admin role has been installed."
+msgstr "管理角色已被安装"
+
+msgid "The admin role has not yet been installed"
+msgstr "管理角色还未安装"
+
+msgid "The object gateway role has been installed."
+msgstr "对象网关角色已被安装"
+
+msgid "The object gateway role has not yet been installed"
+msgstr "对象网关角色还未安装"
+
+msgid "The block gateway role has been installed."
+msgstr "块存储网关角色已被安装"
+
+msgid "The block gateway role has not yet been installed"
+msgstr "块存储角色还未安装"
+
 msgid "set roles success: {}"
-msgstr ""
+msgstr "{} 设置角色成功"
 
 msgid "set roles error {}"
-msgstr ""
+msgstr "设置角色错误: {}"
 
 msgid "Only host's status is active can setrole(host_name: %s)"
-msgstr ""
+msgstr "%s：仅当服务器状态健康才能设置角色"
 
 msgid "Can't not set and unset the same role"
-msgstr ""
+msgstr "无法设置并移除相同角色"
 
 msgid "node create success"
-msgstr ""
+msgstr "节点创建成功"
 
 msgid "node create error, reason: {}"
-msgstr ""
+msgstr "节点创建失败，原因：{}"
 
 msgid "Admin ip exists"
-msgstr ""
+msgstr "管理IP已存在"
 
 msgid "Cluster ip exists"
-msgstr ""
+msgstr "集群IP已存在"
 
 msgid "Public ip exists"
-msgstr ""
+msgstr "公共IP已存在"
 
 msgid "Please Clean First"
-msgstr ""
+msgstr "请先清理集群"
 
 msgid "Please Import First"
-msgstr ""
+msgstr "请先导入集群"
 
 msgid "admin_ip,cluster_ip,public_ip is required"
-msgstr ""
+msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
 
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
@@ -541,28 +571,28 @@ msgid "create error: osd.{}"
 msgstr "创建硬盘失败：osd.{}"
 
 msgid "Disk %s not available"
-msgstr ""
+msgstr "磁盘 %s 不可用"
 
 msgid "Disk %s not for data"
-msgstr ""
+msgstr "磁盘 %s 不是数据盘"
 
 msgid "The partition %s not available"
-msgstr ""
+msgstr "磁盘分区 %s 不可用"
 
 msgid "The partition %s not for data"
-msgstr ""
+msgstr "磁盘分区类型不是 'data'"
 
 msgid "The partition is not on the same machine as the disk"
-msgstr ""
+msgstr "分区和磁盘不在同一个节点"
 
 msgid "%s not support filestore"
-msgstr ""
+msgstr "%s 不支持 filestore"
 
 msgid "No active monitor"
-msgstr ""
+msgstr "没有健康的主控节点"
 
 msgid "Max osd num is %s"
-msgstr ""
+msgstr "最大硬盘数为 %s"
 
 msgid "delete osd.{} success"
 msgstr "删除硬盘成功：osd.{}"
@@ -592,168 +622,168 @@ msgid "pool {} increase disk error"
 msgstr "存储池{}添加硬盘失败"
 
 msgid "{} decrease disk success"
-msgstr ""
+msgstr "{} 添加硬盘成功"
 
 msgid "{} decrease disk error"
-msgstr ""
+msgstr "{} 添加硬盘失败"
 
 msgid "{} update policy success"
-msgstr ""
+msgstr "{} 修改数据安全策略成功"
 
 msgid "{} update policy error"
-msgstr ""
+msgstr "{} 修改数据安全策略错误"
 
 msgid "rack: {} is already exists!"
-msgstr ""
+msgstr "机架 {} 已存在"
 
 msgid "Volume name {} already exists!"
-msgstr ""
+msgstr "块存储卷 {} 已存在"
 
 msgid "create volume success"
-msgstr ""
+msgstr "创建块存储卷成功"
 
 msgid "create volume error"
-msgstr ""
+msgstr "创建块存储卷失败"
 
 msgid "The volume {} has snapshot"
-msgstr ""
+msgstr "块存储卷 {} 存在快照"
 
 msgid "The volume {} has related access_path"
-msgstr ""
+msgstr "块存储卷 {} 已关联到访问路径"
 
 msgid "delete volume success"
-msgstr ""
+msgstr "删除块存储卷成功"
 
 msgid "delete volume error"
-msgstr ""
+msgstr "删除块存储卷失败"
 
 msgid "volume resize success"
-msgstr ""
+msgstr "块存储卷容量调整成功"
 
 msgid "volume resize error"
-msgstr ""
+msgstr "块存储卷容量调整失败"
 
 msgid "The volume_id {} has not the snap_id {}"
-msgstr ""
+msgstr "块存储卷 {} 没有快照 {}"
 
 msgid "The volume {} has access_path, can not rollback"
-msgstr ""
+msgstr "块存储卷已关联访问路径，无法回滚"
 
 msgid "volume rollback success"
-msgstr ""
+msgstr "块存储卷回滚成功"
 
 msgid "volume rollback error"
-msgstr ""
+msgstr "块存储卷回滚失败"
 
 msgid "the volume_name {} has not relate_snap"
-msgstr ""
+msgstr "块存储卷 {} 没有快照"
 
 msgid "volume unlink success"
-msgstr ""
+msgstr "块存储卷断开关系链成功"
 
 msgid "volume unlink error"
-msgstr ""
+msgstr "块存储卷断开关系链失败"
 
 msgid "snap name {} already exists!"
-msgstr ""
+msgstr "快照 {} 已存在"
 
 msgid "delete snapshot success"
-msgstr ""
+msgstr "删除快照成功"
 
 msgid "delete snapshot error"
-msgstr ""
+msgstr "删除快照失败"
 
 msgid "snapshot {} has clone volume, can not del"
-msgstr ""
+msgstr "快照 {}  存在克隆块存储卷，无法删除"
 
 msgid "Version should be less than or equal to %(max_version)d."
-msgstr ""
+msgstr "版本需要小于或等于 %(max_version)d"
 
 msgid "Must supply a positive value for age"
-msgstr ""
+msgstr "必须给寿命提供一个正值"
 
 msgid "Maximum age is count of days since epoch."
-msgstr ""
+msgstr "最大寿命是从时期开始计算日期的总天数"
 
 msgid "Purge command failed, check stor-manage logs for more details."
-msgstr ""
+msgstr "清除命令失败，请检查stor-manage日志以获取更多详细信息。"
 
 msgid "Error attempting to run %(method)s"
-msgstr ""
+msgstr "尝试运行 %(method)s 时出错"
 
 msgid "%(found)i rows matched query %(meth)s, %(done)i migrated"
-msgstr ""
+msgstr "结果 %(done)i 中有 %(found)i 行，其中 %(done)i 行完成了"
 
 msgid "Must supply a positive value for max_count."
-msgstr ""
+msgstr "必须给最大数量提供一个正值"
 
 msgid "Running batches of %i until complete."
-msgstr ""
+msgstr "批量运行 %i 直至完成"
 
 msgid "Migration"
-msgstr ""
+msgstr "迁移"
 
 msgid "Total Needed"
-msgstr ""
+msgstr "总共需要"
 
 msgid "Completed"
-msgstr ""
+msgstr "完成~"
 
 msgid "Some migrations failed unexpectedly. Check log for details."
-msgstr ""
+msgstr "一些迁移意外的失败了。查看日志了解详细信息。"
 
 msgid ""
 "Failed to reset active backend for host %s, check stor-manage logs for more "
 "details."
-msgstr ""
+msgstr "重置主机 %s 的活动后端失败，请检查“存储管理日志”以获取更多详细信息"
 
 msgid "Available categories:"
-msgstr ""
+msgstr "可用分类："
 
 msgid "\t%s"
-msgstr ""
+msgstr "	%s"
 
 msgid "Invalid directory: %s"
-msgstr ""
+msgstr "不合法的目录"
 
 msgid "Failed to read configuration file(s): %s"
-msgstr ""
+msgstr "读取配置文件失败：%s"
 
 msgid "Unknown sort direction, must be 'desc' or 'asc'"
-msgstr ""
+msgstr "未知的排序方向，仅支持 'desc'或'asc'"
 
 msgid "Condition has no field."
-msgstr ""
+msgstr "条件没有字段"
 
 msgid "Error writing field to database"
-msgstr ""
+msgstr "数据库写入错误"
 
 msgid "Unrecognized read_deleted value '%s'"
-msgstr ""
+msgstr "无法识别的 'read_deleted' 值 '%s'"
 
 msgid "Model %s doesn't support counting resource."
-msgstr ""
+msgstr "模型 %s 不支持计数资源。"
 
 msgid "Unknown sort direction, must be 'desc' or 'asc'."
-msgstr ""
+msgstr "未知的排序方向，仅支持 'desc'或'asc'"
 
 msgid "Sort direction array size exceeds sort key array size."
-msgstr ""
+msgstr "排序方向数组大小超过排序键数组大小"
 
 msgid "attribute %s not lazy-loadable"
-msgstr ""
+msgstr "%s 属性不是懒加载"
 
 msgid "Invalid config type"
-msgstr ""
+msgstr "不合法的配置类型"
 
 msgid "SSH Error: %s"
-msgstr ""
+msgstr "SSH错误：%s"
 
 msgid "old style configuration can use only dictionary or memcached backends"
-msgstr ""
+msgstr "旧样式的配置只能使用字典或缓存后端"
 
 msgid "Coordinator uninitialized."
-msgstr ""
+msgstr "协调器未初始化"
 
 msgid "IP address {} format is incorrect!"
-msgstr ""
+msgstr "IP地址格式错误"
