@@ -69,10 +69,11 @@ class DiskTool(ToolBase):
                         res[block]['is_sys_dev'] = True
                 if not partition.startswith(block):
                     continue
+                part_size = open(
+                    os.path.join(path, block, partition, 'size')
+                ).read().strip()
                 res[block]["partitions"][partition] = {
-                    "size": open(
-                        os.path.join(path, block, partition, 'size')
-                    ).read().strip(),
+                    "size": int(part_size) * 512,
                 }
         return res
 
