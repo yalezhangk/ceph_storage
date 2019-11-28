@@ -3,9 +3,11 @@
 import configparser
 import json
 import logging
+import time
 
 from oslo_utils import encodeutils
 
+from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephException
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
@@ -144,6 +146,51 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         return True
+
+    def osd_mark_out(self, osd_id):
+        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def osd_stop(self, osd_id):
+        cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc == 1 and "No such file" in stderr:
+            return
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        cmd = ["systemctl", "stop", "ceph-osd@%s" % osd_id]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--", "--id",
+               osd_id]
+        retrys = 10
+        while True:
+            rc, stdout, stderr = self.run_command(cmd, timeout=5)
+            if "osd" in stdout:
+                time.sleep(1)
+                retrys = retrys - 1
+                if retrys < 0:
+                    raise ActionTimeoutError(reason="Stop osd.%d" % osd_id)
+            else:
+                return
+
+    def osd_umount(self, osd_id):
+        path = "/var/lib/ceph/osd/ceph-%s" % osd_id
+        cmd = ["umount", path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc == 32 and "not found" in stderr:
+            return
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        cmd = ["rm", "-rf", path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
 
     def osd_remove_from_cluster(self, osd_id):
         cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
