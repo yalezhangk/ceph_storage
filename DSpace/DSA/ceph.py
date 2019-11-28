@@ -91,27 +91,19 @@ class CephHandler(AgentBaseHandler):
 
     def _data_clear(self, client, partition_name):
         disk_tool = DiskTool(client)
-        try:
-            disk_tool.data_clear(partition_name)
-        except Exception as e:
-            logger.exception(e)
+        disk_tool.data_clear(partition_name)
+        logger.info("clear partition %s success", partition_name)
 
     def ceph_osd_destroy(self, context, osd):
+        logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
-        try:
-            ceph_tool.osd_deactivate(osd.disk.name)
-        except Exception as e:
-            logger.exception(e)
-        try:
-            ceph_tool.osd_zap(osd.disk.name)
-        except Exception as e:
-            logger.exception(e)
-        try:
-            ceph_tool.osd_remove_from_cluster(osd.osd_id)
-        except exception.RunCommandError as e:
-            logger.exception("Remove osd from cluster error: %s", e)
-            raise exception.InvalidInput("Remove osd from cluster error")
+        ceph_tool.osd_deactivate(osd.disk.name)
+        logger.info("osd %s(osd.%s), deactivate success", osd.id, osd.osd_id)
+        ceph_tool.osd_zap(osd.disk.name)
+        logger.info("osd %s(osd.%s), zap success", osd.id, osd.osd_id)
+        ceph_tool.osd_remove_from_cluster(osd.osd_id)
+        logger.info("osd %s(osd.%s), remove success", osd.id, osd.osd_id)
         if osd.cache_partition_id:
             self._data_clear(client, osd.cache_partition.name)
         if osd.db_partition_id:
@@ -120,6 +112,8 @@ class CephHandler(AgentBaseHandler):
             self._data_clear(client, osd.wal_partition.name)
         if osd.journal_partition_id:
             self._data_clear(client, osd.journal_partition.name)
+        logger.info("osd %s(osd.%s), clear partition success",
+                    osd.id, osd.osd_id)
         return osd
 
     def _wait_mon_ready(self, client):
