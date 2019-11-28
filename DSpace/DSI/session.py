@@ -7,6 +7,7 @@ from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
 import redis
+import six
 from redis import sentinel
 
 from DSpace.common.config import CONF
@@ -117,7 +118,15 @@ class RedisSession(Session):
 
         logger.debug("Session(%s) set(%s) value(%s)",
                      self.random_index_str, key, value)
-        self.client.hset(self.random_index_str, key, value)
+        if value is None:
+            self.client.hdel(self.random_index_str, key)
+        elif isinstance(value, six.text_type):
+            value = str(value)
+            self.client.hset(self.random_index_str, key, value)
+        elif isinstance(value, int):
+            self.client.hset(self.random_index_str, key, value)
+        else:
+            raise ValueError("Type Error")
 
         self.handler.set_secure_cookie('__sson__', self.random_index_str)
 
