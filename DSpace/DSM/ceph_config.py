@@ -1,3 +1,5 @@
+import json
+
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -177,19 +179,22 @@ class CephConfigHandler(AdminBaseHandler):
             if _success:
                 cephconf = self._ceph_config_db(ctxt, values)
                 msg = _('Ceph config update successful')
+                op_status = "SET_CONFIG_SUCCESS"
             status = 'success'
         else:
-            cephconf = None
+            cephconf = {}
             msg = _('Ceph config update failed')
+            op_status = "SET_CONFIG_ERROR"
             status = 'fail'
-        self.finish_action(begin_action, None, Resource.CEPH_CONFIG, values,
-                           status)
+        self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
+                           json.dumps(values), status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, cephconf, "UPDATED", msg)
+        wb_client.send_message(ctxt, cephconf, op_status, msg,
+                               resource_type="CephConfig")
 
     def ceph_config_set(self, ctxt, values):
         begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
                                          Action.UPDATE)
-        self.task_submit(self._ceph_config_set, ctxt, values, begin_action)
+        self._ceph_config_set(ctxt, values, begin_action)
         return values
