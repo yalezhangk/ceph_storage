@@ -24,7 +24,7 @@ class AgentBaseHandler(object):
         self.state = 'setup'
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
-        self.ctxt = RequestContext(user_id="xxx",
+        self.ctxt = RequestContext(user_id="agent %s" % CONF.node_id,
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
 
