@@ -24,6 +24,9 @@ class PrepareTask(task.Task):
     def revert(self, task_info, result, flow_failures):
         t = task_info.get('task')
         reason = [v.exception_str for k, v in six.iteritems(flow_failures)]
+        for k, v in six.iteritems(flow_failures):
+            logger.error(v.exception)
+            logger.error(v.traceback_str)
 
         if t:
             t.status = s_fields.TaskStatus.FAILED

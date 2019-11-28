@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import configparser
 import json
 import logging
 import math
@@ -26,7 +27,15 @@ class CephTask(object):
                 ctxt.cluster_id)
             self.conf_file = '/etc/ceph/{}/ceph.conf'.format(
                 ctxt.cluster_id)
+            self.key_file = '/etc/ceph/{}/ceph.client.admin.keyring'.format(
+                ctxt.cluster_id)
             self._generate_config_file()
+            self._generate_admin_keyring()
+
+    def ceph_admin_keyring(self):
+        admin_keyring = objects.CephConfig.get_by_key(
+            self.ctxt, 'global', 'client.admin')
+        return admin_keyring
 
     def ceph_config(self):
         content = objects.ceph_config.ceph_config_content(self.ctxt)
@@ -34,7 +43,25 @@ class CephTask(object):
 
     def rados_args(self):
         obj = objects.CephConfig.get_by_key(self.ctxt, "global", "mon_host")
-        return {'mon_host': obj.value}
+        res = {'mon_host': obj.value}
+        admin_keyring = self.ceph_admin_keyring()
+        if admin_keyring:
+            res["keyring"] = self.key_file
+        logger.info("ceph task, rados args: %s", res)
+        return res
+
+    def _generate_admin_keyring(self):
+        admin_keyring = self.ceph_admin_keyring()
+        config = configparser.ConfigParser()
+
+        if not admin_keyring:
+            return None
+        if not os.path.exists(self.conf_dir):
+            os.makedirs(self.conf_dir, mode=0o0755)
+        config['client.admin'] = {}
+        config['client.admin']['key'] = admin_keyring.value
+        with open(self.key_file, 'w') as f:
+            config.write(f)
 
     def _generate_config_file(self):
         ceph_config_str = self.ceph_config()

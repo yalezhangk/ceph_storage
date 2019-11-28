@@ -3620,7 +3620,7 @@ def ceph_config_get_by_key(context, group, key):
         result = result.filter_by(group=group, key=key).first()
 
         if not result:
-            raise exception.CephConfigKeyNotFound(group=group, key=key)
+            return None
         return result
 
 

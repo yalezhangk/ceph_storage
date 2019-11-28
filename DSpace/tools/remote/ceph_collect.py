@@ -253,6 +253,18 @@ def collect_ceph_config():
     return configs
 
 
+def collect_ceph_keyring():
+    cmd = ["ceph", "auth", "get", "client.admin", "--format", "json"]
+    rc, out, err = run_command(cmd)
+    if rc:
+        return None
+    res = json.loads(out)
+    return {
+        "entity": res[0]['entity'],
+        "key": res[0]['key']
+    }
+
+
 def main():
     action = sys.argv[1]
     if action == "collect_nodes":
@@ -267,6 +279,9 @@ def main():
         print(json.dumps(data))
     elif action == "ceph_config":
         data = collect_ceph_config()
+        print(json.dumps(data))
+    elif action == "ceph_keyring":
+        data = collect_ceph_keyring()
         print(json.dumps(data))
 
 

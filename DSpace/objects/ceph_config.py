@@ -49,6 +49,8 @@ class CephConfig(base.StorPersistentObject, base.StorObject,
     @classmethod
     def get_by_key(cls, ctxt, group, key):
         db_obj = db.ceph_config_get_by_key(ctxt, group, key)
+        if not db_obj:
+            return None
         return cls._from_db_object(ctxt, cls(ctxt), db_obj)
 
 
