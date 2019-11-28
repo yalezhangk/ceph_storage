@@ -151,7 +151,6 @@ class PermissionMixin(BaseAPIHandler):
         permission['platform_inited'] = yield self.check_init_page(ctxt)
         permission['user'] = user
         if permission['platform_inited']:
-            self.add_page(permission, "set-system-info")
             if cluster_id:
                 cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
                 if cluster.is_admin:

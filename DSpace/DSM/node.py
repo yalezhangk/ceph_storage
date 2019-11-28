@@ -906,8 +906,6 @@ class NodeHandler(AdminBaseHandler):
             res = self._node_check(ctxt, data, [
                 "hostname",
                 "selinux",
-                "ceph_ports",
-                "ceph_package",
                 "network",
                 "roles",
                 "athena_ports",
