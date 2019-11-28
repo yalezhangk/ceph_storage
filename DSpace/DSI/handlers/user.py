@@ -219,6 +219,13 @@ class UserLoginHandler(PermissionMixin):
     def get_context(self):
         return RequestContext(user_id=None, is_admin=False)
 
+    def get_first_cluster_id(self, ctxt):
+        clusters = objects.ClusterList.get_all(ctxt, limit=1)
+        if clusters:
+            return clusters[0].id
+        else:
+            return None
+
     @gen.coroutine
     def post(self):
         """
@@ -263,6 +270,11 @@ class UserLoginHandler(PermissionMixin):
         if not users:
             raise exception.NotFound(user_id=name)
         user = users[0]
+        if not user.current_cluster_id:
+            # 初次登录绑定一个cluster_id
+            first_clu_id = self.get_first_cluster_id(ctxt)
+            user.current_cluster_id = first_clu_id
+            user.save()
         r = check_encrypted_password(password, user.password)
         if not r:
             raise exception.PasswordError()
@@ -326,7 +338,8 @@ class PermissionHandler(PermissionMixin):
           description: successful operation
         """
         ctxt = self.get_context()
+        user = objects.User.get_by_id(ctxt, self.current_user)
         permission = yield self.get_permission(
-            ctxt, self.current_user,
+            ctxt, user,
             cluster_id=self.get_cluster_id())
         self.write(objects.json_encode(permission))

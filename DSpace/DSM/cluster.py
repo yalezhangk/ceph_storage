@@ -243,7 +243,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             cluster_delete_flow(ctxt, t, clean_ceph)
             cluster.destroy()
             msg = _("Cluster delete success")
-            action = "DELETE_CLUSTER_SUCCESS"
+            action = "CLUSTER_DELETED"
             logger.info("delete cluster-%s success", cluster.id)
             status = 'success'
             err_msg = None
@@ -253,7 +253,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             cluster.status = status
             cluster.save()
             msg = _("Cluster delete error!")
-            action = "DELETE_CLUSTER_ERROR"
+            action = "CLUSTER_DELETE_FAILED"
             err_msg = str(e)
 
         self.finish_action(begin_action, cluster.id, cluster.display_name,
@@ -263,19 +263,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         logger.debug("delete cluster %s finish: %s", cluster.id, msg)
         wb_client.send_message(ctxt, cluster, action, msg)
 
-    def _cluster_delete_check(self, ctxt, cluster):
-        if cluster.is_admin:
-            raise exc.InvalidInput(_('Admin node cannot be delete'))
-        if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
-                                  s_fields.ClusterStatus.ERROR]:
-            raise exc.InvalidInput(_('Cluster is %s') % cluster.status)
-
     def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
         logger.debug("delete cluster %s start", cluster_id)
         src_cluster_id = ctxt.cluster_id
         ctxt.cluster_id = cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
-        self._cluster_delete_check(ctxt, cluster)
+        if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
+                                  s_fields.ClusterStatus.ERROR]:
+            raise exc.InvalidInput(_('Cluster is %s') % cluster.status)
         begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.DELETE)
         cluster.status = s_fields.ClusterStatus.DELETING
         cluster.save()
@@ -403,3 +398,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             total["total"]["unactive"] += pg_state["unactive"]
         pg_states.update(total)
         return pg_states
+
+    def cluster_switch(self, ctxt, cluster_id):
+        user_id = ctxt.user_id
+        user = objects.User.get_by_id(ctxt, user_id)
+        user.current_cluster_id = cluster_id
+        user.save()
+        return cluster_id

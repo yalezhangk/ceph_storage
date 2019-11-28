@@ -525,6 +525,7 @@ class User(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(64))
     password = Column(String(255))
+    current_cluster_id = Column(String(36), nullable=True)
 
 
 class Task(BASE, StorBase):
