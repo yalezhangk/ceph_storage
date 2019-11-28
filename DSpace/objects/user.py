@@ -21,6 +21,7 @@ class User(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'name': fields.StringField(),
         'password': fields.SensitiveStringField(),
+        'current_cluster_id': fields.UUIDField(nullable=True)
     }
 
     def _encrypt_password(self, updates):

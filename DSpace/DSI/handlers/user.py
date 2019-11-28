@@ -270,6 +270,7 @@ class UserLoginHandler(PermissionMixin):
         if not users:
             raise exception.NotFound(user_id=name)
         user = users[0]
+        ctxt.user_id = user.id
         if not user.current_cluster_id:
             # 初次登录绑定一个cluster_id
             first_clu_id = self.get_first_cluster_id(ctxt)
@@ -280,7 +281,6 @@ class UserLoginHandler(PermissionMixin):
             raise exception.PasswordError()
         self.session['user_id'] = user.id
         self.current_user = user.id
-        ctxt.user_id = user.id
         permission = yield self.get_permission(ctxt, user)
         self.write(objects.json_encode(permission))
 
