@@ -1029,6 +1029,9 @@ def datacenter_get(context, datacenter_id, expected_attrs=None):
 @require_context
 def datacenter_get_all(context, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
     session = get_session()
     with session.begin():
         # Generate the query
