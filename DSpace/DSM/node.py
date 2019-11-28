@@ -438,8 +438,11 @@ class NodeHandler(AdminBaseHandler):
         if node.status != s_fields.NodeStatus.ACTIVE:
             raise exc.InvalidInput(_("Only host's status is active can set"
                                      "role(host_name: %s)" % node.hostname))
+
         i_roles = set(data.get('install_roles'))
         u_roles = set(data.get('uninstall_roles'))
+        if not len(i_roles) and not len(u_roles):
+            raise exc.InvalidInput(_("Please provide roles"))
         if len(list(i_roles.intersection(u_roles))):
             raise exc.InvalidInput(_("Can't not set and unset the same role"))
         install_check_role_map = {
@@ -462,6 +465,20 @@ class NodeHandler(AdminBaseHandler):
         for role in u_roles:
             func = uninstall_check_role_map.get(role)
             func(ctxt, node)
+        deploying_nodes = objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "status": [s_fields.NodeStatus.DEPLOYING_ROLE,
+                           s_fields.NodeStatus.REMOVING_ROLE]
+            }
+        )
+        if deploying_nodes:
+            raise exc.InvalidInput(_("Only one node can set roles at the"
+                                     " same time"))
+        if len(i_roles):
+            node.status = s_fields.NodeStatus.DEPLOYING_ROLE
+        else:
+            node.status = s_fields.NodeStatus.REMOVING_ROLE
         begin_action = self.begin_action(ctxt, Resource.NODE, Action.SET_ROLES)
         logger.info('node %s roles check pass', node.hostname)
         self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles,
