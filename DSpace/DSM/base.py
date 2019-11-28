@@ -1,8 +1,10 @@
+import sys
 from concurrent import futures
 
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
+from DSpace import context
 from DSpace import exception as exc
 from DSpace import objects
 from DSpace.common.config import CONF
@@ -16,6 +18,8 @@ class AdminBaseHandler(object):
     def __init__(self):
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
+        ctxt = context.get_context()
+        self.debug_mode = objects.sysconfig.sys_config_get(ctxt, 'debug_mode')
 
     def _wapper(self, fun, *args, **kwargs):
         try:
@@ -56,6 +60,8 @@ class AdminBaseHandler(object):
             if status in ['active', 'success', 'available']:
                 finish_data.update({'status': 'success'})
             else:
+                if self.debug_mode:
+                    sys.exit(1)
                 finish_data.update({'status': 'fail'})
         if err_msg:
             finish_data.update({'err_msg': err_msg})

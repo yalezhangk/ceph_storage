@@ -1,10 +1,12 @@
 import json
 import logging
+import sys
 from concurrent import futures
 
 import grpc
 from oslo_config import cfg
 
+from DSpace import context
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
@@ -30,6 +32,8 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
         self.handler = handler
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
+        ctxt = context.get_context()
+        self.debug_mode = objects.sysconfig.sys_config_get(ctxt, 'debug_mode')
 
     def call(self, request, context):
         logger.debug("get rpc call: ctxt(%s), method(%s), kwargs(%s),"
@@ -59,6 +63,8 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
             logger.exception("%s raise exception: %s" % (
                 func.__name__, e
             ))
+            if self.debug_mode:
+                sys.exit(1)
             res = stor_pb2.Response(
                 value=json.dumps(self.serializer.serialize_exception(ctxt, e))
             )
