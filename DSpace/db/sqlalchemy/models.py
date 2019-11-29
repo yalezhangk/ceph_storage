@@ -242,7 +242,6 @@ class Pool(BASE, StorBase):
     used = Column(BigInteger)  # bytes
     osd_num = Column(Integer)
     speed_type = Column(String(32))
-    failure_domain_type = Column(String(32), default='host', index=True)
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     rgw_zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))

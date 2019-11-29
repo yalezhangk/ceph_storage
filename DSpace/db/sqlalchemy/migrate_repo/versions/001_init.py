@@ -286,7 +286,6 @@ def define_tables(meta):
         Column('osd_num', Integer, nullable=True),
         Column('speed_type', String(32), nullable=True),
         Column('replicate_size', Integer, nullable=True),
-        Column('failure_domain_type', String(32), nullable=False),
         Column('crush_rule_id', Integer, ForeignKey('crush_rules.id')),
         Column('cluster_id', ForeignKey('clusters.id')),
         Column('rgw_zone_id', Integer, ForeignKey('radosgw_zones.id')),

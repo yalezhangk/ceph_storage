@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
 import sys
 
 import six
@@ -15,11 +16,14 @@ from DSpace import exception
 from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects import utils as obj_utils
 from DSpace.taskflows.base import BaseTask
 from DSpace.taskflows.base import CompleteTask
 from DSpace.taskflows.base import PrepareTask
 from DSpace.taskflows.ceph import CephTask
+from DSpace.taskflows.crush import CrushContentGen
 from DSpace.taskflows.node import DSpaceAgentInstall
 from DSpace.taskflows.node import DSpaceAgentUninstall
 from DSpace.taskflows.node import DSpaceChronyInstall
@@ -227,8 +231,9 @@ class SyncClusterInfo(BaseTask):
             logger.info(osd_infos)
             for info in osd_infos:
                 self._update_osd(ctxt, info, node)
-        self.pool_probe(ctxt)
+        self._probe_pool(ctxt)
         self._update_disk_status(ctxt)
+        self._update_planning(ctxt)
 
     def _update_disk_status(self, ctxt):
         disks = objects.DiskList.get_all(
@@ -240,7 +245,47 @@ class SyncClusterInfo(BaseTask):
                 disk.status = s_fields.DiskStatus.INUSE
             disk.save()
 
-    def _get_osds_from_crush(self, ceph_client, fault_domain, root_buckets):
+    def _get_or_create_rack(self, ctxt, rack_id):
+        rack_objs = objects.RackList.get_all(ctxt, filters={"id": rack_id})
+        if not rack_objs:
+            rack_obj = objects.Rack(ctxt, id=rack_id, name="rack-%" % rack_id)
+            rack_obj.create()
+        else:
+            rack_obj = rack_objs[0]
+        return rack_obj
+
+    def _get_or_create_dc(self, ctxt, dc_id):
+        dc_objs = objects.DatacenterList.get_all(ctxt, filters={"id": dc_id})
+        if not dc_objs:
+            dc_obj = objects.Rack(ctxt, id=dc_id, name="datacenter-%s" % dc_id)
+            dc_obj.create()
+        else:
+            dc_obj = dc_objs[0]
+        return dc_obj
+
+    def _update_host_rack(self, ctxt, crush_host, rack_id):
+        res = crush_host.split("-")
+        if not res:
+            raise exception.Invalid(_("Crush hostname Invalid"))
+        hostname = res[-1]
+        hosts = objects.Node.get_all(ctxt, filters={"hostname": hostname})
+        if hosts:
+            host = hosts[0]
+            host.rack_id = rack_id
+            host.save()
+        raise exception.NodeNotFound(node_id=hostname)
+
+    def _update_rack_dc(self, ctxt, crush_rack, dc_id):
+        res = crush_rack.split("-")
+        if not res:
+            raise exception.Invalid(_("Crush hostname Invalid"))
+        rack_id = res[-1][4:]
+        rack = objects.Rack.get_by_id(ctxt, rack_id)
+        rack.datacenter_id = dc_id
+        rack.save()
+
+    def _get_osds_from_crush(self, ctxt, ceph_client, fault_domain,
+                             root_buckets):
         osds = []
         if fault_domain == "host":
             hosts = root_buckets
@@ -249,125 +294,226 @@ class SyncClusterInfo(BaseTask):
                 osds.extend(host_osds)
         elif fault_domain == "rack":
             racks = root_buckets
-            for rack in racks:
-                hosts = ceph_client.get_bucket_info(rack)
+            for rack_name in racks:
+                logger.info("---rack info: %s", rack_name)
+                res = re.search(r'rack(\d)', rack_name)
+                if not res:
+                    raise exception.Invalid(_("Rack Invalid"))
+                rack_id = res.group()
+                self._get_or_create_rack(ctxt, rack_id)
+                hosts = ceph_client.get_bucket_info(rack_name)
                 for host in hosts:
                     host_osds = ceph_client.get_bucket_info(host)
                     osds.extend(host_osds)
+                    self._update_host_rack(ctxt, host, rack_id)
+
         elif fault_domain == "datacenter":
             datacenters = root_buckets
-            for datacenter in datacenters:
-                racks = ceph_client.get_bucket_info(datacenter)
-                for rack in racks:
-                    hosts = ceph_client.get_bucket_info(rack)
+            for datacenter_name in datacenters:
+                logger.info("---dc info: %s", datacenter_name)
+                res = re.search(r'datacenter(\d)', datacenter_name)
+                if not res:
+                    raise exception.Invalid(_("Datacenter Invalid"))
+                datacenter_id = res.group()
+                self._get_or_create_dc(ctxt, datacenter_id)
+                racks = ceph_client.get_bucket_info(datacenter_name)
+                for rack_name in racks:
+                    logger.info("---rack info: %s", rack_name)
+                    res = re.search(r'rack(\d)', rack_name)
+                    if not res:
+                        raise exception.Invalid(_("Rack Invalid"))
+                    rack_id = res.group()
+                    self._get_or_create_rack(ctxt, rack_id)
+                    hosts = ceph_client.get_bucket_info(rack_name)
+                    self._update_rack_dc(ctxt, rack_name, datacenter_id)
                     for host in hosts:
                         host_osds = ceph_client.get_bucket_info(host)
                         osds.extend(host_osds)
+                        self._update_host_rack(ctxt, host, rack_id)
         return osds
 
-    def _get_crush_info(self, ctxt, ceph_client, rule_name):
-        rule_info = ceph_client.get_crush_rule_info(rule_name)
-        root_name = None
-        fault_domain = None
-        if "steps" in rule_info:
-            for op_info in rule_info.get("steps"):
-                if op_info.get("op") == "take":
-                    root_name = op_info.get("item_name")
-                elif op_info.get("op") == "chooseleaf_firstn":
-                    fault_domain = op_info.get("type")
-        root_buckets = ceph_client.get_bucket_info(root_name)
-        osds = self._get_osds_from_crush(ceph_client, fault_domain,
-                                         root_buckets)
-        crush_rule_info = {
-            "rule_name": rule_name,
-            "rule_id": rule_info.get("rule_id"),
-            "type": fault_domain,
-            "osds": osds,
-            "osd_num": len(osds)
-        }
-        return crush_rule_info
+    def _update_planning(self, ctxt):
+        logger.info("update planning")
+        nodes = objects.NodeList.get_all(ctxt, filters={"rack_id": None})
+        # from remote_pdb import RemotePdb
+        # RemotePdb('127.0.0.1', 4444).set_trace()
+        logger.info("nodes %s need rack_id", nodes)
+        if nodes:
+            rack = obj_utils.rack_create(ctxt)
+            logger.info("create new rack %s" % rack.name)
+            for node in nodes:
+                node.rack_id = rack.id
+                node.save()
+        racks = objects.RackList.get_all(ctxt, filters={"datacenter_id": None})
+        logger.info("racs %s need datacenter_id", racks)
+        if racks:
+            dc = obj_utils.datacenter_create(ctxt)
+            logger.info("create new datacenter %s" % dc.name)
+            for rack in racks:
+                rack.datacenter_id = dc.id
+                rack.save()
 
-    def _probe_pool_info(self, ctxt):
-        logger.info("trying to probe cluster pool info")
-        try:
-            ceph_client = CephTask(ctxt)
-            all_pools = ceph_client.get_pools()
-            logger.info("get all pools: %s", all_pools)
-            pool_infos = []
-            crush_rule_infos = {}
-            for pool in all_pools:
-                # TODO: EC pool get info
-                pool_id = pool.get("poolnum")
-                pool_name = pool.get("poolname")
-                pool_info = ceph_client.get_pool_info(pool_name, "crush_rule")
-                logger.info("rados get pool info: %s", pool_info)
+    def _get_host_by_osd_name(self, ctxt, osd_name):
+        osd = objects.Osd.get_by_osd_name(
+            ctxt, osd_name, expected_attrs=['node'])
+        return osd.node
 
-                # {'pool': 'rbd', 'pool_id': 2, 'size': 3}
-                pool_size = ceph_client.get_pool_info(pool_name, "size")
-                rep_size = pool_size.get("size")
-                rule_name = pool_info.get("crush_rule")
-                if rule_name not in crush_rule_infos:
-                    rule_info = self._get_crush_info(
-                        ctxt, ceph_client, rule_name)
-                    crush_rule_infos[rule_name] = rule_info
-                else:
-                    rule_info = crush_rule_infos[rule_name]
-                logger.info("rados get rule info: %s", rule_info)
-                pool_info = {
-                    "pool_name": pool_name,
-                    "pool_id": pool_id,
-                    "crush_rule": rule_name,
-                    "fault_domain": rule_info['type'],
-                    "rep_size": rep_size,
-                    "osd_num": rule_info['osd_num']
-                }
-                pool_infos.append(pool_info)
-        except exception.StorException as e:
-            logger.error("pool probe error: {}".format(e))
-            return None
-        return pool_infos, crush_rule_infos
+    def _get_rack_by_host(self, ctxt, host):
+        rack = objects.Rack.get_by_id(ctxt, host.rack_id,
+                                      expected_attrs=['node'])
+        return rack
 
-    def _update_osd_crush_info(self, ctxt, crush_rule, crush_rule_info):
-        osds = crush_rule_info['osds']
-        for osd_id in osds:
-            osd = objects.Osd.get_by_osd_id(ctxt, osd_id.replace("osd.", ""))
-            osd.crush_rule_id = crush_rule.id
+    def _rack_create(self, ctxt, rack_name):
+        logger.info("create rack: %s", rack_name)
+        rack = objects.Rack(ctxt, name=rack_name)
+        rack.create()
+        return rack
+
+    def _nodes_update_rack(self, ctxt, nodes, rack_id):
+        for node in nodes:
+            node.rack_id = rack_id
+            node.save()
+
+    def _datacenter_create(self, ctxt, dc_name):
+        logger.info("create datacenter: %s", dc_name)
+        dc = objects.Datacenter(ctxt, name=dc_name)
+        dc.create()
+        return dc
+
+    def _racks_update_datacenter(self, ctxt, racks, datacenter_id):
+        for rack in racks:
+            rack.datacenter_id = datacenter_id
+            rack.save()
+
+    def _add_plan_by_crush(self, ctxt, crush_info):
+        host_map = {}
+        rack_map = {}
+        crush_hosts = crush_info['hosts']
+        for host_crush_name, osd_names in six.iteritems(crush_hosts):
+            if not osd_names:
+                raise exception.ProgrammingError(
+                    reason="empty host(%s) not allowed" % host_crush_name)
+            host = self._get_host_by_osd_name(ctxt, osd_names[0])
+            host_map[host_crush_name] = host
+
+        crush_racks = crush_info['racks']
+        for rack_crush_name, crush_hosts in six.iteritems(crush_racks):
+            if not crush_hosts:
+                raise exception.ProgrammingError(
+                    reason="empty rack(%s) not allowed" % rack_crush_name)
+            host_crush_name = crush_hosts[0]
+            if host_crush_name not in host_map:
+                raise exception.ProgrammingError(
+                    reason="host(%s) not found" % host_crush_name)
+            host = host_map[host_crush_name]
+            if not host.rack_id:
+                rack = self._rack_create(ctxt, rack_crush_name)
+                hosts = [host_map[name] for name in crush_hosts]
+                self._nodes_update_rack(ctxt, hosts, rack.id)
+            if host.rack_id:
+                rack = objects.Rack.get_by_id(ctxt, host.rack_id)
+            rack_map[rack_crush_name] = rack
+
+        crush_dcs = crush_info['datacenters']
+        for dc_crush_name, crush_racks in six.iteritems(crush_dcs):
+            if not crush_racks:
+                raise exception.ProgrammingError(
+                    reason="empty datacenter(%s) not allowed" % dc_crush_name)
+            rack_crush_name = crush_racks[0]
+            if rack_crush_name not in rack_map:
+                raise exception.ProgrammingError(
+                    reason="rack(%s) not found" % rack_crush_name)
+            rack = rack_map[rack_crush_name]
+            if not rack.datacenter_id:
+                dc = self._datacenter_create(ctxt, dc_crush_name)
+                racks = [rack_map[name] for name in crush_racks]
+                self._racks_update_datacenter(ctxt, racks, dc.id)
+
+    def _crush_db_create(self, ctxt, crush_info):
+        rule_name = crush_info.get("rule_name")
+        root_name = crush_info.get("root_name")
+        fault_domain = crush_info.get("type")
+        osd_ids = crush_info.get("osds").keys()
+        osd_ids = [o.replace("osd.", "") for o in osd_ids]
+        osds = objects.OsdList.get_all(ctxt, filters={"osd_id": osd_ids})
+        gen = CrushContentGen(
+            ctxt, rule_name=rule_name, root_name=root_name,
+            fault_domain=fault_domain, osds=osds
+        )
+        gen.gen_content()
+        content = gen.map_exists(crush_info)
+        crush = objects.CrushRule(
+            ctxt,
+            rule_name=rule_name,
+            type=crush_info.get("type"),
+            rule_id=crush_info.get("rule_id"),
+            content = content
+        )
+        crush.create()
+        for osd in osds:
+            osd.crush_rule_id = crush.id
             osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
+        return crush
 
-    def pool_probe(self, ctxt):
-        pool_infos, crush_rule_infos = self._probe_pool_info(ctxt)
-        logger.info("probe pools info: %s", pool_infos)
-        logger.info("probe crush info: %s", crush_rule_infos)
-        for _ign, crush_rule_info in six.iteritems(crush_rule_infos):
-            crush_rule = objects.CrushRule(
-                ctxt, cluster_id=ctxt.cluster_id,
-                rule_name=crush_rule_info.get("rule_name"),
-                type=crush_rule_info.get("type"),
-                content=None)
-            crush_rule.create()
-            self._update_osd_crush_info(ctxt, crush_rule, crush_rule_info)
-        for pool_info in pool_infos:
-            rule_name = pool_info.get("crush_rule")
-            crush_rule = objects.CrushRuleList.get_all(
-                ctxt, filters={"rule_name": rule_name})
-            crush_rule_id = crush_rule[0].id
+    def _get_crush_info(self, ctxt, ceph_client, rule_name):
+        crushs = objects.CrushRuleList.get_all(
+            ctxt, filters={"rule_name": rule_name})
+        if crushs:
+            crush = crushs[0]
+        else:
+            rule_info = ceph_client.get_crush_rule_info(rule_name)
+            self._add_plan_by_crush(ctxt, rule_info)
+            crush = self._crush_db_create(ctxt, rule_info)
+        return crush
+
+    def _create_pool(self, ctxt, pool_info):
+        pool = objects.Pool(
+            ctxt, crush_rule_id=pool_info['crush_rule_id'],
+            status=s_fields.PoolStatus.ACTIVE,
+            pool_name=pool_info.get("pool_name"),
+            display_name=pool_info.get("pool_name"),
+            type="replicated",
+            role="data",
+            data_chunk_num=None,
+            coding_chunk_num=None,
+            osd_num=pool_info['osd_num'],
+            speed_type="hdd",
+            replicate_size=pool_info.get("rep_size"),
+            failure_domain_type=pool_info.get("fault_domain")
+        )
+        pool.create()
+
+    def _probe_pool(self, ctxt):
+        ceph_client = CephTask(ctxt)
+        all_pools = ceph_client.get_pools()
+        logger.info("get all pools: %s", all_pools)
+        for pool in all_pools:
             # TODO: EC pool get info
-            # TODO: update pool meta in web
+            pool_id = pool.get("poolnum")
+            pool_name = pool.get("poolname")
+            pool_info = ceph_client.get_pool_info(pool_name, "crush_rule")
+            logger.info("rados get pool info: %s", pool_info)
+
+            # {'pool': 'rbd', 'pool_id': 2, 'size': 3}
+            pool_size = ceph_client.get_pool_info(pool_name, "size")
+            rep_size = pool_size.get("size")
+            rule_name = pool_info.get("crush_rule")
+            crush = self._get_crush_info(ctxt, ceph_client, rule_name)
             pool = objects.Pool(
-                ctxt, crush_rule_id=crush_rule_id,
-                cluster_id=ctxt.cluster_id,
+                ctxt, crush_rule_id=crush.id,
+                pool_id=pool_id,
                 status=s_fields.PoolStatus.ACTIVE,
-                pool_name=pool_info.get("pool_name"),
-                display_name=pool_info.get("pool_name"),
+                pool_name=pool_name,
+                display_name=pool_name,
                 type="replicated",
                 role="data",
                 data_chunk_num=None,
                 coding_chunk_num=None,
-                osd_num=pool_info['osd_num'],
+                osd_num=len(crush.content['osds']),
                 speed_type="hdd",
-                replicate_size=pool_info.get("rep_size"),
-                failure_domain_type=pool_info.get("fault_domain")
+                replicate_size=rep_size,
+                failure_domain_type=crush.type
             )
             pool.create()
 
@@ -511,6 +657,8 @@ class CleanIncludeCluster(BaseTask, CleanDataMixin):
         self._clean_network(ctxt)
         self._clean_node(ctxt)
         self._clean_ceph_config(ctxt)
+        self._clean_rack(ctxt)
+        self._clean_datacenter(ctxt)
 
         # mark finish
         objects.sysconfig.sys_config_set(

@@ -4,7 +4,6 @@
 from oslo_versionedobjects import fields
 
 from DSpace import db
-from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
 
@@ -24,9 +23,6 @@ class Rack(base.StorPersistentObject, base.StorObject,
     OPTIONAL_FIELDS = ('nodes')
 
     def create(self):
-        if self.obj_attr_is_set('id'):
-            raise exception.ObjectActionError(action='create',
-                                              reason='already created')
         updates = self.stor_obj_get_changes()
 
         db_rack = db.rack_create(self._context, updates)

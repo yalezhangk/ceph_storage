@@ -39,7 +39,8 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics')
+    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics',
+                       'failure_domain_type')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -65,11 +66,12 @@ class Pool(base.StorPersistentObject, base.StorObject,
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         expected_attrs = expected_attrs or []
-        if 'crush_rule' in expected_attrs:
-            crush_rule = db_obj.get('crush_rule', None)
+        crush_rule = db_obj.get('crush_rule', None)
+        if 'crush_rule' in expected_attrs and crush_rule:
             obj.crush_rule = objects.CrushRule._from_db_object(
                 context, objects.CrushRule(context), crush_rule
             )
+            obj.failure_domain_type = crush_rule.content.get('fault_domain')
         if 'osds' in expected_attrs:
             osds = db_obj.get('osds', [])
             obj.osds = [objects.Osd._from_db_object(

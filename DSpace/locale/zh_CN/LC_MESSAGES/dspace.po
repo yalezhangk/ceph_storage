@@ -607,16 +607,19 @@ msgid "pool {} increase disk error"
 msgstr "存储池{}添加硬盘失败"
 
 msgid "{} decrease disk success"
-msgstr "{} 添加硬盘成功"
+msgstr "{} 移除硬盘成功"
 
 msgid "{} decrease disk error"
-msgstr "{} 添加硬盘失败"
+msgstr "{} 移除硬盘失败"
 
-msgid "{} update policy success"
-msgstr "{} 修改数据安全策略成功"
+msgid "can't remove osds more than pool's available domain"
+msgstr "移除的osd数量不能超过副本数"
 
 msgid "{} update policy error"
 msgstr "{} 修改数据安全策略错误"
+
+msgid "More than one pool use this crush, not allow change fault domain"
+msgstr "超过一个存储池使用这个故障域规划，不允许修改故障域"
 
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
@@ -733,6 +736,15 @@ msgstr "%s 属性不是懒加载"
 
 msgid "Invalid config type"
 msgstr "不合法的配置类型"
+
+msgid "Crush hostname Invalid"
+msgstr "主机名无效"
+
+msgid "Rack Invalid"
+msgstr "机架无效"
+
+msgid "Datacenter Invalid"
+msgstr "数据中心需要参数 'name'"
 
 msgid "SSH Error: %s"
 msgstr "SSH错误：%s"

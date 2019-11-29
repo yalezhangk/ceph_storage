@@ -61,6 +61,18 @@ class PoolStatusField(BaseEnumField):
     AUTO_TYPE = PoolStatus()
 
 
+class FaultDomain(BaseStorEnum):
+    HOST = 'host'
+    RACK = 'rack'
+    DATACENTER = 'datacenter'
+
+    ALL = (HOST, RACK, DATACENTER)
+
+
+class FaultDomainField(BaseEnumField):
+    AUTO_TYPE = FaultDomain()
+
+
 class NetworkStatus(BaseStorEnum):
     UP = 'up'
     DOWN = 'down'
