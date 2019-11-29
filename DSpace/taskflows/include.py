@@ -332,6 +332,7 @@ class SyncClusterInfo(BaseTask):
         for osd_id in osds:
             osd = objects.Osd.get_by_osd_id(ctxt, osd_id.replace("osd.", ""))
             osd.crush_rule_id = crush_rule.id
+            osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
 
     def pool_probe(self, ctxt):
@@ -384,7 +385,7 @@ class SyncClusterInfo(BaseTask):
             osd_id=osd_info.get('osd_id'),
             type=osd_info.get('type', s_fields.OsdType.BLUESTORE),
             disk_type=disk.type,
-            status=s_fields.OsdStatus.ACTIVE,
+            status=s_fields.OsdStatus.AVAILABLE,
             disk_id=disk.id
         )
         osd.create()
