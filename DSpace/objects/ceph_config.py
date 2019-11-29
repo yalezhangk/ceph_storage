@@ -3,12 +3,15 @@
 import configparser
 from io import StringIO
 
+from oslo_utils import strutils
 from oslo_versionedobjects import fields
 
 from DSpace import db
 from DSpace import exception
 from DSpace import objects
+from DSpace.i18n import _
 from DSpace.objects import base
+from DSpace.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -74,6 +77,20 @@ class CephConfigList(base.ObjectListBase, base.StorObject):
     def get_count(cls, context, filters=None):
         count = db.ceph_config_get_count(context, filters)
         return count
+
+
+def ceph_config_get(ctxt, group, key, default=None):
+    obj = CephConfig.get_by_key(ctxt, group, key)
+    if not obj:
+        return default
+    if obj.value_type == s_fields.ConfigType.STRING:
+        return obj.value
+    elif obj.value_type == s_fields.ConfigType.INT:
+        return int(obj.value)
+    elif obj.value_type == s_fields.ConfigType.BOOL:
+        return strutils.bool_from_string(obj.value)
+    else:
+        raise exception.Invalid(msg=_("Invalid config type"))
 
 
 def ceph_config_content(ctxt):
