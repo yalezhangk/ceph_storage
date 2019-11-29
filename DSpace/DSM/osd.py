@@ -364,7 +364,8 @@ class OsdHandler(AdminBaseHandler):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
         if osd.status not in [s_fields.OsdStatus.AVAILABLE,
                               s_fields.OsdStatus.ERROR]:
-            raise exception.InvalidInput(_('Osd status is %s') % osd.status)
+            raise exception.InvalidInput(_("Only available and error"
+                                           " osd can be delete"))
         begin_action = self.begin_action(ctxt, Resource.OSD, Action.DELETE)
         osd.status = s_fields.OsdStatus.DELETING
         osd.save()
