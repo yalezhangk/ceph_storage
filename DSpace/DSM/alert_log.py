@@ -1,4 +1,5 @@
 from oslo_log import log as logging
+from oslo_utils import strutils
 from oslo_utils import timeutils
 
 from DSpace import exception as exc
@@ -30,9 +31,10 @@ class AlertLogHandler(AdminBaseHandler):
             subject_conf = {
                 'smtp_subject': 't2stor_alert:{}'.format(
                     alert_rule.type)}
-            content_conf = {'smtp_context': alert_value}
+            content_conf = {'smtp_content': alert_value}
             mail_conf.update({'smtp_name': 't2stor',
                               'smtp_to_email': to_email})
+            logger.info('begin send email, to_email=%s', to_email)
             try:
                 send_mail(subject_conf, content_conf,
                           mail_conf)
@@ -43,7 +45,6 @@ class AlertLogHandler(AdminBaseHandler):
 
     def _send_alert_email(self, ctxt, to_datas):
         for to_data in to_datas:
-            # 1.get smtp conf
             cluster_id = to_data['cluster_id']
             alert_rule = to_data['alert_rule']
             alert_value = to_data['alert_value']
@@ -54,7 +55,8 @@ class AlertLogHandler(AdminBaseHandler):
                 logger.info('not yet deploy SMTP conf,'
                             'will not send alert emails')
                 return
-            if is_smtp[0].value != '1':
+            enabled = strutils.bool_from_string(is_smtp[0].value)
+            if not enabled:
                 logger.info('SMTP conf has closed, will not send alert emails')
                 return
             mail_conf = {}
@@ -65,10 +67,20 @@ class AlertLogHandler(AdminBaseHandler):
             for smtp_conf in smtp_configs:
                 if smtp_conf.key in keys:
                     mail_conf[smtp_conf.key] = smtp_conf.value
+            # enable_ssl,enable_tls: str -> bool
+            mail_conf['smtp_enable_ssl'] = strutils.bool_from_string(
+                mail_conf['smtp_enable_ssl'])
+            mail_conf['smtp_enable_tls'] = strutils.bool_from_string(
+                mail_conf['smtp_enable_tls'])
             # 2. send mail
             # alert_rule -> alert_group -> email_group: send_email
+            ale_rule_id = alert_rule.id
+            alert_rule = objects.AlertRule.get_by_id(
+                ctxt, ale_rule_id, expected_attrs=['alert_groups'])
             al_groups = alert_rule.alert_groups
             for al_group in al_groups:
+                al_group = objects.AlertGroup.get_by_id(
+                    ctxt, al_group.id, expected_attrs=['email_groups'])
                 email_groups = al_group.email_groups
                 for email_group in email_groups:
                     to_emails = email_group.emails.strip().split(',')
@@ -82,7 +94,7 @@ class AlertLogHandler(AdminBaseHandler):
         to_datas = []
         if not isinstance(receive_datas, list):
             raise exc.InvalidInput(
-                message="param 'alert_messages' must a list")
+                message="param 'alerts' must a list")
         for alert in receive_datas:
             resource_name = None
             resource_id = None
@@ -93,9 +105,11 @@ class AlertLogHandler(AdminBaseHandler):
             alert_rules = objects.AlertRuleList.get_all(
                 ctxt, filters={'type': alert_name, 'cluster_id': cluster_id})
             if not alert_rules:
+                logger.info('alert_rule:%s not found', alert_name)
                 continue
             alert_rule = alert_rules[0]
             if not alert_rule.enabled:
+                logger.info('alert_rule:%s has closed', alert_name)
                 continue
             resource_type = alert_rule.resource_type
             if resource_type == Resource.NODE:
@@ -115,7 +129,7 @@ class AlertLogHandler(AdminBaseHandler):
                                    'cluster_id': cluster_id})
                 if osd:
                     resource_id = osd[0].id
-                    resource_name = "osd.%s", osd_id
+                    resource_name = "osd.{}".format(osd_id)
                     logger.info('receive_alert,resource_type=%s,name=%s',
                                 Resource.OSD, resource_name)
             elif resource_type == Resource.POOL:
@@ -137,6 +151,7 @@ class AlertLogHandler(AdminBaseHandler):
                     logger.info('receive_alert,resource_type=%s,name=%s',
                                 Resource.CLUSTER, resource_name)
             else:
+                logger.info('not receive any alert_logs')
                 continue
             # create alert_log
             if resource_id and resource_name:
@@ -150,7 +165,9 @@ class AlertLogHandler(AdminBaseHandler):
                     'level': alert_rule.level,
                     'alert_value': alert_value,
                     'alert_rule_id': alert_rule.id,
+                    'cluster_id': cluster_id
                 }
+
                 alert_log = objects.AlertLog(ctxt, **alert_log_data)
                 alert_log.create()
                 logger.info('create an alert_log success,resource_type=%s,'
@@ -181,6 +198,7 @@ class AlertLogHandler(AdminBaseHandler):
     def send_alert_messages(self, ctxt, receive_datas):
         # 1. receive_datas
         to_datas = self._receive_datas(ctxt, receive_datas)
+        logger.debug('has handled to_datas:%s', to_datas)
         # 2. send_email
         self.task_submit(self._send_alert_email, ctxt, to_datas)
         logger.info('send_email tasks has begin')

@@ -38,7 +38,7 @@ def send_mail(subject, content, config):
             server = smtplib.SMTP(smtp_host, smtp_port)
             server.login(smtp_user,
                          smtp_password)  # 括号中对应的是发件人邮箱账号、邮箱密码
-        server.sendmail(smtp_user, [smtp_user, ],
+        server.sendmail(smtp_user, [smtp_to_email],
                         msg.as_string())
         server.quit()  # 关闭连接
     except Exception as e:
