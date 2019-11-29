@@ -228,9 +228,17 @@ class SyncClusterInfo(BaseTask):
             for info in osd_infos:
                 self._update_osd(ctxt, info, node)
         self.pool_probe(ctxt)
+        self._update_disk_status(ctxt)
 
-    def revert(self, task_info, result, flow_failures):
-        pass
+    def _update_disk_status(self, ctxt):
+        disks = objects.DiskList.get_all(
+            ctxt, expected_attrs=['partition_used'])
+        for disk in disks:
+            if disk.partition_used < disk.partition_num:
+                disk.status = s_fields.DiskStatus.AVAILABLE
+            else:
+                disk.status = s_fields.DiskStatus.INUSE
+            disk.save()
 
     def _get_osds_from_crush(self, ceph_client, fault_domain, root_buckets):
         osds = []
