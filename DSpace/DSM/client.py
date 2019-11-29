@@ -1033,6 +1033,13 @@ class AdminClient(BaseClient):
                              task_id=task_id)
         return response
 
+    ####################
+
+    def send_mail(self, ctxt, subject, content, config):
+        response = self.call(ctxt, "send_mail", subject=subject,
+                             content=content, config=config)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

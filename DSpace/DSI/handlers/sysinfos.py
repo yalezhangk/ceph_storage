@@ -293,11 +293,9 @@ class SmtpTestHandler(ClusterAPIHandler):
         config = config.get('smtp_conf')
         if not config:
             raise exception.NotFound(_("smtp could not be found."))
-        subject = config.pop("smtp_subject")
-        content = config.pop("smtp_content")
-        if not content["smtp_subject"]:
-            raise exception.NotFound(_("smtp_context could not be found."))
+        subject = {'smtp_subject': config.pop("smtp_subject")}
+        content = {'smtp_content': config.pop("smtp_content", None)}
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        yield client.send_mail(subject, content, config)
-        self.write(json.dumps({'result': 'true'}))
+        result = yield client.send_mail(ctxt, subject, content, config)
+        self.write(json.dumps({'result': result}))

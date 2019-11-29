@@ -12,8 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class MailHandler(AdminBaseHandler):
-    def send_mail(subject, content, config):
-        send_mail(subject, content, config)
+    def send_mail(self, ctxt, subject, content, config):
+        try:
+            send_mail(subject, content, config)
+        except Exception as e:
+            logger.exception('send test email error: %s', e)
+            return False
+        return True
 
     def smtp_init(self, ctxt):
         data = [
