@@ -273,7 +273,7 @@ def define_tables(meta):
         Column('deleted_at', DateTime),
         Column('deleted', Boolean, nullable=False),
         Column('id', Integer, primary_key=True, nullable=False),
-        Column('display_name', String(32), nullable=True),
+        Column('display_name', String(64), nullable=True),
         Column('pool_id', Integer, nullable=True),
         Column('pool_name', String(64), nullable=True),
         Column('type', String(32), nullable=True),

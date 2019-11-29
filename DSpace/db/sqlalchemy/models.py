@@ -228,7 +228,7 @@ class Pool(BASE, StorBase):
     __tablename__ = "pools"
 
     id = Column(Integer, primary_key=True)
-    display_name = Column(String(32), index=True)
+    display_name = Column(String(64), index=True)
     pool_id = Column(Integer)
     pool_name = Column(String(64))
     type = Column(String(32))  # ec or replica pool
