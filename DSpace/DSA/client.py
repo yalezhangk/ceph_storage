@@ -104,69 +104,6 @@ class AgentClient(BaseClient):
                              directory=directory, filename=filename)
         return response
 
-    def mount_bgw(self, ctxt, access_path, node):
-        response = self.call(ctxt, "mount_bgw", access_path=access_path,
-                             node=node)
-        return response
-
-    def unmount_bgw(self, ctxt, access_path):
-        response = self.call(ctxt, "unmount_bgw", access_path=access_path)
-        return response
-
-    def bgw_set_chap(self, ctxt, node, access_path, chap_enable,
-                     username, password):
-        response = self.call(ctxt, "bgw_set_chap", node=node,
-                             access_path=access_path, chap_enable=chap_enable,
-                             username=username, password=password)
-        return response
-
-    def bgw_create_mapping(self, ctxt, node, access_path,
-                           volume_client, volumes):
-        response = self.call(ctxt, "bgw_create_mapping",
-                             node=node, access_path=access_path,
-                             volume_client=volume_client, volumes=volumes)
-        return response
-
-    def bgw_remove_mapping(self, ctxt, node, access_path,
-                           volume_client, volumes):
-        response = self.call(ctxt, "bgw_remove_mapping",
-                             node=node, access_path=access_path,
-                             volume_client=volume_client, volumes=volumes)
-        return response
-
-    def bgw_add_volume(self, ctxt, node, access_path, volume_client, volumes):
-        response = self.call(ctxt, "bgw_add_volume",
-                             node=node, access_path=access_path,
-                             volume_client=volume_client, volumes=volumes)
-        return response
-
-    def bgw_remove_volume(self, ctxt, node, access_path, volume_client,
-                          volumes):
-        response = self.call(ctxt, "bgw_remove_volume",
-                             node=node, access_path=access_path,
-                             volume_client=volume_client, volumes=volumes)
-        return response
-
-    def bgw_change_client_group(self, ctxt, access_path, volumes,
-                                volume_clients, new_volume_clients):
-        response = self.call(ctxt, "bgw_change_client_group",
-                             access_path=access_path,
-                             volumes=volumes,
-                             volume_clients=volume_clients,
-                             new_volume_clients=new_volume_clients)
-        return response
-
-    def bgw_set_mutual_chap(self, ctxt, access_path, volume_clients,
-                            mutual_chap_enable, mutual_username,
-                            mutual_password):
-        response = self.call(ctxt, "bgw_set_mutual_chap",
-                             access_path=access_path,
-                             volume_clients=volume_clients,
-                             mutual_chap_enable=mutual_chap_enable,
-                             mutual_username=mutual_username,
-                             mutual_password=mutual_password)
-        return response
-
     def prometheus_target_add(self, ctxt, ip, port, hostname, path):
         response = self.call(ctxt, 'prometheus_target_add',
                              ip=ip, port=port, hostname=hostname, path=path)
