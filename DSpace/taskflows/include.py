@@ -187,10 +187,11 @@ class SyncCephConfig(BaseTask):
                     key = key.replace(" ", "_")
                     self._update_config(ctxt, section, key, value)
             admin_keyring = tool.probe_admin_keyring()
-            logger.info(admin_keyring)
-            key = admin_keyring.get('entity')
-            value = admin_keyring.get('key')
-            self._update_config(ctxt, "global", key, value)
+            if admin_keyring:
+                logger.info(admin_keyring)
+                key = admin_keyring.get('entity')
+                value = admin_keyring.get('key')
+                self._update_config(ctxt, "global", key, value)
 
     def _update_config(self, ctxt, section, key, value):
         objs = objects.CephConfigList.get_all(
