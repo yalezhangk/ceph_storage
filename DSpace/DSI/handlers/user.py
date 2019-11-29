@@ -155,11 +155,7 @@ class PermissionMixin(BaseAPIHandler):
                 cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
                 if cluster.is_admin:
                     self.add_page(permission, "manage-cluster")
-            include_tag = objects.sysconfig.sys_config_get(ctxt, 'is_import')
-            if include_tag:
-                pages = self.import_page()
-            else:
-                pages = self.default_page()
+            pages = self.import_page()
             for p in pages:
                 self.add_page(permission, p)
         else:

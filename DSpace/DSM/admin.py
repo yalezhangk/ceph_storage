@@ -25,10 +25,6 @@ from DSpace.DSM.rack import RackHandler
 from DSpace.DSM.service import ServiceHandler
 from DSpace.DSM.sys_config import SysConfigHandler
 from DSpace.DSM.task import TaskHandler
-from DSpace.DSM.volume import VolumeHandler
-from DSpace.DSM.volume_access_path import VolumeAccessPathHandler
-from DSpace.DSM.volume_client_group import VolumeClientGroupHandler
-from DSpace.DSM.volume_snapshot import VolumeSnapshotHandler
 from DSpace.service import ServiceBase
 
 CONF = cfg.CONF
@@ -58,11 +54,7 @@ class AdminHandler(ActionLogHandler,
                    RackHandler,
                    ServiceHandler,
                    SysConfigHandler,
-                   TaskHandler,
-                   VolumeAccessPathHandler,
-                   VolumeHandler,
-                   VolumeClientGroupHandler,
-                   VolumeSnapshotHandler):
+                   TaskHandler):
     pass
 
 

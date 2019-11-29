@@ -27,45 +27,6 @@ class ClusterStatusField(BaseEnumField):
     AUTO_TYPE = ClusterStatus()
 
 
-class VolumeStatus(BaseStorEnum):
-    CREATING = 'creating'
-    AVAILABLE = 'available'
-    DELETING = 'deleting'
-    ERROR = 'error'
-    ERROR_DELETING = 'error_deleting'
-    ERROR_MANAGING = 'error_managing'
-    MANAGING = 'managing'
-    ATTACHING = 'attaching'
-    IN_USE = 'in-use'
-    DETACHING = 'detaching'
-    MAINTENANCE = 'maintenance'
-    RESTORING_BACKUP = 'restoring-backup'
-    ERROR_RESTORING = 'error_restoring'
-    RESERVED = 'reserved'
-    AWAITING_TRANSFER = 'awaiting-transfer'
-    BACKING_UP = 'backing-up'
-    ERROR_BACKING_UP = 'error_backing-up'
-    ERROR_EXTENDING = 'error_extending'
-    DOWNLOADING = 'downloading'
-    UPLOADING = 'uploading'
-    RETYPING = 'retyping'
-    EXTENDING = 'extending'
-    DELETED = 'deleted'
-    ACTIVE = 'active'
-    SHRINK = 'shrink'
-
-    ALL = (CREATING, AVAILABLE, DELETING, ERROR, ERROR_DELETING,
-           ERROR_MANAGING, MANAGING, ATTACHING, IN_USE, DETACHING,
-           MAINTENANCE, RESTORING_BACKUP, ERROR_RESTORING,
-           RESERVED, AWAITING_TRANSFER, BACKING_UP,
-           ERROR_BACKING_UP, ERROR_EXTENDING, DOWNLOADING,
-           UPLOADING, RETYPING, EXTENDING, DELETED, ACTIVE, SHRINK)
-
-
-class VolumeStatusField(BaseEnumField):
-    AUTO_TYPE = VolumeStatus()
-
-
 class NodeStatus(BaseStorEnum):
     CREATING = 'creating'
     ACTIVE = 'active'
@@ -83,20 +44,6 @@ class NodeStatus(BaseStorEnum):
 
 class NodeStatusField(BaseEnumField):
     AUTO_TYPE = NodeStatus()
-
-
-class VolumeAccessPathStatus(BaseStorEnum):
-    CREATING = 'creating'
-    ACTIVE = 'active'
-    DELETING = 'deleting'
-    ERROR = 'error'
-    DELETED = 'deleted'
-
-    ALL = (CREATING, ACTIVE, DELETING, ERROR, DELETED)
-
-
-class VolumeAccessPathStatusField(BaseEnumField):
-    AUTO_TYPE = VolumeAccessPathStatus()
 
 
 class PoolStatus(BaseStorEnum):
@@ -236,19 +183,6 @@ class ServiceStatus(BaseStorEnum):
 
 class ServiceStatusField(BaseEnumField):
     AUTO_TYPE = ServiceStatus()
-
-
-class VolumeSnapshotStatus(BaseStorEnum):
-    CREATING = 'creating'
-    ACTIVE = 'active'
-    DELETING = 'deleting'
-    ERROR = 'error'
-    DELETED = 'deleted'
-    ALL = (CREATING, ACTIVE, DELETING, ERROR, DELETED)
-
-
-class VolumeSnapshotStatusField(BaseEnumField):
-    AUTO_TYPE = VolumeSnapshotStatus()
 
 
 class OsdType(BaseStorEnum):
