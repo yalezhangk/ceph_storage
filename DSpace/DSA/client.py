@@ -46,7 +46,8 @@ class AgentClient(BaseClient):
         return response
 
     def ceph_mon_create(self, ctxt, fsid, ceph_auth='none'):
-        response = self.call(ctxt, "ceph_mon_create", ceph_auth=ceph_auth)
+        response = self.call(
+            ctxt, "ceph_mon_create", fsid=fsid, ceph_auth=ceph_auth)
         return response
 
     def ceph_mon_remove(self, ctxt, last_mon=False):
