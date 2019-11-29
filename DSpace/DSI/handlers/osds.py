@@ -249,7 +249,7 @@ class OsdListHandler(ClusterAPIHandler):
                         'osd:hostname=%s,disk_name=%s create error:%s',
                         hostname, disk_name, e)
                     err_ms = _('osd:hostname={},disk_name={} create '
-                               'error'.format(hostname, disk_name))
+                               'error').format(hostname, disk_name)
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
                     wb_client.send_message(
