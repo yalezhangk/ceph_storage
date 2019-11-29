@@ -265,7 +265,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def _cluster_delete_check(self, ctxt, cluster):
         if cluster.is_admin:
-            raise exc.InvalidInput(_('Admin node cannot be delete'))
+            raise exc.InvalidInput(_('Admin cluster cannot be delete'))
         if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
                                   s_fields.ClusterStatus.ERROR]:
             raise exc.InvalidInput(_('Cluster is %s') % cluster.status)
@@ -292,6 +292,9 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         )
         if len(osds):
             raise exc.InvalidInput(_('Cluster has osds in doing task'))
+        import_task = objects.sysconfig.sys_config_get(ctxt, "import_task_id")
+        if import_task >= 0:
+            raise exc.InvalidInput(_('Cluster is importing'))
 
     def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
         logger.debug("delete cluster %s start", cluster_id)
