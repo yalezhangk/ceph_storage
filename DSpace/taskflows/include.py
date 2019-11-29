@@ -66,6 +66,11 @@ class CreateDB(BaseTask):
                 cluster_ip=data.get('cluster_ip'),
                 public_ip=data.get('public_ip'),
                 status=s_fields.NodeStatus.CREATING)
+            roles = data.get('roles')
+            if 'monitor' in roles:
+                node.role_monitor = True
+            if 'storage' in roles:
+                node.role_storage = True
             node.create()
             nodes.append(node)
         return nodes
