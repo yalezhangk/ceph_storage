@@ -40,6 +40,21 @@ class OsdHandler(AdminBaseHandler):
                 res.append(osd)
         return res
 
+    def _get_osd_df_map(self, ctxt):
+        has_mon_host = self.has_monitor_host(ctxt)
+        if has_mon_host:
+            ceph_client = CephTask(ctxt)
+            capacity = ceph_client.get_osd_df()
+        else:
+            capacity = None
+        mapping = {}
+        if capacity:
+            osd_capacity = capacity.get('nodes') + capacity.get('stray')
+            logger.info("get osd_capacity: %s", json.dumps(osd_capacity))
+            for c in osd_capacity:
+                mapping[str(c['id'])] = c
+        return mapping
+
     def osd_get_all(self, ctxt, tab=None, marker=None, limit=None,
                     sort_keys=None, sort_dirs=None, filters=None, offset=None,
                     expected_attrs=None):
@@ -58,18 +73,7 @@ class OsdHandler(AdminBaseHandler):
 
         if tab == "default":
             logger.debug("Get osd metrics: tab=default")
-            has_mon_host = self.has_monitor_host(ctxt)
-            if has_mon_host:
-                ceph_client = CephTask(ctxt)
-                capacity = ceph_client.get_osd_df()
-            else:
-                capacity = None
-            mapping = {}
-            if capacity:
-                osd_capacity = capacity.get('nodes') + capacity.get('stray')
-                logger.info("get osd_capacity: %s", json.dumps(osd_capacity))
-                for c in osd_capacity:
-                    mapping[str(c['id'])] = c
+            mapping = self._get_osd_df_map(ctxt)
             for osd in osds:
                 size = mapping.get(osd.osd_id)
                 osd.metrics = {}
@@ -384,3 +388,23 @@ class OsdHandler(AdminBaseHandler):
         disk_name = disk.name
         hostname = disk.node.hostname
         return {'hostname': hostname, 'disk_name': disk_name}
+
+    def osd_capacity_get(self, ctxt, osd_id):
+        logger.info("Osd capacity get: osd_id: %s.", osd_id)
+        osd = objects.Osd.get_by_id(ctxt, osd_id)
+        prometheus = PrometheusTool(ctxt)
+        osd.metrics = {}
+
+        mapping = self._get_osd_df_map(ctxt)
+        size = mapping.get(osd.osd_id)
+        osd.metrics = {}
+        if size:
+            osd.metrics.update({'kb': [0, size['kb']]})
+            osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
+            osd.metrics.update({'kb_used': [0, size['kb_used']]})
+            osd.size = int(size['kb']) * 1024
+            osd.used = int(size['kb_used']) * 1024
+            osd.save()
+
+        prometheus.osd_get_bluefs_capacity(osd)
+        return osd.metrics
