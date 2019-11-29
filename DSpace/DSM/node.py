@@ -811,6 +811,7 @@ class NodeHandler(AdminBaseHandler):
     def _node_check_roles(self, roles, services):
         res = {}
         # add default value
+        roles = roles or []
         for s in roles:
             res[s] = True
 
