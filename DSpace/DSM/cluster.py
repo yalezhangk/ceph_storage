@@ -293,7 +293,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if len(osds):
             raise exc.InvalidInput(_('Cluster has osds in doing task'))
         import_task = objects.sysconfig.sys_config_get(ctxt, "import_task_id")
-        if import_task >= 0:
+        if import_task is not None and import_task >= 0:
             raise exc.InvalidInput(_('Cluster is importing'))
 
     def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
