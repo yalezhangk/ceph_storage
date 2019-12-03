@@ -180,13 +180,15 @@ class NodeListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
-        exact_filters = ['status', 'role_object_gateway']
+        exact_filters = ['status', 'role_object_gateway', 'no_router']
         fuzzy_filters = ['hostname', 'ip_address']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(ctxt)
         nodes = yield client.node_get_all(
             ctxt, expected_attrs=['disks', 'networks', 'osds'],
             filters=filters, **page_args)
+        if 'no_router' in filters:
+            del(filters['no_router'])
         node_count = yield client.node_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "nodes": nodes,

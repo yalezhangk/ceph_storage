@@ -1,4 +1,5 @@
 import six
+from netaddr import IPNetwork
 from oslo_log import log as logging
 
 from DSpace import objects
@@ -21,6 +22,13 @@ class NetworkHandler(AdminBaseHandler):
 
     def network_get_count(self, ctxt, filters=None):
         return objects.NetworkList.get_count(ctxt, filters=filters)
+
+    def _get_object_gateway_ip_address(self, ctxt, net):
+        gateway_cidr = objects.sysconfig.sys_config_get(
+            ctxt, key="gateway_cidr")
+        if net.ip_address in IPNetwork(gateway_cidr):
+            return True
+        return False
 
     def network_reporter(self, ctxt, networks, node_id):
         all_net_objs = objects.NetworkList.get_all(
@@ -63,6 +71,12 @@ class NetworkHandler(AdminBaseHandler):
                 )
                 net.create()
                 logger.info("Create network %s: %s", name, data)
+            if self._get_object_gateway_ip_address(ctxt, net):
+                node = objects.Node.get_by_id(ctxt, node_id)
+                node.object_gateway_ip_address = net.ip_address
+                node.save()
+                logger.info("Update object_gateway_ip_address %s for node %s",
+                            net.ip_address, node.id)
         for name, net in six.iteritems(all_nets):
             logger.warning("Remove network %s", name)
             net.destroy()

@@ -1,0 +1,15 @@
+
+vrrp_instance vip_{{ keepalived_virtual_router_id }} {
+    state BACKUP
+    nopreempt
+    interface {{ interface_name }}
+    virtual_router_id {{ keepalived_virtual_router_id }}
+    priority {{ priority }}
+    advert_int 1
+    virtual_ipaddress {
+        {{ router_vip_address }} dev {{  interface_name }}
+    }
+    track_script {
+        check_alive
+    }
+}

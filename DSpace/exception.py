@@ -166,6 +166,10 @@ class RgwZoneNotFound(NotFound):
     message = _("Radosgw Zone %(rgw_zone_id)s could not be found.")
 
 
+class RgwRouterNotFound(NotFound):
+    message = _("Radosgw router %(rgw_router_id)s could not be found.")
+
+
 class DiskPartitionNotFound(NotFound):
     message = _("Disk partition %(disk_part_id)s could not be found.")
 
@@ -446,3 +450,7 @@ class ClusterPauseError(StorException):
 
 class ClusterUnpauseError(StorException):
     message = _('Osd unpause error')
+
+
+class IPConnectError(StorException):
+    message = _('Connect to %(ip)s error')

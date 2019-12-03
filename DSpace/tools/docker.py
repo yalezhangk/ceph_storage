@@ -142,3 +142,17 @@ class Docker(ToolBase):
             return s_fields.ServiceStatus.ACTIVE
         else:
             return s_fields.ServiceStatus.INACTIVE
+
+    def exist(self, name):
+        logger.info("Check if container is existed: %s", name)
+        cmd = ['docker', 'ps', '-a', '|', 'grep', name]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            if not stderr:
+                return False
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        if stdout:
+            return True
+        else:
+            return False

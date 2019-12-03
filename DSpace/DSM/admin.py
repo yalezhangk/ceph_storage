@@ -24,6 +24,7 @@ from DSpace.DSM.probe import ProbeHandler
 from DSpace.DSM.prometheus import PrometheusHandler
 from DSpace.DSM.rack import RackHandler
 from DSpace.DSM.radosgw import RadosgwHandler
+from DSpace.DSM.radosgw_router import RadosgwRouterHandler
 from DSpace.DSM.service import ServiceHandler
 from DSpace.DSM.sys_config import SysConfigHandler
 from DSpace.DSM.task import TaskHandler
@@ -55,6 +56,7 @@ class AdminHandler(ActionLogHandler,
                    ProbeHandler,
                    PrometheusHandler,
                    RadosgwHandler,
+                   RadosgwRouterHandler,
                    RackHandler,
                    ServiceHandler,
                    SysConfigHandler,

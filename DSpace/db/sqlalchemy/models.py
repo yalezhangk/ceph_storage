@@ -552,11 +552,14 @@ class Radosgw(BASE, StorBase):
     name = Column(String(64))
     display_name = Column(String(255))
     status = Column(String(32))
+    status = Column(String(32))
     ip_address = Column(String(32))
     port = Column(Integer)
     zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))
     node_id = Column(Integer, ForeignKey('nodes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    router_id = Column(Integer, ForeignKey('radosgw_routers.id'))
+    _radosgw_routers = relationship("RadosgwRouter", backref="_radosgws")
 
 
 class RadosgwZone(BASE, StorBase):
@@ -569,3 +572,32 @@ class RadosgwZone(BASE, StorBase):
     zonegroup = Column(String(64))
     realm = Column(String(64))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class RadosgwRouter(BASE, StorBase):
+    __tablename__ = 'radosgw_routers'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255))
+    name = Column(String(64))
+    status = Column(String(32))
+    virtual_ip = Column(String(32))
+    port = Column(Integer)
+    https_port = Column(Integer)
+    virtual_router_id = Column(Integer)
+    nodes = Column(String(1024))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class RouterService(BASE, StorBase):
+    __tablename__ = "router_services"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), index=True)
+    status = Column(String(32))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    net_id = Column(String(36), ForeignKey('networks.id'))
+    router_id = Column(Integer, ForeignKey('radosgw_routers.id'))
+    _radosgw_routers = relationship("RadosgwRouter",
+                                    backref="_router_services")

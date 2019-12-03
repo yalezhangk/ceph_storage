@@ -81,6 +81,9 @@ msgstr "对象存储网关 %(radosgw_id)s 未找到"
 msgid "Radosgw Zone %(rgw_zone_id)s could not be found."
 msgstr "对象存储网关区域 %(rgw_zone_id)s 未找到"
 
+msgid "Radosgw router %(rgw_router_id)s could not be found."
+msgstr "对象路由 %(rgw_zone_id)s 无法找到"
+
 msgid "Disk partition %(disk_part_id)s could not be found."
 msgstr "分区 %(disk_part_id)s 未找到"
 
@@ -287,6 +290,9 @@ msgstr "硬盘暂停错误"
 
 msgid "Osd unpause error"
 msgstr "硬盘暂停错误"
+
+msgid "Connect to %(ip)s error"
+msgstr "连接IP地址 %(ip)s 错误"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -698,6 +704,42 @@ msgstr "删除对象存储网关失败：{}"
 
 msgid "Only available and error radosgw can be deleted"
 msgstr "只能删除可用与错误的对象存储网关"
+
+msgid "The radosgw %s has router"
+msgstr "对象存储网关 %s 已经绑定路由"
+
+msgid "The Router name %s has been used"
+msgstr "对象路由名称 %s 重复"
+
+msgid "The virtual ip %s has been used"
+msgstr "虚拟IP %s 已被占用"
+
+msgid "The virtual router id %s has been used"
+msgstr "虚拟路由ID %s 已被使用"
+
+msgid "The virtual ip address %s is not in gateway_cidr"
+msgstr "此虚拟IP地址 %s 不在对象存储网关地址范围内"
+
+msgid "The virtual ip %s is used by another node"
+msgstr "虚拟IP地址 %s 已被其他对象存储网关使用"
+
+msgid "delete radosgw router {} success"
+msgstr "删除对象路由成功：{}"
+
+msgid "delete rgw_router {} error"
+msgstr "删除对象路由失败：{}"
+
+msgid "Only available and error radosgw router can be deleted"
+msgstr "只能删除可用与错误的对象路由"
+
+msgid "Update radosgw router {} success"
+msgstr "删除对象路由成功：{}"
+
+msgid "Update rgw_router {} error"
+msgstr "删除对象路由失败：{}"
+
+msgid "Only available and error radosgw router can be updated"
+msgstr "只能更新可用与错误的对象路由"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
