@@ -116,6 +116,7 @@ def require_admin_context(f):
         if not is_admin_context(args[0]):
             raise exception.AdminRequired()
         return f(*args, **kwargs)
+
     return wrapper
 
 
@@ -133,6 +134,7 @@ def require_context(f):
         if not is_admin_context(args[0]) and not is_user_context(args[0]):
             raise exception.NotAuthorized()
         return f(*args, **kwargs)
+
     return wrapper
 
 
@@ -148,6 +150,7 @@ def require_volume_exists(f):
         if not resource_exists(context, models.Volume, volume_id):
             raise exception.VolumeNotFound(volume_id=volume_id)
         return f(context, volume_id, *args, **kwargs)
+
     return wrapper
 
 
@@ -163,6 +166,7 @@ def require_snapshot_exists(f):
         if not resource_exists(context, models.Snapshot, snapshot_id):
             raise exception.SnapshotNotFound(snapshot_id=snapshot_id)
         return f(context, snapshot_id, *args, **kwargs)
+
     return wrapper
 
 
@@ -178,6 +182,7 @@ def require_backup_exists(f):
         if not resource_exists(context, models.Backup, backup_id):
             raise exception.BackupNotFound(backup_id=backup_id)
         return f(context, backup_id, *args, **kwargs)
+
     return wrapper
 
 
@@ -230,7 +235,6 @@ def model_query(context, model, *args, **kwargs):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_create(context, values):
-
     volume_ref = models.Volume()
     volume_ref.update(values)
 
@@ -250,8 +254,8 @@ def volume_destroy(context, access_path_id):
                           'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Volume, session=session).\
-            filter_by(id=access_path_id).\
+        model_query(context, models.Volume, session=session). \
+            filter_by(id=access_path_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -293,7 +297,9 @@ def apply_like_filters(model):
                     regex_filters[key.rstrip('~')] = value
             query = process_exact_filters(query, exact_filters)
             return _process_model_like_filter(model, query, regex_filters)
+
         return _decorator
+
     return decorator_filters
 
 
@@ -759,7 +765,6 @@ def cluster_get_new_uuid(context):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def cluster_create(context, values):
-
     if not values.get('id'):
         uid = cluster_get_new_uuid(context)
         values['id'] = uid
@@ -782,8 +787,8 @@ def cluster_destroy(context, cluster_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Cluster, session=session).\
-            filter_by(id=cluster_id).\
+        model_query(context, models.Cluster, session=session). \
+            filter_by(id=cluster_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -824,8 +829,8 @@ def rpc_service_destroy(context, rpc_service_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.RPCService, session=session).\
-            filter_by(id=rpc_service_id).\
+        model_query(context, models.RPCService, session=session). \
+            filter_by(id=rpc_service_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -900,8 +905,8 @@ def node_destroy(context, node_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Node, session=session).\
-            filter_by(id=node_id).\
+        model_query(context, models.Node, session=session). \
+            filter_by(id=node_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1014,8 +1019,8 @@ def datacenter_destroy(context, datacenter_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Datacenter, session=session).\
-            filter_by(id=datacenter_id).\
+        model_query(context, models.Datacenter, session=session). \
+            filter_by(id=datacenter_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1090,8 +1095,8 @@ def rack_destroy(context, rack_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Rack, session=session).\
-            filter_by(id=rack_id).\
+        model_query(context, models.Rack, session=session). \
+            filter_by(id=rack_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1199,8 +1204,8 @@ def osd_destroy(context, osd_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Osd, session=session).\
-            filter_by(id=osd_id).\
+        model_query(context, models.Osd, session=session). \
+            filter_by(id=osd_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1313,8 +1318,8 @@ def pool_destroy(context, pool_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Pool, session=session).\
-            filter_by(id=pool_id).\
+        model_query(context, models.Pool, session=session). \
+            filter_by(id=pool_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1454,8 +1459,8 @@ def sys_config_destroy(context, sys_config_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.SysConfig, session=session).\
-            filter_by(id=sys_config_id).\
+        model_query(context, models.SysConfig, session=session). \
+            filter_by(id=sys_config_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1501,7 +1506,6 @@ def sys_config_update(context, sys_config_id, values):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_access_path_create(context, values):
-
     volume_access_path_ref = models.VolumeAccessPath()
     volume_access_path_ref.update(values)
 
@@ -1521,8 +1525,8 @@ def volume_access_path_destroy(context, access_path_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.VolumeAccessPath, session=session).\
-            filter_by(id=access_path_id).\
+        model_query(context, models.VolumeAccessPath, session=session). \
+            filter_by(id=access_path_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1720,6 +1724,8 @@ def volume_access_path_remove_gateway(context, access_path_id,
         volume_access_path_ref._volume_gateways.remove(volume_gateway_ref)
         volume_access_path_ref.save(session)
     return volume_access_path_ref
+
+
 ###############################
 
 
@@ -1727,7 +1733,6 @@ def volume_access_path_remove_gateway(context, access_path_id,
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_gateway_create(context, values):
-
     volume_gateway_ref = models.VolumeGateway()
     volume_gateway_ref.update(values)
 
@@ -1747,8 +1752,8 @@ def volume_gateway_destroy(context, ap_gateway_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.VolumeGateway, session=session).\
-            filter_by(id=ap_gateway_id).\
+        model_query(context, models.VolumeGateway, session=session). \
+            filter_by(id=ap_gateway_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1859,7 +1864,6 @@ def volume_gateways_update(context, values_list):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_mapping_create(context, values):
-
     volume_mapping_ref = models.VolumeMapping()
     volume_mapping_ref.update(values)
 
@@ -1879,8 +1883,8 @@ def volume_mapping_destroy(context, volume_mapping_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.VolumeMapping, session=session).\
-            filter_by(id=volume_mapping_id).\
+        model_query(context, models.VolumeMapping, session=session). \
+            filter_by(id=volume_mapping_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -1986,6 +1990,7 @@ def volume_mappings_update(context, values_list):
 
         return volume_mappings_ref
 
+
 ###############################
 
 
@@ -1993,7 +1998,6 @@ def volume_mappings_update(context, values_list):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_client_create(context, values):
-
     volume_client_ref = models.VolumeClient()
     volume_client_ref.update(values)
 
@@ -2013,8 +2017,8 @@ def volume_client_destroy(context, volume_client_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.VolumeClient, session=session).\
-            filter_by(id=volume_client_id).\
+        model_query(context, models.VolumeClient, session=session). \
+            filter_by(id=volume_client_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2124,7 +2128,6 @@ def volume_clients_update(context, values_list):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_client_group_create(context, values):
-
     volume_client_group_ref = models.VolumeClientGroup()
     volume_client_group_ref.update(values)
 
@@ -2144,8 +2147,8 @@ def volume_client_group_destroy(context, client_group_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.VolumeClientGroup, session=session).\
-            filter_by(id=client_group_id).\
+        model_query(context, models.VolumeClientGroup, session=session). \
+            filter_by(id=client_group_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2398,6 +2401,7 @@ def license_get_latest_valid(context, marker=None, limit=None, sort_keys=None,
             return []
         return query.all()
 
+
 ###############################
 
 
@@ -2436,8 +2440,8 @@ def network_destroy(context, net_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Network, session=session).\
-            filter_by(id=net_id).\
+        model_query(context, models.Network, session=session). \
+            filter_by(id=net_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2524,7 +2528,6 @@ def _alert_rule_load_attr(ctxt, alert_rule, expected_attrs, session=None):
 
 @require_context
 def alert_rule_get(context, alert_rule_id, expected_attrs=None):
-
     session = get_session()
     with session.begin():
         alert_rule = _alert_rule_get(context, alert_rule_id, session)
@@ -2550,8 +2553,8 @@ def alert_rule_destroy(context, alert_rule_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.AlertRule, session=session).\
-            filter_by(id=alert_rule_id).\
+        model_query(context, models.AlertRule, session=session). \
+            filter_by(id=alert_rule_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2597,6 +2600,7 @@ def alert_rule_get_count(context, filters=None):
         query = _alert_rule_get_query(context, session)
         query = process_filters(models.AlertRule)(query, filters)
         return query.count()
+
 
 ###############################
 
@@ -2651,8 +2655,8 @@ def disk_destroy(context, disk_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Disk, session=session).\
-            filter_by(id=disk_id).\
+        model_query(context, models.Disk, session=session). \
+            filter_by(id=disk_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2773,8 +2777,8 @@ def disk_partition_destroy(context, disk_part_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.DiskPartition, session=session).\
-            filter_by(id=disk_part_id).\
+        model_query(context, models.DiskPartition, session=session). \
+            filter_by(id=disk_part_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -2982,7 +2986,7 @@ def alert_group_destroy(context, alert_group_id):
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')
                           }
-        db_obj = model_query(context, models.AlertGroup, session=session).\
+        db_obj = model_query(context, models.AlertGroup, session=session). \
             filter_by(id=alert_group_id).first()
         # del relations
         db_obj.alert_rules.clear()
@@ -3003,6 +3007,7 @@ def alert_group_get_count(context, filters=None):
         query = _alert_group_get_query(context, session)
         query = process_filters(models.AlertGroup)(query, filters)
         return query.count()
+
 
 ###############################
 
@@ -3103,7 +3108,7 @@ def email_group_destroy(context, email_group_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        db_obj = model_query(context, models.EmailGroup, session=session).\
+        db_obj = model_query(context, models.EmailGroup, session=session). \
             filter_by(id=email_group_id).first()
         if db_obj.alert_groups:
             raise exception.EmailGroupDeleteError()
@@ -3211,8 +3216,8 @@ def alert_log_destroy(context, alert_log_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.AlertLog, session=session).\
-            filter_by(id=alert_log_id).\
+        model_query(context, models.AlertLog, session=session). \
+            filter_by(id=alert_log_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3318,8 +3323,8 @@ def log_file_destroy(context, log_file_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.LogFile, session=session).\
-            filter_by(id=log_file_id).\
+        model_query(context, models.LogFile, session=session). \
+            filter_by(id=log_file_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3361,7 +3366,6 @@ def _snap_load_attr(ctxt, snap, expected_attrs=None, session=None):
 
 @require_context
 def volume_snapshot_get(context, volume_snapshot_id, expected_attrs=None):
-
     session = get_session()
     with session.begin():
         snap = _volume_snapshot_get(context, volume_snapshot_id, session)
@@ -3434,8 +3438,8 @@ def volume_snapshot_destroy(context, volume_snapshot_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.VolumeSnapshot, session=session).\
-            filter_by(id=volume_snapshot_id).\
+        model_query(context, models.VolumeSnapshot, session=session). \
+            filter_by(id=volume_snapshot_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3478,8 +3482,8 @@ def service_destroy(context, service_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Service, session=session).\
-            filter_by(id=service_id).\
+        model_query(context, models.Service, session=session). \
+            filter_by(id=service_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3606,8 +3610,8 @@ def ceph_config_destroy(context, ceph_config_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.CephConfig, session=session).\
-            filter_by(id=ceph_config_id).\
+        model_query(context, models.CephConfig, session=session). \
+            filter_by(id=ceph_config_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3708,8 +3712,8 @@ def crush_rule_destroy(context, crush_rule_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.CrushRule, session=session).\
-            filter_by(id=crush_rule_id).\
+        model_query(context, models.CrushRule, session=session). \
+            filter_by(id=crush_rule_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3814,8 +3818,8 @@ def action_log_destroy(context, action_log_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.ActionLog, session=session).\
-            filter_by(id=action_log_id).\
+        model_query(context, models.ActionLog, session=session). \
+            filter_by(id=action_log_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -3980,8 +3984,8 @@ def task_destroy(context, task_id):
         updated_values = {'deleted': True,
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
-        model_query(context, models.Task, session=session).\
-            filter_by(id=task_id).\
+        model_query(context, models.Task, session=session). \
+            filter_by(id=task_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -4074,7 +4078,203 @@ def process_filters(model):
                 query = query.filter_by(**filter_dict)
 
         return query
+
     return _process_filters
+
+
+###############################
+
+
+def _radosgw_get_query(context, session=None):
+    return model_query(context, models.Radosgw, session=session)
+
+
+def _radosgw_get(context, radosgw_id, session=None):
+    result = _radosgw_get_query(context, session)
+    result = result.filter_by(id=radosgw_id).first()
+
+    if not result:
+        raise exception.RadosgwNotFound(radosgw_id=radosgw_id)
+
+    return result
+
+
+@require_context
+def radosgw_create(context, values):
+    radosgw_ref = models.Radosgw()
+    radosgw_ref.update(values)
+    session = get_session()
+    with session.begin():
+        radosgw_ref.save(session)
+
+    return radosgw_ref
+
+
+def radosgw_destroy(context, radosgw_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Radosgw, session=session). \
+            filter_by(id=radosgw_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _radosgw_load_attr(ctxt, radosgw, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'node' in expected_attrs:
+        radosgw.node = radosgw._node
+
+
+@require_context
+def radosgw_get(context, radosgw_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        radosgw = _radosgw_get(context, radosgw_id, session)
+        _radosgw_load_attr(context, radosgw, expected_attrs)
+        return radosgw
+
+
+@require_context
+def radosgw_get_all(context, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None,
+                    expected_attrs=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Radosgw, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        radosgws = query.all()
+        if not expected_attrs:
+            return radosgws
+        for radosgw in radosgws:
+            _radosgw_load_attr(context, radosgw, expected_attrs)
+        return radosgws
+
+
+@require_context
+def radosgw_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _radosgw_get_query(context, session)
+        query = process_filters(models.Radosgw)(query, filters)
+        return query.count()
+
+
+@require_context
+def radosgw_update(context, radosgw_id, values):
+    session = get_session()
+    with session.begin():
+        query = _radosgw_get_query(context, session)
+        result = query.filter_by(id=radosgw_id).update(values)
+        if not result:
+            raise exception.RadosgwNotFound(radosgw_id=radosgw_id)
+
+
+###############################
+
+
+def _radosgw_zone_get_query(context, session=None):
+    return model_query(context, models.RadosgwZone, session=session)
+
+
+def _radosgw_zone_get(context, rgw_zone_id, session=None):
+    result = _radosgw_zone_get_query(context, session)
+    result = result.filter_by(id=rgw_zone_id).first()
+
+    if not result:
+        raise exception.RgwZoneNotFound(rgw_zone_id=rgw_zone_id)
+
+    return result
+
+
+@require_context
+def radosgw_zone_create(context, values):
+    radosgw_zone_ref = models.RadosgwZone()
+    radosgw_zone_ref.update(values)
+    session = get_session()
+    with session.begin():
+        radosgw_zone_ref.save(session)
+
+    return radosgw_zone_ref
+
+
+def radosgw_zone_destroy(context, rgw_zone_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.RadosgwZone, session=session). \
+            filter_by(id=rgw_zone_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _radosgw_zone_load_attr(ctxt, radosgw_zone, expected_attrs=None):
+    pass
+
+
+@require_context
+def radosgw_zone_get(context, rgw_zone_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        radosgw_zone = _radosgw_zone_get(context, rgw_zone_id, session)
+        _radosgw_zone_load_attr(context, rgw_zone_id, expected_attrs)
+        return radosgw_zone
+
+
+@require_context
+def radosgw_zone_get_all(context, marker=None, limit=None, sort_keys=None,
+                         sort_dirs=None, filters=None, offset=None,
+                         expected_attrs=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.RadosgwZone, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        radosgw_zones = query.all()
+        if not expected_attrs:
+            return radosgw_zones
+        for radosgw_zone in radosgw_zones:
+            _radosgw_zone_load_attr(context, radosgw_zone, expected_attrs)
+        return radosgw_zones
+
+
+@require_context
+def radosgw_zone_update(context, rgw_zone_id, values):
+    session = get_session()
+    with session.begin():
+        query = _radosgw_zone_get_query(context, session)
+        result = query.filter_by(id=rgw_zone_id).update(values)
+        if not result:
+            raise exception.RgwZoneNotFound(rgw_zone_id=rgw_zone_id)
 
 
 ########################
@@ -4160,6 +4360,12 @@ PAGINATION_HELPERS = {
     models.Task: (_task_get_query,
                   process_filters(models.Task),
                   _task_get),
+    models.Radosgw: (_radosgw_get_query,
+                     process_filters(models.Radosgw),
+                     _radosgw_get),
+    models.RadosgwZone: (_radosgw_zone_get_query,
+                         process_filters(models.RadosgwZone),
+                         _radosgw_zone_get),
 }
 
 

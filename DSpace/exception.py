@@ -158,6 +158,14 @@ class DiskNotFound(NotFound):
     message = _("Disk %(disk_id)s could not be found.")
 
 
+class RadosgwNotFound(NotFound):
+    message = _("Radosgw %(radosgw_id)s could not be found.")
+
+
+class RgwZoneNotFound(NotFound):
+    message = _("Radosgw Zone %(rgw_zone_id)s could not be found.")
+
+
 class DiskPartitionNotFound(NotFound):
     message = _("Disk partition %(disk_part_id)s could not be found.")
 

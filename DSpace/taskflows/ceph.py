@@ -238,11 +238,10 @@ class CephTask(object):
                     pool_name=pool_name, rep_size=rep_size)
             if pool_role == 'gateway':
                 pg_num = 32
-                rgw_pools = ['.rgw.root', 'default.rgw.control',
-                             'default.rgw.meta', 'default.rgw.log',
+                rgw_pools = ['.rgw.root',
+                             'default.rgw.meta',
                              'default.rgw.buckets.index',
-                             'default.rgw.buckets.non-ec',
-                             'default.rgw.buckets.data']
+                             'default.rgw.buckets.non-ec']
                 for pool in rgw_pools:
                     rados_client.pool_create(pool_name=pool,
                                              pool_type=pool_type,
@@ -303,11 +302,10 @@ class CephTask(object):
             else:
                 logger.debug("pool %s not exists, ignore it", pool_name)
             if pool_role == 'gateway':
-                rgw_pools = ['.rgw.root', 'default.rgw.control',
-                             'default.rgw.meta', 'default.rgw.log',
+                rgw_pools = ['.rgw.root',
+                             'default.rgw.meta',
                              'default.rgw.buckets.index',
-                             'default.rgw.buckets.non-ec',
-                             'default.rgw.buckets.data']
+                             'default.rgw.buckets.non-ec']
                 for pool in rgw_pools:
                     if pool in pool_list:
                         rados_client.pool_delete(pool)

@@ -258,15 +258,34 @@ class NodeTask(object):
         osd = agent.ceph_osd_destroy(self.ctxt, osd)
         return osd
 
-    def ceph_rgw_install(self):
-        # write ceph.conf
-        # start service
-        pass
+    def ceph_rgw_package_install(self):
+        logger.info("Install radosgw package on node")
+        agent = self.get_agent()
+        agent.ceph_rgw_package_install(self.ctxt)
 
-    def ceph_rgw_uninstall(self):
-        # update ceph.conf
-        # stop service
-        pass
+    def ceph_rgw_package_uninstall(self):
+        logger.info("uninstall radosgw package on node")
+        agent = self.get_agent()
+        agent.ceph_rgw_package_uninstall(self.ctxt)
+
+    def ceph_rgw_install(self, radosgw, zone_params):
+        # write ceph.conf
+        ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
+        logger.debug("Write radosgw config for %s", radosgw.name)
+        agent = self.get_agent()
+        agent.ceph_conf_write(self.ctxt, ceph_conf_content)
+
+        logger.debug("Radosgw %s create on node %s",
+                     radosgw.name, radosgw.node_id)
+        radosgw = agent.ceph_rgw_create(self.ctxt, radosgw, zone_params)
+        return radosgw
+
+    def ceph_rgw_uninstall(self, radosgw):
+        logger.debug("radosgw %s remove on node %s",
+                     radosgw.name, radosgw.node_id)
+        agent = self.get_agent()
+        radosgw = agent.ceph_rgw_destroy(self.ctxt, radosgw)
+        return radosgw
 
     def mount_bgw(self, ctxt, access_path, node):
         """mount ISCSI gateway"""
@@ -440,6 +459,9 @@ class NodeTask(object):
         result = ceph_tool.check_ceph_is_installed()
         sys_tool = SystemTool(ssh)
         result |= sys_tool.check_package('ceph')
+        result |= sys_tool.check_package('rbd')
+        result |= sys_tool.check_package('rados')
+        result |= sys_tool.check_package('rgw')
         file_tool = FileTool(ssh)
         result |= file_tool.exist('/etc/ceph')
         result |= file_tool.exist('/var/lib/ceph')

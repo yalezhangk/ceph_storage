@@ -180,7 +180,7 @@ class NodeListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
-        exact_filters = ['status']
+        exact_filters = ['status', 'role_object_gateway']
         fuzzy_filters = ['hostname', 'ip_address']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(ctxt)

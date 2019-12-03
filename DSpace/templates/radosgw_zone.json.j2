@@ -1,0 +1,35 @@
+{
+    "id": "{{ zone_id }}",
+    "name": "default",
+    "domain_root": "{{ zone_name }}.rgw.meta:root",
+    "control_pool": "{{ zone_name }}.rgw.meta:control",
+    "gc_pool": "{{ zone_name }}.rgw.meta:log_gc",
+    "lc_pool": "{{ zone_name }}.rgw.meta:log_lc",
+    "log_pool": "{{ zone_name }}.rgw.meta:log",
+    "intent_log_pool": "{{ zone_name }}.rgw.meta:log_intent",
+    "usage_log_pool": "{{ zone_name }}.rgw.meta:log_usage",
+    "reshard_pool": "{{ zone_name }}.rgw.meta:log_reshard",
+    "user_keys_pool": "{{ zone_name }}.rgw.meta:users.keys",
+    "user_email_pool": "{{ zone_name }}.rgw.meta:users.email",
+    "user_swift_pool": "{{ zone_name }}.rgw.meta:users.swift",
+    "user_uid_pool": "{{ zone_name }}.rgw.meta:users.uid",
+    "system_key": {
+        "access_key": "",
+        "secret_key": ""
+    },
+    "placement_pools": [
+        {
+            "key": "default-placement",
+            "val": {
+                "index_pool": "{{ zone_name }}.rgw.buckets.index",
+                "data_pool": "{{ data_pool }}",
+                "data_extra_pool": "{{ zone_name }}.rgw.buckets.non-ec",
+                "index_type": 0,
+                "compression": ""
+            }
+        }
+    ],
+    "metadata_heap": "",
+    "tier_config": [],
+    "realm_id": ""
+}
