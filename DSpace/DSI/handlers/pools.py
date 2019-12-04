@@ -54,7 +54,8 @@ create_pool_schema = {
                         "properties": {
                             "replicate_size": {
                                 "type": "integer",
-                                "minimum": 1
+                                "minimum": 1,
+                                "maximum": 6
                             },
                         },
                         "required": ["replicate_size"]
