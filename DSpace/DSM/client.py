@@ -802,6 +802,12 @@ class AdminClient(BaseClient):
                              content=content, config=config)
         return response
 
+    ####################
+
+    def components_get_list(self, ctxt, services):
+        response = self.call(ctxt, "components_get_list", services=services)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

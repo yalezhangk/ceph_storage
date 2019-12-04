@@ -44,6 +44,7 @@ def get_routers():
     __import__('DSpace.DSI.handlers.alert_rule')
     __import__('DSpace.DSI.handlers.ceph_config')
     __import__('DSpace.DSI.handlers.clusters')
+    __import__('DSpace.DSI.handlers.components')
     __import__('DSpace.DSI.handlers.datacenters')
     __import__('DSpace.DSI.handlers.disks')
     __import__('DSpace.DSI.handlers.email_group')
