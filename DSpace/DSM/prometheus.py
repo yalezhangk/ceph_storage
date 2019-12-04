@@ -137,3 +137,32 @@ class PrometheusHandler(AdminBaseHandler):
                                                 float(start),
                                                 float(end))
         return data
+
+    def cluster_capacity_get(self, ctxt, pool_id):
+        # pool_id -> Pool object id
+        prometheus = PrometheusTool(ctxt)
+        if pool_id:
+            # pool 容量和已分配的容量
+            logger.debug('begin get pool_id:%s capacity', pool_id)
+            pool = objects.Pool.get_by_id(ctxt, int(pool_id))
+            result = prometheus.pool_get_provisioned_capacity(
+                ctxt, pool.pool_id)
+            logger.info('get pool_id:%s capacity success, data:%s',
+                        pool_id, result)
+            return result
+        else:
+            # cluster 容量和已分配容量
+            logger.debug('get cluster capacity')
+            cluster_capacity, allocated_capacity = (
+                prometheus.cluster_get_provisioned_capacity())
+            total_allocated = 0
+            if allocated_capacity:
+                logger.info('get pool_list allocated_capacity '
+                            'success,data:%s', allocated_capacity)
+                for per_pool in allocated_capacity:
+                    if per_pool['value']:
+                        total_allocated += int(per_pool['value'][1])
+            cluster_capacity['total_allocated'] = total_allocated
+            logger.info('get cluster capacity success, data:%s',
+                        cluster_capacity)
+        return {'capacity': cluster_capacity}
