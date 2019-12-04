@@ -107,7 +107,7 @@ class PrometheusTool(object):
         except BaseException as e:
             logger.error('get metric:%s data error from prometheus:%s',
                          metric, e)
-            return None
+            raise e
 
         if len(value['data']['result']):
             data = value['data']['result'][0]['value']
@@ -576,13 +576,14 @@ class PrometheusTool(object):
         for k, v in six.iteritems(metrics):
             value = self.prometheus_get_metric(v)
             cluster_capacity[k] = value
-        pool_metric = 'ceph_pool_allocated_capacity'
-        logger.debug('begin get cluster provisioned_capacity')
-        # 已分配容量
-        allocated_capacity = self.prometheus_get_list_metrics(pool_metric)
-        logger.info('get cluster capacity is:%s, allocated_capacity is:%s',
-                    cluster_capacity, allocated_capacity)
-        return cluster_capacity, allocated_capacity
+        # TODO:已分配容量
+        # pool_metric = 'ceph_pool_allocated_capacity'
+        # logger.debug('begin get cluster provisioned_capacity')
+        # allocated_capacity = self.prometheus_get_list_metrics(pool_metric)
+        # logger.info('get cluster capacity is:%s, allocated_capacity is:%s',
+        #             cluster_capacity, allocated_capacity)
+        # return cluster_capacity, allocated_capacity
+        return cluster_capacity, None
 
     def prometheus_get_list_metrics(self, metric, filter=None):
         """Get metrics from prometheus
@@ -594,7 +595,7 @@ class PrometheusTool(object):
         except BaseException as e:
             logger.error('get metric:%s data error from prometheus:%s',
                          metric, e)
-            return None
+            raise e
         data = value['data']['result']
         if data:
             logger.info('get metric:%s data success from prometheus, data:%s',
