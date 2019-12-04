@@ -2,6 +2,7 @@ import json
 import logging
 import time
 
+import six
 from prometheus_http_client import NodeExporter
 from prometheus_http_client import Prometheus as PrometheusClient
 
@@ -103,12 +104,18 @@ class PrometheusTool(object):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
-        except BaseException:
+        except BaseException as e:
+            logger.error('get metric:%s data error from prometheus:%s',
+                         metric, e)
             return None
 
         if len(value['data']['result']):
-            return value['data']['result'][0]['value']
+            data = value['data']['result'][0]['value']
+            logger.info('get metric:%s data success from prometheus, data:%s',
+                        metric, data)
+            return data
         else:
+            logger.info('get metric:%s data is None from prometheus', metric)
             return None
 
     def prometheus_get_histroy_metric(self, metric, start, end, filter=None):
@@ -555,3 +562,61 @@ class PrometheusTool(object):
         except exception.StorException as e:
             logger.error(e)
             pass
+
+    def cluster_get_provisioned_capacity(self):
+        # 集群容量
+        logger.info('get cluster capacity')
+        metrics = {
+            'total_bytes': 'ceph_cluster_total_bytes',
+            'total_used_bytes': 'ceph_cluster_total_used_bytes',
+            'total_avail_bytes':
+                'ceph_cluster_total_bytes - ceph_cluster_total_used_bytes',
+        }
+        cluster_capacity = {}
+        for k, v in six.iteritems(metrics):
+            value = self.prometheus_get_metric(v)
+            cluster_capacity[k] = value
+        pool_metric = 'ceph_pool_allocated_capacity'
+        logger.debug('begin get cluster provisioned_capacity')
+        # 已分配容量
+        allocated_capacity = self.prometheus_get_list_metrics(pool_metric)
+        logger.info('get cluster capacity is:%s, allocated_capacity is:%s',
+                    cluster_capacity, allocated_capacity)
+        return cluster_capacity, allocated_capacity
+
+    def prometheus_get_list_metrics(self, metric, filter=None):
+        """Get metrics from prometheus
+        Returns: list datas
+        """
+        prometheus = PrometheusClient(url=self.prometheus_url)
+        try:
+            value = json.loads(prometheus.query(metric=metric, filter=filter))
+        except BaseException as e:
+            logger.error('get metric:%s data error from prometheus:%s',
+                         metric, e)
+            return None
+        data = value['data']['result']
+        if data:
+            logger.info('get metric:%s data success from prometheus, data:%s',
+                        metric, data)
+            return data
+        else:
+            logger.info('get metric:%s data is None from prometheus', metric)
+            return None
+
+    def pool_get_provisioned_capacity(self, ctxt, pool_id):
+        # 容量和已配置的容量
+        logger.info('get pool_id:%s capacity', pool_id)
+        metrics = {
+            'max_avail': 'ceph_pool_max_avail',
+            'bytes_used': 'ceph_pool_bytes_used',
+            'total_bytes': 'ceph_pool_max_avail + ceph_pool_bytes_used',
+            # TODO:已分配容量, 待对接
+            # 'allocated_capacity': 'ceph_pool_allocated_capacity'
+        }
+        result = {}
+        for k, v in six.iteritems(metrics):
+            value = self.prometheus_get_metric(
+                v, filter={'pool_id': pool_id, 'cluster_id': ctxt.cluster_id})
+            result[k] = value
+        return result

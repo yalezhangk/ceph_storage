@@ -90,6 +90,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "cluster_switch", cluster_id=cluster_id)
         return response
 
+    def cluster_capacity_get(self, ctxt, pool_id=None):
+        response = self.call(ctxt, "cluster_capacity_get", pool_id=pool_id)
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,

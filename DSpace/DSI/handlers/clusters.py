@@ -552,3 +552,42 @@ class ClusterSwitch(ClusterAPIHandler):
         cluster_id = data.get('cluster_id')
         result = yield client.cluster_switch(ctxt, cluster_id)
         self.write(json.dumps({"cluster_id": result}))
+
+
+@URLRegistry.register(r"/clusters/capacity/")
+class ClusterCapacity(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster/Pools capacity overview
+        description: Lists the capacity of the cluster or any pools by
+                     prometheus
+        operationId: cluster.api.clusterCapacity
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: pool_id
+          description: pool object ID
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        pool_id = self.get_argument('pool_id', default=None)
+        capacity = yield client.cluster_capacity_get(ctxt, pool_id)
+        self.write(json.dumps({"capacity": capacity}))
