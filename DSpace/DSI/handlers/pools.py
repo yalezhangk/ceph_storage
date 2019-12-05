@@ -192,7 +192,8 @@ class PoolListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
 
-        exact_filters = ['role', 'type', 'status', 'speed_type']
+        exact_filters = ['role', 'type', 'status', 'speed_type',
+                         'failure_domain_type']
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
 
