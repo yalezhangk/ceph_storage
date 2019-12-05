@@ -9,6 +9,7 @@ from DSpace.DSM.alert_log import AlertLogHandler
 from DSpace.DSM.alert_rule import AlertRuleHandler
 from DSpace.DSM.ceph_config import CephConfigHandler
 from DSpace.DSM.cluster import ClusterHandler
+from DSpace.DSM.component import ComponentHandler
 from DSpace.DSM.crush_rule import CrushRuleHandler
 from DSpace.DSM.datacenter import DatacenterHandler
 from DSpace.DSM.disk import DiskHandler
@@ -39,6 +40,7 @@ class AdminHandler(ActionLogHandler,
                    AlertRuleHandler,
                    CephConfigHandler,
                    ClusterHandler,
+                   ComponentHandler,
                    CrushRuleHandler,
                    DatacenterHandler,
                    DiskHandler,
