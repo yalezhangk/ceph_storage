@@ -1,6 +1,8 @@
 from oslo_log import log as logging
 
+from DSpace import exception
 from DSpace import objects
+from DSpace.DSA.client import AgentClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects import fields as s_fields
 
@@ -27,6 +29,40 @@ class ComponentHandler(AdminBaseHandler):
         rgws = objects.NodeList.get_all(ctxt, filters=filters)
         return rgws
 
+    def _mon_restart(self, ctxt, id, agent_client):
+        node = objects.Node.get_by_id(ctxt, id)
+        if node:
+            res = agent_client.ceph_services_restart(
+                ctxt, "mon", node.hostname)
+            return res
+        else:
+            raise exception.NodeNotFound(id)
+
+    def _mgr_restart(self, ctxt, id, agent_client):
+        node = objects.Node.get_by_id(ctxt, id)
+        if node:
+            res = agent_client.ceph_services_restart(
+                ctxt, "mgr", node.hostname)
+            return res
+        else:
+            raise exception.NodeNotFound(id)
+
+    def _osd_restart(self, ctxt, id, agent_client):
+        osd = objects.Osd.get_by_id(ctxt, id)
+        if osd:
+            res = agent_client.ceph_services_restart(ctxt, "osd", osd.osd_id)
+            return res
+        else:
+            raise exception.OsdNotFound(id)
+
+    def _rgw_restart(self, ctxt, id):
+        # TODO rgw尚未开发，数据库无数据
+        pass
+
+    def _mds_restart(self, ctxt, id):
+        # TODO mds尚未开发，数据库无数据
+        pass
+
     def components_get_list(self, ctxt, services=None):
         res = {}
         if not services:
@@ -41,4 +77,25 @@ class ComponentHandler(AdminBaseHandler):
                 service = "mgr_mon_mds"
             res.update(
                 {_service: getattr(self, '_get_%s_list' % service)(ctxt)})
+        return res
+
+    def component_restart(self, ctxt, component):
+        service = component.get('service')
+        if service not in self.service_list:
+            logger.error("service type not supported: %s" % service)
+            return "service type not supported: %s" % service
+        restart = {
+            "mon": self._mon_restart,
+            "mgr": self._mgr_restart,
+            "osd": self._osd_restart,
+            "rgw": self._rgw_restart,
+            "mds": self._mds_restart
+        }
+        filters = {'status': s_fields.NodeStatus.ACTIVE,
+                   'role_monitor': True}
+        mon = objects.NodeList.get_all(ctxt, filters=filters)
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node_id=int(mon[0].id))
+        res = restart[service](ctxt, component.get("id"), client)
         return res

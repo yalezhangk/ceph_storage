@@ -812,6 +812,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "components_get_list", services=services)
         return response
 
+    def component_restart(self, ctxt, component):
+        response = self.call(ctxt, "component_restart", component=component)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
