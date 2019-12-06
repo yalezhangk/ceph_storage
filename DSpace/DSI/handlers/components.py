@@ -55,7 +55,7 @@ class ComponentHandler(ClusterAPIHandler):
         self.write(objects.json_encode(components))
 
 
-@URLRegistry.register(r"/components/restart")
+@URLRegistry.register(r"/components/restart/")
 class ComponentRestartHandler(ClusterAPIHandler):
     @gen.coroutine
     def post(self):
