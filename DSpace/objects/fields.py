@@ -470,3 +470,4 @@ class RouterServiceStatusField(BaseEnumField):
 class ConfigKey(BaseStorEnum):
     ENABLE_CEPH_REPO = 'enable_ceph_repo'
     REMOVE_ANOTHER_REPO = 'remove_another_repo'
+    CEPH_VERSION = 'ceph_version'

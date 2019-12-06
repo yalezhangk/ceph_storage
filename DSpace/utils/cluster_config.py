@@ -1,4 +1,10 @@
 
+SUPPORT_CEPH_VERSION = [{
+    "name": "luminous",
+    "version": "12.2.10",
+    "release": "0"
+}]
+
 # cluster configs
 # TODO add other configs
 cluster_sys_configs = ['chrony_server', 'cluster_name', 'mon_available']
@@ -49,3 +55,21 @@ default_cluster_configs = {
     'auth_client_required': {'type': 'string', 'value': 'none'},
     'osd_crush_update_on_start': {'type': 'bool', 'value': False},
 }
+
+
+def get_full_ceph_version(v):
+    if not v:
+        return False
+    version = v.get('version')
+    if not version:
+        return False
+    versions = filter(lambda v: v['version'] == version,
+                      SUPPORT_CEPH_VERSION)
+    release = v.get('release')
+    if not release:
+        versions = filter(lambda v: v['release'] == release,
+                          versions)
+    versions = list(versions)
+    if versions:
+        return versions[0]
+    return False
