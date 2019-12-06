@@ -10,6 +10,7 @@ from oslo_utils import encodeutils
 from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephException
 from DSpace.exception import RunCommandError
+from DSpace.exception import SystemctlRestartError
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
 
@@ -183,6 +184,46 @@ class CephTool(ToolBase):
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
+
+    def systemctl_restart(self, types, service, retrys=10):
+        check_cmd = ["ps", "-ef", "|", "grep", types, "|", "grep",
+                     "id\\ %s" % service, "|grep", "-v", "grep", "|",
+                     "awk", "'{print $2}'"]
+        status_cmd = ["systemctl", "status", "ceph-%s@%s" % (types, service),
+                      "|", "grep", "Active", "|", "awk", "'{print $2}'"]
+        reset_cmd = ["systemctl", "reset-failed",
+                     "ceph-%s@%s" % (types, service)]
+        # 检查进程存在
+        rc, PID, c_err = self.run_command(check_cmd, timeout=5)
+        if not PID:
+            # 服务未启动 检查状态
+            rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
+            # 错误状态需要重置为 inactive 状态，才能启动
+            if s_out.strip('\n') == "failed":
+                self.run_command(reset_cmd, timeout=5)
+        # 重启
+        cmd = ["systemctl", "restart", "ceph-%s@%s" % (types, service)]
+        rc, stdout, stderr = self.run_command(cmd, timeout=35)
+        while True:
+            s_rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
+            if rc or s_out.strip('\n') != "active":
+                if retrys == 0 or s_out.strip('\n') == "failed":
+                    logger.error("Service ceph - {}@{} Status: % {}."
+                                 "Restart Failed!".format(
+                                     types, service, s_out, s_err))
+                    raise SystemctlRestartError(service="ceph-{}@{}".format(
+                        types, service), state=s_out)
+                retrys = retrys - 1
+            else:
+                break
+        rc, stdout, stderr = self.run_command(check_cmd, timeout=5)
+        if stdout == PID:
+            logger.error("Service ceph - {}@{} restart Failed!"
+                         "The PID is the same as before".format(
+                             types, service, s_out, s_err))
+            raise SystemctlRestartError(
+                service="ceph-{}@{}".format(types, service), state=s_out)
+        return stdout
 
     def osd_stop(self, osd_id):
         cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]

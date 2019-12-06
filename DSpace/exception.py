@@ -119,6 +119,11 @@ class NodeNotFound(NotFound):
     message = _("Node %(node_id)s could not be found.")
 
 
+class SystemctlRestartError(StorException):
+    code = 200
+    message = _('Service %(service)s restart failed. State: %(state)s')
+
+
 class NodeMoveNotAllow(StorException):
     code = 400
     message = _("node: %(node)s osd already in pool %(pool)s, can't move")
