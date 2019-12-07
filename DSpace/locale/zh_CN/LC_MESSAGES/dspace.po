@@ -327,6 +327,9 @@ msgstr "磁盘 'partition_num' 必须大于 0"
 msgid "disk: action is none"
 msgstr "磁盘需要参数 'action'"
 
+msgid "k must be number"
+msgstr "k 必须是数字"
+
 msgid "can not get file_metas"
 msgstr "无法获取文件"
 

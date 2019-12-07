@@ -239,6 +239,10 @@ class AdminClient(BaseClient):
                              node_summary=node_summary, node_id=node_id)
         return response
 
+    def disk_io_top(self, ctxt, k=None):
+        response = self.call(ctxt, "disk_io_top", k=k)
+        return response
+
     ###################
     def osd_get(self, ctxt, osd_id, **kwargs):
         response = self.call(ctxt, "osd_get", osd_id=osd_id, **kwargs)

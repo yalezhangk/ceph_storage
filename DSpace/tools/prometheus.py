@@ -9,6 +9,8 @@ from prometheus_http_client import Prometheus as PrometheusClient
 from DSpace import exception
 from DSpace import objects
 
+DISK_SKIP = "dm.*"
+
 logger = logging.getLogger(__name__)
 
 cpu_attrs = ['cpu_rate', 'intr_rate', 'context_switches_rate',
@@ -111,6 +113,27 @@ class PrometheusTool(object):
 
         if len(value['data']['result']):
             data = value['data']['result'][0]['value']
+            logger.info('get metric:%s data success from prometheus, data:%s',
+                        metric, data)
+            return data
+        else:
+            logger.info('get metric:%s data is None from prometheus', metric)
+            return None
+
+    def prometheus_get_metrics(self, metric, filter=None):
+        """Get metrics from prometheus
+        Returns: metrics value
+        """
+        prometheus = PrometheusClient(url=self.prometheus_url)
+        try:
+            value = json.loads(prometheus.query(metric=metric, filter=filter))
+        except BaseException as e:
+            logger.error('get metric:%s data error from prometheus:%s',
+                         metric, e)
+            raise e
+
+        if len(value['data']['result']):
+            data = value['data']['result']
             logger.info('get metric:%s data success from prometheus, data:%s',
                         metric, data)
             return data
@@ -621,3 +644,21 @@ class PrometheusTool(object):
                 v, filter={'pool_id': pool_id, 'cluster_id': ctxt.cluster_id})
             result[k] = value
         return result
+
+    def disk_io_top(self, ctxt, k):
+        m = ('topk({}, rate(node_disk_io_now{{cluster_id="{}",'
+             ' device!~"{}"}}[5m]))'.format(k, ctxt.cluster_id, DISK_SKIP))
+        logger.info('disk io top query: %s', m)
+        datas = self.prometheus_get_metrics(m)
+        if not datas:
+            return None
+        if len(datas) > k:
+            datas = datas[:k]
+        disks = []
+        for data in datas:
+            disks.append({
+                "hostname": data['metric']['hostname'],
+                "name": data['metric']['device'],
+                "value": data['value'][1]
+            })
+        return disks

@@ -590,3 +590,47 @@ class DiskAvailableListHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "disks": disks,
         }))
+
+
+@URLRegistry.register(r"/disks/top/")
+class DiskTopHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - disk
+        summary: disk io top
+        description: Return a list of io top disks
+        operationId: disks.api.listIoTopDisk
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: k
+          description: number of disk
+          type: integer
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        k = self.get_query_argument('k', None)
+        if not k:
+            k = 10
+        elif k.isdigit():
+            k = int(k)
+        else:
+            raise exception.InvalidInput(_("k must be number"))
+        client = self.get_admin_client(ctxt)
+        disks = yield client.disk_io_top(ctxt, k)
+        self.write(objects.json_encode({
+            "disks": disks,
+        }))
