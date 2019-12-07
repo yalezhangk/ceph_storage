@@ -846,3 +846,37 @@ class PoolOsdTreeHandler(ClusterAPIHandler):
             "pool_osd_tree": data
         }))
         logger.info("get osd tree success")
+
+
+@URLRegistry.register(r"/pools/undo/")
+class PoolUndoHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool undo
+        description: pool undo
+        operationId: pools.api.undo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        logger.info("trying pool undo")
+        pool = yield client.pool_undo(ctxt)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))
+        logger.info("get undo op accept")

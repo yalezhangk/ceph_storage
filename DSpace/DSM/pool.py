@@ -182,6 +182,7 @@ class PoolHandler(AdminBaseHandler):
             data_pool=data.get("data_pool")
         )
         pool.create()
+        objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
         self.task_submit(self._pool_create, ctxt, pool, data)
         return pool
 
@@ -234,6 +235,7 @@ class PoolHandler(AdminBaseHandler):
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
         pool.status = s_fields.PoolStatus.DELETING
         pool.save()
+        objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
         self.task_submit(self._pool_delete, ctxt, pool)
         return pool
 
@@ -261,8 +263,19 @@ class PoolHandler(AdminBaseHandler):
             pool.save()
             self._update_osd_info(ctxt, osd_db_ids, s_fields.OsdStatus.ACTIVE,
                                   crush.id)
+            undo_data = {
+                "pool": {
+                    "id": pool.id,
+                    "name": pool.display_name
+                },
+                "osds": [{
+                    "id": osd.id,
+                    "osd_name": osd.osd_name
+                } for osd in osds]
+            }
             op_status = "INCREASE_DISK_SUCCESS"
-        except exception.StorException as e:
+            objects.sysconfig.sys_config_set(ctxt, 'pool_undo', undo_data)
+        except Exception as e:
             logger.error("increase disk error: {}".format(e))
             msg = _("pool {} increase disk error").format(pool.display_name)
             status = s_fields.PoolStatus.ERROR
@@ -283,31 +296,34 @@ class PoolHandler(AdminBaseHandler):
         return pool
 
     def _pool_decrease_disk(self, ctxt, pool, osd_db_ids):
+        crush = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
+                                            expected_attrs=["osds"])
+        osds = objects.OsdList.get_all(ctxt, filters={"id": osd_db_ids})
+        new_osds = [osd for osd in crush.osds if osd not in osds]
+        logger.info("new osds: %s", new_osds)
+
+        gen = CrushContentGen.from_content(
+            ctxt,
+            content=crush.content,
+            osds=new_osds,
+        )
+        crush.content = gen.gen_content()
+        crush.save()
+        logger.debug("crush content: %s", json.dumps(crush.content))
+        ceph_client = CephTask(ctxt)
+        ceph_client.pool_del_disk(pool, crush.content)
+        pool.status = s_fields.PoolStatus.ACTIVE
+        pool.osd_num = len(new_osds)
+        pool.save()
+        self._update_osd_info(ctxt, osd_db_ids,
+                              s_fields.OsdStatus.AVAILABLE, None)
+
+    def _pool_decrease_task(self, ctxt, pool, osd_db_ids):
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.POOL_DEL_DISK)
         try:
-            crush = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
-                                                expected_attrs=["osds"])
-            osds = objects.OsdList.get_all(ctxt, filters={"id": osd_db_ids})
-            new_osds = [osd for osd in crush.osds if osd not in osds]
-            logger.info("new osds: %s", new_osds)
-
-            gen = CrushContentGen.from_content(
-                ctxt,
-                content=crush.content,
-                osds=new_osds,
-            )
-            crush.content = gen.gen_content()
-            crush.save()
-            logger.debug("crush content: %s", json.dumps(crush.content))
-            ceph_client = CephTask(ctxt)
-            ceph_client.pool_del_disk(pool, crush.content)
-            pool.status = s_fields.PoolStatus.ACTIVE
-            pool.osd_num = len(new_osds)
-            pool.save()
-            self._update_osd_info(ctxt, osd_db_ids,
-                                  s_fields.OsdStatus.AVAILABLE, None)
+            self._pool_decrease_disk(ctxt, pool, osd_db_ids)
             msg = _("{} decrease disk success").format(pool.display_name)
             op_status = "DECREASE_DISK_SUCCESS"
         except exception.StorException as e:
@@ -372,7 +388,8 @@ class PoolHandler(AdminBaseHandler):
             ctxt, id, expected_attrs=['crush_rule', 'osds'])
         osds = data.get('osds')
         self._check_data_lost(ctxt, pool, osds)
-        self.task_submit(self._pool_decrease_disk, ctxt, pool, osds)
+        objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
+        self.task_submit(self._pool_decrease_task, ctxt, pool, osds)
         return pool
 
     def pool_update_display_name(self, ctxt, id, name):
@@ -452,6 +469,7 @@ class PoolHandler(AdminBaseHandler):
         pool.failure_domain_type = fault_domain
         pool.replicate_size = rep_size
         pool.save()
+        objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
         self.task_submit(self._pool_update_policy, ctxt, pool)
         return pool
 
@@ -525,3 +543,48 @@ class PoolHandler(AdminBaseHandler):
                     crush_rule.rule_name))
         osd_tree = self._generate_osd_tree(ctxt, osds)
         return osd_tree
+
+    def _try_out_osds(self, ctxt, osd_db_ids):
+        osds = objects.OsdList.get_all(ctxt, filters={"id": osd_db_ids})
+        osd_names = [osd.osd_name for osd in osds]
+        ceph_client = CephTask(ctxt)
+        ceph_client.mark_osds_out(osd_names)
+        for osd in osds:
+            osd.status = s_fields.OsdStatus.OFFLINE
+            osd.save()
+
+    def pool_undo(self, ctxt):
+        undo = objects.sysconfig.sys_config_get(ctxt, 'pool_undo')
+        pool = None
+        if undo:
+            begin_action = self.begin_action(
+                ctxt, resource_type=AllResourceType.POOL,
+                action=AllActionType.POOL_UPDATE_POLICY)
+            logger.info("pool undo: %s", undo)
+            pool = objects.Pool.get_by_id(
+                ctxt, undo['pool']['id'],
+                expected_attrs=['crush_rule', 'osds'])
+            osd_db_ids = [osd['id'] for osd in undo['osds']]
+            objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
+            try_out = False
+            try:
+                self._pool_decrease_disk(ctxt, pool, osd_db_ids)
+            except Exception as e:
+                try_out = True
+                logger.exception("pool decrease disk error: %s", e)
+            if try_out:
+                try:
+                    logger.warning("pool decrease disk failed. try out osd")
+                    self._try_out_osds(ctxt, osd_db_ids)
+                except Exception as e:
+                    logger.exception("try out osds error: %s", e)
+                    pool.status = s_fields.PoolStatus.ERROR
+                    pool.save()
+                    raise exception.StorException(str(e))
+            logger.exception("pool undo finish")
+            self.finish_action(begin_action, resource_id=pool.id,
+                               resource_name=pool.display_name,
+                               resource_data=objects.json_encode(pool))
+            return pool
+        else:
+            raise exception.InvalidInput(_("No available undo"))

@@ -99,7 +99,8 @@ class ConfigType(BaseStorEnum):
     STRING = 'string'
     INT = 'int'
     BOOL = 'bool'
-    ALL = (STRING, INT, BOOL)
+    DICT = 'dict'
+    ALL = (STRING, INT, BOOL, DICT)
 
 
 class ConfigTypeField(BaseEnumField):
@@ -213,12 +214,14 @@ class OsdStatus(BaseStorEnum):
     DELETING = 'deleting'
     ERROR = 'error'
     AVAILABLE = 'available'
+    OFFLINE = 'offline'
 
     INUSE = 'inuse'
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
-    ALL = (CREATING, DELETING, ERROR, AVAILABLE, INUSE, ACTIVE, INACTIVE)
+    ALL = (CREATING, DELETING, ERROR, AVAILABLE, INUSE, ACTIVE, INACTIVE,
+           OFFLINE)
 
 
 class OsdStatusField(BaseEnumField):

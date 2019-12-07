@@ -708,3 +708,7 @@ class CephTask(object):
                     logger.info("cluster unpause success")
                     return True
                 raise exc.ClusterUnpauseError()
+
+    def mark_osds_out(self, osd_names):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.osd_out(osd_names)
