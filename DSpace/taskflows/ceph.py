@@ -682,3 +682,29 @@ class CephTask(object):
     def ceph_data_balance(self, action=None, mode=None):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.data_balance(action=action, mode=mode)
+
+    def _is_paush_in_ceph(self, client):
+        status = client.status()
+        health = status.get("health", {})
+        check = health.get("checks", {}).get("OSDMAP_FLAGS", {})
+        summary = check.get('summary', {})
+        message = summary.get('message')
+        if message and "pause" in message:
+            return True
+        return False
+
+    def cluster_pause(self, enable=True):
+        logger.info("cluster pause enable=%s", enable)
+        with RADOSClient(self.rados_args(), timeout='5') as client:
+            if enable:
+                client.osd_pause()
+                if self._is_paush_in_ceph(client):
+                    logger.info("cluster pause success")
+                    return True
+                raise exc.ClusterPauseError()
+            else:
+                client.osd_unpause()
+                if not self._is_paush_in_ceph(client):
+                    logger.info("cluster unpause success")
+                    return True
+                raise exc.ClusterUnpauseError()

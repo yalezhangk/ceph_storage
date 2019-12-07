@@ -477,3 +477,26 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         objects.sysconfig.sys_config_set(
             ctxt, "data_balance_mode", res.get("mode"), "string")
         return res
+
+    def cluster_pause(self, ctxt, enable=True):
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.PAUSE)
+        try:
+            cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
+            ceph_client = CephTask(ctxt)
+            ceph_client.cluster_pause(enable)
+            if enable:
+                msg = _("Cluster Pause Success")
+            else:
+                msg = _("Cluster Unpause Success")
+            action = "CLUSTER_PAUSE"
+        except Exception as e:
+            logger.exception('get cluster info error: %s', e)
+            if enable:
+                msg = _("Cluster Pause Error")
+            else:
+                msg = _("Cluster Unpause Error")
+            action = "CLUSTER_PAUSE_ERROR"
+        self.finish_action(begin_action, ctxt.cluster_id, cluster.display_name,
+                           objects.json_encode(cluster))
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, cluster, action, msg)

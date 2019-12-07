@@ -6,6 +6,7 @@ import logging
 
 from jsonschema import draft7_format_checker
 from jsonschema import validate
+from oslo_utils import strutils
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -614,4 +615,40 @@ class ClusterDataBalance(ClusterAPIHandler):
         data = json_decode(self.request.body)
         data_balance = data.get("data_balance")
         res = yield client.cluster_data_balance_set(ctxt, data_balance)
+        self.write(json.dumps({"res": res}))
+
+
+@URLRegistry.register(r"/clusters/pause/")
+class ClusterPause(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: cluster pause
+        description: cluster pause.
+        operationId: clusters.api.pause
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: cluster
+          description: Created cluster object
+          required: true
+          schema:
+            type: object
+            properties:
+              pause:
+                type: boolen
+                description: cluster object
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        pause = strutils.bool_from_string(data.get("pause"))
+        res = yield client.cluster_pause(ctxt, pause)
         self.write(json.dumps({"res": res}))
