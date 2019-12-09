@@ -591,3 +591,27 @@ class ClusterCapacity(ClusterAPIHandler):
         pool_id = self.get_argument('pool_id', default=None)
         capacity = yield client.cluster_capacity_get(ctxt, pool_id)
         self.write(json.dumps({"capacity": capacity}))
+
+
+@URLRegistry.register(r"/clusters/data_balance/")
+class ClusterDataBalance(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data_balance = yield client.cluster_data_balance_get(ctxt)
+        self.write(json.dumps({"data_balance": data_balance}))
+
+    @gen.coroutine
+    def post(self):
+        """
+        {"data_balance": {
+            "action": on|off",
+            "mode": "crush-compat|upmap"
+        }}"""
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        data_balance = data.get("data_balance")
+        res = yield client.cluster_data_balance_set(ctxt, data_balance)
+        self.write(json.dumps({"res": res}))

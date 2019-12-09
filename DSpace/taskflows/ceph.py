@@ -678,3 +678,7 @@ class CephTask(object):
     def get_bucket_info(self, bucket):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.bucket_get(bucket)
+
+    def ceph_data_balance(self, action=None, mode=None):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.data_balance(action=action, mode=mode)

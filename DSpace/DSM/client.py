@@ -840,6 +840,17 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "radosgw_delete", rgw_id=rgw_id)
         return response
 
+    ####################
+
+    def cluster_data_balance_get(self, ctxt):
+        response = self.call(ctxt, "cluster_data_balance_get")
+        return response
+
+    def cluster_data_balance_set(self, ctxt, data_balance):
+        response = self.call(ctxt, "cluster_data_balance_set",
+                             data_balance=data_balance)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

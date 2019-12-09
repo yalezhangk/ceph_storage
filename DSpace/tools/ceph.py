@@ -9,6 +9,7 @@ from oslo_utils import encodeutils
 
 from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephException
+from DSpace.exception import DataBalanceActionError
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
 from DSpace.tools.base import ToolBase
@@ -999,6 +1000,34 @@ class RADOSClient(object):
             mon_hosts.append(public_addr)
 
         return mon_hosts
+
+    def data_balance(self, action, mode):
+        run_cmd = '{"prefix":"balancer %s","target": ["mgr", ""]}' % action
+        status_cmd = '{"prefix": "balancer status", "target": ["mgr", ""], "format": "json"}'
+        enable_cmd = '{"prefix":"mgr module enable balancer"}'
+        mode_cmd = '{"prefix": "balancer mode", "mode": "%s", "target": ["mgr", ""]}' % mode
+        v_cmd = '{"prefix": "osd set-require-min-compat-client", "version": "luminous"}'
+        map = {True: 'on', False: 'off'}
+        ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
+        # 查看状态 22未开启， 开启之后再查询
+        if ret == 22:
+            self.client.mon_command(enable_cmd, '')
+            ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
+        # 解析数据
+        st_data = json.loads(encodeutils.safe_decode(st_outbuf))
+        # 判断action与mode是否与传入一致， 不一致才设置
+        if not action and not mode:
+            return st_data
+        if mode and st_data.get("mode") != mode:
+            if mode == 'upmap':
+                self.client.mon_command(v_cmd, '')
+            self.client.mon_command(mode_cmd, '')
+        if map[st_data.get("active")] != action:
+            self.client.mon_command(run_cmd, '')
+        ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
+        st_data = json.loads(encodeutils.safe_decode(st_outbuf))
+        logger.info("ceph banlancer status: %s" % st_data)
+        return st_data
 
     def osd_new(self, osd_fsid):
         logger.debug("detect mons from cluster")

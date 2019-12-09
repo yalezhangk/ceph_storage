@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-05 16:55+0800\n"
+"POT-Creation-Date: 2019-12-09 17:06+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,6 +47,9 @@ msgstr "服务 %(rpc_service_id)s 未找到"
 
 msgid "Node %(node_id)s could not be found."
 msgstr "节点 %(node_id)s 未找到"
+
+msgid "Service %(service)s restart failed. State: %(state)s"
+msgstr "服务 %(service)s 重启失败， 状态： %(state)s"
 
 msgid "node: %(node)s osd already in pool %(pool)s, can't move"
 msgstr "节点  %(node)s 上的硬盘已经加入存储池 %(pool)s，不能移动"
@@ -111,6 +114,9 @@ msgstr "参数必须是字符串"
 
 msgid "Ceph exception"
 msgstr "Ceph 异常"
+
+msgid "Data balance %(action)s error, mode %(mode)s"
+msgstr "数据平衡 %(action)s 错误， 启用的模式：%(mode)s"
 
 msgid "%(msg)s"
 msgstr "%(msg)s"
@@ -623,39 +629,6 @@ msgstr "超过一个存储池使用这个故障域规划，不允许修改故障
 
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
-
-msgid "The role of node %s is not role_object_gateway"
-msgstr "节点 %s 的角色不是对象存储网关"
-
-msgid "The port %s is used by another radosgw"
-msgstr "端口 %s 已被其他对象存储网关使用"
-
-msgid "The ip address %s is invalid"
-msgstr "此IP %s 地址不合法"
-
-msgid "The ip address %s is not in gateway_cidr"
-msgstr "此IP地址 %s 不在对象存储网关地址范围内"
-
-msgid "The port %s is used"
-msgstr "端口 %s 已被占用"
-
-msgid "Need to create index pool before radosgw"
-msgstr "需要在创建对象存储网关之前创建索引池"
-
-msgid "create success: {}"
-msgstr "创建对象粗存储网关成功：{}"
-
-msgid "create error: {}"
-msgstr "创建对象粗存储网关失败：{}"
-
-msgid "delete radosgw {} success"
-msgstr "删除对象存储网关成功：{}"
-
-msgid "delete radosgw {} error"
-msgstr "删除对象存储网关失败：{}"
-
-msgid "Only available and error radosgw can be deleted"
-msgstr "只能删除可用与错误的对象存储网关"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
