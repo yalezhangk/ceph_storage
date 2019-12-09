@@ -8,6 +8,8 @@ import re
 import subprocess
 import sys
 
+ALLOWED_FAULT_DOMAIN = ['root', 'rack', 'datacenter', 'host', 'osd']
+
 
 def _bytes2str(string):
     return string.decode('utf-8') if isinstance(string, bytes) else string
@@ -265,6 +267,26 @@ def collect_ceph_keyring():
     }
 
 
+def check_planning():
+    response = {
+        "check": True,
+        "change": []
+    }
+    cmd = ['ceph', 'osd', 'crush', 'tree', "--format", "json"]
+    rc, out, err = run_command(cmd)
+    if rc:
+        return {
+            "check": False
+        }
+    res = json.loads(out)
+    nodes = res['nodes']
+    for node in nodes:
+        if 'type' in node:
+            if node['type'] not in ALLOWED_FAULT_DOMAIN:
+                response["change"].append(node['name'])
+    return response
+
+
 def main():
     action = sys.argv[1]
     if action == "collect_nodes":
@@ -282,6 +304,9 @@ def main():
         print(json.dumps(data))
     elif action == "ceph_keyring":
         data = collect_ceph_keyring()
+        print(json.dumps(data))
+    elif action == "check_planning":
+        data = check_planning()
         print(json.dumps(data))
 
 

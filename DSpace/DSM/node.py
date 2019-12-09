@@ -785,6 +785,14 @@ class NodeHandler(AdminBaseHandler):
                 extras.append(n)
         return leaks, extras
 
+    def _nodes_inclusion_check_planning(self, ctxt, datas):
+        data = datas[0]
+        node = objects.Node(ip_address=data.get('ip_address'),
+                            password=data.get('password'))
+        probe_task = ProbeTask(ctxt, node)
+        infos = probe_task.check_planning()
+        return infos
+
     def _node_check_port(self, node_task, ports):
         res = []
         for po in ports:
@@ -933,6 +941,8 @@ class NodeHandler(AdminBaseHandler):
         status['leak_cluster_ips'] = leaks
         status['extra_cluster_ips'] = extras
         logger.info("leak_cluster_ips: %s", status['leak_admin_ips'])
+        status['check_planning'] = self._nodes_inclusion_check_planning(
+            ctxt, datas)
         status['nodes'] = []
         for data in datas:
             admin_ip = data.get('ip_address')

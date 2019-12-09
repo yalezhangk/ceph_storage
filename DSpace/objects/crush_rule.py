@@ -17,7 +17,7 @@ class CrushRule(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'rule_id': fields.IntegerField(nullable=True),
         'rule_name': fields.StringField(),
-        'type': fields.StringField(),
+        'type': s_fields.FaultDomainField(),
         'content': s_fields.DictOfNullableField(nullable=True),
         'cluster_id': fields.UUIDField(nullable=True),
         'osds': fields.ListOfObjectsField("Osd", nullable=True)

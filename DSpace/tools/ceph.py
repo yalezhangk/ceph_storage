@@ -654,7 +654,13 @@ class RADOSClient(object):
     def conf_set(self, key, val):
         return self.client.conf_set(key, val)
 
+    def _pool_delete(self, pool_name):
+        return self.client.delete_pool(pool_name)
+
     def pool_delete(self, pool_name):
+        if not self.pool_exists(pool_name):
+            logger.warning("pool %s not exists, ignore it", pool_name)
+            return
         return self.client.delete_pool(pool_name)
 
     def osd_df_list(self, pool_name=DEFAULT_POOL):
@@ -758,15 +764,19 @@ class RADOSClient(object):
          "id": 1, "weight": 0.0976}
         """
         weight = float(osd_size) / (2**40)
-        command_str = '{"prefix": "osd crush add", "args" : \
-            ["host=%(host_name)s"], "id": %(osd_id)s, \
-             "weight": %(weight)s}' \
-                % {'osd_id': osd_id, 'host_name': host_name, 'weight': weight}
+        cmd = {
+            "format": "json",
+            "prefix": "osd crush add",
+            "args": ["host=%s" % host_name],
+            "id": int(osd_id.replace("osd.", "")),
+            "weight": weight
+        }
+        command_str = json.dumps(cmd)
         logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
+        ret, mon_dump_outbuf, err = self.client.mon_command(command_str, '')
         if ret:
-            logger.error("add osd.{} to {} error: {}".format(
-                osd_id, host_name, mon_dump_outbuf))
+            logger.error("add osd.{} to {} error: {} {}".format(
+                osd_id, host_name, mon_dump_outbuf, err))
             raise CephException(
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
@@ -807,10 +817,11 @@ class RADOSClient(object):
         self._bucket_add("root", root_name)
 
     def _send_mon_command(self, command_str):
-        ret, outbuf, _ign = self.client.mon_command(command_str, '')
+        ret, outbuf, err = self.client.mon_command(command_str, '')
         if ret:
             raise CephException(
-                message="execute command failed: {}".format(command_str))
+                message="execute command failed: {}, outbuf: {}, err: {}"
+                "".format(command_str, outbuf, err))
         return get_json_output(outbuf)
 
     def _send_osd_command(self, osd_id, command_str):
@@ -1035,6 +1046,16 @@ class RADOSClient(object):
             "prefix": "osd pool application enable",
             "app": app_name,
             "pool": pool_name
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def crush_tree(self):
+        logger.info("osd crush tree")
+        cmd = {
+            "prefix": "osd crush tree",
+            "format": "json"
         }
         command_str = json.dumps(cmd)
         res = self._send_mon_command(command_str)

@@ -33,3 +33,9 @@ class ProbeTask(object):
         probe_tool = ProbeTool(ssh)
         result = probe_tool.probe_cluster_nodes()
         return result
+
+    def check_planning(self):
+        ssh = self.get_ssh_executor()
+        probe_tool = ProbeTool(ssh)
+        result = probe_tool.check_planning()
+        return result
