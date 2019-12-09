@@ -437,3 +437,43 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         user.current_cluster_id = cluster_id
         user.save()
         return cluster_id
+
+    def cluster_data_balance_get(self, ctxt):
+        has_mon_host = self.has_monitor_host(ctxt)
+        if has_mon_host:
+            ceph_client = CephTask(ctxt)
+            res = ceph_client.ceph_data_balance()
+            objects.sysconfig.sys_config_set(
+                ctxt, "data_balance", res.get("active"), "bool")
+            objects.sysconfig.sys_config_set(
+                ctxt, "data_balance_mode", res.get("mode"), "string")
+            data_balance = {
+                "active": res.get("active"),
+                "mode": res.get("mode"),
+            }
+            return data_balance
+        else:
+            logger.error("The cluster has no mon role.")
+            return "The cluster has no mon role."
+
+    def cluster_data_balance_set(self, ctxt, data_balance):
+        action = data_balance.get("action")
+        mode = data_balance.get("mode")
+        if action not in ['on', 'off']:
+            logger.error("Invaild action: %s" % action)
+            return "Invaild action: %s" % action
+        if mode not in ['crush-compat', 'upmap', None]:
+            logger.error("Invaild mode: %s" % mode)
+            return "Invaild mode: %s" % mode
+        has_mon_host = self.has_monitor_host(ctxt)
+        if has_mon_host:
+            ceph_client = CephTask(ctxt)
+            res = ceph_client.ceph_data_balance(action, mode)
+        else:
+            logger.error("The cluster has no mon role.")
+            return "The cluster has no mon role."
+        objects.sysconfig.sys_config_set(
+            ctxt, "data_balance", res.get("active"), "bool")
+        objects.sysconfig.sys_config_set(
+            ctxt, "data_balance_mode", res.get("mode"), "string")
+        return res

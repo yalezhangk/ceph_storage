@@ -212,6 +212,10 @@ class CephException(StorException):
     message = _("Ceph exception")
 
 
+class DataBalanceActionError(CephException):
+    message = _("Data balance %(action)s error, mode %(mode)s")
+
+
 class Invalid(StorException):
     message = _("%(msg)s")
     code = 400
