@@ -23,6 +23,7 @@ from DSpace.DSM.pool import PoolHandler
 from DSpace.DSM.probe import ProbeHandler
 from DSpace.DSM.prometheus import PrometheusHandler
 from DSpace.DSM.rack import RackHandler
+from DSpace.DSM.radosgw import RadosgwHandler
 from DSpace.DSM.service import ServiceHandler
 from DSpace.DSM.sys_config import SysConfigHandler
 from DSpace.DSM.task import TaskHandler
@@ -53,6 +54,7 @@ class AdminHandler(ActionLogHandler,
                    PoolHandler,
                    ProbeHandler,
                    PrometheusHandler,
+                   RadosgwHandler,
                    RackHandler,
                    ServiceHandler,
                    SysConfigHandler,

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-20 15:53-0500\n"
+"POT-Creation-Date: 2019-12-05 16:55+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -71,6 +71,12 @@ msgstr "网路 %(net_id)s 未找到"
 
 msgid "Disk %(disk_id)s could not be found."
 msgstr "磁盘 %(disk_id)s 未找到"
+
+msgid "Radosgw %(radosgw_id)s could not be found."
+msgstr "对象存储网关 %(radosgw_id)s 未找到"
+
+msgid "Radosgw Zone %(rgw_zone_id)s could not be found."
+msgstr "对象存储网关区域 %(rgw_zone_id)s 未找到"
 
 msgid "Disk partition %(disk_part_id)s could not be found."
 msgstr "分区 %(disk_part_id)s 未找到"
@@ -369,57 +375,6 @@ msgstr "邮件服务未传入数据"
 msgid "smtp could not be found."
 msgstr "参数 'smtp' 未找到"
 
-msgid "smtp_context could not be found."
-msgstr "参数 'smtp_context' 未找到"
-
-msgid "volume_access_path: {} is already exists!"
-msgstr "访问路径 {} 已存在"
-
-msgid "no username or password input"
-msgstr "用户名或密码未输入"
-
-msgid "username or password too short"
-msgstr "用户名或密码长度不够"
-
-msgid "username or password too long"
-msgstr "用户名或密码过长"
-
-msgid "no access_path input"
-msgstr "缺少参数 'access_path'"
-
-msgid "name or type not found"
-msgstr "参数 'name' 或 'type' 未找到"
-
-msgid "no node_id input"
-msgstr "缺少参数 'node_id'"
-
-msgid "no chap_enable input"
-msgstr "缺少参数 'chap_enable'"
-
-msgid "no client_group_id input"
-msgstr "缺少参数 'client_group_id'"
-
-msgid "no volume_ids input"
-msgstr "缺少参数 'volume_ids'"
-
-msgid "iqn: {} is not allowed!"
-msgstr "IQN {} 格式错误"
-
-msgid "no mutual_username or  mutual_password input"
-msgstr "缺少参数 'mutual_username'或'mutual_password'"
-
-msgid "mutual_username or mutual_passwordtoo short"
-msgstr "参数 'mutual_username'或'mutual_password' 长度不够"
-
-msgid "mutual_username or mutual_passwordtoo long"
-msgstr "参数 'mutual_username'或'mutual_password' 过长"
-
-msgid "no name input"
-msgstr "缺少参数 'name'"
-
-msgid "no mutual_chap_enable input"
-msgstr "缺少参数 'mutual_chap_enable'"
-
 msgid "has not active mon host, can not do any ceph actions"
 msgstr "健康状态监控节点不存在，无法进行任何Ceph操作"
 
@@ -539,6 +494,9 @@ msgstr "对象网关角色已被安装"
 
 msgid "The object gateway role has not yet been installed"
 msgstr "对象网关角色还未安装"
+
+msgid "Node %s has radosgw!"
+msgstr "节点 %s 还存在对象存储网关"
 
 msgid "The block gateway role has been installed."
 msgstr "块存储网关角色已被安装"
@@ -663,65 +621,38 @@ msgstr "{} 修改数据安全策略错误"
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
 
-msgid "Volume name {} already exists!"
-msgstr "块存储卷 {} 已存在"
+msgid "The role of node %s is not role_object_gateway"
+msgstr "节点 %s 的角色不是对象存储网关"
 
-msgid "create volume success"
-msgstr "创建块存储卷成功"
+msgid "The port %s is used by another radosgw"
+msgstr "端口 %s 已被其他对象存储网关使用"
 
-msgid "create volume error"
-msgstr "创建块存储卷失败"
+msgid "The ip address %s is invalid"
+msgstr "此IP %s 地址不合法"
 
-msgid "The volume {} has snapshot"
-msgstr "块存储卷 {} 存在快照"
+msgid "The ip address %s is not in gateway_cidr"
+msgstr "此IP地址 %s 不在对象存储网关地址范围内"
 
-msgid "The volume {} has related access_path"
-msgstr "块存储卷 {} 已关联到访问路径"
+msgid "The port %s is used"
+msgstr "端口 %s 已被占用"
 
-msgid "delete volume success"
-msgstr "删除块存储卷成功"
+msgid "Need to create index pool before radosgw"
+msgstr "需要在创建对象存储网关之前创建索引池"
 
-msgid "delete volume error"
-msgstr "删除块存储卷失败"
+msgid "create success: {}"
+msgstr "创建对象粗存储网关成功：{}"
 
-msgid "volume resize success"
-msgstr "块存储卷容量调整成功"
+msgid "create error: {}"
+msgstr "创建对象粗存储网关失败：{}"
 
-msgid "volume resize error"
-msgstr "块存储卷容量调整失败"
+msgid "delete radosgw {} success"
+msgstr "删除对象存储网关成功：{}"
 
-msgid "The volume_id {} has not the snap_id {}"
-msgstr "块存储卷 {} 没有快照 {}"
+msgid "delete radosgw {} error"
+msgstr "删除对象存储网关失败：{}"
 
-msgid "The volume {} has access_path, can not rollback"
-msgstr "块存储卷已关联访问路径，无法回滚"
-
-msgid "volume rollback success"
-msgstr "块存储卷回滚成功"
-
-msgid "volume rollback error"
-msgstr "块存储卷回滚失败"
-
-msgid "the volume_name {} has not relate_snap"
-msgstr "块存储卷 {} 没有快照"
-
-msgid "volume unlink success"
-msgstr "块存储卷断开关系链成功"
-
-msgid "volume unlink error"
-msgstr "块存储卷断开关系链失败"
-
-msgid "snap name {} already exists!"
-msgstr "快照 {} 已存在"
-
-msgid "delete snapshot success"
-msgstr "删除快照成功"
-
-msgid "delete snapshot error"
-msgstr "删除快照失败"
-
-msgid "snapshot {} has clone volume, can not del"
-msgstr "快照 {}  存在克隆块存储卷，无法删除"
+msgid "Only available and error radosgw can be deleted"
+msgstr "只能删除可用与错误的对象存储网关"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
@@ -814,4 +745,3 @@ msgstr "协调器未初始化"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-

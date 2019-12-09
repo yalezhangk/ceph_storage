@@ -121,6 +121,7 @@ class Node(BASE, StorBase):
     _disks = relationship("Disk", backref="_node")
     _networks = relationship("Network", backref="_node")
     _osds = relationship("Osd", backref="_node")
+    _radosgws = relationship("Radosgw", backref="_node")
 
 
 class Disk(BASE, StorBase):
@@ -244,6 +245,7 @@ class Pool(BASE, StorBase):
     failure_domain_type = Column(String(32), default='host', index=True)
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    rgw_zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))
 
 
 class Volume(BASE, StorBase):
@@ -540,4 +542,31 @@ class Task(BASE, StorBase):
     step = Column(Integer)
     step_num = Column(Integer)
     finished_at = Column(DateTime)
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class Radosgw(BASE, StorBase):
+    __tablename__ = 'radosgws'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255))
+    name = Column(String(64))
+    display_name = Column(String(255))
+    status = Column(String(32))
+    ip_address = Column(String(32))
+    port = Column(Integer)
+    zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class RadosgwZone(BASE, StorBase):
+    __tablename__ = 'radosgw_zones'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255))
+    name = Column(String(64))
+    zone_id = Column(String(36))
+    zonegroup = Column(String(64))
+    realm = Column(String(64))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))

@@ -816,6 +816,30 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "component_restart", component=component)
         return response
 
+    ####################
+
+    def radosgw_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "radosgw_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def radosgw_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "radosgw_get_count", filters=filters)
+        return response
+
+    def radosgw_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "radosgw_create", data=data)
+        return response
+
+    def radosgw_delete(self, ctxt, rgw_id):
+        response = self.call(ctxt, "radosgw_delete", rgw_id=rgw_id)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

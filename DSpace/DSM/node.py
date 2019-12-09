@@ -154,6 +154,19 @@ class NodeHandler(AdminBaseHandler):
         for node in nodes:
             prometheus.node_get_metrics_overall(node)
 
+    def _filter_gateway_network(self, ctxt, nodes):
+        gateway_cidr = objects.sysconfig.sys_config_get(
+            ctxt, key="gateway_cidr")
+        for node in nodes:
+            nets = []
+            for net in node.networks:
+                node.networks = []
+                if not net.ip_address:
+                    continue
+                if net.ip_address in IPNetwork(gateway_cidr):
+                    nets.append(net)
+            node.networks = nets
+
     def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None,
                      expected_attrs=None):
@@ -161,6 +174,8 @@ class NodeHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+        if filters.get('role_object_gateway'):
+            self._filter_gateway_network(ctxt, nodes)
         self._node_get_metrics_overall(ctxt, nodes)
         return nodes
 
@@ -253,6 +268,11 @@ class NodeHandler(AdminBaseHandler):
         if not node.role_object_gateway:
             raise exc.InvalidInput(_(
                 "The object gateway role has not yet been installed"))
+        node_rgws = objects.RadosgwList.get_count(
+            ctxt, filters={"node_id": node.id}
+        )
+        if node_rgws:
+            raise exc.InvalidInput(_("Node %s has radosgw!" % node.hostname))
 
     def _bgw_install_check(self, ctxt, node):
         if node.role_block_gateway:
@@ -404,12 +424,18 @@ class NodeHandler(AdminBaseHandler):
 
     def _rgw_install(self, ctxt, node):
         node.status = s_fields.NodeStatus.DEPLOYING_ROLE
+        node_task = NodeTask(ctxt, node)
+        node_task.ceph_rgw_package_install()
+
         node.role_object_gateway = True
         node.save()
         return node
 
     def _rgw_uninstall(self, ctxt, node):
         node.status = s_fields.NodeStatus.REMOVING_ROLE
+        node_task = NodeTask(ctxt, node)
+        node_task.ceph_rgw_package_uninstall()
+
         node.role_object_gateway = False
         node.save()
         return node

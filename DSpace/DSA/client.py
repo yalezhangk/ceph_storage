@@ -63,6 +63,23 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_osd_destroy", osd=osd)
         return response
 
+    def ceph_rgw_package_install(self, ctxt):
+        response = self.call(ctxt, "ceph_rgw_package_install")
+        return response
+
+    def ceph_rgw_package_uninstall(self, ctxt):
+        response = self.call(ctxt, "ceph_rgw_package_uninstall")
+        return response
+
+    def ceph_rgw_create(self, ctxt, radosgw, zone_params):
+        response = self.call(ctxt, "ceph_rgw_create", radosgw=radosgw,
+                             zone_params=zone_params)
+        return response
+
+    def ceph_rgw_destroy(self, ctxt, radosgw):
+        response = self.call(ctxt, "ceph_rgw_destroy", radosgw=radosgw)
+        return response
+
     def package_install(self, ctxt, packages):
         response = self.call(ctxt, "package_install", packages=packages)
         return response

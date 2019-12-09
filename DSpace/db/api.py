@@ -10,7 +10,6 @@ db_options.set_defaults(CONF)
 
 _BACKEND_MAPPING = {'sqlalchemy': 'DSpace.db.sqlalchemy.api'}
 
-
 IMPL = oslo_db_api.DBAPI.from_config(conf=CONF,
                                      backend_mapping=_BACKEND_MAPPING,
                                      lazy=True)
@@ -33,6 +32,7 @@ def dispose_engine():
         return IMPL.dispose_engine()
     else:
         return
+
 
 ###############
 
@@ -153,6 +153,7 @@ def pool_status_get(context):
 
 def osd_status_get(context):
     return IMPL.osd_status_get(context)
+
 
 ##################
 
@@ -404,6 +405,8 @@ def volume_access_path_remove_gateway(context, access_path_id,
                                       volume_gateway_id):
     return IMPL.volume_access_path_remove_gateway(
         context, access_path_id, volume_gateway_id)
+
+
 ###############
 
 
@@ -448,6 +451,7 @@ def volume_gateways_update(context, values_list):
     Raises NotFound if a volume does not exist.
     """
     return IMPL.volume_gateways_update(context, values_list)
+
 
 ###############
 
@@ -530,6 +534,7 @@ def volume_client_group_update(context, client_group_id, values):
     """
     return IMPL.volume_client_group_update(context, client_group_id, values)
 
+
 ###############
 # Volume Mappings
 
@@ -576,6 +581,7 @@ def volume_mappings_update(context, values_list):
     """
     return IMPL.volume_mappings_update(context, values_list)
 
+
 ###############
 
 
@@ -589,6 +595,7 @@ def license_update(context, license_id, values):
 
 def license_get_latest_valid(context, *args, **kwargs):
     return IMPL.license_get_latest_valid(context, *args, **kwargs)
+
 
 ###############
 
@@ -717,6 +724,7 @@ def disk_partition_get_all_available(context, filters=None,
                                      expected_attrs=None):
     return IMPL.disk_partition_get_all_available(context, filters,
                                                  expected_attrs=expected_attrs)
+
 
 ###################
 
@@ -1019,6 +1027,69 @@ def task_update(context, task_id, values):
 ###############
 
 
+def radosgw_create(context, values):
+    return IMPL.radosgw_create(context, values)
+
+
+def radosgw_destroy(context, radosgw_id):
+    return IMPL.radosgw_destroy(context, radosgw_id)
+
+
+def radosgw_get(context, radosgw_id):
+    return IMPL.radosgw_get(context, radosgw_id)
+
+
+def radosgw_get_all(context, filters, marker, limit,
+                    offset, sort_keys, sort_dirs,
+                    expected_attrs=None):
+    return IMPL.radosgw_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def radosgw_get_count(context, filters):
+    return IMPL.radosgw_get_count(context, filters=filters)
+
+
+def radosgw_update(context, radosgw_id, values):
+    return IMPL.radosgw_update(context, radosgw_id, values)
+
+
+###############
+
+
+def radosgw_zone_create(context, values):
+    return IMPL.radosgw_zone_create(context, values)
+
+
+def radosgw_zone_destroy(context, rgw_zone_id):
+    return IMPL.radosgw_zone_destroy(context, rgw_zone_id)
+
+
+def radosgw_zone_get(context, rgw_zone_id):
+    return IMPL.radosgw_zone_get(context, rgw_zone_id)
+
+
+def radosgw_zone_get_all(context, filters, marker, limit, offset, sort_keys,
+                         sort_dirs, expected_attrs=None):
+    return IMPL.radosgw_zone_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def radosgw_zone_get_count(context, filters):
+    return IMPL.radosgw_zone_get_count(context, filters=filters)
+
+
+def radosgw_zone_update(context, rgw_zone_id, values):
+    return IMPL.radosgw_zone_update(context, rgw_zone_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 
@@ -1045,6 +1116,7 @@ class Condition(object):
         if not field:
             raise ValueError(_('Condition has no field.'))
         return field
+
 
 ###################
 

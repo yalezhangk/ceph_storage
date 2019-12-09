@@ -248,9 +248,10 @@ class AllResourceType(BaseStorEnum):
     DATACENTER = 'datacenter'
     RACK = 'rack'
     CEPH_CONFIG = 'ceph_config'
+    RADOSGW = 'radosgw'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG,
-           DATACENTER, RACK, CEPH_CONFIG)
+           DATACENTER, RACK, CEPH_CONFIG, RADOSGW)
 
 
 class AllActionType(BaseStorEnum):
@@ -397,3 +398,18 @@ class TaskStatus(BaseStorEnum):
 
 class TaskStatusField(BaseEnumField):
     AUTO_TYPE = TaskStatus()
+
+
+class RadosgwStatus(BaseStorEnum):
+    CREATING = 'creating'
+    DELETING = 'deleting'
+    ERROR = 'error'
+
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, DELETING, ERROR, ACTIVE, INACTIVE)
+
+
+class RadosgwStatusField(BaseEnumField):
+    AUTO_TYPE = RadosgwStatus()

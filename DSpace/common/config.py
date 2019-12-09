@@ -66,6 +66,12 @@ global_opts = [
     cfg.StrOpt('session_url',
                default=None,
                help="Session url"),
+    cfg.IntOpt('rgw_min_port',
+               default=1,
+               help='The minimum port number for rgw.'),
+    cfg.IntOpt('rgw_max_port',
+               default=65500,
+               help='The maximum port number for rgw.'),
 ]
 
 CONF.register_cli_opts(core_opts)

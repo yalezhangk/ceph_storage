@@ -308,6 +308,23 @@ class CephTool(ToolBase):
         configer.set(values['group'], values['key'], str(values['value']))
         configer.write(open(path, 'w'))
 
+    def radosgw_admin_zone_set(self, values, file_path):
+        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone",
+               json.loads(values)["name"], "<", file_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def radosgw_admin_zone_get(self, zone):
+        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone", zone]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        else:
+            return json.loads(stdout)
+
 
 def get_json_output(json_databuf):
     if len(json_databuf) == 0:

@@ -26,6 +26,8 @@ def register_all():
     __import__('DSpace.objects.node')
     __import__('DSpace.objects.osd')
     __import__('DSpace.objects.pool')
+    __import__('DSpace.objects.radosgw')
+    __import__('DSpace.objects.radosgw_zone')
     __import__('DSpace.objects.rack')
     __import__('DSpace.objects.rpc_service')
     __import__('DSpace.objects.service')
