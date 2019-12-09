@@ -9,7 +9,6 @@ from oslo_utils import encodeutils
 
 from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephException
-from DSpace.exception import DataBalanceActionError
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
 from DSpace.tools.base import ToolBase
@@ -1003,10 +1002,13 @@ class RADOSClient(object):
 
     def data_balance(self, action, mode):
         run_cmd = '{"prefix":"balancer %s","target": ["mgr", ""]}' % action
-        status_cmd = '{"prefix": "balancer status", "target": ["mgr", ""], "format": "json"}'
+        status_cmd = '{"prefix": "balancer status",' \
+                     '"target": ["mgr", ""], "format": "json"}'
         enable_cmd = '{"prefix":"mgr module enable balancer"}'
-        mode_cmd = '{"prefix": "balancer mode", "mode": "%s", "target": ["mgr", ""]}' % mode
-        v_cmd = '{"prefix": "osd set-require-min-compat-client", "version": "luminous"}'
+        mode_cmd = '{"prefix": "balancer mode", "mode": "%s",' \
+                   '"target": ["mgr", ""]}' % mode
+        v_cmd = '{"prefix": "osd set-require-min-compat-client",' \
+                '"version": "luminous"}'
         map = {True: 'on', False: 'off'}
         ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
         # 查看状态 22未开启， 开启之后再查询
