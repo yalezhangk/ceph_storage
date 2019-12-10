@@ -145,7 +145,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
             rgw_router.save()
             logger.info("client.rgw.%s create success", rgw_router.name)
             op_status = 'CREATE_SUCCESS'
-            msg = _("create success: {}").format(rgw_router.name)
+            msg = _("create radosgw success: {}").format(rgw_router.name)
             err_msg = None
         except Exception as e:
             logger.error(e)
@@ -260,10 +260,6 @@ class RadosgwRouterHandler(AdminBaseHandler):
         action = data.get('action')
         radosgws = data.get('radosgws')
         try:
-            if action == "add":
-                self._add_radosgw_to_router(ctxt, radosgws, rgw_router)
-            elif action == "remove":
-                self._delete_radosgw_from_router(ctxt, radosgws)
             rgw_router = objects.RadosgwRouter.get_by_id(
                 ctxt, rgw_router.id, joined_load=True)
             nodes = json.loads(rgw_router.nodes)
@@ -271,6 +267,10 @@ class RadosgwRouterHandler(AdminBaseHandler):
                 node = objects.Node.get_by_id(ctxt, n['node_id'])
                 task = NodeTask(ctxt, node)
                 task.rgw_router_update()
+            if action == "add":
+                self._add_radosgw_to_router(ctxt, radosgws, rgw_router)
+            elif action == "remove":
+                self._delete_radosgw_from_router(ctxt, radosgws)
             rgw_router.status = s_fields.RadosgwRouterStatus.ACTIVE
             rgw_router.save()
             msg = _("Update radosgw router {} success").format(rgw_router.name)

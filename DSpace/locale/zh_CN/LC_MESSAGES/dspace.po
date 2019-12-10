@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-10 15:23+0800\n"
+"POT-Creation-Date: 2019-12-18 10:56+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -465,6 +465,24 @@ msgstr "关闭成功: {}"
 msgid "Stop failed: {}"
 msgstr "关闭失败: {}"
 
+msgid "osd.{} service status is inactive, trying to restart"
+msgstr "osd.{}服务已停止，尝试进行重启"
+
+msgid "osd.{} cannot be restarted, mark to offline"
+msgstr "osd.{}重启失败，标记为离线状态"
+
+msgid "osd.{} is offline"
+msgstr "osd.{}已离线"
+
+msgid "Node {}: DSA service status is inactive, trying to restart."
+msgstr "节点{}：DSA服务已停止，尝试进行重启"
+
+msgid "Node {}: DSA restart failed, mark it to error"
+msgstr "节点{}: DSA服务重启失败，标记为错误状态"
+
+msgid "Node {}: DSA in status is inactive"
+msgstr "节点{}: DSA服务已停止"
+
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"
 
@@ -714,11 +732,11 @@ msgstr "端口 %s 已被占用"
 msgid "Need to create index pool before radosgw"
 msgstr "需要在创建对象存储网关之前创建索引池"
 
-msgid "create success: {}"
-msgstr "创建对象粗存储网关成功：{}"
+msgid "create radosgw success: {}"
+msgstr "创建对象存储网关成功：{}"
 
 msgid "create error: {}"
-msgstr "创建对象粗存储网关失败：{}"
+msgstr "创建硬盘失败：osd.{}"
 
 msgid "delete radosgw {} success"
 msgstr "删除对象存储网关成功：{}"
@@ -757,13 +775,40 @@ msgid "Only available and error radosgw router can be deleted"
 msgstr "只能删除可用与错误的对象路由"
 
 msgid "Update radosgw router {} success"
-msgstr "删除对象路由成功：{}"
+msgstr "更新对象路由成功：{}"
 
 msgid "Update rgw_router {} error"
-msgstr "删除对象路由失败：{}"
+msgstr "更新对象路由失败：{}"
 
 msgid "Only available and error radosgw router can be updated"
 msgstr "只能更新可用与错误的对象路由"
+
+msgid "Node {}: service {} in status is inactive, trying to restart"
+msgstr "节点{}: 服务{}已停止，尝试进行重启"
+
+msgid "Node {}: service {} restart failed, mark it to ERROR"
+msgstr "节点{}: 服务{}无法重新启动，标记为错误状态"
+
+msgid "Node {}: radosgw {} status is inactive, trying to restart"
+msgstr "节点{}: 对象存储网关{}已停止，尝试进行重启"
+
+msgid "Node {}: radosgw {} restart failed, mark it to ERROR"
+msgstr "节点{}：对象存储网关{}重启失败，标记为错误状态"
+
+msgid "Node {}：service {} status is down, trying to restart"
+msgstr "节点{}: 服务{}已停止，尝试进行重启"
+
+msgid "Node {}：service {} restart failed, mark it to error"
+msgstr "节点{}: 服务{}重启失败，标记为错误状态"
+
+msgid "Node {}: radosgw {} status is inactive"
+msgstr "节点{}: 对象网关服务{}已停止"
+
+msgid "Node {}: radosgw router service {} status is inactive"
+msgstr "节点{}: 对象路由服务{}已停止"
+
+msgid "Node {}: service {} status is inactive"
+msgstr "节点{}: 服务{}已停止"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
@@ -860,9 +905,7 @@ msgstr "SSH错误：%s"
 msgid "old style configuration can use only dictionary or memcached backends"
 msgstr "旧样式的配置只能使用字典或缓存后端"
 
-msgid "Coordinator uninitialized."
-msgstr "协调器未初始化"
-
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
 

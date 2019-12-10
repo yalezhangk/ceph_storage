@@ -6,6 +6,7 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
@@ -37,10 +38,13 @@ class ServiceHandler(AdminBaseHandler):
     def _restart_systemd_service(self, ctxt, name, service):
         if self.debug_mode:
             return
+        node = objects.Node.get_by_id(ctxt, service.node_id)
+        if node.status in [s_fields.NodeStatus.REMOVING_ROLE,
+                           s_fields.NodeStatus.DELETING]:
+            return
         logger.info("Try to restart systemd service: %s", name)
         service.status = s_fields.ServiceStatus.STARTING
         service.save()
-        node = objects.Node.get_by_id(ctxt, service.node_id)
         if name == "MON":
             target = node.hostname
             type = "mon"
@@ -50,6 +54,11 @@ class ServiceHandler(AdminBaseHandler):
         else:
             logger.error("Service not support")
             return
+        msg = _("Node {}: service {} in status is inactive, trying to restart"
+                ).format(node.hostname, name)
+        self.send_service_alert(
+            ctxt, service, "service_status", name, "INFO", msg,
+            "SERVICE_RESTART")
         service.status = s_fields.ServiceStatus.STARTING
         service.save()
         ssh = SSHExecutor(hostname=str(node.ip_address),
@@ -61,6 +70,12 @@ class ServiceHandler(AdminBaseHandler):
             logger.error(e)
             service.status = s_fields.ServiceStatus.ERROR
             service.save()
+            msg = _("Node {}: service {} restart failed, mark it to ERROR"
+                    ).format(node.hostname, name)
+            self.send_service_alert(
+                ctxt, service, "service_status", "Service", "ERROR", msg,
+                "SERVICE_ERROR"
+            )
 
     def _restart_radosgw_service(self, ctxt, radosgw):
         if self.debug_mode:
@@ -71,6 +86,11 @@ class ServiceHandler(AdminBaseHandler):
         target = radosgw.name
         type = "rgw"
         node = objects.Node.get_by_id(ctxt, radosgw.node_id)
+        msg = _("Node {}: radosgw {} status is inactive, trying to restart"
+                ).format(node.hostname, radosgw.display_name)
+        self.send_service_alert(
+            ctxt, radosgw, "service_status", radosgw.display_name, "INFO", msg,
+            "SERVICE_RESTART")
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
         ceph_tool = CephTool(ssh)
@@ -80,6 +100,12 @@ class ServiceHandler(AdminBaseHandler):
             logger.error(e)
             radosgw.status = s_fields.RadosgwStatus.ERROR
             radosgw.save()
+            msg = _("Node {}: radosgw {} restart failed, mark it to ERROR"
+                    ).format(node.hostname, radosgw.display_name)
+            self.send_service_alert(
+                ctxt, radosgw, "service_status", "Service", "ERROR", msg,
+                "SERVICE_ERROR"
+            )
 
     def _restart_docker_service(self, ctxt, service, container_name):
         if self.debug_mode:
@@ -89,6 +115,11 @@ class ServiceHandler(AdminBaseHandler):
             s_fields.ServiceStatus.STARTING
         service.save()
         node = objects.Node.get_by_id(ctxt, service.node_id)
+        msg = _("Node {}：service {} status is down, trying to restart")\
+            .format(node.hostname, service.name)
+        self.send_service_alert(
+            ctxt, service, "service_status", service.name, "INFO", msg,
+            "SERVICE_RESTART")
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
         docker_tool = DockerTool(ssh)
@@ -104,6 +135,13 @@ class ServiceHandler(AdminBaseHandler):
                 if retry_times == 10:
                     service.status = s_fields.ServiceStatus.ERROR
                     service.save()
+                    msg = _(
+                        "Node {}：service {} restart failed, mark it to error"
+                    ).format(node.hostname, container_name)
+                    self.send_service_alert(
+                        ctxt, service, "service_status", "Service", "ERROR",
+                        msg, "SERVICE_ERROR"
+                    )
 
     def _update_object_gateway(self, ctxt, filters, status):
         rgws = objects.RadosgwList.get_all(ctxt, filters=filters)
@@ -121,6 +159,14 @@ class ServiceHandler(AdminBaseHandler):
         if (rgw.status == s_fields.RadosgwStatus.ERROR) \
                 and (status != s_fields.RadosgwStatus.ACTIVE):
             return rgw
+        if status == s_fields.RadosgwStatus.INACTIVE and \
+                rgw.status == s_fields.RadosgwStatus.ACTIVE:
+            node = objects.Node.get_by_id(ctxt, rgw.node_id)
+            msg = _("Node {}: radosgw {} status is inactive") \
+                .format(node.hostname, rgw.display_name)
+            self.send_service_alert(
+                ctxt, rgw, "service_status", rgw.display_name, "WARN",
+                msg, "SERVICE_INACTIVE")
         rgw.status = status
         if status == s_fields.RadosgwStatus.ACTIVE:
             rgw.counter += 1
@@ -150,6 +196,14 @@ class ServiceHandler(AdminBaseHandler):
         if (service.status == s_fields.RouterServiceStatus.ERROR) \
                 and (status != s_fields.RouterServiceStatus.ACTIVE):
             return service
+        if status == s_fields.RouterServiceStatus.INACTIVE \
+                and service.status == s_fields.RouterServiceStatus.ACTIVE:
+            node = objects.Node.get_by_id(ctxt, service.node_id)
+            msg = _("Node {}: radosgw router service {} status is inactive"
+                    ).format(node.hostname, service.name)
+            self.send_service_alert(
+                ctxt, service, "service_status", service.name, "WARN",
+                msg, "SERVICE_INACTIVE")
         service.status = status
         if status == s_fields.RouterServiceStatus.ACTIVE:
             service.counter += 1
@@ -183,6 +237,14 @@ class ServiceHandler(AdminBaseHandler):
             if (service.status == s_fields.ServiceStatus.ERROR) \
                     and (status != s_fields.ServiceStatus.ACTIVE):
                 return service
+            if status == s_fields.ServiceStatus.INACTIVE \
+                    and service.status == s_fields.ServiceStatus.ACTIVE:
+                node = objects.Node.get_by_id(ctxt, node_id)
+                msg = _("Node {}: service {} status is inactive") \
+                    .format(node.hostname, service.name)
+                self.send_service_alert(
+                    ctxt, service, "service_status", service.name, "WARN",
+                    msg, "SERVICE_INACTIVE")
             service.status = status
             if status == s_fields.ServiceStatus.ACTIVE:
                 service.counter += 1
@@ -204,12 +266,16 @@ class ServiceHandler(AdminBaseHandler):
                 service_name = s.get('service_name')
                 if role == "role_object_gateway":
                     rgw = self._update_object_gateway(ctxt, filters, status)
+                    if not rgw:
+                        continue
                     if rgw.status == s_fields.RadosgwStatus.INACTIVE:
                         self.task_submit(self._restart_radosgw_service,
                                          ctxt, rgw)
                 elif role == "role_radosgw_router":
                     service = self._update_radosgw_router(
                         ctxt, filters, status, service_name)
+                    if not service:
+                        continue
                     if service.status == s_fields.RouterServiceStatus.INACTIVE:
                         self.task_submit(self._restart_docker_service,
                                          ctxt, service, service_name)

@@ -11,6 +11,7 @@ from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSA.client import AgentClientManager
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
 from DSpace.tools.base import SSHExecutor
@@ -101,6 +102,10 @@ class CronHandler(AdminBaseHandler):
 
     def _restart_osd(self, context, osd):
         logger.info("osd.%s is down, try to restart", osd.osd_id)
+        msg = _("osd.{} service status is inactive, trying to restart").format(
+            osd.osd_id)
+        self.send_service_alert(context, osd, "osd_status", "Osd", "INFO",
+                                msg, "OSD_RESTART")
         node = objects.Node.get_by_id(context, osd.node_id)
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
@@ -111,6 +116,10 @@ class CronHandler(AdminBaseHandler):
             logger.error(e)
             osd.status = s_fields.OsdStatus.OFFLINE
             osd.save()
+            msg = _("osd.{} cannot be restarted, mark to offline").format(
+                osd.osd_id)
+            self.send_service_alert(context, osd, "osd_status", "Osd",
+                                    "ERROR", msg, "OSD_OFFLINE")
 
     def _set_osd_status(self, context, osd_status, up_down):
         osd_id = osd_status.get('id')
@@ -122,33 +131,50 @@ class CronHandler(AdminBaseHandler):
         else:
             status += "out&"
         # append up or down
+        if not up_down:
+            return
         status += up_down
         osd = objects.Osd.get_by_osd_id(context, osd_id)
         if osd.status in [s_fields.OsdStatus.DELETING,
                           s_fields.OsdStatus.CREATING,
+                          s_fields.OsdStatus.REPLACE_PREPARED,
+                          s_fields.OsdStatus.REPLACE_PREPARING,
+                          s_fields.OsdStatus.RESTARTING,
                           s_fields.OsdStatus.PROCESSING]:
             return
         if status == "in&up":
             osd.status = s_fields.OsdStatus.ACTIVE
+            osd.save()
         elif status == "in&down":
             if osd.status in [s_fields.OsdStatus.ACTIVE]:
                 if self.debug_mode:
                     osd.status = s_fields.OsdStatus.OFFLINE
                     osd.save()
+                    msg = _("osd.{} is offline").format(osd.osd_id)
+                    self.send_service_alert(context, osd, "osd_status", "Osd",
+                                            "WARN", msg, "OSD_OFFLINE")
                     return
                 osd.status = s_fields.OsdStatus.RESTARTING
                 osd.save()
                 self.task_submit(self._restart_osd, context, osd)
                 return
         elif status == "out&up":
-            osd.status = s_fields.OsdStatus.OFFLINE
-        elif status == "out&down":
-            if osd.status == s_fields.OsdStatus.ERROR:
+            if osd.status in [s_fields.OsdStatus.OFFLINE]:
                 return
+            msg = _("osd.{} is offline").format(osd.osd_id)
+            self.send_service_alert(context, osd, "osd_status", "Osd",
+                                    "WARN", msg, "OSD_OFFLINE")
             osd.status = s_fields.OsdStatus.OFFLINE
-        else:
-            return
-        osd.save()
+            osd.save()
+        elif status == "out&down":
+            if osd.status in [s_fields.OsdStatus.OFFLINE,
+                              s_fields.OsdStatus.ERROR]:
+                return
+            msg = _("osd.{} is offline").format(osd.osd_id)
+            self.send_service_alert(context, osd, "osd_status", "Osd",
+                                    "WARN", msg, "OSD_OFFLINE")
+            osd.status = s_fields.OsdStatus.OFFLINE
+            osd.save()
 
     def _get_osd_status_from_dsa(self, context):
         osds = objects.OsdList.get_all(
@@ -176,6 +202,8 @@ class CronHandler(AdminBaseHandler):
             min_up_ratio = 0.3
         osd_stat = ceph_client.get_osd_stat()
         num_osds = osd_stat.get("num_osds")
+        if not num_osds:
+            return {}
         up_ratio = osd_stat.get("num_up_osds") / num_osds
         if up_ratio <= min_up_ratio:
             return self._get_osd_status_from_dsa(context)
@@ -223,18 +251,23 @@ class CronHandler(AdminBaseHandler):
                 logger.exception("Dsa check cron Exception: %s", e)
             time.sleep(CONF.dsa_check_interval)
 
-    def _restart_dsa(self, ctxt, dsa):
-        node = objects.Node.get_by_id(ctxt, dsa.node_id)
+    def _restart_dsa(self, ctxt, dsa, node):
+        logger.warning("DSA in node %s is down, trying to restart",
+                       dsa.node_id)
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
         docker_tool = DockerTool(ssh)
         retry_times = 0
         container_name = self.map_util.base['DSA']
+        msg = _("Node {}: DSA service status is inactive, trying to restart.")\
+            .format(node.hostname)
+        self.send_service_alert(
+            ctxt, dsa, "service_status", dsa.name, "INFO",
+            msg, "SERVICE_RESTART")
         while retry_times < 10:
             try:
                 docker_tool.restart(container_name)
                 if docker_tool.status(container_name):
-                    dsa.status = s_fields.ServiceStatus.ACTIVE
                     break
             except exception.StorException as e:
                 logger.error(e)
@@ -242,6 +275,13 @@ class CronHandler(AdminBaseHandler):
                 if retry_times == 10:
                     dsa.status = s_fields.ServiceStatus.ERROR
                     dsa.save()
+                    msg = _(
+                        "Node {}: DSA restart failed, mark it to error"
+                    ).format(node.hostname)
+                    self.send_service_alert(
+                        ctxt, dsa, "service_status", "Service", "ERROR",
+                        msg, "SERVICE_ERROR"
+                    )
 
     @synchronized('cron_dsa_check', blocking=False)
     def dsa_check(self):
@@ -249,11 +289,22 @@ class CronHandler(AdminBaseHandler):
             self.ctxt, filters={'name': 'DSA', 'cluster_id': '*'})
         logger.debug("dsa_check: %s", dsas)
         for dsa in dsas:
+            ctxt = RequestContext(user_id='admin',
+                                  is_admin=True,
+                                  cluster_id=dsa.cluster_id)
             self.check_service_status(self.ctxt, dsa)
-            if dsa.status == s_fields.ServiceStatus.INACTIVE:
-                logger.warning("DSA in ndoe %s is down, trying to restart",
-                               dsa.node_id)
-                self.task_submit(self._restart_dsa, self.ctxt, dsa)
+            logger.error("DSA in node %s is inactive", dsa.node_id)
+            if dsa.status == s_fields.ServiceStatus.INACTIVE \
+                    and not self.debug_mode:
+                dsa.status = s_fields.ServiceStatus.STARTING
+                dsa.save()
+                node = objects.Node.get_by_id(ctxt, dsa.node_id)
+                msg = _("Node {}: DSA in status is inactive"
+                        ).format(node.hostname)
+                self.send_service_alert(
+                    ctxt, dsa, "service_status", "DSA", "WARN", msg,
+                    "SERVICE_INACTIVE")
+                self.task_submit(self._restart_dsa, ctxt, dsa, node)
 
     def _node_check_cron(self):
         logger.debug("Start node check crontab")

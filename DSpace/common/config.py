@@ -70,7 +70,7 @@ global_opts = [
                default=None,
                help="Session url"),
     cfg.IntOpt('rgw_min_port',
-               default=1,
+               default=7480,
                help='The minimum port number for rgw.'),
     cfg.IntOpt('rgw_max_port',
                default=65500,
