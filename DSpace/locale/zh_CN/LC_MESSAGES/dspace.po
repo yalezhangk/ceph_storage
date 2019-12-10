@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-10 10:45+0800\n"
+"POT-Creation-Date: 2019-12-10 15:23+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -280,7 +280,7 @@ msgid "download file error: %(reason)s"
 msgstr "下载文件错误：%(reason)s"
 
 msgid "Timeout error: %(reason)s"
-msgstr "下载文件错误：%(reason)s"
+msgstr "超时错误：%(reason)s"
 
 msgid "Osd pause error"
 msgstr "硬盘暂停错误"
@@ -434,6 +434,18 @@ msgstr "集群关闭错误"
 
 msgid "Cluster Unpause Error"
 msgstr "集群解除关闭错误"
+
+msgid "Start success: {}"
+msgstr "启动成功：{}"
+
+msgid "Start failed: {}"
+msgstr "启动失败: {}"
+
+msgid "Stop success: {}"
+msgstr "关闭成功: {}"
+
+msgid "Stop failed: {}"
+msgstr "关闭失败: {}"
 
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"
@@ -650,6 +662,39 @@ msgstr "超过一个存储池使用这个故障域规划，不允许修改故障
 
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
+
+msgid "The role of node %s is not role_object_gateway"
+msgstr "节点 %s 的角色不是对象存储网关"
+
+msgid "The port %s is used by another radosgw"
+msgstr "端口 %s 已被其他对象存储网关使用"
+
+msgid "The ip address %s is invalid"
+msgstr "此IP %s 地址不合法"
+
+msgid "The ip address %s is not in gateway_cidr"
+msgstr "此IP地址 %s 不在对象存储网关地址范围内"
+
+msgid "The port %s is used"
+msgstr "端口 %s 已被占用"
+
+msgid "Need to create index pool before radosgw"
+msgstr "需要在创建对象存储网关之前创建索引池"
+
+msgid "create success: {}"
+msgstr "创建对象粗存储网关成功：{}"
+
+msgid "create error: {}"
+msgstr "创建对象粗存储网关失败：{}"
+
+msgid "delete radosgw {} success"
+msgstr "删除对象存储网关成功：{}"
+
+msgid "delete radosgw {} error"
+msgstr "删除对象存储网关失败：{}"
+
+msgid "Only available and error radosgw can be deleted"
+msgstr "只能删除可用与错误的对象存储网关"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"

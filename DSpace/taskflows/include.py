@@ -335,8 +335,6 @@ class SyncClusterInfo(BaseTask):
     def _update_planning(self, ctxt):
         logger.info("update planning")
         nodes = objects.NodeList.get_all(ctxt, filters={"rack_id": None})
-        # from remote_pdb import RemotePdb
-        # RemotePdb('127.0.0.1', 4444).set_trace()
         logger.info("nodes %s need rack_id", nodes)
         if nodes:
             rack = obj_utils.rack_create(ctxt)

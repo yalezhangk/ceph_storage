@@ -66,6 +66,34 @@ class ComponentRestartHandler(ClusterAPIHandler):
                 "id": 1
             }
         }
+        ---
+        tags:
+        - components
+        summary: Restart components
+        description: Restart components
+        operationId: components.api.rekstartComponents
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: component
+          description: request body
+          required: true
+          schema:
+            type: object
+            properties:
+                radosgw:
+                  type: object
+                  properties:
+                    service:
+                      type: string
+                      description: service name
+                    node_id:
+                      type: integer
+                      format: int32
+        responses:
+        "200":
+          description: successful operation
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
@@ -73,3 +101,101 @@ class ComponentRestartHandler(ClusterAPIHandler):
         component = data.get('component')
         result = yield client.component_restart(ctxt, component)
         self.write(objects.json_encode({"res": result}))
+
+
+@URLRegistry.register(r"/components/start/")
+class ComponentStartHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """start components
+        {
+            "component": {
+                "service": "mon|mds|osd|mgr|rgw",
+                "id": 1
+            }
+        }
+
+        ---
+        tags:
+        - components
+        summary: Start components
+        description: Start components
+        operationId: components.api.startComponents
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: component
+          description: request body
+          required: true
+          schema:
+            type: object
+            properties:
+                radosgw:
+                  type: object
+                  properties:
+                    service:
+                      type: string
+                      description: service name
+                    node_id:
+                      type: integer
+                      format: int32
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        component = data.get('component')
+        result = yield client.component_start(ctxt, component)
+        self.write(objects.json_encode({"components_start": result}))
+
+
+@URLRegistry.register(r"/components/stop/")
+class ComponentStopHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """stop commponts
+        {
+            "component": {
+                "service": "mon|mds|osd|mgr|rgw",
+                "id": 1
+            }
+        }
+
+        ---
+        tags:
+        - components
+        summary: Stop components
+        description: Stop components
+        operationId: components.api.stopComponents
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: component
+          description: request body
+          required: true
+          schema:
+            type: object
+            properties:
+                radosgw:
+                  type: object
+                  properties:
+                    service:
+                      type: string
+                      description: service name
+                    node_id:
+                      type: integer
+                      format: int32
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        component = data.get('component')
+        result = yield client.component_stop(ctxt, component)
+        self.write(objects.json_encode({"components_stop": result}))

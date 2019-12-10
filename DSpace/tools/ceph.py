@@ -186,13 +186,29 @@ class CephTool(ToolBase):
                                   stdout=stdout, stderr=stderr)
 
     def systemctl_restart(self, types, service, retrys=10):
-        check_cmd = ["ps", "-ef", "|", "grep", types, "|", "grep",
-                     "id\\ %s" % service, "|grep", "-v", "grep", "|",
-                     "awk", "'{print $2}'"]
-        status_cmd = ["systemctl", "status", "ceph-%s@%s" % (types, service),
-                      "|", "grep", "Active", "|", "awk", "'{print $2}'"]
-        reset_cmd = ["systemctl", "reset-failed",
-                     "ceph-%s@%s" % (types, service)]
+        logger.info("Try to restart service type %s, service %s",
+                    types, service)
+        if types == "rgw":
+            check_cmd = ["ps", "-ef", "|", "grep", types, "|", "grep",
+                         "client.rgw.%s" % service, "|grep", "-v", "grep", "|",
+                         "awk", "'{print $2}'"]
+            status_cmd = ["systemctl", "status",
+                          "ceph-radosgw@rgw.%s" % (service), "|", "grep",
+                          "Active", "|", "awk", "'{print $2}'"]
+            reset_cmd = ["systemctl", "reset-failed",
+                         "ceph-radosgw@rgw.%s" % (service)]
+            cmd = ["systemctl", "restart",
+                   "ceph-radosgw@rgw.%s" % (service)]
+        else:
+            check_cmd = ["ps", "-ef", "|", "grep", types, "|", "grep",
+                         "id\\ %s" % service, "|grep", "-v", "grep", "|",
+                         "awk", "'{print $2}'"]
+            status_cmd = ["systemctl", "status",
+                          "ceph-%s@%s" % (types, service), "|", "grep",
+                          "Active", "|", "awk", "'{print $2}'"]
+            reset_cmd = ["systemctl", "reset-failed",
+                         "ceph-%s@%s" % (types, service)]
+            cmd = ["systemctl", "restart", "ceph-%s@%s" % (types, service)]
         # 检查进程存在
         rc, PID, c_err = self.run_command(check_cmd, timeout=5)
         if not PID:
@@ -202,7 +218,6 @@ class CephTool(ToolBase):
             if s_out.strip('\n') == "failed":
                 self.run_command(reset_cmd, timeout=5)
         # 重启
-        cmd = ["systemctl", "restart", "ceph-%s@%s" % (types, service)]
         rc, stdout, stderr = self.run_command(cmd, timeout=35)
         while True:
             s_rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
@@ -224,6 +239,39 @@ class CephTool(ToolBase):
             raise SystemctlRestartError(
                 service="ceph-{}@{}".format(types, service), state=s_out)
         return stdout
+
+    def service_stop(self, types, service, retrys = 12):
+        logger.info("Try to stop service type %s, service %s", types, service)
+        if types == "rgw":
+            check_cmd = ["ps", "-ef", "|", "grep", "rgw", "|", "grep",
+                         "client.rgw.%s" % service, "|grep", "-v", "grep"]
+            stop_cmd = ["systemctl", "stop", "ceph-radosgw@rgw.%s" % (service)]
+        else:
+            # TODO add other service
+            check_cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
+                         "'id %s '" % service]
+            stop_cmd = ["systemctl", "stop", "ceph-%s@%s" % (types, service)]
+        while True:
+            # stop
+            rc, stdout, stderr = self.run_command(stop_cmd, timeout=35)
+            if rc == 1 and "canceled" in stderr:
+                logger.warning("wait stop: code(%s), out(%s), err(%s)",
+                               rc, stdout, stderr)
+            elif rc:
+                raise RunCommandError(cmd=stop_cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+            # check
+            rc, stdout, stderr = self.run_command(check_cmd, timeout=5)
+            logger.debug("wait stop: code(%s), out(%s), err(%s)",
+                         rc, stdout, stderr)
+            if types in stdout:
+                time.sleep(10)
+                retrys = retrys - 1
+                if retrys < 0:
+                    raise ActionTimeoutError(reason="Stop %s %s" % (types,
+                                             service))
+            else:
+                return True
 
     def osd_stop(self, osd_id):
         cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]
