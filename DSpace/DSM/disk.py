@@ -345,3 +345,37 @@ class DiskHandler(AdminBaseHandler):
         partitions = objects.DiskPartitionList.get_all_available(
             ctxt, filters=filters, expected_attrs=expected_attrs)
         return partitions
+
+    def disk_io_top(self, ctxt, k=10):
+        logger.info("disk io top(%s)", k)
+        prometheus = PrometheusTool(ctxt)
+        metrics = prometheus.disk_io_top(ctxt, k)
+        if metrics is None:
+            return None
+        nodes = {}
+        disks = []
+        for metric in metrics:
+            hostname = metric['hostname']
+            name = metric['name']
+            if hostname in nodes:
+                node = nodes[hostname]
+            else:
+                _nodes = objects.NodeList.get_all(
+                    ctxt, filters={"hostname": hostname})
+                if not _nodes:
+                    logger.warring("host not found: %s", hostname)
+                    continue
+                node = _nodes[0]
+            _disks = objects.DiskList.get_all(
+                ctxt, filters={"name": name, "node_id": node.id})
+            if not _disks:
+                logger.warring("disk not found: %s,%s", hostname, name)
+                continue
+            disk = _disks[0]
+            disk.node = node
+            disk.metrics = {
+                'iops': metric['value']
+            }
+            disks.append(disk)
+        logger.info("disk io top(%s): %s", k, disks)
+        return disks
