@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-09 17:06+0800\n"
+"POT-Creation-Date: 2019-12-10 10:45+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -620,6 +620,9 @@ msgstr "{} 移除硬盘失败"
 
 msgid "can't remove osds more than pool's available domain"
 msgstr "移除的osd数量不能超过副本数"
+
+msgid "{} update policy success"
+msgstr "{} 修改数据安全策略成功"
 
 msgid "{} update policy error"
 msgstr "{} 修改数据安全策略错误"
