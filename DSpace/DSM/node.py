@@ -60,6 +60,11 @@ class NodeHandler(AdminBaseHandler):
         for network in networks:
             network.destroy()
 
+        services = objects.ServiceList.get_all(
+            ctxt, filters={"node_id": node.id})
+        for service in services:
+            service.destroy()
+
     def _node_delete(self, ctxt, node, begin_action):
         try:
             if node.role_monitor:
@@ -93,10 +98,10 @@ class NodeHandler(AdminBaseHandler):
             msg = _("node remove error: {}").format(node.hostname)
             err_msg = str(e)
             op_status = "DELETE_ERROR"
-        self.finish_action(begin_action, node.id, node.hostname,
-                           objects.json_encode(node), status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
+        self.finish_action(begin_action, node.id, node.hostname,
+                           objects.json_encode(node), status, err_msg=err_msg)
 
     def node_update_rack(self, ctxt, node_id, rack_id):
         node = objects.Node.get_by_id(ctxt, node_id, expected_attrs=['osds'])
@@ -201,6 +206,7 @@ class NodeHandler(AdminBaseHandler):
         if no_router:
             nodes = self._filter_by_routers(ctxt, nodes)
         self._node_get_metrics_overall(ctxt, nodes)
+
         return nodes
 
     def node_get_count(self, ctxt, filters=None):
@@ -478,6 +484,18 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         return node
 
+    def _notify_dsa_update(self, ctxt, node):
+        logger.info("Send node update info to %s", node.id)
+        node = objects.Node.get_by_id(ctxt, node.id)
+        self._notify_dsa_update(ctxt, node)
+        services = objects.ServiceList.get_all(
+            ctxt, filters={'node_id': node.id})
+        for service in services:
+            if service.role == "role_admin":
+                continue
+            if service.role == "role_monitor" and not node.role_monitor:
+                service.destroy()
+
     def _node_roles_set(self, ctxt, node, i_roles, u_roles, begin_action):
         install_role_map = {
             'monitor': self._mon_install,
@@ -513,12 +531,15 @@ class NodeHandler(AdminBaseHandler):
             op_status = "SET_ROLES_ERROR"
         node.status = status
         node.save()
+        # notify dsa to update node info
+        self._notify_dsa_update(ctxt, node)
+
         # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
         self.finish_action(begin_action, node.id, node.hostname,
                            objects.json_encode(node), status,
                            err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
 
     def node_roles_set(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
@@ -614,12 +635,12 @@ class NodeHandler(AdminBaseHandler):
 
         node_task.prometheus_target_config(action='add',
                                            service='node_exporter')
-        self.finish_action(begin_action, node.id, node.hostname,
-                           objects.json_encode(node), status,
-                           err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
+        self.finish_action(begin_action, node.id, node.hostname,
+                           objects.json_encode(node), status,
+                           err_msg=err_msg)
         return node
 
     def node_create(self, ctxt, data):

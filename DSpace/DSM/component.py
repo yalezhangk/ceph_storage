@@ -133,6 +133,7 @@ class ComponentHandler(AdminBaseHandler):
         if not radosgw:
             raise exception.RadosgwNotFound(radosgw_id=radosgw_id)
         if radosgw.status not in [s_fields.RadosgwStatus.INACTIVE,
+                                  s_fields.RadosgwStatus.STOPPED,
                                   s_fields.RadosgwStatus.ERROR]:
             logger.error("Service status is %s, cannot start", radosgw.status)
             return ("Service status is %s, cannot start", radosgw.status)
@@ -159,7 +160,7 @@ class ComponentHandler(AdminBaseHandler):
         ).get_client(node_id=radosgw.node_id)
         try:
             client.ceph_services_stop(ctxt, "rgw", radosgw.name)
-            radosgw.status = s_fields.RadosgwStatus.INACTIVE
+            radosgw.status = s_fields.RadosgwStatus.STOPPED
             radosgw.save()
             logger.info("client.rgw.%s stop success", radosgw.name)
             op_status = 'STOP_SUCCESS'

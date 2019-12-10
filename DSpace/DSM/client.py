@@ -579,6 +579,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "service_status_get", names=names)
         return response
 
+    def service_infos_get(self, ctxt, node):
+        response = self.call(ctxt, "service_infos_get", node=node)
+        return response
+
     ##################
 
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,

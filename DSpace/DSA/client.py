@@ -45,6 +45,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_osd_create", osd=osd)
         return response
 
+    def get_osds_status(self, ctxt, osds):
+        response = self.call(ctxt, "get_osds_status", osds=osds)
+        return response
+
     def ceph_services_restart(self, ctxt, types, service):
         response = self.call(ctxt, "ceph_services_restart",
                              types=types, service=service)
@@ -167,6 +171,10 @@ class AgentClient(BaseClient):
     def prometheus_target_remove(self, ctxt, ip, port, hostname, path):
         response = self.call(ctxt, 'prometheus_target_remove',
                              ip=ip, port=port, hostname=hostname, path=path)
+        return response
+
+    def node_update_infos(self, ctxt, node):
+        response = self.call(ctxt, 'node_update_infos', node=node)
         return response
 
 

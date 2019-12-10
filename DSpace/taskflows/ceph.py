@@ -753,3 +753,13 @@ class CephTask(object):
     def osds_rm_noout(self, osd_names):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.osds_rm_noout(osd_names)
+
+    def get_osd_tree(self):
+        logger.info("Get osd tree info")
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.get_osd_tree()
+
+    def get_osd_stat(self):
+        logger.info("Get ceph osd stat")
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.get_osd_stat()

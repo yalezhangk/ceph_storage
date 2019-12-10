@@ -8,9 +8,11 @@ from DSpace import context
 from DSpace import exception as exc
 from DSpace import objects
 from DSpace.common.config import CONF
+from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
+from DSpace.utils.service_map import ServiceMap
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,9 @@ class AdminBaseHandler(object):
         ctxt = context.get_context()
         self.debug_mode = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DEBUG_MODE)
+        self.container_namespace = objects.sysconfig.sys_config_get(
+            ctxt, "image_namespace")
+        self.map_util = ServiceMap(self.container_namespace)
 
     def _wapper(self, fun, *args, **kwargs):
         try:
@@ -97,3 +102,21 @@ class AdminBaseHandler(object):
             raise exc.InvalidInput(
                 reason=_('has not active mon host, can not do any '
                          'ceph actions'))
+
+    def check_service_status(self, ctxt, service):
+        time_now = timeutils.utcnow(with_timezone=True)
+        if service.updated_at:
+            update_time = service.updated_at
+        else:
+            update_time = service.created_at
+        time_diff = time_now - update_time
+        if (service.status == s_fields.ServiceStatus.ACTIVE) \
+                and (time_diff.total_seconds() > CONF.service_max_interval):
+            service.status = s_fields.ServiceStatus.INACTIVE
+            service.save()
+
+    def notify_node_update(self, ctxt, node):
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node.id)
+        client.node_update_infos(ctxt, node)

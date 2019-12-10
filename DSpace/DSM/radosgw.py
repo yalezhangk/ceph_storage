@@ -4,9 +4,11 @@ import six
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -21,12 +23,26 @@ logger = logging.getLogger(__name__)
 
 class RadosgwHandler(AdminBaseHandler):
 
+    def _check_radosgw_status(self, ctxt, radosgws):
+        for rgw in radosgws:
+            time_now = timeutils.utcnow(with_timezone=True)
+            if rgw.updated_at:
+                update_time = rgw.updated_at
+            else:
+                update_time = rgw.created_at
+            time_diff = time_now - update_time
+            if (rgw.status == s_fields.RadosgwStatus.ACTIVE) and \
+                    (time_diff.total_seconds() > CONF.service_max_interval):
+                rgw.status = s_fields.RadosgwStatus.INACTIVE
+                rgw.save()
+
     def radosgw_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                         sort_dirs=None, filters=None, offset=None):
         radosgws = objects.RadosgwList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=['node'])
+        self._check_radosgw_status(ctxt, radosgws)
         return radosgws
 
     def radosgw_get_count(self, ctxt, filters=None):
@@ -129,6 +145,7 @@ class RadosgwHandler(AdminBaseHandler):
             radosgw.save()
             node.object_gateway_ip_address = radosgw.ip_address
             node.save()
+            self.notify_node_update(ctxt, node)
             logger.info("client.rgw.%s create success", radosgw.name)
             op_status = 'CREATE_SUCCESS'
             msg = _("create success: {}").format(radosgw.display_name)

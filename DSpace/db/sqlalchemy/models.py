@@ -186,6 +186,7 @@ class Service(BASE, StorBase):
     name = Column(String(32), index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     status = Column(String(32))
+    role = Column(String(32))
     counter = Column(BigInteger, default=0)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
@@ -556,12 +557,12 @@ class Radosgw(BASE, StorBase):
     name = Column(String(64))
     display_name = Column(String(255))
     status = Column(String(32))
-    status = Column(String(32))
     ip_address = Column(String(32))
     port = Column(Integer)
     zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))
     node_id = Column(Integer, ForeignKey('nodes.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    counter = Column(BigInteger, default=0)
     router_id = Column(Integer, ForeignKey('radosgw_routers.id'))
     _radosgw_routers = relationship("RadosgwRouter", backref="_radosgws")
 
@@ -603,5 +604,6 @@ class RouterService(BASE, StorBase):
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     net_id = Column(String(36), ForeignKey('networks.id'))
     router_id = Column(Integer, ForeignKey('radosgw_routers.id'))
+    counter = Column(BigInteger, default=0)
     _radosgw_routers = relationship("RadosgwRouter",
                                     backref="_router_services")

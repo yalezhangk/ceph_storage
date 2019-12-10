@@ -492,7 +492,7 @@ class NodeTask(object):
     def check_container(self):
         ssh = self.get_ssh_executor()
         service_tool = ServiceTool(ssh)
-        if service_tool.status('docker') == 'active':
+        if service_tool.status('docker'):
             image_namespace = objects.sysconfig.sys_config_get(
                 self.ctxt, ConfigKey.IMAGE_NAMESPACE)
             dspace_containers = [
@@ -503,7 +503,7 @@ class NodeTask(object):
             docker_tool = DockerTool(ssh)
             for container in dspace_containers:
                 status = docker_tool.status(container)
-                if status == 'active':
+                if status:
                     return False
         return True
 
@@ -612,10 +612,10 @@ class ContainerUninstallMixin(object):
         docker_tool = DockerTool(ssh)
         container_name = '{}_{}'.format(image_namespace, container_name)
         status = docker_tool.status(container_name)
-        if status == 'active':
+        if status:
             docker_tool.stop(container_name)
             docker_tool.rm(container_name)
-        if status == 'inactive':
+        else:
             docker_tool.rm(container_name)
         try:
             docker_tool.image_rm(
@@ -1043,7 +1043,7 @@ class HaproxyInstall(BaseTask):
                 volumes=volumes
             )
 
-        if docker_tool.status(container_name) == s_fields.ServiceStatus.ACTIVE:
+        if docker_tool.status(container_name):
             router_service.status = s_fields.RouterServiceStatus.ACTIVE
         else:
             logger.error("Start container %s failed", container_name)
@@ -1164,7 +1164,7 @@ class KeepalivedInstall(BaseTask):
                 volumes=volumes
             )
 
-        if docker_tool.status(container_name) == s_fields.ServiceStatus.ACTIVE:
+        if docker_tool.status(container_name):
             router_service.status = s_fields.RouterServiceStatus.ACTIVE
         else:
             logger.error("Start container %s failed", container_name)

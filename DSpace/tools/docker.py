@@ -4,7 +4,6 @@ import logging
 
 from DSpace.exception import ProgrammingError
 from DSpace.exception import RunCommandError
-from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
@@ -135,13 +134,13 @@ class Docker(ToolBase):
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
             if "No such object" in stderr:
-                return "error"
+                return False
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         if stdout.strip() == "true":
-            return s_fields.ServiceStatus.ACTIVE
+            return True
         else:
-            return s_fields.ServiceStatus.INACTIVE
+            return False
 
     def exist(self, name):
         logger.info("Check if container is existed: %s", name)

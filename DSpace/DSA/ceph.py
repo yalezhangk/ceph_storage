@@ -5,7 +5,6 @@ import time
 
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
-from DSpace.objects import fields as s_fields
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.ceph import CephTool
 from DSpace.tools.disk import DiskTool as DiskTool
@@ -192,8 +191,8 @@ class CephHandler(AgentBaseHandler):
             mgr_service = "ceph-mgr@{}".format(self.node.hostname)
             mds_service = "ceph-mds@{}".format(self.node.hostname)
             if (ceph_tool.check_mon_is_joined(str(self.node.public_ip)) and
-                    service_tool.status(mgr_service) == "active" and
-                    service_tool.status(mds_service) == "active"):
+                    service_tool.status(mgr_service) and
+                    service_tool.status(mds_service)):
                 break
             logger.info("Mon not start success, retry after 1 second")
             retry_times += 1
@@ -301,7 +300,7 @@ class CephHandler(AgentBaseHandler):
         service_tool = ServiceTool(client)
         status = service_tool.status(
             "ceph-radosgw@rgw.{}".format(radosgw.name))
-        if status != s_fields.ServiceStatus.ACTIVE:
+        if not status:
             raise exception.StorException(
                 message='Radosgw service start failed')
 
@@ -336,3 +335,23 @@ class CephHandler(AgentBaseHandler):
         logger.info("Radosgw %s destroy success",
                     radosgw.name)
         return radosgw
+
+    def get_osds_status(self, ctxt, osds):
+        logger.debug("Check osd status")
+        ssh_client = self._get_ssh_executor()
+        service_tool = ServiceTool(ssh_client)
+        osd_status = {}
+        for osd in osds:
+            try:
+                name = "ceph-osd@{}".format(osd.osd_id)
+                if service_tool.status(name=name):
+                    status = "up"
+                else:
+                    status = "down"
+            except exception.StorException as e:
+                logger.error("Get service status error: {}".format(e))
+                status = "down"
+            osd_status.update({
+                "osd.{}".format(osd.osd_id): status
+            })
+        return osd_status
