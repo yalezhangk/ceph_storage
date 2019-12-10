@@ -93,9 +93,14 @@ class ComponentHandler(AdminBaseHandler):
         }
         filters = {'status': s_fields.NodeStatus.ACTIVE,
                    'role_monitor': True}
-        mon = objects.NodeList.get_all(ctxt, filters=filters)
+        if service == "osd":
+            osd = objects.Osd.get_by_id(ctxt, component.get("id"))
+            node_id = osd.node_id
+        else:
+            mon = objects.NodeList.get_all(ctxt, filters=filters)
+            node_id = int(mon[0].id)
         client = AgentClientManager(
             ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=int(mon[0].id))
+        ).get_client(node_id=node_id)
         res = restart[service](ctxt, component.get("id"), client)
         return res
