@@ -438,3 +438,11 @@ class DownloadFileError(StorException):
 class ActionTimeoutError(StorException):
     code = 400
     message = _('Timeout error: %(reason)s')
+
+
+class ClusterPauseError(StorException):
+    message = _('Osd pause error')
+
+
+class ClusterUnpauseError(StorException):
+    message = _('Osd unpause error')

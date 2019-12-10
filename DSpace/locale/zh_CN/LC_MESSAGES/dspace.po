@@ -282,6 +282,12 @@ msgstr "下载文件错误：%(reason)s"
 msgid "Timeout error: %(reason)s"
 msgstr "下载文件错误：%(reason)s"
 
+msgid "Osd pause error"
+msgstr "硬盘暂停错误"
+
+msgid "Osd unpause error"
+msgstr "硬盘暂停错误"
+
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
 
@@ -416,6 +422,18 @@ msgstr "集群中有正在进行的osd任务"
 
 msgid "Cluster is importing"
 msgstr "集群正在纳管"
+
+msgid "Cluster Pause Success"
+msgstr "集群关闭成功"
+
+msgid "Cluster Unpause Success"
+msgstr "集群解除关闭"
+
+msgid "Cluster Pause Error"
+msgstr "集群关闭错误"
+
+msgid "Cluster Unpause Error"
+msgstr "集群解除关闭错误"
 
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"

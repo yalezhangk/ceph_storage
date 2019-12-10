@@ -1091,3 +1091,30 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         res = self._send_mon_command(command_str)
         return res
+
+    def osd_pause(self):
+        logger.info("osd pause")
+        cmd = {
+            "prefix": "osd pause",
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
+    def osd_unpause(self):
+        logger.info("osd unpause")
+        cmd = {
+            "prefix": "osd unpause",
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
+    def status(self):
+        logger.info("status")
+        cmd = {
+            "prefix": "status",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("ceph status: %s", res)
+        return res

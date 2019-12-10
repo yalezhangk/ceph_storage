@@ -94,6 +94,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "cluster_capacity_get", pool_id=pool_id)
         return response
 
+    def cluster_pause(self, ctxt, enable=True):
+        response = self.call(ctxt, "cluster_pause", enable=enable)
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
