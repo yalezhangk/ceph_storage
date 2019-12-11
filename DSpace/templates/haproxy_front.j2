@@ -10,5 +10,5 @@ frontend {{ backend_name }}_front_https
 
 backend {{ backend_name }}
   mode http
-  {% for rgw in radsogws %}server {{ rgw.name }} {{ rgw.ip_address }}:{{ rgw.port }} check
+  {% for rgw in radosgws %}server {{ rgw.name }} {{ rgw.ip_address }}:{{ rgw.port }} check
   {% endfor %}
