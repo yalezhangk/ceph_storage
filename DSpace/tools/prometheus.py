@@ -626,10 +626,10 @@ class PrometheusTool(object):
         # pool容量和已配置的容量
         logger.info('get pool_id:%s capacity', pool_id)
         metrics = {
-            'max_avail': 'ceph_pool_max_avail',
-            'bytes_used': 'ceph_pool_bytes_used',
+            'total_avail_bytes': 'ceph_pool_max_avail',
+            'total_used_bytes': 'ceph_pool_bytes_used',
             'total_bytes': 'ceph_pool_max_avail + ceph_pool_bytes_used',
-            'allocated_capacity': 'ceph_pool_provisioned_capacity'
+            'total_provisioned': 'ceph_pool_provisioned_capacity'
         }
         result = {}
         for k, v in six.iteritems(metrics):
