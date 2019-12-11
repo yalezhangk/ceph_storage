@@ -500,3 +500,23 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                            objects.json_encode(cluster))
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cluster, action, msg)
+
+    def cluster_capacity_get(self, ctxt, pool_id):
+        # pool_id -> Pool object id
+        prometheus = PrometheusTool(ctxt)
+        if pool_id:
+            # pool 容量和已配置容量
+            logger.debug('begin get pool_id:%s capacity', pool_id)
+            pool = objects.Pool.get_by_id(ctxt, int(pool_id))
+            result = prometheus.pool_get_provisioned_capacity(
+                ctxt, pool.pool_id)
+            logger.info('get pool_id:%s capacity success, data:%s',
+                        pool_id, result)
+            return result
+        else:
+            # cluster 容量和已配置容量
+            logger.debug('get cluster capacity')
+            cluster_capacity = prometheus.cluster_get_provisioned_capacity()
+            logger.info('get cluster capacity success, data:%s',
+                        cluster_capacity)
+        return cluster_capacity
