@@ -1163,5 +1163,15 @@ class RADOSClient(object):
         }
         command_str = json.dumps(cmd)
         res = self._send_mon_command(command_str)
-        logger.info("ceph status: %s", res)
+        return res
+
+    def osd_out(self, osd_names):
+        logger.info("osd out %s", osd_names)
+        cmd = {
+            "prefix": "osd out",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
         return res

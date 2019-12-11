@@ -622,6 +622,10 @@ class AdminClient(BaseClient):
             ctxt, "pool_osd_tree", pool_id=pool_id)
         return response
 
+    def pool_undo(self, ctxt):
+        response = self.call(ctxt, "pool_undo")
+        return response
+
     ##################
 
     def alert_log_get_all(self, ctxt, marker=None, limit=None,
