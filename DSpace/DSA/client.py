@@ -50,6 +50,16 @@ class AgentClient(BaseClient):
                              types=types, service=service)
         return response
 
+    def ceph_services_start(self, ctxt, types, service):
+        response = self.call(ctxt, "ceph_services_start",
+                             types=types, service=service)
+        return response
+
+    def ceph_services_stop(self, ctxt, types, service):
+        response = self.call(ctxt, "ceph_services_stop",
+                             types=types, service=service)
+        return response
+
     def ceph_mon_create(self, ctxt, fsid, ceph_auth='none'):
         response = self.call(
             ctxt, "ceph_mon_create", fsid=fsid, ceph_auth=ceph_auth)

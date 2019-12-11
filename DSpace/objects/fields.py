@@ -416,12 +416,14 @@ class TaskStatusField(BaseEnumField):
 class RadosgwStatus(BaseStorEnum):
     CREATING = 'creating'
     DELETING = 'deleting'
+    STOPPING = "stopping"
+    STARTING = "starting"
     ERROR = 'error'
 
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
-    ALL = (CREATING, DELETING, ERROR, ACTIVE, INACTIVE)
+    ALL = (CREATING, DELETING, STOPPING, STARTING, ERROR, ACTIVE, INACTIVE)
 
 
 class RadosgwStatusField(BaseEnumField):

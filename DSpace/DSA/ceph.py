@@ -97,6 +97,18 @@ class CephHandler(AgentBaseHandler):
         res = ceph_tool.systemctl_restart(types, service)
         return res
 
+    def ceph_services_start(self, ctxt, types, service):
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        res = ceph_tool.systemctl_restart(types, service)
+        return res
+
+    def ceph_services_stop(self, ctxt, types, service):
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        res = ceph_tool.service_stop(types, service)
+        return res
+
     def _data_clear(self, client, partition_name):
         disk_tool = DiskTool(client)
         disk_tool.data_clear(partition_name)

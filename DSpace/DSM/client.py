@@ -824,6 +824,14 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "component_restart", component=component)
         return response
 
+    def component_start(self, ctxt, component):
+        response = self.call(ctxt, "component_start", component=component)
+        return response
+
+    def component_stop(self, ctxt, component):
+        response = self.call(ctxt, "component_stop", component=component)
+        return response
+
     ####################
 
     def radosgw_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,

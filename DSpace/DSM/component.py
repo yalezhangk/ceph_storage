@@ -3,7 +3,9 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSA.client import AgentClientManager
+from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
@@ -103,4 +105,96 @@ class ComponentHandler(AdminBaseHandler):
             ctxt, cluster_id=ctxt.cluster_id
         ).get_client(node_id=node_id)
         res = restart[service](ctxt, component.get("id"), client)
+        return res
+
+    def _rgw_start_op(self, ctxt, radosgw):
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node_id=radosgw.node_id)
+        try:
+            client.ceph_services_start(ctxt, "rgw", radosgw.name)
+            radosgw.status = s_fields.RadosgwStatus.ACTIVE
+            radosgw.save()
+            logger.info("client.rgw.%s start success", radosgw.name)
+            op_status = 'START_SUCCESS'
+            msg = _("Start success: {}").format(radosgw.display_name)
+        except exception.StorException as e:
+            logger.error(e)
+            radosgw.status = s_fields.RadosgwStatus.ERROR
+            radosgw.save()
+            logger.info("client.rgw.%s start failed", radosgw.name)
+            op_status = 'START_FAILD'
+            msg = _("Start failed: {}").format(radosgw.display_name)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, radosgw, op_status, msg)
+
+    def _rgw_start(self, ctxt, radosgw_id):
+        radosgw = objects.Radosgw.get_by_id(ctxt, radosgw_id)
+        if not radosgw:
+            raise exception.RadosgwNotFound(radosgw_id=radosgw_id)
+        if radosgw.status not in [s_fields.RadosgwStatus.INACTIVE,
+                                  s_fields.RadosgwStatus.ERROR]:
+            logger.error("Service status is %s, cannot start", radosgw.status)
+            return ("Service status is %s, cannot start", radosgw.status)
+        radosgw.status = s_fields.RadosgwStatus.STARTING
+        radosgw.save()
+        self.task_submit(self._rgw_start_op, ctxt, radosgw)
+        return radosgw
+
+    def component_start(self, ctxt, component):
+        logger.info("Start service with data %s", component)
+        service = component.get('service')
+        if service not in self.service_list:
+            logger.error("service type not supported: %s" % service)
+            return "service type not supported: %s" % service
+        start = {
+            "rgw": self._rgw_start,
+        }
+        res = start[service](ctxt, component.get("id"))
+        return res
+
+    def _rgw_stop_op(self, ctxt, radosgw):
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node_id=radosgw.node_id)
+        try:
+            client.ceph_services_stop(ctxt, "rgw", radosgw.name)
+            radosgw.status = s_fields.RadosgwStatus.INACTIVE
+            radosgw.save()
+            logger.info("client.rgw.%s stop success", radosgw.name)
+            op_status = 'STOP_SUCCESS'
+            msg = _("Stop success: {}").format(radosgw.display_name)
+        except exception.StorException as e:
+            logger.error(e)
+            radosgw.status = s_fields.RadosgwStatus.ERROR
+            radosgw.save()
+            logger.info("client.rgw.%s stop failed", radosgw.name)
+            op_status = 'STOP_FAILD'
+            msg = _("Stop failed: {}").format(radosgw.display_name)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, radosgw, op_status, msg)
+
+    def _rgw_stop(self, ctxt, radosgw_id):
+        radosgw = objects.Radosgw.get_by_id(ctxt, radosgw_id)
+        if not radosgw:
+            raise exception.RadosgwNotFound(radosgw_id=radosgw_id)
+        if radosgw.status not in [s_fields.RadosgwStatus.ACTIVE,
+                                  s_fields.RadosgwStatus.ERROR]:
+            logger.error("Service status is %s, cannot stop", radosgw.status)
+            return ("Service status is %s, cannot stop", radosgw.status)
+        radosgw.status = s_fields.RadosgwStatus.STOPPING
+        radosgw.save()
+        self.task_submit(self._rgw_stop_op, ctxt, radosgw)
+        return radosgw
+
+    def component_stop(self, ctxt, component):
+        logger.info("Stop service with data %s", component)
+        service = component.get('service')
+        if service not in self.service_list:
+            logger.error("service type not supported: %s" % service)
+            return "service type not supported: %s" % service
+        start = {
+            "rgw": self._rgw_stop,
+        }
+        res = start[service](ctxt, component.get("id"))
         return res
