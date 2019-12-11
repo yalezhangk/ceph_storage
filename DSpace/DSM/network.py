@@ -26,7 +26,7 @@ class NetworkHandler(AdminBaseHandler):
     def _get_object_gateway_ip_address(self, ctxt, net):
         gateway_cidr = objects.sysconfig.sys_config_get(
             ctxt, key="gateway_cidr")
-        if net.ip_address in IPNetwork(gateway_cidr):
+        if net.ip_address and net.ip_address in IPNetwork(gateway_cidr):
             return True
         return False
 
