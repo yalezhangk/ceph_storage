@@ -149,14 +149,17 @@ class CephHandler(AgentBaseHandler):
         retry_times = 0
         while True:
             if retry_times == 30:
-                logger.exception("monitor cann't join cluster")
-                raise exception.InvalidInput("monitor cann't join cluster")
-            try:
-                ceph_tool = CephTool(client)
-                ceph_tool.check_mon_is_joined(str(self.node.public_ip))
+                logger.exception("Monitor start failed")
+                raise exception.InvalidInput("Monitor start failed")
+            ceph_tool = CephTool(client)
+            service_tool = ServiceTool(client)
+            mgr_service = "ceph-mgr@{}".format(self.node.hostname)
+            mds_service = "ceph-mds@{}".format(self.node.hostname)
+            if (ceph_tool.check_mon_is_joined(str(self.node.public_ip)) and
+                    service_tool.status(mgr_service) == "active" and
+                    service_tool.status(mds_service) == "active"):
                 break
-            except exception.RunCommandError as e:
-                logger.info("mon join failed : %s, retry after 1 second", e)
+            logger.info("Mon not start success, retry after 1 second")
             retry_times += 1
             time.sleep(1)
         logger.debug("mon is ready")
@@ -165,7 +168,7 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
-        package_tool.install(["ceph-mon", "ceph-mgr"])
+        package_tool.install(["ceph-mon", "ceph-mgr", "ceph-mds"])
         # create mon dir
         file_tool = FileTool(client)
         file_tool.mkdir("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
@@ -175,6 +178,10 @@ class CephHandler(AgentBaseHandler):
         file_tool.mkdir("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
         file_tool.rm("/var/lib/ceph/mgr/ceph-{}/*".format(self.node.hostname))
         file_tool.chown("/var/lib/ceph/mgr", user='ceph', group='ceph')
+        # create mds dir
+        file_tool.mkdir("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
+        file_tool.rm("/var/lib/ceph/mds/ceph-{}/*".format(self.node.hostname))
+        file_tool.chown("/var/lib/ceph/mds", user='ceph', group='ceph')
 
         ceph_tool = CephTool(client)
         ceph_tool.mon_install(self.node.hostname,
@@ -187,6 +194,8 @@ class CephHandler(AgentBaseHandler):
         service_tool.start("ceph-mon@{}".format(self.node.hostname))
         service_tool.enable("ceph-mgr@{}".format(self.node.hostname))
         service_tool.start("ceph-mgr@{}".format(self.node.hostname))
+        service_tool.enable("ceph-mds@{}".format(self.node.hostname))
+        service_tool.start("ceph-mds@{}".format(self.node.hostname))
 
         self._wait_mon_ready(client)
         ceph_tool.module_enable("prometheus")
@@ -204,11 +213,16 @@ class CephHandler(AgentBaseHandler):
         service_tool.disable("ceph-mon@{}".format(self.node.hostname))
         service_tool.stop("ceph-mgr@{}".format(self.node.hostname))
         service_tool.disable("ceph-mgr@{}".format(self.node.hostname))
+        service_tool.stop("ceph-mds@{}".format(self.node.hostname))
+        service_tool.disable("ceph-mds@{}".format(self.node.hostname))
 
+        package_tool = PackageTool(client)
+        package_tool.uninstall(["ceph-mon", "ceph-mgr", "ceph-mds"])
         # remove mon and dir
         file_tool = FileTool(client)
         file_tool.rm("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
         file_tool.rm("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
+        file_tool.rm("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
         return True
 
     def osd_create(self, ctxt, node, osd):

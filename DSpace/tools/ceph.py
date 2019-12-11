@@ -68,8 +68,7 @@ class CephTool(ToolBase):
             stdout = stdout.strip()
             if public_ip in stdout:
                 return True
-        raise RunCommandError(cmd=cmd, return_code=rc,
-                              stdout=stdout, stderr=stderr)
+        return False
 
     def module_enable(self, module):
         cmd = ["ceph", "mgr", "module", "enable", module]
