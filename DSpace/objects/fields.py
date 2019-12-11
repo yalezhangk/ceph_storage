@@ -34,12 +34,10 @@ class NodeStatus(BaseStorEnum):
     ERROR = 'error'
     DEPLOYING_ROLE = 'deploying_role'
     REMOVING_ROLE = 'removing_role'
-
-    # TODO
-    INACTIVE = 'inactive'
+    WARNING = 'WARNING'
 
     ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING_ROLE,
-           REMOVING_ROLE, INACTIVE)
+           REMOVING_ROLE, WARNING)
 
 
 class NodeStatusField(BaseEnumField):
