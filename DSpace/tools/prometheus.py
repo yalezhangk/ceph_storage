@@ -594,19 +594,13 @@ class PrometheusTool(object):
             'total_used_bytes': 'ceph_cluster_total_used_bytes',
             'total_avail_bytes':
                 'ceph_cluster_total_bytes - ceph_cluster_total_used_bytes',
+            'total_provisioned': 'ceph_cluster_provisioned_capacity'
         }
         cluster_capacity = {}
         for k, v in six.iteritems(metrics):
             value = self.prometheus_get_metric(v)
             cluster_capacity[k] = value
-        # TODO:已分配容量
-        # pool_metric = 'ceph_pool_allocated_capacity'
-        # logger.debug('begin get cluster provisioned_capacity')
-        # allocated_capacity = self.prometheus_get_list_metrics(pool_metric)
-        # logger.info('get cluster capacity is:%s, allocated_capacity is:%s',
-        #             cluster_capacity, allocated_capacity)
-        # return cluster_capacity, allocated_capacity
-        return cluster_capacity, None
+        return cluster_capacity
 
     def prometheus_get_list_metrics(self, metric, filter=None):
         """Get metrics from prometheus
@@ -629,14 +623,13 @@ class PrometheusTool(object):
             return None
 
     def pool_get_provisioned_capacity(self, ctxt, pool_id):
-        # 容量和已配置的容量
+        # pool容量和已配置的容量
         logger.info('get pool_id:%s capacity', pool_id)
         metrics = {
             'max_avail': 'ceph_pool_max_avail',
             'bytes_used': 'ceph_pool_bytes_used',
             'total_bytes': 'ceph_pool_max_avail + ceph_pool_bytes_used',
-            # TODO:已分配容量, 待对接
-            # 'allocated_capacity': 'ceph_pool_allocated_capacity'
+            'allocated_capacity': 'ceph_pool_provisioned_capacity'
         }
         result = {}
         for k, v in six.iteritems(metrics):
