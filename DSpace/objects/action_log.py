@@ -24,7 +24,10 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
         'status': fields.StringField(),
         'err_msg': fields.StringField(nullable=True),
         'cluster_id': fields.UUIDField(),
+        'user': fields.ObjectField('User', nullable=True)
     }
+
+    OPTIONAL_FIELDS = ('user',)
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -47,6 +50,16 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        expected_attrs = expected_attrs or []
+
+        if 'user' in expected_attrs:
+            user = db_obj.get('user', [])
+            obj.user = objects.User._from_db_object(
+                context, objects.User(context), user)
+        return super(ActionLog, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class ActionLogList(base.ObjectListBase, base.StorObject):
@@ -57,12 +70,13 @@ class ActionLogList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         action_logs = db.action_log_get_all(context, marker, limit,
                                             sort_keys, sort_dirs, filters,
-                                            offset)
+                                            offset, expected_attrs)
         return base.obj_make_list(context, cls(context), objects.ActionLog,
-                                  action_logs)
+                                  action_logs, expected_attrs=expected_attrs)
 
     @classmethod
     def get_count(cls, context, filters=None):

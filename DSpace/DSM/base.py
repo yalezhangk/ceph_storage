@@ -50,7 +50,8 @@ class AdminBaseHandler(object):
         finish_data = {
             'resource_id': resource_id,
             'resource_name': resource_name,
-            'resource_data': resource_data,
+            'resource_data': (objects.json_encode(resource_data) if
+                              resource_data else None),
             'status': 'success',
             'finish_time': timeutils.utcnow()
         }

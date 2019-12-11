@@ -3829,7 +3829,11 @@ def _action_log_get(context, action_log_id, session=None):
 
 @require_context
 def action_log_get(context, action_log_id, expected_attrs=None):
-    return _action_log_get(context, action_log_id)
+    session = get_session()
+    with session.begin():
+        action_log = _action_log_get(context, action_log_id, session)
+        _action_log_load_attr(context, action_log, expected_attrs, session)
+    return action_log
 
 
 def action_log_destroy(context, action_log_id):
@@ -3868,9 +3872,18 @@ def action_log_update(context, action_log_id, values):
             raise exception.ActionLogNotFound(action_log_id=action_log_id)
 
 
+def _action_log_load_attr(ctxt, action_log, expected_attrs=None,
+                          session=None):
+    expected_attrs = expected_attrs or []
+    if 'user' in expected_attrs:
+        user = _user_get(ctxt, action_log.user_id, session)
+        action_log.user = user
+
+
 @require_context
 def action_log_get_all(context, marker=None, limit=None, sort_keys=None,
-                       sort_dirs=None, filters=None, offset=None):
+                       sort_dirs=None, filters=None, offset=None,
+                       expected_attrs=None):
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
@@ -3883,7 +3896,10 @@ def action_log_get_all(context, marker=None, limit=None, sort_keys=None,
             sort_keys, sort_dirs, filters, offset)
         if query is None:
             return []
-        return query.all()
+        action_logs = query.all()
+        for action_log in action_logs:
+            _action_log_load_attr(context, action_log, expected_attrs, session)
+        return action_logs
 
 
 @require_context

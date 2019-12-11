@@ -13,13 +13,14 @@ class ActionLogHandler(AdminBaseHandler):
 
     def action_log_get_all(self, ctxt, marker=None, limit=None,
                            sort_keys=None, sort_dirs=None, filters=None,
-                           offset=None):
+                           offset=None, expected_attrs=None):
         return objects.ActionLogList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset)
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
 
-    def action_log_get(self, ctxt, action_log_id):
-        return objects.ActionLog.get_by_id(ctxt, action_log_id)
+    def action_log_get(self, ctxt, action_log_id, expected_attrs=None):
+        return objects.ActionLog.get_by_id(ctxt, action_log_id, expected_attrs)
 
     def action_log_get_count(self, ctxt, filters=None):
         return objects.ActionLogList.get_count(
