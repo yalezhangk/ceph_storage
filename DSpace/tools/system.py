@@ -198,3 +198,12 @@ class System(ToolBase):
             if(re.search(match, i[0])):
                 matched.append(i)
         return matched
+
+    def ping(self, ip):
+        logger.info("Ping ip address %s", ip)
+        cmd = "ping {} -c 1".format(ip)
+        result = os.system(cmd)
+        if result:
+            return False
+        else:
+            return True

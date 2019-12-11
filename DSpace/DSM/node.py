@@ -166,16 +166,38 @@ class NodeHandler(AdminBaseHandler):
                 if net.ip_address in IPNetwork(gateway_cidr):
                     nets.append(net)
             node.networks = nets
+            rgws = []
+            for rgw in node.radosgws:
+                if not rgw.router_id:
+                    rgws.append(rgw)
+            node.radosgws = rgws
+
+    def _filter_by_routers(self, ctxt, nodes):
+        n = []
+        for node in nodes:
+            rgw_router = objects.RadosgwRouterList.get_all(
+                ctxt, filters={'node_id': node.id})
+            if not rgw_router:
+                n.append(node)
+        return n
 
     def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None,
                      expected_attrs=None):
+        if filters.get('role_object_gateway'):
+            if expected_attrs:
+                expected_attrs.append('radosgws')
+        no_router = 0
+        if 'no_router' in filters:
+            no_router = filters.pop('no_router')
         nodes = objects.NodeList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
         if filters.get('role_object_gateway'):
             self._filter_gateway_network(ctxt, nodes)
+        if no_router:
+            nodes = self._filter_by_routers(ctxt, nodes)
         self._node_get_metrics_overall(ctxt, nodes)
         return nodes
 

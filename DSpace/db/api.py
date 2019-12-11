@@ -1090,6 +1090,68 @@ def radosgw_zone_update(context, rgw_zone_id, values):
 ###############
 
 
+def radosgw_router_create(context, values):
+    return IMPL.radosgw_router_create(context, values)
+
+
+def radosgw_router_destroy(context, rgw_router_id):
+    return IMPL.radosgw_router_destroy(context, rgw_router_id)
+
+
+def radosgw_router_get(context, rgw_router_id, expected_attrs=None):
+    return IMPL.radosgw_router_get(context, rgw_router_id,
+                                   expected_attrs=expected_attrs)
+
+
+def radosgw_router_get_all(context, filters, marker, limit, offset, sort_keys,
+                           sort_dirs, expected_attrs=None):
+    return IMPL.radosgw_router_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def radosgw_router_get_count(context, filters):
+    return IMPL.radosgw_router_get_count(context, filters=filters)
+
+
+def radosgw_router_update(context, rgw_router_id, values):
+    return IMPL.radosgw_router_update(context, rgw_router_id, values)
+
+
+###############
+
+
+def router_service_create(context, values):
+    return IMPL.router_service_create(context, values)
+
+
+def router_service_destroy(context, router_service_id):
+    return IMPL.router_service_destroy(context, router_service_id)
+
+
+def router_service_get(context, router_service_id):
+    return IMPL.router_service_get(context, router_service_id)
+
+
+def router_service_get_all(context, filters, marker, limit,
+                           offset, sort_keys, sort_dirs):
+    return IMPL.router_service_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset)
+
+
+def router_service_get_count(context, filters):
+    return IMPL.router_service_get_count(context, filters=filters)
+
+
+def router_service_update(context, router_service_id, values):
+    return IMPL.router_service_update(context, router_service_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

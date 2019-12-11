@@ -14,6 +14,7 @@ from DSpace import exception as exc
 from DSpace import objects
 from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
+from DSpace.objects import fields as s_fields
 from DSpace.taskflows.base import BaseTask
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
@@ -45,12 +46,7 @@ class NodeMixin(object):
             raise exc.Invalid('ip_address,cluster_ip,'
                               'public_ip is required')
         if objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "cluster_id": "*",
-                "ip_address": ip_address
-            }
-        ):
+                ctxt, filters={"cluster_id": "*", "ip_address": ip_address}):
             raise exc.Invalid("ip_address already exists!")
         if IPAddress(ip_address) not in IPNetwork(admin_cidr):
             raise exc.Invalid("admin ip not in admin cidr ({})"
@@ -286,6 +282,43 @@ class NodeTask(object):
         agent = self.get_agent()
         radosgw = agent.ceph_rgw_destroy(self.ctxt, radosgw)
         return radosgw
+
+    def rgw_router_install(self, rgw_router, net_id):
+        wf = lf.Flow('Install Haproxy')
+        wf.add(HaproxyInstall('Install Haproxy'))
+        if rgw_router.virtual_ip:
+            wf.add(KeepalivedInstall('Install Keepalived'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            "rgw_router": rgw_router,
+            "net_id": net_id,
+            'task_info': {}
+        })
+
+    def rgw_router_uninstall(self, rgw_router):
+        wf = lf.Flow('Uninstall Haproxy')
+        wf.add(HaproxyUninstall('Uninstall Haproxy'))
+        if rgw_router.virtual_ip:
+            wf.add(KeepalivedUninstall('Uninstall Keepalived'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            "rgw_router": rgw_router,
+            'task_info': {}
+        })
+
+    def rgw_router_update(self):
+        wf = lf.Flow('Update Haproxy')
+        wf.add(HaproxyUpdate('Update Haproxy'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            'task_info': {}
+        })
 
     def mount_bgw(self, ctxt, access_path, node):
         """mount ISCSI gateway"""
@@ -868,3 +901,245 @@ class DSpaceExpoterInstall(BaseTask):
             envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
                   ("NODE_EXPORTER_PORT", node_exporter_port)]
         )
+
+
+def get_haproxy_cfg(ctxt, node):
+    haproxy_services = objects.RouterServiceList.get_all(
+        ctxt, filters={'node_id': node.id, 'name': 'haproxy'})
+    tpl = template.get('haproxy.cfg.j2')
+    cfg_params = tpl.render()
+    for service in haproxy_services:
+        router = objects.RadosgwRouter.get_by_id(ctxt, service.router_id,
+                                                 joined_load=True)
+        tpl = template.get('haproxy_front.j2')
+        vip = node.object_gateway_ip_address
+        if router.virtual_ip:
+            vip = router.virtual_ip
+        cfg_params += tpl.render(backend_name=router.name,
+                                 router_vip_address=vip,
+                                 router_port=router.port,
+                                 router_https_port=router.https_port,
+                                 radsogws=router.radosgws)
+    return cfg_params
+
+
+class HaproxyInstall(BaseTask):
+    def execute(self, ctxt, node, rgw_router, net_id, task_info):
+        super(HaproxyInstall, self).execute(task_info)
+
+        ssh = node.executer
+        # get global config
+        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "log_dir_container")
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir") + "/radsogw_haproxy/"
+        config_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir_container") + "/haproxy"
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(ctxt,
+                                                          "dspace_version")
+
+        router_service = objects.RouterService(
+            ctxt, name="haproxy",
+            status='creating',
+            node_id=node.id,
+            cluster_id=ctxt.cluster_id,
+            router_id=rgw_router.id,
+            net_id=net_id
+        )
+        router_service.create()
+
+        # write config
+        file_tool = FileTool(ssh)
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/haproxy.cfg".format(config_dir),
+                        get_haproxy_cfg(ctxt, node))
+
+        # cp tls pem
+        # TODO: auto generate pem
+        tpl = template.get('haproxy.pem')
+        pem_content = tpl.render()
+        file_tool.write("{}/haproxy_{}.pem".format(
+            config_dir, rgw_router.name), pem_content)
+
+        # run container
+        volumes = [
+            (config_dir, config_dir_container),
+            (log_dir, log_dir_container),
+            ("/etc/localtime", "/etc/localtime", "ro"),
+            ("/etc/pki/", "/etc/pki"),
+            ("radosgw_haproxy_socket", "/var/lib/dspace/haproxy/")
+        ]
+        restart = True
+        docker_tool = DockerTool(ssh)
+        container_name = "{}_radsogw_haproxy".format(image_namespace)
+        # Check container, create or restart
+        if docker_tool.exist(container_name):
+            docker_tool.restart(container_name)
+        else:
+            docker_tool.run(
+                name=container_name,
+                image="{}/haproxy:{}".format(image_namespace, dspace_version),
+                command="haproxy",
+                privileged=True,
+                restart=restart,
+                volumes=volumes
+            )
+
+        if docker_tool.status(container_name) == s_fields.ServiceStatus.ACTIVE:
+            router_service.status = s_fields.RouterServiceStatus.ACTIVE
+        else:
+            logger.error("Start container %s failed", container_name)
+            router_service.status = s_fields.RouterServiceStatus.ERROR
+        router_service.save()
+
+
+def haproxy_update(ctxt, node):
+    ssh = node.executer
+    # get global config
+    config_dir = objects.sysconfig.sys_config_get(
+        ctxt, "config_dir") + "/radsogw_haproxy/"
+    image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                       "image_namespace")
+
+    docker_tool = DockerTool(ssh)
+    file_tool = FileTool(ssh)
+    container_name = "{}_radsogw_haproxy".format(image_namespace)
+    router_service = objects.RouterServiceList.get_all(
+        ctxt, filters={'node_id': node.id, 'name': 'haproxy'}
+    )
+    if not router_service:
+        docker_tool.rm(container_name, force=True)
+        file_tool.rm("{}/haproxy.cfg".format(config_dir))
+    else:
+        # Update config
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/haproxy.cfg".format(config_dir),
+                        get_haproxy_cfg(ctxt, node))
+        docker_tool.restart(container_name)
+
+
+class HaproxyUpdate(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(HaproxyUpdate, self).execute(task_info)
+        haproxy_update(ctxt, node)
+
+
+class HaproxyUninstall(BaseTask):
+    def execute(self, ctxt, node, rgw_router, task_info):
+        super(HaproxyUninstall, self).execute(task_info)
+        haproxy_update(ctxt=ctxt, node=node)
+
+
+def get_keepalived_cfg(ctxt, node):
+    haproxy_services = objects.RouterServiceList.get_all(
+        ctxt, filters={'node_id': node.id, 'name': 'keepalived'})
+    tpl = template.get('keepalived.conf.j2')
+    conf_params = tpl.render()
+    for service in haproxy_services:
+        tpl = template.get('keepalived_instance.j2')
+        net = objects.Network.get_by_id(ctxt, service.net_id)
+        router = objects.RadosgwRouter.get_by_id(ctxt, service.router_id,
+                                                 joined_load=True)
+        conf_params += tpl.render(
+            keepalived_virtual_router_id=router.virtual_router_id,
+            interface_name=net.name,
+            priority=len(router.radosgws) + 1,
+            router_vip_address=router.virtual_ip
+        )
+    return conf_params
+
+
+class KeepalivedInstall(BaseTask):
+    def execute(self, ctxt, node, rgw_router, net_id, task_info):
+        super(KeepalivedInstall, self).execute(task_info)
+
+        ssh = node.executer
+        # get global config
+        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "log_dir_container")
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir") + "/radsogw_keepalived/"
+        config_dir_container = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir_container") + "/keepalived"
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        dspace_version = objects.sysconfig.sys_config_get(ctxt,
+                                                          "dspace_version")
+        router_service = objects.RouterService(
+            ctxt, name="keepalived",
+            status='creating',
+            node_id=node.id,
+            cluster_id=ctxt.cluster_id,
+            router_id=rgw_router.id,
+            net_id=net_id
+        )
+
+        router_service.create()
+        # write config
+        file_tool = FileTool(ssh)
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/keepalived.conf".format(config_dir),
+                        get_keepalived_cfg(ctxt, node))
+        # run container
+        volumes = [
+            (config_dir, config_dir_container),
+            (log_dir, log_dir_container),
+            ("/etc/localtime", "/etc/localtime", "ro"),
+            ("/lib/modules", "/lib/modules", "ro"),
+            ("radosgw_haproxy_socket", "/var/lib/dspace/haproxy/"),
+            ("radosgw_ha_state", "/var/lib/ha_state/"),
+        ]
+        restart = True
+        docker_tool = DockerTool(ssh)
+        container_name = "{}_radsogw_keepalived".format(image_namespace)
+        if docker_tool.exist(container_name):
+            docker_tool.restart(container_name)
+        else:
+            docker_tool.run(
+                name=container_name,
+                image="{}/keepalived:{}".format(
+                    image_namespace, dspace_version),
+                command="keepalived",
+                privileged=True,
+                restart=restart,
+                volumes=volumes
+            )
+
+        if docker_tool.status(container_name) == s_fields.ServiceStatus.ACTIVE:
+            router_service.status = s_fields.RouterServiceStatus.ACTIVE
+        else:
+            logger.error("Start container %s failed", container_name)
+            router_service.status = s_fields.RouterServiceStatus.ERROR
+        router_service.save()
+
+
+class KeepalivedUninstall(BaseTask):
+    def execute(self, ctxt, node, rgw_router, task_info):
+        super(KeepalivedUninstall, self).execute(task_info)
+
+        ssh = node.executer
+        # get global config
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, "config_dir") + "/radsogw_keepalived/"
+        image_namespace = objects.sysconfig.sys_config_get(ctxt,
+                                                           "image_namespace")
+        container_name = "{}_radsogw_keepalived".format(image_namespace)
+
+        file_tool = FileTool(ssh)
+        file_tool.mkdir(config_dir)
+        file_tool.write("{}/keepalived.conf".format(config_dir),
+                        get_keepalived_cfg(ctxt, node))
+
+        docker_tool = DockerTool(ssh)
+        docker_tool.restart(container_name)
+
+        router_service = objects.RouterServiceList.get_all(
+            ctxt, filters={'node_id': node.id, 'name': 'keepalived'}
+        )
+        if not router_service:
+            docker_tool.rm(container_name, force=True)
+            file_tool.rm("{}/keepalived.conf".format(config_dir))

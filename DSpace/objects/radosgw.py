@@ -22,6 +22,7 @@ class Radosgw(base.StorPersistentObject, base.StorObject,
         'zone': fields.StringField(nullable=True),
         'node_id': fields.IntegerField(),
         'cluster_id': fields.StringField(),
+        'router_id': fields.IntegerField(nullable=True),
         'node': fields.ObjectField("Node", nullable=True),
     }
 

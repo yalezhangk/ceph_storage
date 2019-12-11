@@ -920,6 +920,8 @@ def _node_load_attr(node, expected_attrs=None):
         node.networks = [net for net in node._networks if net.deleted is False]
     if 'osds' in expected_attrs:
         node.osds = [osd for osd in node._osds if osd.deleted is False]
+    if 'radosgws' in expected_attrs:
+        node.radosgws = [rgw for rgw in node._radosgws if rgw.deleted is False]
 
 
 @require_context
@@ -4299,6 +4301,207 @@ def radosgw_zone_update(context, rgw_zone_id, values):
 ########################
 
 
+def _radosgw_router_get_query(context, session=None):
+    return model_query(context, models.RadosgwRouter, session=session)
+
+
+def _radosgw_router_get(context, rgw_router_id, session=None):
+    result = _radosgw_router_get_query(context, session)
+    result = result.filter_by(id=rgw_router_id).first()
+
+    if not result:
+        raise exception.RgwRouterNotFound(rgw_router_id=rgw_router_id)
+
+    return result
+
+
+@require_context
+def radosgw_router_create(context, values):
+    radosgw_ref = models.RadosgwRouter()
+    radosgw_ref.update(values)
+    session = get_session()
+    with session.begin():
+        radosgw_ref.save(session)
+
+    return radosgw_ref
+
+
+def radosgw_router_destroy(context, rgw_router_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.RadosgwRouter, session=session). \
+            filter_by(id=rgw_router_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _radosgw_router_load_attr(ctxt, rgw_router, expected_attrs=None):
+    expected_attrs = expected_attrs or []
+    if 'radosgws' in expected_attrs:
+        rgw_router.radosgws = [rgw for rgw in rgw_router._radosgws
+                               if not rgw.deleted]
+    if 'radosgws' in expected_attrs:
+        rgw_router.router_services = [service for service in
+                                      rgw_router._router_services
+                                      if not service.deleted]
+
+
+@require_context
+def radosgw_router_get(context, rgw_router_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        rgw_router = _radosgw_router_get(context, rgw_router_id, session)
+        _radosgw_router_load_attr(context, rgw_router, expected_attrs)
+        return rgw_router
+
+
+@require_context
+def radosgw_router_get_all(context, marker=None, limit=None, sort_keys=None,
+                           sort_dirs=None, filters=None, offset=None,
+                           expected_attrs=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.RadosgwRouter, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        rgw_routers = query.all()
+        if not expected_attrs:
+            return rgw_routers
+        for rgw_router in rgw_routers:
+            _radosgw_router_load_attr(context, rgw_router, expected_attrs)
+        return rgw_routers
+
+
+@require_context
+def radosgw_router_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _radosgw_router_get_query(context, session)
+        query = process_filters(models.RadosgwRouter)(query, filters)
+        return query.count()
+
+
+@require_context
+def radosgw_router_update(context, rgw_router_id, values):
+    session = get_session()
+    with session.begin():
+        query = _radosgw_router_get_query(context, session)
+        result = query.filter_by(id=rgw_router_id).update(values)
+        if not result:
+            raise exception.RgwRouterNotFound(rgw_router_id=rgw_router_id)
+
+
+########################
+
+
+def _router_service_get_query(context, session=None):
+    return model_query(
+        context, models.RouterService, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _router_service_get(context, router_service_id, session=None):
+    result = _router_service_get_query(context, session)
+    result = result.filter_by(id=router_service_id).first()
+
+    if not result:
+        raise exception.ServiceNotFound(service_id=router_service_id)
+
+    return result
+
+
+@require_context
+def router_service_create(context, values):
+    router_service_ref = models.RouterService()
+    router_service_ref.update(values)
+    session = get_session()
+    with session.begin():
+        router_service_ref.save(session)
+    return router_service_ref
+
+
+@require_context
+def router_service_destroy(context, router_service_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.RouterService, session=session). \
+            filter_by(id=router_service_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def router_service_get(context, router_service_id, expected_attrs=None):
+    return _router_service_get(context, router_service_id)
+
+
+@require_context
+def router_service_get_all(context, marker=None, limit=None, sort_keys=None,
+                           sort_dirs=None, filters=None, offset=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.RouterService, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def router_service_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _router_service_get_query(context, session)
+        query = process_filters(models.RouterService)(query, filters)
+        return query.count()
+
+
+@require_context
+def router_service_update(context, router_service_id, values):
+    session = get_session()
+    with session.begin():
+        query = _router_service_get_query(context, session)
+        result = query.filter_by(id=router_service_id).update(values)
+        if not result:
+            raise exception.ServiceNotFound(service_id=router_service_id)
+
+
+########################
+
+
 PAGINATION_HELPERS = {
     models.Node: (_node_get_query, process_filters(models.Node), _node_get),
     models.Volume: (_volume_get_query, process_filters(models.Volume),
@@ -4385,6 +4588,12 @@ PAGINATION_HELPERS = {
     models.RadosgwZone: (_radosgw_zone_get_query,
                          process_filters(models.RadosgwZone),
                          _radosgw_zone_get),
+    models.RadosgwRouter: (_radosgw_router_get_query,
+                           process_filters(models.RadosgwRouter),
+                           _radosgw_router_get),
+    models.RouterService: (_router_service_get_query,
+                           process_filters(models.RouterService),
+                           _router_service_get),
 }
 
 

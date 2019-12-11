@@ -261,9 +261,10 @@ class AllResourceType(BaseStorEnum):
     RACK = 'rack'
     CEPH_CONFIG = 'ceph_config'
     RADOSGW = 'radosgw'
+    RADOSGW_ROUTER = 'radosgw_router'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG,
-           DATACENTER, RACK, CEPH_CONFIG, RADOSGW)
+           DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER)
 
 
 class AllActionType(BaseStorEnum):
@@ -428,3 +429,34 @@ class RadosgwStatus(BaseStorEnum):
 
 class RadosgwStatusField(BaseEnumField):
     AUTO_TYPE = RadosgwStatus()
+
+
+class RadosgwRouterStatus(BaseStorEnum):
+    CREATING = 'creating'
+    DELETING = 'deleting'
+    UPDATING = 'updating'
+    ERROR = 'error'
+
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, DELETING, UPDATING, ERROR, ACTIVE, INACTIVE)
+
+
+class RadosgwRouterStatusField(BaseEnumField):
+    AUTO_TYPE = RadosgwRouterStatus()
+
+
+class RouterServiceStatus(BaseStorEnum):
+    CREATING = 'creating'
+    DELETING = 'deleting'
+    ERROR = 'error'
+
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, DELETING, ERROR, ACTIVE, INACTIVE)
+
+
+class RouterServiceStatusField(BaseEnumField):
+    AUTO_TYPE = RouterServiceStatus()

@@ -1,0 +1,7 @@
+vrrp_script check_alive {
+    script "/usr/local/bin/check_alive.sh"
+    interval 2
+    fall 2
+    rise 10
+}
+
