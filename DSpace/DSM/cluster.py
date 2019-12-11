@@ -343,7 +343,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         query_all = objects.NodeList.get_status(ctxt)
         status = {s_fields.NodeStatus.ACTIVE: 0,
                   s_fields.NodeStatus.ERROR: 0,
-                  s_fields.NodeStatus.WARNING: 0}
+                  s_fields.NodeStatus.WARNING: 0,
+                  "progress": 0}
         for [k, v] in query_all:
             if k in [s_fields.NodeStatus.ACTIVE,
                      s_fields.NodeStatus.ERROR,
