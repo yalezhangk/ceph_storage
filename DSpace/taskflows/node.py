@@ -919,7 +919,7 @@ def get_haproxy_cfg(ctxt, node):
                                  router_vip_address=vip,
                                  router_port=router.port,
                                  router_https_port=router.https_port,
-                                 radsogws=router.radosgws)
+                                 radosgws=router.radosgws)
     return cfg_params
 
 
@@ -933,7 +933,7 @@ class HaproxyInstall(BaseTask):
         log_dir_container = objects.sysconfig.sys_config_get(
             ctxt, "log_dir_container")
         config_dir = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir") + "/radsogw_haproxy/"
+            ctxt, "config_dir") + "/radosgw_haproxy/"
         config_dir_container = objects.sysconfig.sys_config_get(
             ctxt, "config_dir_container") + "/haproxy"
         image_namespace = objects.sysconfig.sys_config_get(ctxt,
@@ -974,7 +974,7 @@ class HaproxyInstall(BaseTask):
         ]
         restart = True
         docker_tool = DockerTool(ssh)
-        container_name = "{}_radsogw_haproxy".format(image_namespace)
+        container_name = "{}_radosgw_haproxy".format(image_namespace)
         # Check container, create or restart
         if docker_tool.exist(container_name):
             docker_tool.restart(container_name)
@@ -1000,13 +1000,13 @@ def haproxy_update(ctxt, node):
     ssh = node.executer
     # get global config
     config_dir = objects.sysconfig.sys_config_get(
-        ctxt, "config_dir") + "/radsogw_haproxy/"
+        ctxt, "config_dir") + "/radosgw_haproxy/"
     image_namespace = objects.sysconfig.sys_config_get(ctxt,
                                                        "image_namespace")
 
     docker_tool = DockerTool(ssh)
     file_tool = FileTool(ssh)
-    container_name = "{}_radsogw_haproxy".format(image_namespace)
+    container_name = "{}_radosgw_haproxy".format(image_namespace)
     router_service = objects.RouterServiceList.get_all(
         ctxt, filters={'node_id': node.id, 'name': 'haproxy'}
     )
@@ -1062,7 +1062,7 @@ class KeepalivedInstall(BaseTask):
         log_dir_container = objects.sysconfig.sys_config_get(
             ctxt, "log_dir_container")
         config_dir = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir") + "/radsogw_keepalived/"
+            ctxt, "config_dir") + "/radosgw_keepalived/"
         config_dir_container = objects.sysconfig.sys_config_get(
             ctxt, "config_dir_container") + "/keepalived"
         image_namespace = objects.sysconfig.sys_config_get(ctxt,
@@ -1095,7 +1095,7 @@ class KeepalivedInstall(BaseTask):
         ]
         restart = True
         docker_tool = DockerTool(ssh)
-        container_name = "{}_radsogw_keepalived".format(image_namespace)
+        container_name = "{}_radosgw_keepalived".format(image_namespace)
         if docker_tool.exist(container_name):
             docker_tool.restart(container_name)
         else:
@@ -1124,10 +1124,10 @@ class KeepalivedUninstall(BaseTask):
         ssh = node.executer
         # get global config
         config_dir = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir") + "/radsogw_keepalived/"
+            ctxt, "config_dir") + "/radosgw_keepalived/"
         image_namespace = objects.sysconfig.sys_config_get(ctxt,
                                                            "image_namespace")
-        container_name = "{}_radsogw_keepalived".format(image_namespace)
+        container_name = "{}_radosgw_keepalived".format(image_namespace)
 
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
