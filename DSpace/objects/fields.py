@@ -34,7 +34,7 @@ class NodeStatus(BaseStorEnum):
     ERROR = 'error'
     DEPLOYING_ROLE = 'deploying_role'
     REMOVING_ROLE = 'removing_role'
-    WARNING = 'WARNING'
+    WARNING = 'warning'
 
     ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING_ROLE,
            REMOVING_ROLE, WARNING)
