@@ -326,16 +326,12 @@ class AlertTpyeCountHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         all_level = Level.ALL
-        INFO = Level.INFO
-        WARN = Level.WARN
-        ERROR = Level.ERROR
-        FATAL = Level.FATAL
         map_querys = {
             'unread': {'readed': False},
-            INFO: {'level': INFO},
-            WARN: {'level': WARN},
-            ERROR: {'level': ERROR},
-            FATAL: {'level': FATAL}
+            Level.INFO: {'level': Level.INFO},
+            Level.WARN: {'level': Level.WARN},
+            Level.ERROR: {'level': Level.ERROR},
+            Level.FATAL: {'level': Level.FATAL}
         }
         result_data = {}
         result_data.update({'level_type': all_level})

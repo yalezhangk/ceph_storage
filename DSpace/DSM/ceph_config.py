@@ -11,7 +11,7 @@ from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
-from DSpace.utils import cluster_config as ClusterConfg
+from DSpace.utils import cluster_config
 
 logger = logging.getLogger(__name__)
 
@@ -60,44 +60,44 @@ class CephConfigHandler(AdminBaseHandler):
         ceph_client = CephTask(ctxt)
 
         if group == 'global':
-            if key in ClusterConfg.cluster_mon_restart_configs:
+            if key in cluster_config.cluster_mon_restart_configs:
                 nodes = self._get_mon_node(ctxt)
-            if key in ClusterConfg.cluster_osd_restart_configs:
+            if key in cluster_config.cluster_osd_restart_configs:
                 nodes = self._get_osd_node(ctxt, osd_name='*')
-            if key in ClusterConfg.cluster_rgw_restart_configs:
+            if key in cluster_config.cluster_rgw_restart_configs:
                 # TODO handle rgw
                 pass
-            if key in ClusterConfg.cluster_mon_temp_configs:
+            if key in cluster_config.cluster_mon_temp_configs:
                 temp_configs = [{'service': 'mon.*',
                                  'key': key,
                                  'value': value}]
                 nodes = self._get_mon_node(ctxt)
-            if key in ClusterConfg.cluster_osd_temp_configs:
+            if key in cluster_config.cluster_osd_temp_configs:
                 temp_configs = [{'service': 'osd.*',
                                  'key': key,
                                  'value': value}]
                 nodes = self._get_osd_node(ctxt, osd_name='*')
-            if key in ClusterConfg.cluster_rgw_temp_configs:
+            if key in cluster_config.cluster_rgw_temp_configs:
                 # TODO handle rgw
                 pass
 
         if group.startswith('osd'):
             osd_id = group.split('.')
             if len(osd_id) == 1:
-                if key in ClusterConfg.cluster_osd_temp_configs:
+                if key in cluster_config.cluster_osd_temp_configs:
                     temp_configs = [{'service': 'osd.*',
                                      'key': key,
                                      'value': value}]
                 nodes = self._get_osd_node(ctxt, osd_name='*')
             if len(osd_id) == 2:
-                if key in ClusterConfg.cluster_osd_temp_configs:
+                if key in cluster_config.cluster_osd_temp_configs:
                     temp_configs = [{'service': 'osd.' + osd_id[1],
                                      'key': key,
                                      'value': value}]
                 nodes = self._get_osd_node(ctxt, osd_name=osd_id[1])
 
         if group == 'mon':
-            if key in ClusterConfg.cluster_mon_temp_configs:
+            if key in cluster_config.cluster_mon_temp_configs:
                 temp_configs = [{'service': 'mon.*',
                                  'key': key,
                                  'value': value}]

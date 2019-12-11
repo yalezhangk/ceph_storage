@@ -4612,11 +4612,10 @@ def _get_get_method(model):
     # Exceptions to model to get methods, in general method names are a simple
     # conversion changing ORM name from camel case to snake format and adding
     # _get to the string
-    GET_EXCEPTIONS = {
-    }
+    get_exceptions = {}
 
-    if model in GET_EXCEPTIONS:
-        return GET_EXCEPTIONS[model]
+    if model in get_exceptions:
+        return get_exceptions[model]
 
     # General conversion
     # Convert camel cased model name to snake format
@@ -4673,11 +4672,11 @@ def condition_not_db_filter(model, field, value, auto_none=True):
     """
     result = ~condition_db_filter(model, field, value)
 
-    if (auto_none
-            and ((isinstance(value, Iterable) and
-                  not isinstance(value, six.string_types)
-                  and None not in value)
-                 or (value is not None))):
+    if (auto_none and
+            ((isinstance(value, Iterable) and
+              not isinstance(value, six.string_types) and
+              None not in value) or
+             (value is not None))):
         orm_field = getattr(model, field)
         result = or_(result, orm_field.is_(None))
 

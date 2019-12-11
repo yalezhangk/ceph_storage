@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 class BaseAPIHandler(RequestHandler):
 
     def initialize(self):
-        Session = get_session()
-        self.session = Session(self)
+        session_cls = get_session()
+        self.session = session_cls(self)
 
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")

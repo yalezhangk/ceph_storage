@@ -56,10 +56,10 @@ class MailHandler(AdminBaseHandler):
 
     def update_smtp(self, ctxt, data):
         # TODO check a object exists
-        begin_action = self.begin_action(ctxt,
-                                         resource_type=
-                                         AllResourceType.SMTP_SYSCONFS,
-                                         action=AllActionType.UPDATE)
+        begin_action = self.begin_action(
+            ctxt,
+            resource_type=AllResourceType.SMTP_SYSCONFS,
+            action=AllActionType.UPDATE)
         sysconf = None
         for k, v in data.items():
             sysconf = objects.SysConfigList.get_all(ctxt,

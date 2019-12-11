@@ -91,7 +91,7 @@ class ServiceBase(object):
 
     def start_rpc(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        stor_pb2_grpc.add_RPCServerServicer_to_server(
+        stor_pb2_grpc.add_rpc_server_servicer_to_server(
             RPCHandler(self.handler), server)
         port = '{}:{}'.format(self.rpc_ip, self.rpc_port)
         server.add_insecure_port(port)

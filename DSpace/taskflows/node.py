@@ -393,11 +393,11 @@ class NodeTask(object):
             'task_info': {}
         })
 
-    def pull_logfile(self, directory, filename, LOCAL_LOGFILE_DIR):
+    def pull_logfile(self, directory, filename, local_logfile_dir):
         try:
             sftp_client, transport = self.get_sftp_client()
             sftp_client.get('{}{}'.format(directory, filename),
-                            '{}{}'.format(LOCAL_LOGFILE_DIR, filename))
+                            '{}{}'.format(local_logfile_dir, filename))
             # 将node140上的/var/log/ceph/xx.log下载到admin201.131上
             transport.close()
         except Exception as e:
