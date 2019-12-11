@@ -3,3 +3,5 @@ mock
 sphinx
 flake8
 isort
+pep8-naming
+pep8

@@ -209,8 +209,8 @@ class CephTool(ToolBase):
                          "ceph-%s@%s" % (types, service)]
             cmd = ["systemctl", "restart", "ceph-%s@%s" % (types, service)]
         # 检查进程存在
-        rc, PID, c_err = self.run_command(check_cmd, timeout=5)
-        if not PID:
+        rc, pid, c_err = self.run_command(check_cmd, timeout=5)
+        if not pid:
             # 服务未启动 检查状态
             rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
             # 错误状态需要重置为 inactive 状态，才能启动
@@ -231,7 +231,7 @@ class CephTool(ToolBase):
             else:
                 break
         rc, stdout, stderr = self.run_command(check_cmd, timeout=5)
-        if stdout == PID:
+        if stdout == pid:
             logger.error("Service ceph - {}@{} restart Failed!"
                          "The PID is the same as before".format(
                              types, service, s_out, s_err))
@@ -239,7 +239,7 @@ class CephTool(ToolBase):
                 service="ceph-{}@{}".format(types, service), state=s_out)
         return stdout
 
-    def service_stop(self, types, service, retrys = 12):
+    def service_stop(self, types, service, retrys=12):
         logger.info("Try to stop service type %s, service %s", types, service)
         if types == "rgw":
             check_cmd = ["ps", "-ef", "|", "grep", "rgw", "|", "grep",

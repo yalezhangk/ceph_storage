@@ -17,7 +17,7 @@ from DSpace.taskflows.node import NodeMixin
 from DSpace.taskflows.node import NodeTask
 from DSpace.taskflows.probe import ProbeTask
 from DSpace.tools.prometheus import PrometheusTool
-from DSpace.utils import cluster_config as ClusterConfg
+from DSpace.utils import cluster_config
 from DSpace.utils import logical_xor
 from DSpace.utils import validator
 
@@ -338,7 +338,7 @@ class NodeHandler(AdminBaseHandler):
                 'cluster_network': {'type': 'string', 'value': cluster_network}
             }
             configs = {}
-            configs.update(ClusterConfg.default_cluster_configs)
+            configs.update(cluster_config.default_cluster_configs)
             configs.update(new_cluster_config)
             for key, value in configs.items():
                 self._set_ceph_conf(ctxt,

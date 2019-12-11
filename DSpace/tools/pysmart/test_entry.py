@@ -14,19 +14,19 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 #                   Boston, MA  02110-1301, USA.
 """
-This module contains the definition of the `Test_Entry` class, used to
+This module contains the definition of the `TestEntry` class, used to
 represent individual entries in a `Device`'s SMART Self-test Log.
 """
 
 
-class Test_Entry(object):
+class TestEntry(object):
     """
     Contains all of the information associated with a single SMART Self-test
     log entry. This data is intended to exactly mirror that obtained through
     smartctl.
     """
-    def __init__(self, format, num, test_type, status, hours, LBA, remain=None,
-                 segment=None, sense=None, ASC=None, ASCQ=None):
+    def __init__(self, format, num, test_type, status, hours, lba, remain=None,
+                 segment=None, sense=None, asc=None, ascq=None):
         self._format = format
         """
         **(str):** Indicates whether this entry was taken from an 'ata' or
@@ -53,7 +53,7 @@ class Test_Entry(object):
         **(str):** The device's power-on hours at the time the self-test
         was initiated.
         """
-        self.LBA = LBA
+        self.lba = lba
         """
         **(str):** Indicates the first LBA at which an error was encountered
         during this self-test. Presented as a decimal value for ATA/SATA
@@ -76,12 +76,12 @@ class Test_Entry(object):
         **(str):** SCSI sense key reported on self-test failure. Set to '-'
         otherwise.
         """
-        self.ASC = ASC
+        self.asc = asc
         """
         **(str):** SCSI 'Additonal Sense Code' reported on self-test failure.
         Set to '-' otherwise.
         """
-        self.ASCQ = ASCQ
+        self.ascq = ascq
         """
         **(str):** SCSI 'Additonal Sense Code Quaifier' reported on self-test
         failure. Set to '-' otherwise.
@@ -101,13 +101,13 @@ class Test_Entry(object):
         if self._format == 'ata':
             return "{0:>2} {1:17}{2:30}{3:5}{4:7}{5:17}".format(
                 self.num, self.type, self.status, self.remain, self.hours,
-                self.LBA)
+                self.lba)
         else:
             # 'Segment' could not be fit on the 80-char line. It's of limited
             # utility anyway due to it's manufacturer-proprietary nature...
             return ("{0:>2} {1:17}{2:23}{3:7}{4:14}[{5:4}{6:5}{7:4}]".format(
                 self.num, self.type, self.status, self.hours,
-                self.LBA, self.sense, self.ASC, self.ASCQ))
+                self.lba, self.sense, self.asc, self.ascq))
 
 
-__all__ = ['Test_Entry']
+__all__ = ['TestEntry']

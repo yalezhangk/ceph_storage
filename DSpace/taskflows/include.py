@@ -445,7 +445,7 @@ class SyncClusterInfo(BaseTask):
             rule_name=rule_name,
             type=crush_info.get("type"),
             rule_id=crush_info.get("rule_id"),
-            content = content
+            content=content
         )
         crush.create()
         for osd in osds:

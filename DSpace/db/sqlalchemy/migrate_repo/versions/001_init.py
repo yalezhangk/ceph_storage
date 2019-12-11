@@ -23,9 +23,12 @@ CLASS_NAME = 'default'
 CREATED_AT = datetime.datetime.now()  # noqa
 
 
-def InetSmall():
+def inet_small():
     return String(length=39).with_variant(
         dialects.postgresql.INET(), 'postgresql')
+
+
+InetSmall = inet_small
 
 
 def define_tables(meta):
