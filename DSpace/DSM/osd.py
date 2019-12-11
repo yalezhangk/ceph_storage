@@ -109,7 +109,7 @@ class OsdHandler(AdminBaseHandler):
         try:
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_install(osd)
-            osd.status = s_fields.OsdStatus.AVAILABLE
+            osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
             logger.info("osd.%s create success", osd.osd_id)
             op_status = 'CREATE_SUCCESS'
@@ -366,7 +366,7 @@ class OsdHandler(AdminBaseHandler):
 
     def osd_delete(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
-        if osd.status not in [s_fields.OsdStatus.AVAILABLE,
+        if osd.status not in [s_fields.OsdStatus.ACTIVE,
                               s_fields.OsdStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " osd can be delete"))

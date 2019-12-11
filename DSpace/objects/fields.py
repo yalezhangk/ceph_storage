@@ -210,18 +210,18 @@ class OsdTypeField(BaseEnumField):
 
 
 class OsdStatus(BaseStorEnum):
+    ACTIVE = 'active'
+    WARNING = 'warning'
+    OFFLINE = 'offline'
     CREATING = 'creating'
     DELETING = 'deleting'
+    MAINTAIN = 'maintain'
     ERROR = 'error'
-    AVAILABLE = 'available'
-    OFFLINE = 'offline'
+    RESTARTING = 'restarting'
+    PROCESSING = 'processing'
 
-    INUSE = 'inuse'
-    ACTIVE = 'active'
-    INACTIVE = 'inactive'
-
-    ALL = (CREATING, DELETING, ERROR, AVAILABLE, INUSE, ACTIVE, INACTIVE,
-           OFFLINE)
+    ALL = (CREATING, DELETING, ERROR, ACTIVE,
+           OFFLINE, RESTARTING, PROCESSING, MAINTAIN, WARNING)
 
 
 class OsdStatusField(BaseEnumField):

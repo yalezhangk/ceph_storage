@@ -373,23 +373,22 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_osd_status_get(self, ctxt):
         query_all = objects.OsdList.get_status(ctxt)
-        num = 0
         status = {s_fields.OsdStatus.ACTIVE: 0,
-                  s_fields.OsdStatus.ERROR: 0,
-                  s_fields.OsdStatus.INACTIVE: 0,
-                  s_fields.OsdStatus.AVAILABLE: 0}
+                  s_fields.OsdStatus.PROCESSING: 0,
+                  s_fields.OsdStatus.WARNING: 0,
+                  s_fields.OsdStatus.OFFLINE: 0,
+                  s_fields.OsdStatus.ERROR: 0}
         for [k, v] in query_all:
-            if k == s_fields.OsdStatus.AVAILABLE:
-                status[s_fields.OsdStatus.AVAILABLE] = v
-            elif k == s_fields.OsdStatus.INACTIVE:
-                status[s_fields.OsdStatus.INACTIVE] = v
+            if k == s_fields.OsdStatus.ACTIVE:
+                status[s_fields.OsdStatus.ACTIVE] = v
+            elif k == s_fields.OsdStatus.WARNING:
+                status[s_fields.OsdStatus.WARNING] = v
+            elif k == s_fields.OsdStatus.OFFLINE:
+                status[s_fields.OsdStatus.OFFLINE] = v
             elif k == s_fields.OsdStatus.ERROR:
                 status[s_fields.OsdStatus.ERROR] = v
-            elif k == s_fields.OsdStatus.ACTIVE:
-                status[s_fields.OsdStatus.ACTIVE] = v
             else:
-                num += v
-        status["progress"] = num
+                status[s_fields.OsdStatus.PROCESSING] = v
         return status
 
     def cluster_capacity_status_get(self, ctxt):

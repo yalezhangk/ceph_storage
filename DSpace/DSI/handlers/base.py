@@ -141,6 +141,7 @@ class BaseAPIHandler(RequestHandler):
         return cluster_id
 
     def get_support_filters(self, exact_filters=None, fuzzy_filters=None):
+        fuzzy_filters = fuzzy_filters or []
         filters = {}
         for e in exact_filters:
             # 精确字段
