@@ -5,9 +5,23 @@ import time
 import six
 from prometheus_http_client import NodeExporter
 from prometheus_http_client import Prometheus as PrometheusClient
+from prometheus_http_client.prometheus import relabel
 
 from DSpace import exception
 from DSpace import objects
+
+
+class DSpaceNodeExporter(NodeExporter):
+    @relabel('node_filesystem_size_bytes{}')
+    def node_sys_disk_size(self, **kwargs):
+        pass
+
+    @relabel('(node_filesystem_size_bytes{} - node_filesystem_free_bytes{}) '
+             ' / (node_filesystem_size_bytes{} - node_filesystem_free_bytes{} '
+             '+ node_filesystem_avail_bytes{})')
+    def node_sys_disk_used_rate(self, **kwargs):
+        pass
+
 
 DISK_SKIP = "dm.*"
 
@@ -17,7 +31,8 @@ cpu_attrs = ['cpu_rate', 'intr_rate', 'context_switches_rate',
              'vmstat_pgfault_rate', 'load5']
 sys_attrs = ['memory_rate']
 
-fs_attrs = ['disk_rate']
+sys_disk_used_rate_attrs = ['sys_disk_used_rate']
+sys_disk_size_attrs = ['sys_disk_size']
 
 disk_attrs = ['disk_io_rate']
 
@@ -27,7 +42,7 @@ network_attrs = ['network_transmit_packets_rate',
                  'network_errs_rate', 'network_drop_rate']
 
 prometheus_attrs = cpu_attrs + sys_attrs + disk_attrs + network_attrs +\
-    fs_attrs
+    sys_disk_used_rate_attrs + sys_disk_size_attrs
 
 osd_rate = ['op_in_bytes', 'op_out_bytes', 'op_w',
             'op_r', 'op_w_latency', 'op_r_latency']
@@ -161,7 +176,7 @@ class PrometheusTool(object):
         """Get metrics from prometheus
         Returns: metrics value
         """
-        node_exporter = NodeExporter(url=self.prometheus_url)
+        node_exporter = DSpaceNodeExporter(url=self.prometheus_url)
 
         function = getattr(node_exporter, metric)
 
@@ -289,7 +304,13 @@ class PrometheusTool(object):
                         'hostname': node.hostname,
                         'device': sys_disk_name,
                         'cluster_id': node.cluster_id})
-            elif metric in fs_attrs:
+            elif metric in sys_disk_used_rate_attrs:
+                data = self.get_node_exporter_metric(
+                    metric_method, filter={
+                        'hostname': node.hostname,
+                        'mountpoint': '/',
+                        'cluster_id': node.cluster_id})
+            elif metric in sys_disk_size_attrs:
                 data = self.get_node_exporter_metric(
                     metric_method, filter={
                         'hostname': node.hostname,
