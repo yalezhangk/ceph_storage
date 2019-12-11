@@ -908,6 +908,13 @@ class AdminClient(BaseClient):
                              rgw_router_id=rgw_router_id, data=data)
         return response
 
+    ####################
+
+    def osd_slow_requests_get(self, ctxt, osd_top, op_top):
+        response = self.call(ctxt, "osd_slow_requests_get",
+                             osd_top=osd_top, op_top=op_top)
+        return response
+
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"

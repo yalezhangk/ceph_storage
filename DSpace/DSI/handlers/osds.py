@@ -613,3 +613,23 @@ class OsdAvailableHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "osds": osds,
         }))
+
+
+@URLRegistry.register(r"/osds/slow_requests/")
+class OsdSlowRequests(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd_top = self.get_query_argument('osd_top', default=10)
+        if osd_top and not osd_top.isdecimal():
+            raise exception.InvalidInput(_("osd_top not number"))
+        if osd_top:
+            osd_top = int(osd_top)
+        op_top = self.get_query_argument('op_top', default=10)
+        if op_top and not op_top.isdecimal():
+            raise exception.InvalidInput(_("op_top not number"))
+        if op_top:
+            op_top = int(op_top)
+        res = yield client.osd_slow_requests_get(ctxt, osd_top, op_top)
+        self.write(objects.json_encode({"slow_requests": res}))

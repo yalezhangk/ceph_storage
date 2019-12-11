@@ -90,6 +90,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_rgw_destroy", radosgw=radosgw)
         return response
 
+    def ceph_slow_request(self, ctxt, osds):
+        response = self.call(ctxt, "ceph_slow_request", osds=osds)
+        return response
+
     def package_install(self, ctxt, packages):
         response = self.call(ctxt, "package_install", packages=packages)
         return response

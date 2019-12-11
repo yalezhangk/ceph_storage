@@ -31,6 +31,7 @@ class CephTool(ToolBase):
 
     All function need move to rados client
     """
+
     def get_networks(self):
         logger.debug("detect cluster networks")
 
@@ -268,9 +269,36 @@ class CephTool(ToolBase):
                 retrys = retrys - 1
                 if retrys < 0:
                     raise ActionTimeoutError(reason="Stop %s %s" % (types,
-                                             service))
+                                                                    service))
             else:
                 return True
+
+    def slow_request_get(self, osds):
+        res = []
+        for osd in osds:
+            logger.debug("Osd.{} slow request get start.".format(osd.osd_id))
+            cmd = ["ceph", "daemon", "osd.%s" % osd.osd_id,
+                   "dump_historic_slow_ops", '-f', 'json']
+            rc, stdout, stderr = self.run_command(cmd, timeout=5)
+            if rc == 22:
+                logger.error("osd.%s not found." % osd.osd_id)
+                continue
+            elif rc:
+                logger.error("Command: %(cmd)s ReturnCode: %(return_code)s "
+                             "Stderr: %(stderr)s Stdout: %(stdout)s.".format(
+                                 cmd=cmd, return_code=rc,
+                                 stdout=stdout, stderr=stderr
+                             ))
+                continue
+            res.append({
+                "id": osd.id,
+                "osd_id": osd.osd_id,
+                "osd_name": osd.osd_name,
+                "node_id": osd.node_id,
+                "hostname": osd.node.hostname,
+                "ops": json.loads(encodeutils.safe_decode(stdout)).get("Ops")
+            })
+        return res
 
     def osd_stop(self, osd_id):
         cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]
@@ -513,6 +541,7 @@ class RBDProxy(object):
 
 class RADOSClient(object):
     """Context manager to simplify error handling for connecting to ceph."""
+
     def __init__(self, ceph_conf, timeout=None):
         self.client = rados.Rados(conf=ceph_conf)
         if timeout:

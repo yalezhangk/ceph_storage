@@ -72,6 +72,9 @@ global_opts = [
     cfg.IntOpt('rgw_max_port',
                default=65500,
                help='The maximum port number for rgw.'),
+    cfg.IntOpt('slow_request_get_time_interval',
+               default=10,
+               help='Gets the time interval for slow requests'),
 ]
 
 CONF.register_cli_opts(core_opts)
