@@ -168,7 +168,8 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
-        package_tool.install(["ceph-mon", "ceph-mgr", "ceph-mds"])
+        package_tool.install(["ceph-mon", "ceph-mgr", "ceph-mds",
+                              "ceph-mgr-dspace"])
         # create mon dir
         file_tool = FileTool(client)
         file_tool.mkdir("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
@@ -198,7 +199,7 @@ class CephHandler(AgentBaseHandler):
         service_tool.start("ceph-mds@{}".format(self.node.hostname))
 
         self._wait_mon_ready(client)
-        ceph_tool.module_enable("prometheus")
+        ceph_tool.module_enable("dspace")
         return True
 
     def ceph_mon_remove(self, context, last_mon=False):
