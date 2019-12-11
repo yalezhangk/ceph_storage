@@ -570,3 +570,46 @@ class OsdCapacityHandler(ClusterAPIHandler):
         self.write(json.dumps({
             "osd_capacity": data
         }))
+
+
+@URLRegistry.register(r"/osds/available/")
+class OsdAvailableHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """List osds fro pool
+
+        ---
+        tags:
+        - osd
+        summary: List osds for pool
+        description: Return a list of osds.
+        operationId: osds.api.listOsdForPool
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        expected_attrs = ['node', 'disk']
+
+        exact_filters = ['type', 'disk_type']
+        filters = self.get_support_filters(exact_filters)
+        filters['status'] = s_fields.OsdStatus.ACTIVE
+        filters['crush_rule_id'] = None
+
+        osds = yield client.osd_get_all(
+            ctxt, tab="default", filters=filters,
+            expected_attrs=expected_attrs)
+
+        self.write(objects.json_encode({
+            "osds": osds,
+        }))

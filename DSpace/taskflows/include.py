@@ -529,7 +529,7 @@ class SyncClusterInfo(BaseTask):
             osd_id=osd_info.get('osd_id'),
             type=osd_info.get('type', s_fields.OsdType.BLUESTORE),
             disk_type=disk.type,
-            status=s_fields.OsdStatus.AVAILABLE,
+            status=s_fields.OsdStatus.ACTIVE,
             disk_id=disk.id
         )
         osd.create()

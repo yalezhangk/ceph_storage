@@ -79,13 +79,12 @@ class PoolHandler(AdminBaseHandler):
             prometheus.osd_get_capacity(osd)
         return osds
 
-    def _update_osd_info(self, ctxt, osds, osd_status, crush_rule_id):
+    def _update_osd_info(self, ctxt, osds, crush_rule_id):
         for osd in osds:
             if isinstance(osd, int):
                 osd = objects.Osd.get_by_id(ctxt, osd)
             elif isinstance(osd, str):
                 osd = objects.Osd.get_by_osd_id(ctxt, osd)
-            osd.status = osd_status
             osd.crush_rule_id = crush_rule_id
             osd.save()
 
@@ -198,7 +197,7 @@ class PoolHandler(AdminBaseHandler):
         osds = objects.OsdList.get_all(
             ctxt, filters={"crush_rule_id": crush.id})
         self._update_osd_info(
-            ctxt, osds, s_fields.OsdStatus.AVAILABLE, None)
+            ctxt, osds, None)
 
     def _pool_delete(self, ctxt, pool):
         begin_action = self.begin_action(
@@ -261,8 +260,7 @@ class PoolHandler(AdminBaseHandler):
             pool.osd_num = len(new_osds)
             pool.status = s_fields.PoolStatus.ACTIVE
             pool.save()
-            self._update_osd_info(ctxt, osd_db_ids, s_fields.OsdStatus.ACTIVE,
-                                  crush.id)
+            self._update_osd_info(ctxt, osd_db_ids, crush.id)
             undo_data = {
                 "pool": {
                     "id": pool.id,
@@ -315,8 +313,7 @@ class PoolHandler(AdminBaseHandler):
         pool.status = s_fields.PoolStatus.ACTIVE
         pool.osd_num = len(new_osds)
         pool.save()
-        self._update_osd_info(ctxt, osd_db_ids,
-                              s_fields.OsdStatus.AVAILABLE, None)
+        self._update_osd_info(ctxt, osd_db_ids, None)
 
     def _pool_decrease_task(self, ctxt, pool, osd_db_ids):
         begin_action = self.begin_action(
