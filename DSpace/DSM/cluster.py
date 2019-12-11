@@ -341,18 +341,16 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_host_status_get(self, ctxt):
         query_all = objects.NodeList.get_status(ctxt)
-        num = 0
         status = {s_fields.NodeStatus.ACTIVE: 0,
                   s_fields.NodeStatus.ERROR: 0,
-                  s_fields.NodeStatus.INACTIVE: 0}
+                  s_fields.NodeStatus.WARNING: 0}
         for [k, v] in query_all:
             if k in [s_fields.NodeStatus.ACTIVE,
                      s_fields.NodeStatus.ERROR,
-                     s_fields.NodeStatus.INACTIVE]:
+                     s_fields.NodeStatus.WARNING]:
                 status[k] = v
             else:
-                num += v
-        status["progress"] = num
+                status["progress"] += v
         return status
 
     def cluster_pool_status_get(self, ctxt):
