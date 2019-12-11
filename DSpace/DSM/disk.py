@@ -349,33 +349,27 @@ class DiskHandler(AdminBaseHandler):
     def disk_io_top(self, ctxt, k=10):
         logger.info("disk io top(%s)", k)
         prometheus = PrometheusTool(ctxt)
-        metrics = prometheus.disk_io_top(ctxt, k)
+        metrics = prometheus.disks_io_util(ctxt)
+        osds = objects.OsdList.get_all(
+            ctxt, expected_attrs=['node', 'disk'])
         if metrics is None:
             return None
-        nodes = {}
+        osd_maps = {osd.node.hostname + '-' + osd.disk.name: osd
+                    for osd in osds}
+        metrics.sort(key=lambda x: x['value'], reverse=True)
         disks = []
         for metric in metrics:
             hostname = metric['hostname']
-            name = metric['name']
-            if hostname in nodes:
-                node = nodes[hostname]
-            else:
-                _nodes = objects.NodeList.get_all(
-                    ctxt, filters={"hostname": hostname})
-                if not _nodes:
-                    logger.warring("host not found: %s", hostname)
-                    continue
-                node = _nodes[0]
-            _disks = objects.DiskList.get_all(
-                ctxt, filters={"name": name, "node_id": node.id})
-            if not _disks:
-                logger.warring("disk not found: %s,%s", hostname, name)
-                continue
-            disk = _disks[0]
-            disk.node = node
-            disk.metrics = {
-                'iops': metric['value']
-            }
-            disks.append(disk)
+            disk_name = metric['name']
+            map_name = hostname + '-' + disk_name
+            if map_name in osd_maps:
+                disks.append({
+                    "hostname": hostname,
+                    "osd_name": osd_maps[map_name].osd_name,
+                    "disk": disk_name,
+                    "value": round(float(metric['value']), 2)
+                })
+                if len(disks) >= k:
+                    break
         logger.info("disk io top(%s): %s", k, disks)
         return disks

@@ -676,3 +676,20 @@ class PrometheusTool(object):
                 "value": data['value'][1]
             })
         return disks
+
+    def disks_io_util(self, ctxt):
+        logger.info('disk io utils')
+        m = ('irate(node_disk_io_time_seconds_total{{cluster_id="{}",'
+             ' device!~"{}"}}[5m])').format(ctxt.cluster_id, DISK_SKIP)
+        logger.info('disk io top query: %s', m)
+        datas = self.prometheus_get_metrics(m)
+        if not datas:
+            return None
+        disks = []
+        for data in datas:
+            disks.append({
+                "hostname": data['metric']['hostname'],
+                "name": data['metric']['device'],
+                "value": data['value'][1]
+            })
+        return disks
