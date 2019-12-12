@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from oslo_log import log as logging
 
 from DSpace import exception as exc
@@ -37,9 +39,11 @@ class EmailGroupHandler(AdminBaseHandler):
             action=AllActionType.CREATE)
         email_group = objects.EmailGroup(ctxt, **email_group_data)
         email_group.create()
+        resource_data = {'before': None,
+                         'after': email_group}
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,
-                           resource_data=objects.json_encode(email_group))
+                           resource_data=resource_data)
         logger.info('email_group:%s create success', email_group_data['name'])
         return email_group
 
@@ -53,14 +57,17 @@ class EmailGroupHandler(AdminBaseHandler):
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
             action=AllActionType.UPDATE)
         email_group = self.email_group_get(ctxt, email_group_id)
+        before_obj = deepcopy(email_group)
         name = data.get('name')
         emails = data.get('emails')
         email_group.name = name
         email_group.emails = emails
         email_group.save()
+        resource_data = {'before': before_obj,
+                         'after': email_group}
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,
-                           resource_data=objects.json_encode(email_group))
+                           resource_data=resource_data)
         logger.info('email_group:% update success', email_group_id)
         return email_group
 
@@ -71,12 +78,15 @@ class EmailGroupHandler(AdminBaseHandler):
         if email_group.alert_groups:
             raise exc.InvalidInput(reason=_(
                 'can not delete email_group used by alert_group'))
+        before_obj = deepcopy(email_group)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
             action=AllActionType.DELETE)
         email_group.destroy()
+        resource_data = {'before': before_obj,
+                         'after': email_group}
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,
-                           resource_data=objects.json_encode(email_group))
+                           resource_data=resource_data)
         logger.info('email_group:%s delete success', email_group_id)
         return email_group
