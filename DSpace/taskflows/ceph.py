@@ -693,6 +693,19 @@ class CephTask(object):
             return True
         return False
 
+    def _is_balancer_enable(self, client):
+        # is module enable
+        res = client.mgr_module_ls()
+        if 'balancer' not in res["enabled_modules"]:
+            return False
+        # blancer status
+        status = client.balancer_status()
+        if not status["active"]:
+            return False
+        if "none" == status['mode']:
+            return False
+        return True
+
     def cluster_pause(self, enable=True):
         logger.info("cluster pause enable=%s", enable)
         with RADOSClient(self.rados_args(), timeout='5') as client:
@@ -717,6 +730,16 @@ class CephTask(object):
                 return True
             logger.info("cluster not pause")
             return False
+
+    def cluster_status(self):
+        logger.info("cluster status")
+        with RADOSClient(self.rados_args(), timeout='5') as client:
+            res = {
+                "pause": self._is_paush_in_ceph(client),
+                "balancer": self._is_balancer_enable(client)
+            }
+            logger.info("cluster status: %s", res)
+            return res
 
     def mark_osds_out(self, osd_names):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:

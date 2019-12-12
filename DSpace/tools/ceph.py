@@ -8,6 +8,7 @@ import time
 from oslo_utils import encodeutils
 
 from DSpace.exception import ActionTimeoutError
+from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
@@ -548,7 +549,10 @@ class RADOSClient(object):
             self.client.conf_set('rados_osd_op_timeout', timeout)
             self.client.conf_set('rados_mon_op_timeout', timeout)
             self.client.conf_set('client_mount_timeout', timeout)
-        self.client.connect()
+        try:
+            self.client.connect()
+        except rados.TimedOut:
+            raise CephConnectTimeout()
 
     def __enter__(self):
         return self
@@ -1203,4 +1207,26 @@ class RADOSClient(object):
         }
         command_str = json.dumps(cmd)
         res = self._send_mon_command(command_str)
+        return res
+
+    def mgr_module_ls(self):
+        logger.info("mgr module ls")
+        cmd = {
+            "prefix": "mgr module ls",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("mgr model ls res: %s", res)
+        return res
+
+    def balancer_status(self):
+        logger.info("balancer status")
+        cmd = {
+            "prefix": "balancer status",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("balancer status res: %s", res)
         return res

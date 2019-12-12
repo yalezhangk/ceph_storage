@@ -501,9 +501,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_status(self, ctxt):
         ceph_client = CephTask(ctxt)
-        res = {
-            "pause": ceph_client.cluster_is_pause()
-        }
+        res = ceph_client.cluster_status()
         return res
 
     def cluster_capacity_get(self, ctxt, pool_id):
