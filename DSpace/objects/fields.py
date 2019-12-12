@@ -47,12 +47,16 @@ class NodeStatusField(BaseEnumField):
 class PoolStatus(BaseStorEnum):
     CREATING = 'creating'
     ACTIVE = 'active'
+    DEGRADED = 'degraded'
+    RECOVERING = 'recovering'
+    PROCESSING = 'processing'
     DELETING = 'deleting'
     ERROR = 'error'
-    INACTIVE = 'inactive'
     DELETED = 'deleted'
+    WARNING = 'warning'
 
-    ALL = (CREATING, ACTIVE, DELETING, ERROR, INACTIVE, DELETED)
+    ALL = (CREATING, ACTIVE, DEGRADED, RECOVERING, PROCESSING, DELETING,
+           ERROR, DELETED)
 
 
 class PoolStatusField(BaseEnumField):
