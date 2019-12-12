@@ -499,6 +499,13 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cluster, action, msg)
 
+    def cluster_status(self, ctxt):
+        ceph_client = CephTask(ctxt)
+        res = {
+            "pause": ceph_client.cluster_is_pause()
+        }
+        return res
+
     def cluster_capacity_get(self, ctxt, pool_id):
         # pool_id -> Pool object id
         prometheus = PrometheusTool(ctxt)

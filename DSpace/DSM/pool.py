@@ -585,3 +585,6 @@ class PoolHandler(AdminBaseHandler):
             return pool
         else:
             raise exception.InvalidInput(_("No available undo"))
+
+    def pool_get_undo(self, ctxt):
+        return objects.sysconfig.sys_config_get(ctxt, 'pool_undo')
