@@ -632,6 +632,12 @@ class ClusterPause(ClusterAPIHandler):
         produces:
         - application/json
         parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
         - in: body
           name: cluster
           description: Created cluster object
@@ -652,3 +658,33 @@ class ClusterPause(ClusterAPIHandler):
         pause = strutils.bool_from_string(data.get("pause"))
         res = yield client.cluster_pause(ctxt, pause)
         self.write(json.dumps({"res": res}))
+
+
+@URLRegistry.register(r"/clusters/status/")
+class ClusterStatus(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: cluster status
+        description: cluster status.
+        operationId: clusters.api.status
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        res = yield client.cluster_status(ctxt)
+        self.write(json.dumps({"cluster": res}))

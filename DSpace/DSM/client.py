@@ -98,6 +98,10 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "cluster_pause", enable=enable)
         return response
 
+    def cluster_status(self, ctxt):
+        response = self.call(ctxt, "cluster_status")
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
@@ -624,6 +628,10 @@ class AdminClient(BaseClient):
 
     def pool_undo(self, ctxt):
         response = self.call(ctxt, "pool_undo")
+        return response
+
+    def pool_get_undo(self, ctxt):
+        response = self.call(ctxt, "pool_get_undo")
         return response
 
     ##################

@@ -709,6 +709,15 @@ class CephTask(object):
                     return True
                 raise exc.ClusterUnpauseError()
 
+    def cluster_is_pause(self):
+        logger.info("cluster is pause")
+        with RADOSClient(self.rados_args(), timeout='5') as client:
+            if self._is_paush_in_ceph(client):
+                logger.info("cluster is pause")
+                return True
+            logger.info("cluster not pause")
+            return False
+
     def mark_osds_out(self, osd_names):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.osd_out(osd_names)
