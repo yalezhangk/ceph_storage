@@ -2688,6 +2688,20 @@ def disk_get(context, disk_id, expected_attrs=None):
 
 
 @require_context
+def disk_get_by_slot(context, slot, node_id, **kwargs):
+    expected_attrs = kwargs.pop("expected_attrs", None)
+    session = get_session()
+    with session.begin():
+        disk = _disk_get_query(
+            context, session,
+        ).filter_by(slot=slot, node_id=node_id).first()
+        if not disk:
+            return None
+        _disk_load_attr(context, disk, expected_attrs, session)
+        return disk
+
+
+@require_context
 def disk_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
@@ -2758,6 +2772,17 @@ def disk_get_all_available(context, filters=None, expected_attrs=None):
 ###############################
 
 
+def _disk_partition_load_attr(context,
+                              disk_partition,
+                              expected_attrs=None,
+                              session=None):
+    expected_attrs = expected_attrs or []
+    if 'node' in expected_attrs:
+        disk_partition.node = disk_partition._node
+    if "disk" in expected_attrs:
+        disk_partition.disk = disk_partition._disk
+
+
 def _disk_partition_get_query(context, session=None):
     return model_query(
         context, models.DiskPartition, session=session
@@ -2772,6 +2797,21 @@ def _disk_partition_get(context, disk_part_id, session=None):
         raise exception.DiskPartitionNotFound(disk_part_id=disk_part_id)
 
     return result
+
+
+@require_context
+def disk_partition_get_by_uuid(context, uuid, node_id, **kwargs):
+    expected_attrs = kwargs.pop("expected_attrs", None)
+    session = get_session()
+    with session.begin():
+        disk_partition = _disk_partition_get_query(
+            context, session,
+        ).filter_by(uuid=uuid, node_id=node_id).first()
+        if not disk_partition:
+            return None
+        _disk_partition_load_attr(
+            context, disk_partition, expected_attrs, session)
+        return disk_partition
 
 
 @require_context

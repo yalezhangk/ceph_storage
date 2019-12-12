@@ -745,3 +745,11 @@ class CephTask(object):
     def mark_osds_out(self, osd_names):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.osd_out(osd_names)
+
+    def osds_add_noout(self, osd_names):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.osds_add_noout(osd_names)
+
+    def osds_rm_noout(self, osd_names):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.osds_rm_noout(osd_names)

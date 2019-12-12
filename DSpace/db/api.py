@@ -666,6 +666,11 @@ def disk_get(context, disk_id):
     return IMPL.disk_get(context, disk_id)
 
 
+def disk_get_by_slot(context, slot, node_id, expected_attrs=None):
+    return IMPL.disk_get_by_slot(
+        context, slot, node_id, expected_attrs=expected_attrs)
+
+
 def disk_get_all(context, filters, marker, limit,
                  offset, sort_keys, sort_dirs,
                  expected_attrs=None):
@@ -701,6 +706,11 @@ def disk_partition_destroy(context, disk_part_id):
 
 def disk_partition_get(context, disk_part_id):
     return IMPL.disk_partition_get(context, disk_part_id)
+
+
+def disk_partition_get_by_uuid(context, uuid, node_id, expected_attrs=None):
+    return IMPL.disk_partition_get_by_uuid(
+        context, uuid, node_id, expected_attrs=expected_attrs)
 
 
 def disk_partition_get_all(context, filters, marker, limit,

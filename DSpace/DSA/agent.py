@@ -12,6 +12,7 @@ from DSpace.DSA.disk import DiskHandler
 from DSpace.DSA.network import NetworkHandler
 from DSpace.DSA.node import NodeHandler
 from DSpace.DSA.prometheus import PrometheusHandler
+from DSpace.DSA.socket_domain import SocketDomainHandler
 from DSpace.i18n import _
 from DSpace.service import ServiceBase
 from DSpace.tools.log_file import LogFile as LogFileTool
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
-                   PrometheusHandler, NodeHandler):
+                   PrometheusHandler, NodeHandler, SocketDomainHandler):
 
     def service_restart(self, context, name):
         logger.debug("Service restart: %s", name)

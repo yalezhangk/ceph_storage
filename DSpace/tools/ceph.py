@@ -116,6 +116,11 @@ class CephTool(ToolBase):
                                   stdout=stdout, stderr=stderr)
 
     def disk_clear_partition_table(self, diskname):
+        cmd = ['wipefs', '-a', "/dev/%s" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
         cmd = ['sgdisk', '-o', "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=60)
         if rc:
@@ -174,14 +179,7 @@ class CephTool(ToolBase):
         return True
 
     def osd_mark_out(self, osd_id):
-        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-
-    def osd_remove_active(self, osd_id):
-        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
+        cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
@@ -317,13 +315,6 @@ class CephTool(ToolBase):
         return res
 
     def osd_stop(self, osd_id):
-        cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc == 1 and "No such file" in stderr:
-            return
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
         # check command
         check_cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
                      "'id %s '" % osd_id]
@@ -1217,6 +1208,28 @@ class RADOSClient(object):
         logger.info("osd out %s", osd_names)
         cmd = {
             "prefix": "osd out",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osds_add_noout(self, osd_names):
+        logger.info("osds add noout %s", osd_names)
+        cmd = {
+            "prefix": "osd add-noout",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osds_rm_noout(self, osd_names):
+        logger.info("osds rm noout %s", osd_names)
+        cmd = {
+            "prefix": "osd rm-noout",
             "ids": osd_names,
             "format": "json"
         }

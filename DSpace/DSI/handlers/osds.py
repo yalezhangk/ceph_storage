@@ -341,6 +341,84 @@ class OsdHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/osds/([0-9]*)/disk_replace_prepare/")
+class OsdDiskReplacePrepareHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: disk replace prepare
+        description: clean osd for osd replace
+        operationId: osds.api.putDiskReplacePrepare
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd = yield client.osd_disk_replace_prepare(ctxt, osd_id)
+        self.write(objects.json_encode({
+            "osd": osd
+        }))
+
+
+@URLRegistry.register(r"/osds/([0-9]*)/disk_replace/")
+class OsdDiskReplaceHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: disk replace
+        description: recreate osd on new disk
+        operationId: osds.api.putDiskReplace
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd = yield client.osd_disk_replace(ctxt, osd_id)
+        self.write(objects.json_encode({
+            "osd": osd
+        }))
+
+
 @URLRegistry.register(r"/osds/([0-9]*)/metrics/")
 class OsdMetricsHandler(ClusterAPIHandler):
     @gen.coroutine

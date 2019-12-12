@@ -86,6 +86,49 @@ class CephHandler(AgentBaseHandler):
         file_tool.rm("/etc/ceph/")
         return True
 
+    def _clean_osd(self, context, osd):
+        logger.info("osd %s(osd.%s), clean", osd.id, osd.osd_id)
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        # stop
+        ceph_tool.osd_stop(osd.osd_id)
+        logger.info("osd %s(osd.%s), service stop", osd.id, osd.osd_id)
+        # unmount
+        ceph_tool.osd_umount(osd.osd_id)
+        logger.info("osd %s(osd.%s), umount", osd.id, osd.osd_id)
+        # clear osd data
+        ceph_tool.osd_zap(osd.disk.name)
+        logger.info("osd %s(osd.%s), zap success", osd.id, osd.osd_id)
+        if osd.cache_partition_id:
+            self._data_clear(client, osd.cache_partition.name)
+        if osd.db_partition_id:
+            self._data_clear(client, osd.db_partition.name)
+        if osd.wal_partition_id:
+            self._data_clear(client, osd.wal_partition.name)
+        if osd.journal_partition_id:
+            self._data_clear(client, osd.journal_partition.name)
+        logger.info("osd %s(osd.%s), clear partition success",
+                    osd.id, osd.osd_id)
+
+    def ceph_osd_clean(self, context, osd):
+        self._clean_osd(context, osd)
+        return osd
+
+    def ceph_osd_offline(self, context, osd, umount):
+        logger.info("osd %s(osd.%s), offline", osd.id, osd.osd_id)
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        ceph_tool.osd_stop(osd.osd_id)
+        if umount:
+            ceph_tool.osd_umount(osd.osd_id)
+
+    def ceph_osd_restart(self, context, osd):
+        logger.info("osd %s(osd.%s), restart", osd.id, osd.osd_id)
+        client = self._get_ssh_executor()
+        service_tool = ServiceTool(client)
+        osd_service = "ceph-osd@{}".format(osd.osd_id)
+        service_tool.restart(osd_service)
+
     def ceph_osd_create(self, context, osd):
         self.ceph_prepare_disk(context, osd)
         self.ceph_active_disk(context, osd)
@@ -124,30 +167,17 @@ class CephHandler(AgentBaseHandler):
         logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
-        # mark oud
+        # mark out
         ceph_tool.osd_mark_out(osd.osd_id)
         logger.info("osd %s(osd.%s), mark out", osd.id, osd.osd_id)
-        # stop
-        ceph_tool.osd_stop(osd.osd_id)
-        logger.info("osd %s(osd.%s), service stop", osd.id, osd.osd_id)
-        # unmount
-        ceph_tool.osd_umount(osd.osd_id)
-        logger.info("osd %s(osd.%s), umount", osd.id, osd.osd_id)
-        # clean data
-        ceph_tool.osd_zap(osd.disk.name)
-        logger.info("osd %s(osd.%s), zap success", osd.id, osd.osd_id)
+        # clean osd
+        self._clean_osd(context, osd)
+        service_tool = ServiceTool(client)
+        osd_service = "ceph-osd@{}".format(osd.osd_id)
+        service_tool.disable(osd_service)
+        logger.info("osd %s(osd.%s), service disable", osd.id, osd.osd_id)
         ceph_tool.osd_remove_from_cluster(osd.osd_id)
         logger.info("osd %s(osd.%s), remove success", osd.id, osd.osd_id)
-        if osd.cache_partition_id:
-            self._data_clear(client, osd.cache_partition.name)
-        if osd.db_partition_id:
-            self._data_clear(client, osd.db_partition.name)
-        if osd.wal_partition_id:
-            self._data_clear(client, osd.wal_partition.name)
-        if osd.journal_partition_id:
-            self._data_clear(client, osd.journal_partition.name)
-        logger.info("osd %s(osd.%s), clear partition success",
-                    osd.id, osd.osd_id)
         return osd
 
     def _wait_mon_ready(self, client):
