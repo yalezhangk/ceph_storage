@@ -55,6 +55,20 @@ class OsdHandler(AdminBaseHandler):
                 mapping[str(c['id'])] = c
         return mapping
 
+    def _osds_update_size(self, ctxt, osds):
+        mapping = self._get_osd_df_map(ctxt)
+        for osd in osds:
+            size = mapping.get(osd.osd_id)
+            osd.metrics = {}
+            if size:
+                osd.metrics.update({'kb': [0, size['kb']]})
+                osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
+                osd.metrics.update({'kb_used': [0, size['kb_used']]})
+                # TODO OSD实时容量数据放到定时任务中
+                osd.size = int(size['kb']) * 1024
+                osd.used = int(size['kb_used']) * 1024
+                osd.save()
+
     def osd_get_all(self, ctxt, tab=None, marker=None, limit=None,
                     sort_keys=None, sort_dirs=None, filters=None, offset=None,
                     expected_attrs=None):
@@ -73,18 +87,8 @@ class OsdHandler(AdminBaseHandler):
 
         if tab == "default":
             logger.debug("Get osd metrics: tab=default")
-            mapping = self._get_osd_df_map(ctxt)
+            self._osds_update_size(ctxt, osds)
             for osd in osds:
-                size = mapping.get(osd.osd_id)
-                osd.metrics = {}
-                if size:
-                    osd.metrics.update({'kb': [0, size['kb']]})
-                    osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
-                    osd.metrics.update({'kb_used': [0, size['kb_used']]})
-                    # TODO OSD实时容量数据放到定时任务中
-                    osd.size = int(size['kb']) * 1024
-                    osd.used = int(size['kb_used']) * 1024
-                    osd.save()
                 prometheus = PrometheusTool(ctxt)
                 prometheus.osd_get_pg_state(osd)
 

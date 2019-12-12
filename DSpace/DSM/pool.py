@@ -587,4 +587,15 @@ class PoolHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("No available undo"))
 
     def pool_get_undo(self, ctxt):
-        return objects.sysconfig.sys_config_get(ctxt, 'pool_undo')
+        data = objects.sysconfig.sys_config_get(ctxt, 'pool_undo')
+        if not data:
+            return None
+        osd_db_ids = [osd['id'] for osd in data['osds']]
+        osds = objects.OsdList.get_all(ctxt, filters={'id': osd_db_ids},
+                                       expected_attrs=['node', 'disk'])
+        self._osds_update_size(ctxt, osds)
+        res = {
+            'pool': objects.Pool.get_by_id(ctxt, data['pool']['id']),
+            'osds': osds
+        }
+        return res
