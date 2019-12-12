@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class AdminBaseHandler(object):
+    slow_requests = {}
+
     def __init__(self):
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)

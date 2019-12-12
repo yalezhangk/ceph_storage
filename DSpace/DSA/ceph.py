@@ -109,6 +109,12 @@ class CephHandler(AgentBaseHandler):
         res = ceph_tool.service_stop(types, service)
         return res
 
+    def ceph_slow_request(self, ctxt, osds):
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        res = ceph_tool.slow_request_get(osds)
+        return res
+
     def _data_clear(self, client, partition_name):
         disk_tool = DiskTool(client)
         disk_tool.data_clear(partition_name)

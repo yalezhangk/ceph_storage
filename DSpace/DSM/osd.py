@@ -412,3 +412,13 @@ class OsdHandler(AdminBaseHandler):
 
         prometheus.osd_get_bluefs_capacity(osd)
         return osd.metrics
+
+    def osd_slow_requests_get(self, ctxt, osd_top=10, op_top=10):
+        if not isinstance(osd_top, int) or not isinstance(osd_top, int):
+            raise exception.InvalidInput(_("Invalid osd_top or op_top."))
+        logger.info("Get osd slow request...")
+        sr = self.slow_requests.get(ctxt.cluster_id)
+        if sr:
+            sr["slow_request_sum"] = sr["slow_request_sum"][:osd_top]
+            sr["slow_request_ops"] = sr["slow_request_ops"][:op_top]
+        return sr
