@@ -60,9 +60,11 @@ class AgentClient(BaseClient):
                              types=types, service=service)
         return response
 
-    def ceph_mon_create(self, ctxt, fsid, ceph_auth='none'):
+    def ceph_mon_create(self, ctxt, fsid, ceph_auth='none',
+                        mgr_dspace_port=None):
         response = self.call(
-            ctxt, "ceph_mon_create", fsid=fsid, ceph_auth=ceph_auth)
+            ctxt, "ceph_mon_create", fsid=fsid, ceph_auth=ceph_auth,
+            mgr_dspace_port=mgr_dspace_port)
         return response
 
     def ceph_mon_remove(self, ctxt, last_mon=False):
