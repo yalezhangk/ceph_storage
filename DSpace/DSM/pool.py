@@ -2,7 +2,6 @@ import json
 import uuid
 
 from oslo_log import log as logging
-from oslo_utils import timeutils
 
 from DSpace import exception
 from DSpace import objects
@@ -21,6 +20,35 @@ logger = logging.getLogger(__name__)
 
 
 class PoolHandler(AdminBaseHandler):
+    def _pool_update_metrics(self, ctxt, pool):
+        prometheus = PrometheusTool(ctxt)
+        pool.metrics = {}
+        prometheus.pool_get_capacity(pool)
+        prometheus.pool_get_pg_state(pool)
+        pg_state = pool.metrics.get("pg_state")
+        if pool.updated_at:
+            logger.info("pool %s, get metrics: %s",
+                        pool.pool_name, json.dumps(pool.metrics))
+            if pool.status not in [s_fields.PoolStatus.CREATING,
+                                   s_fields.PoolStatus.DELETING,
+                                   s_fields.PoolStatus.DELETED]:
+                if pg_state:
+                    pg_unactive = pg_state.get("unactive")
+                    pg_degraded = pg_state.get("degraded")
+                    pg_recovering = pg_state.get("recovering")
+                    pg_healthy = pg_state.get("healthy")
+                if pg_unactive and pg_unactive > 0:
+                    pool.status = s_fields.PoolStatus.ERROR
+                elif pg_degraded and pg_degraded > 0:
+                    pool.status = s_fields.PoolStatus.DEGRADED
+                elif pg_recovering and pg_recovering > 0:
+                    pool.status = s_fields.PoolStatus.RECOVERING
+                elif pg_healthy and pg_healthy == 1:
+                    pool.status = s_fields.PoolStatus.ACTIVE
+                else:
+                    pool.status = s_fields.PoolStatus.WARNING
+                pool.save()
+
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None,
                      expected_attrs=None, tab=None):
@@ -31,30 +59,7 @@ class PoolHandler(AdminBaseHandler):
 
         if tab == 'default':
             for pool in pools:
-                prometheus = PrometheusTool(ctxt)
-                pool.metrics = {}
-                prometheus.pool_get_capacity(pool)
-                prometheus.pool_get_pg_state(pool)
-                pg_state = pool.metrics.get("pg_state")
-                time_now = timeutils.utcnow(with_timezone=True)
-                if pool.updated_at:
-                    time_diff = time_now - pool.created_at
-                    logger.info("pool %s, get metrics: %s",
-                                pool.pool_name, pool.metrics)
-                    if time_diff.total_seconds() <= 60:
-                        continue
-                    if pool.status not in [s_fields.PoolStatus.CREATING,
-                                           s_fields.PoolStatus.DELETING,
-                                           s_fields.PoolStatus.ERROR,
-                                           s_fields.PoolStatus.DELETED]:
-                        if (pg_state and pg_state.get("healthy") < 1.0 and
-                                pool.status != s_fields.PoolStatus.INACTIVE):
-                            pool.status = s_fields.PoolStatus.INACTIVE
-                            pool.save()
-                        if (pg_state and pg_state.get("healthy") >= 1.0 and
-                                pool.status != s_fields.PoolStatus.ACTIVE):
-                            pool.status = s_fields.PoolStatus.ACTIVE
-                            pool.save()
+                self._pool_update_metrics(ctxt, pool)
         if tab == 'io':
             prometheus = PrometheusTool(ctxt)
             for pool in pools:
@@ -290,6 +295,8 @@ class PoolHandler(AdminBaseHandler):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
         osds = data.get('osds')
+        pool.status = s_fields.PoolStatus.PROCESSING
+        pool.save()
         self.task_submit(self._pool_increase_disk, ctxt, pool, osds)
         return pool
 
@@ -386,6 +393,8 @@ class PoolHandler(AdminBaseHandler):
         osds = data.get('osds')
         self._check_data_lost(ctxt, pool, osds)
         objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
+        pool.status = s_fields.PoolStatus.PROCESSING
+        pool.save()
         self.task_submit(self._pool_decrease_task, ctxt, pool, osds)
         return pool
 
@@ -465,6 +474,7 @@ class PoolHandler(AdminBaseHandler):
                   " not allow change fault domain"))
         pool.failure_domain_type = fault_domain
         pool.replicate_size = rep_size
+        pool.status = s_fields.PoolStatus.PROCESSING
         pool.save()
         objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
         self.task_submit(self._pool_update_policy, ctxt, pool)
