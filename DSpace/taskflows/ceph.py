@@ -735,6 +735,7 @@ class CephTask(object):
         logger.info("cluster status")
         with RADOSClient(self.rados_args(), timeout='5') as client:
             res = {
+                "created": True,
                 "pause": self._is_paush_in_ceph(client),
                 "balancer": self._is_balancer_enable(client)
             }
