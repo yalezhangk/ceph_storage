@@ -39,11 +39,9 @@ class EmailGroupHandler(AdminBaseHandler):
             action=AllActionType.CREATE)
         email_group = objects.EmailGroup(ctxt, **email_group_data)
         email_group.create()
-        resource_data = {'before': None,
-                         'after': email_group}
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,
-                           resource_data=resource_data)
+                           after_obj=email_group)
         logger.info('email_group:%s create success', email_group_data['name'])
         return email_group
 
@@ -53,21 +51,19 @@ class EmailGroupHandler(AdminBaseHandler):
 
     def email_group_update(self, ctxt, email_group_id, data):
         logger.debug('email_group:%s begin update', email_group_id)
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.EMAIL_GROUP,
-            action=AllActionType.UPDATE)
         email_group = self.email_group_get(ctxt, email_group_id)
         before_obj = deepcopy(email_group)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.EMAIL_GROUP,
+            action=AllActionType.UPDATE, before_obj=before_obj)
         name = data.get('name')
         emails = data.get('emails')
         email_group.name = name
         email_group.emails = emails
         email_group.save()
-        resource_data = {'before': before_obj,
-                         'after': email_group}
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,
-                           resource_data=resource_data)
+                           after_obj=email_group)
         logger.info('email_group:% update success', email_group_id)
         return email_group
 
@@ -81,12 +77,10 @@ class EmailGroupHandler(AdminBaseHandler):
         before_obj = deepcopy(email_group)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
-            action=AllActionType.DELETE)
+            action=AllActionType.DELETE, before_obj=before_obj)
         email_group.destroy()
-        resource_data = {'before': before_obj,
-                         'after': email_group}
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,
-                           resource_data=resource_data)
+                           after_obj=email_group)
         logger.info('email_group:%s delete success', email_group_id)
         return email_group

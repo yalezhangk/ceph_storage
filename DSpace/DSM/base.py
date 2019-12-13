@@ -32,14 +32,18 @@ class AdminBaseHandler(object):
     def task_submit(self, fun, *args, **kwargs):
         self._executor.submit(self._wapper, fun, *args, **kwargs)
 
-    def begin_action(self, ctxt, resource_type=None, action=None):
-        logger.debug('begin action:%s-%s', resource_type, action)
+    def begin_action(self, ctxt, resource_type=None, action=None,
+                     before_obj=None):
+        logger.debug('begin action, resource_type:%s, action:%s',
+                     resource_type, action)
         action_data = {
             'begin_time': timeutils.utcnow(),
             'client_ip': ctxt.client_ip,
             'user_id': ctxt.user_id,
             'resource_type': resource_type,
             'action': action,
+            'before_data': (objects.json_encode(before_obj)
+                            if before_obj else None),
             'cluster_id': ctxt.cluster_id
         }
         action_log = objects.ActionLog(ctxt, **action_data)
@@ -47,15 +51,18 @@ class AdminBaseHandler(object):
         return action_log
 
     def finish_action(self, begin_action=None, resource_id=None,
-                      resource_name=None, resource_data=None, status=None,
-                      action=None, err_msg=None):
+                      resource_name=None, after_obj=None, status=None,
+                      action=None, err_msg=None, diff_data=None,
+                      *args, **kwargs):
         finish_data = {
             'resource_id': resource_id,
             'resource_name': resource_name,
-            'resource_data': (objects.json_encode(resource_data) if
-                              resource_data else None),
+            'after_data': (objects.json_encode(after_obj) if
+                           after_obj else None),
             'status': 'success',
-            'finish_time': timeutils.utcnow()
+            'finish_time': timeutils.utcnow(),
+            'err_msg': err_msg,
+            'diff_data': diff_data
         }
         if action:
             finish_data.update({'action': action})
@@ -66,11 +73,9 @@ class AdminBaseHandler(object):
                 if self.debug_mode:
                     sys.exit(1)
                 finish_data.update({'status': 'fail'})
-        if err_msg:
-            finish_data.update({'err_msg': err_msg})
         begin_action.update(finish_data)
-        logger.debug('finish action:%s-%s,status:%s', resource_name, action,
-                     finish_data['status'])
+        logger.debug('finish action, resource_name:%s, action:%s, status:%s',
+                     resource_name, action, finish_data['status'])
         begin_action.save()
 
     def has_monitor_host(self, ctxt):
