@@ -502,8 +502,18 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         wb_client.send_message(ctxt, cluster, action, msg)
 
     def cluster_status(self, ctxt):
-        ceph_client = CephTask(ctxt)
-        res = ceph_client.cluster_status()
+        logger.info("get cluster status")
+        has_mon_host = self.has_monitor_host(ctxt)
+        if not has_mon_host:
+            res = {
+                "created": False,
+                "pause": False,
+                "balancer": False
+            }
+        else:
+            ceph_client = CephTask(ctxt)
+            res = ceph_client.cluster_status()
+        logger.info("cluster status: %s", res)
         return res
 
     def cluster_capacity_get(self, ctxt, pool_id):
