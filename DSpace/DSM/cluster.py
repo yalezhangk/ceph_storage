@@ -355,19 +355,21 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return status
 
     def cluster_pool_status_get(self, ctxt):
+        logger.info("try get pool status")
         query_all = objects.PoolList.get_status(ctxt)
         num = 0
         status = {s_fields.PoolStatus.ACTIVE: 0,
-                  s_fields.PoolStatus.INACTIVE: 0,
+                  s_fields.PoolStatus.WARNING: 0,
                   s_fields.PoolStatus.ERROR: 0}
         for [k, v] in query_all:
             if k in [s_fields.PoolStatus.ACTIVE,
                      s_fields.PoolStatus.ERROR,
-                     s_fields.PoolStatus.INACTIVE]:
+                     s_fields.PoolStatus.WARNING]:
                 status[k] = v
             elif k != s_fields.PoolStatus.DELETED:
                 num += v
         status["progress"] = num
+        logger.info("pool status: %s", status)
         return status
 
     def cluster_osd_status_get(self, ctxt):
