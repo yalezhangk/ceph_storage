@@ -15,6 +15,7 @@ from DSpace import objects
 from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.base import BaseTask
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
@@ -374,7 +375,10 @@ class NodeTask(object):
         wf = lf.Flow('DSpace Agent Install')
         wf.add(InstallDocker('Install Docker'))
         wf.add(DSpaceAgentInstall('DSpace Agent Install'))
-        wf.add(InstallCephRepo('Install Ceph Repo'))
+        enable_ceph_repo = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.ENABLE_CEPH_REPO)
+        if enable_ceph_repo:
+            wf.add(InstallCephRepo('Install Ceph Repo'))
         self.node.executer = self.get_ssh_executor()
         taskflow.engines.run(wf, store={
             "ctxt": self.ctxt,
@@ -616,14 +620,21 @@ class InstallDocker(BaseTask):
         # write config
         file_tool = FileTool(ssh)
         # backup repo
-        file_tool.mkdir("/etc/yum.repos.d/bak")
-        file_tool.mv("/etc/yum.repos.d/*.repo",
-                     "/etc/yum.repos.d/bak/")
+        # not remove old repo
+        remove_repo = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.REMOVE_ANOTHER_REPO)
+        if remove_repo:
+            file_tool.mkdir("/etc/yum.repos.d/bak")
+            file_tool.mv("/etc/yum.repos.d/*.repo",
+                         "/etc/yum.repos.d/bak/")
         # set repo
         file_tool.write("/etc/yum.repos.d/dspace.repo",
                         self.get_dspace_repo(ctxt))
-        # install docker
+        # clean repo cache
         package_tool = PackageTool(ssh)
+        package_tool.clean()
+
+        # install docker
         package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
         # start docker
         service_tool = ServiceTool(ssh)
