@@ -388,7 +388,7 @@ msgid "osd_top not number"
 msgstr "osd_top应为数字"
 
 msgid "op_top not number"
-msgstr ""op_top应为数字"
+msgstr "op_top应为数字"
 
 msgid "this tab is not supported"
 msgstr "不支持此标签页"
