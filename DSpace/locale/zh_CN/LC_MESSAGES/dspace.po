@@ -118,6 +118,9 @@ msgstr "参数必须是字符串"
 msgid "Ceph exception"
 msgstr "Ceph 异常"
 
+msgid "error connecting to the cluster"
+msgstr "集群连接异常"
+
 msgid "Data balance %(action)s error, mode %(mode)s"
 msgstr "数据平衡 %(action)s 错误， 启用的模式：%(mode)s"
 
@@ -381,6 +384,12 @@ msgstr "'FileStore' 不支持 'DB', 'WAL' 或 'Cache'类型"
 msgid "osd:hostname={},disk_name={} create error"
 msgstr "主机{}上的硬盘{}创建错误"
 
+msgid "osd_top not number"
+msgstr "osd_top应为数字"
+
+msgid "op_top not number"
+msgstr ""op_top应为数字"
+
 msgid "this tab is not supported"
 msgstr "不支持此标签页"
 
@@ -633,6 +642,9 @@ msgstr "删除硬盘失败：osd.{}"
 msgid "Only available and error osd can be delete"
 msgstr "只能删除可用与错误的硬盘"
 
+msgid "Invalid osd_top or op_top."
+msgstr "osd_top或op_top参数无效"
+
 msgid "create pool success: {}"
 msgstr "创建存储池成功：{}"
 
@@ -668,6 +680,9 @@ msgstr "{} 修改数据安全策略错误"
 
 msgid "More than one pool use this crush, not allow change fault domain"
 msgstr "超过一个存储池使用这个故障域规划，不允许修改故障域"
+
+msgid "No available undo"
+msgstr "无可用撤销"
 
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
