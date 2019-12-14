@@ -562,6 +562,7 @@ class NodeHandler(AdminBaseHandler):
             node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         else:
             node.status = s_fields.NodeStatus.REMOVING_ROLE
+        node.save()
         begin_action = self.begin_action(ctxt, Resource.NODE, Action.SET_ROLES)
         logger.info('node %s roles check pass', node.hostname)
         self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles,
