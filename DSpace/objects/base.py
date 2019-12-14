@@ -152,12 +152,14 @@ class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, StorPersistentObject):
             _obj = {}
-            for k in six.iterkeys(obj.fields):
+            for k, field in six.iteritems(obj.fields):
                 v = getattr(obj, k)
                 if isinstance(v, datetime.datetime):
                     v = datetime.datetime.isoformat(v)
-                if isinstance(v, netaddr.IPAddress):
+                elif isinstance(v, netaddr.IPAddress):
                     v = str(v)
+                elif isinstance(field, fields.SensitiveStringField):
+                    v = "***"
                 _obj[k] = v
             return _obj
 

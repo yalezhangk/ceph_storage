@@ -241,6 +241,17 @@ class DbCommands(object):
             raise exception.InvalidInput(
                 "Not User:{}, can not generate access_token".format(user_name))
 
+    @args('user', type=str, help='User')
+    @args('password', type=str, help='Password')
+    def set_password(self, user, password):
+        ctxt = context.get_context()
+        users = objects.UserList.get_all(ctxt, filters={"name": user})
+        if not users:
+            raise exception.InvalidInput(_("User(%s) not found") % user)
+        user = users[0]
+        user.password = password
+        user.save()
+
     def version(self):
         """Print the current database version."""
         print(migration.db_version(db_api.get_engine(),
