@@ -56,7 +56,7 @@ class PoolStatus(BaseStorEnum):
     WARNING = 'warning'
 
     ALL = (CREATING, ACTIVE, DEGRADED, RECOVERING, PROCESSING, DELETING,
-           ERROR, DELETED)
+           ERROR, DELETED, WARNING)
 
 
 class PoolStatusField(BaseEnumField):
