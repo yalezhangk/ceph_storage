@@ -170,7 +170,8 @@ class CephHandler(AgentBaseHandler):
             time.sleep(1)
         logger.debug("mon is ready")
 
-    def ceph_mon_create(self, context, fsid, ceph_auth='none'):
+    def ceph_mon_create(self, context, fsid, ceph_auth='none',
+                        mgr_dspace_port=None):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
@@ -205,7 +206,9 @@ class CephHandler(AgentBaseHandler):
         service_tool.start("ceph-mds@{}".format(self.node.hostname))
 
         self._wait_mon_ready(client)
-        ceph_tool.module_enable("dspace")
+
+        public_ip = self.node.public_ip
+        ceph_tool.module_enable("dspace", str(public_ip), mgr_dspace_port)
         return True
 
     def ceph_mon_remove(self, context, last_mon=False):

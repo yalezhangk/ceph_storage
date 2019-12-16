@@ -925,13 +925,26 @@ class NodeHandler(AdminBaseHandler):
             res['check_SELinux'] = node_task.check_selinux()
         # check port
         if "ceph_ports" in items:
-            # TODO: move to db
-            ports = [6789, 9876, 9100, 9283, 7480]
-            res['check_ceph_port'] = self._node_check_port(node_task, ports)
+            # default [6789, 9100, 9284]
+            default_port = ['ceph_monitor_port', 'node_exporter_port',
+                            'mgr_dspace_port']
+            check_ports = []
+            for per_sys in default_port:
+                port = objects.sysconfig.sys_config_get(
+                    self.ctxt, per_sys)
+                check_ports.append(int(port))
+            res['check_ceph_port'] = self._node_check_port(
+                node_task, check_ports)
         if "athena_ports" in items:
-            # TODO: move to db
-            ports = [9100, 2083]
-            res['check_athena_port'] = self._node_check_port(node_task, ports)
+            # default [9100, 2083]
+            default_port = ['node_exporter_port', 'agent_port']
+            check_ports = []
+            for per_sys in default_port:
+                port = objects.sysconfig.sys_config_get(
+                    self.ctxt, per_sys)
+                check_ports.append(int(port))
+            res['check_athena_port'] = self._node_check_port(
+                node_task, check_ports)
         if "network" in items:
             public_ip = data.get('public_ip')
             cluster_ip = data.get('cluster_ip')

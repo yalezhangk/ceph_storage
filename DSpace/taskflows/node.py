@@ -201,7 +201,10 @@ class NodeTask(object):
         ceph_auth = objects.ceph_config.ceph_config_get(
             self.ctxt, 'global', 'auth_cluster_required')
         fsid = objects.ceph_config.ceph_config_get(self.ctxt, 'global', 'fsid')
-        agent.ceph_mon_create(self.ctxt, fsid, ceph_auth=ceph_auth)
+        mgr_dspace_port = objects.sysconfig.sys_config_get(
+            self.ctxt, "mgr_dspace_port")
+        agent.ceph_mon_create(self.ctxt, fsid, ceph_auth=ceph_auth,
+                              mgr_dspace_port=mgr_dspace_port)
 
     def ceph_config_update(self, ctxt, values):
         logger.info("update ceph config")
@@ -517,7 +520,9 @@ class NodeTask(object):
                 port = objects.sysconfig.sys_config_get(
                     self.ctxt, "node_exporter_port")
             if service == "mgr":
-                port = '9283'
+                # default 9283
+                port = objects.sysconfig.sys_config_get(
+                    self.ctxt, "mgr_dspace_port")
         ip = self.node.ip_address
         hostname = self.node.hostname
 

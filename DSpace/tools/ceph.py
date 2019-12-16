@@ -72,7 +72,22 @@ class CephTool(ToolBase):
                 return True
         return False
 
-    def module_enable(self, module):
+    def module_enable(self, module, public_ip=None, mgr_dspace_port=None):
+        # set ip and port
+        cmd_ip = ['ceph', 'config-key', 'set', 'mgr/dspace/server_addr',
+                  public_ip]
+        rc, stdout, stderr = self.run_command(cmd_ip, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd_ip, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+        cmd_port = ['ceph', 'config-key', 'set', 'mgr/dspace/server_port',
+                    mgr_dspace_port]
+        rc, stdout, stderr = self.run_command(cmd_port, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd_port, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        # module enable dspace
         cmd = ["ceph", "mgr", "module", "enable", module]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc:
