@@ -22,12 +22,12 @@ class CronHandler(AdminBaseHandler):
         self.task_submit(self._osd_slow_requests_set_all)
 
     def _osd_slow_requests_set(self, ctxt):
-        # 分组
-        osds = objects.OsdList.get_all(ctxt, expected_attrs=['node'])
-        osds.sort(key=itemgetter('node_id'))
-        osds = groupby(osds, itemgetter('node_id'))
-        osd_all = dict([(key, list(group)) for key, group in osds])
         while True:
+            # 分组
+            osds = objects.OsdList.get_all(ctxt, expected_attrs=['node'])
+            osds.sort(key=itemgetter('node_id'))
+            osds = groupby(osds, itemgetter('node_id'))
+            osd_all = dict([(key, list(group)) for key, group in osds])
             res = {"slow_request_total": 0,
                    "slow_request_sum": [],
                    'slow_request_ops': []}
