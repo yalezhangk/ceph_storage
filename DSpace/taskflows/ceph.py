@@ -33,7 +33,7 @@ class CephTask(object):
 
     def ceph_admin_keyring(self):
         admin_keyring = objects.CephConfig.get_by_key(
-            self.ctxt, 'global', 'client.admin')
+            self.ctxt, 'keyring', 'client.admin')
         return admin_keyring
 
     def ceph_config(self):

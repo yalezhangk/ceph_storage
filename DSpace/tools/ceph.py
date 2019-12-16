@@ -120,19 +120,80 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
-    def mon_install(self, hostname, fsid, ceph_auth='none'):
+    # all monitor use mon. keyring
+    def _init_mon_key(self, mon_secret, keyring_path):
+        mon_cap = "mon 'allow *'"
+        cmd = ["ceph-authtool", "--create-keyring", keyring_path,
+               "--name mon.", "--cap", mon_cap, "--mode 0644",
+               "--add-key", mon_secret]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
 
-        if ceph_auth == 'cephx':
-            # do cephx initial
-            pass
-        else:
-            cmd = ["ceph-mon", "--cluster", "ceph", "--setuser",
-                   "ceph", "--setgroup", "ceph", "--mkfs", "-i",
-                   hostname, "--fsid", fsid]
-            rc, stdout, stderr = self.run_command(cmd, timeout=60)
-            if rc:
-                raise RunCommandError(cmd=cmd, return_code=rc,
-                                      stdout=stdout, stderr=stderr)
+    def create_mgr_keyring(self, mgr_id):
+        entity = "mgr.{}".format(mgr_id)
+        keyring_path = "/var/lib/ceph/mgr/ceph-{}/keyring".format(mgr_id)
+        cmd = ["ceph", "auth", "get-or-create", entity,
+               "mon", "'allow *'", "osd", "'allow *'", "mds", "'allow *'",
+               "-o", keyring_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def create_mds_keyring(self, mds_id):
+        entity = "mds.{}".format(mds_id)
+        keyring_path = "/var/lib/ceph/mds/ceph-{}/keyring".format(mds_id)
+        cmd = ["ceph", "auth", "get-or-create", entity,
+               "mon", "'allow rwx'", "osd", "'allow *'", "mds", "'allow *'",
+               "-o", keyring_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def create_rgw_keyring(self, rgw_id, rgw_data_dir):
+        keyring_path = "{}/keyring".format(rgw_data_dir)
+        entity = "client.rgw.{}".format(rgw_id)
+        cmd = ["ceph", "auth", "get-or-create", entity,
+               "mon", "'allow *'", "osd", "'allow *'", "mgr", "'allow *'",
+               "-o", keyring_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    # Get or generate client.admin keyring and bootstrap keyrings
+    def create_keys(self, hostname, cluster="ceph"):
+        cmd = ["ceph-create-keys", "--cluster", cluster, "-i", hostname]
+        logger.info("create admin and bootstrap keyrings")
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            logger.error("create admin and bootstrap keyrings error")
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def collect_keyring(self, entity):
+        cmd = ["ceph", "auth", "get", entity, "--format", "json"]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            return None
+        res = json.loads(stdout)
+        return res[0]['key']
+
+    def mon_install(self, hostname, fsid, mon_secret=None):
+        cmd = ["ceph-mon", "--cluster", "ceph", "--setuser",
+               "ceph", "--setgroup", "ceph", "--mkfs", "-i",
+               hostname, "--fsid", fsid]
+        if mon_secret:
+            mon_keyring = "/tmp/ceph.mon.keyring"
+            self._init_mon_key(mon_secret, mon_keyring)
+            cmd.extend(["--keyring", mon_keyring])
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
 
     def mon_uninstall(self, monitor_name):
         cmd = ['ceph', 'mon', 'remove', monitor_name]
