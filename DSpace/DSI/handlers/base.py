@@ -13,6 +13,7 @@ from DSpace.context import RequestContext
 from DSpace.DSI.session import get_session
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
+from DSpace.utils.user_token import UserToken
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,13 @@ class BaseAPIHandler(RequestHandler):
                 reason=_("get_metrics_history_args: start and end required"))
 
     def get_current_user(self):
+        access_token = self.get_query_argument('access_token', default=None)
+        if access_token:
+            logger.info('get access_token from URL, is:%s', access_token)
+            user_token = UserToken()
+            resu, user_id = user_token.certify_token(access_token)
+            if resu:
+                return user_id
         logger.debug("User: %s", self.session['user_id'])
         return self.session['user_id']
 
