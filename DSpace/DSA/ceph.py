@@ -208,7 +208,7 @@ class CephHandler(AgentBaseHandler):
         self._wait_mon_ready(client)
 
         public_ip = self.node.public_ip
-        ceph_tool.module_enable("dspace", str(public_ip), mgr_dspace_port)
+        ceph_tool.module_enable("dspace", str(public_ip), str(mgr_dspace_port))
         return True
 
     def ceph_mon_remove(self, context, last_mon=False):
