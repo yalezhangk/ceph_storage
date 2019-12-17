@@ -5,6 +5,7 @@ from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,6 @@ class SysConfigHandler(AdminBaseHandler):
             self.finish_action(begin_action, None, 'sysconfig', gateway_cidr)
 
     def image_namespace_get(self, ctxt):
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
         return image_namespace

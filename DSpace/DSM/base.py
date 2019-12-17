@@ -10,6 +10,7 @@ from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import ConfigKey
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,8 @@ class AdminBaseHandler(object):
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
         ctxt = context.get_context()
-        self.debug_mode = objects.sysconfig.sys_config_get(ctxt, 'debug_mode')
+        self.debug_mode = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DEBUG_MODE)
 
     def _wapper(self, fun, *args, **kwargs):
         try:

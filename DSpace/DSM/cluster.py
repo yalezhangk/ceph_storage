@@ -10,6 +10,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.cluster import cluster_delete_flow
 from DSpace.taskflows.node import NodeTask
@@ -100,7 +101,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if not len(clusters):
             return False
 
-        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, ConfigKey.ADMIN_IPS)
         admin_ips = admin_ips.split(',')
 
         success = True
@@ -168,7 +169,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def cluster_admin_nodes_get(self, ctxt):
         logger.debug("get admin nodes info")
         nodes = []
-        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, ConfigKey.ADMIN_IPS)
         admin_ips = admin_ips.split(',')
         has_ceph = False
         for ip_address in admin_ips:

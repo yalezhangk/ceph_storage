@@ -12,6 +12,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.prometheus import PrometheusTool
@@ -236,7 +237,7 @@ class OsdHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("No active monitor"))
         # osd num check
         max_osd_num = objects.sysconfig.sys_config_get(
-            ctxt, key="max_osd_num"
+            ctxt, ConfigKey.MAX_OSD_NUM
         )
         osd_num = objects.OsdList.get_count(ctxt)
         if osd_num >= max_osd_num:
