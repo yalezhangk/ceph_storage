@@ -932,7 +932,12 @@ class NodeHandler(AdminBaseHandler):
             for per_sys in default_port:
                 port = objects.sysconfig.sys_config_get(
                     self.ctxt, per_sys)
-                check_ports.append(int(port))
+                if isinstance(port, int):
+                    check_ports.append(port)
+                elif isinstance(port, str) and port.isdecimal():
+                    check_ports.append(int(port))
+                else:
+                    logger.warning('port:%s shuld be int or str', port)
             res['check_ceph_port'] = self._node_check_port(
                 node_task, check_ports)
         if "athena_ports" in items:
@@ -942,7 +947,12 @@ class NodeHandler(AdminBaseHandler):
             for per_sys in default_port:
                 port = objects.sysconfig.sys_config_get(
                     self.ctxt, per_sys)
-                check_ports.append(int(port))
+                if isinstance(port, int):
+                    check_ports.append(port)
+                elif isinstance(port, str) and port.isdecimal():
+                    check_ports.append(int(port))
+                else:
+                    logger.warning('port:%s shuld be int or str', port)
             res['check_athena_port'] = self._node_check_port(
                 node_task, check_ports)
         if "network" in items:
