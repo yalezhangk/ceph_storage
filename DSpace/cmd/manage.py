@@ -177,10 +177,10 @@ class DbCommands(object):
             'max_osd_num': s_fields.ConfigType.INT,
             'max_monitor_num': s_fields.ConfigType.INT,
             'dspace_dir': s_fields.ConfigType.STRING,
-            'node_exporter_port': s_fields.ConfigType.INT,
+            'node_exporter_port': s_fields.ConfigType.STRING,
             'debug_mode': s_fields.ConfigType.BOOL,
-            'ceph_monitor_port': s_fields.ConfigType.INT,
-            'mgr_dspace_port': s_fields.ConfigType.INT,
+            'ceph_monitor_port': s_fields.ConfigType.STRING,
+            'mgr_dspace_port': s_fields.ConfigType.STRING,
             'dsa_socket_file': s_fields.ConfigType.STRING
         }
         for c in configs:
