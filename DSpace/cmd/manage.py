@@ -24,6 +24,7 @@ from DSpace.db import migration as db_migration
 from DSpace.db.sqlalchemy import api as db_api
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import ConfigKey
 
 try:
     import collections.abc as collections
@@ -161,27 +162,27 @@ class DbCommands(object):
         configs = data.split('|')
         ctxt = context.get_context()
         allowed = {
-            'image_name': s_fields.ConfigType.STRING,
-            'image_namespace': s_fields.ConfigType.STRING,
-            'dspace_version': s_fields.ConfigType.STRING,
-            'admin_ip_address': s_fields.ConfigType.STRING,
-            'agent_port': s_fields.ConfigType.INT,
-            'admin_port': s_fields.ConfigType.INT,
-            'dspace_repo': s_fields.ConfigType.STRING,
-            'config_dir': s_fields.ConfigType.STRING,
-            'run_dir': s_fields.ConfigType.STRING,
-            'config_dir_container': s_fields.ConfigType.STRING,
-            'log_dir': s_fields.ConfigType.STRING,
-            'log_dir_container': s_fields.ConfigType.STRING,
-            'admin_ips': s_fields.ConfigType.STRING,
-            'max_osd_num': s_fields.ConfigType.INT,
-            'max_monitor_num': s_fields.ConfigType.INT,
-            'dspace_dir': s_fields.ConfigType.STRING,
-            'node_exporter_port': s_fields.ConfigType.STRING,
-            'debug_mode': s_fields.ConfigType.BOOL,
-            'ceph_monitor_port': s_fields.ConfigType.STRING,
-            'mgr_dspace_port': s_fields.ConfigType.STRING,
-            'dsa_socket_file': s_fields.ConfigType.STRING
+            ConfigKey.IMAGE_NAME: s_fields.ConfigType.STRING,
+            ConfigKey.IMAGE_NAMESPACE: s_fields.ConfigType.STRING,
+            ConfigKey.DSPACE_VERSION: s_fields.ConfigType.STRING,
+            ConfigKey.ADMIN_IP_ADDRESS: s_fields.ConfigType.STRING,
+            ConfigKey.AGENT_PORT: s_fields.ConfigType.INT,
+            ConfigKey.ADMIN_PORT: s_fields.ConfigType.INT,
+            ConfigKey.DSPACE_REPO: s_fields.ConfigType.STRING,
+            ConfigKey.CONFIG_DIR: s_fields.ConfigType.STRING,
+            ConfigKey.CONFIG_DIR_CONTAINER: s_fields.ConfigType.STRING,
+            ConfigKey.LOG_DIR: s_fields.ConfigType.STRING,
+            ConfigKey.LOG_DIR_CONTAINER: s_fields.ConfigType.STRING,
+            ConfigKey.ADMIN_IPS: s_fields.ConfigType.STRING,
+            ConfigKey.MAX_OSD_NUM: s_fields.ConfigType.INT,
+            ConfigKey.MAX_MONITOR_NUM: s_fields.ConfigType.INT,
+            ConfigKey.DSPACE_DIR: s_fields.ConfigType.STRING,
+            ConfigKey.NODE_EXPORTER_PORT: s_fields.ConfigType.STRING,
+            ConfigKey.DEBUG_MODE: s_fields.ConfigType.BOOL,
+            ConfigKey.CEPH_MONITOR_PORT: s_fields.ConfigType.STRING,
+            ConfigKey.MGR_DSPACE_PORT: s_fields.ConfigType.STRING,
+            ConfigKey.DSA_SOCKET_FILE: s_fields.ConfigType.STRING,
+            ConfigKey.DSA_RUN_DIR: s_fields.ConfigType.STRING
         }
         for c in configs:
             key, value = c.split("=", 1)

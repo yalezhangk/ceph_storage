@@ -11,6 +11,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.include import include_clean_flow
 from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodeMixin
@@ -238,7 +239,7 @@ class NodeHandler(AdminBaseHandler):
             ctxt, key="cluster_cidr"
         )
         max_mon_num = objects.sysconfig.sys_config_get(
-            ctxt, key="max_monitor_num"
+            ctxt, ConfigKey.MAX_MONITOR_NUM
         )
         mon_num = objects.NodeList.get_count(
             ctxt, filters={"role_monitor": True}
@@ -786,7 +787,7 @@ class NodeHandler(AdminBaseHandler):
         cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
         if not cluster.is_admin:
             return []
-        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, ConfigKey.ADMIN_IPS)
         if admin_ips:
             admin_ips = admin_ips.split(',')
         for data in datas:
@@ -970,8 +971,9 @@ class NodeHandler(AdminBaseHandler):
         # check port
         if "ceph_ports" in items:
             # default [6789, 9100, 9284]
-            default_port = ['ceph_monitor_port', 'node_exporter_port',
-                            'mgr_dspace_port']
+            default_port = [ConfigKey.CEPH_MONITOR_PORT,
+                            ConfigKey.NODE_EXPORTER_PORT,
+                            ConfigKey.MGR_DSPACE_PORT]
             check_ports = []
             for per_sys in default_port:
                 port = objects.sysconfig.sys_config_get(
@@ -986,7 +988,7 @@ class NodeHandler(AdminBaseHandler):
                 node_task, check_ports)
         if "athena_ports" in items:
             # default [9100, 2083]
-            default_port = ['node_exporter_port', 'agent_port']
+            default_port = [ConfigKey.NODE_EXPORTER_PORT, ConfigKey.AGENT_PORT]
             check_ports = []
             for per_sys in default_port:
                 port = objects.sysconfig.sys_config_get(

@@ -160,9 +160,10 @@ class NodeTask(object):
     def chrony_update(self):
         ssh = self.get_ssh_executor()
         # install package
-        config_dir = objects.sysconfig.sys_config_get(self.ctxt, "config_dir")
-        image_namespace = objects.sysconfig.sys_config_get(self.ctxt,
-                                                           "image_namespace")
+        config_dir = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.CONFIG_DIR)
+        image_namespace = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.IMAGE_NAMESPACE)
         file_tool = FileTool(ssh)
         file_tool.write("{}/chrony.conf".format(config_dir),
                         self.get_chrony_conf(self.ctxt, self.node.ip_address))
@@ -204,7 +205,7 @@ class NodeTask(object):
             self.ctxt, 'global', 'auth_cluster_required')
         fsid = objects.ceph_config.ceph_config_get(self.ctxt, 'global', 'fsid')
         mgr_dspace_port = objects.sysconfig.sys_config_get(
-            self.ctxt, "mgr_dspace_port")
+            self.ctxt, ConfigKey.MGR_DSPACE_PORT)
         agent.ceph_mon_create(self.ctxt, fsid, ceph_auth=ceph_auth,
                               mgr_dspace_port=mgr_dspace_port)
 
@@ -493,7 +494,7 @@ class NodeTask(object):
         service_tool = ServiceTool(ssh)
         if service_tool.status('docker') == 'active':
             image_namespace = objects.sysconfig.sys_config_get(
-                self.ctxt, "image_namespace")
+                self.ctxt, ConfigKey.IMAGE_NAMESPACE)
             dspace_containers = [
                 "{}_dsa".format(image_namespace),
                 "{}_chrony".format(image_namespace),
@@ -542,15 +543,15 @@ class NodeTask(object):
                     service, self.node.ip_address, self.node.hostname)
         if not path:
             path = objects.sysconfig.sys_config_get(
-                self.ctxt, "config_dir_container")
+                self.ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
         if not port:
             if service == 'node_exporter':
                 port = objects.sysconfig.sys_config_get(
-                    self.ctxt, "node_exporter_port")
+                    self.ctxt, ConfigKey.NODE_EXPORTER_PORT)
             if service == "mgr":
                 # default 9283
                 port = objects.sysconfig.sys_config_get(
-                    self.ctxt, "mgr_dspace_port")
+                    self.ctxt, ConfigKey.MGR_DSPACE_PORT)
         ip = self.node.ip_address
         hostname = self.node.hostname
 
@@ -605,9 +606,9 @@ class NodeTask(object):
 class ContainerUninstallMixin(object):
     def _node_remove_container(self, ctxt, ssh, container_name, image_name):
         image_namespace = objects.sysconfig.sys_config_get(
-            ctxt, "image_namespace")
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
         dspace_version = objects.sysconfig.sys_config_get(
-            ctxt, "dspace_version")
+            ctxt, ConfigKey.DSPACE_VERSION)
         docker_tool = DockerTool(ssh)
         container_name = '{}_{}'.format(image_namespace, container_name)
         status = docker_tool.status(container_name)
@@ -627,7 +628,8 @@ class InstallCephRepo(BaseTask):
     def execute(self, ctxt, node, task_info):
         super(InstallCephRepo, self).execute(task_info)
         ssh = node.executer
-        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR)
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
         file_tool.write("/etc/yum.repos.d/ceph.repo",
@@ -685,8 +687,9 @@ class InstallDocker(BaseTask):
 
         # pull images from repo
         dspace_repo = objects.sysconfig.sys_config_get(
-            ctxt, "dspace_repo")
-        image_name = objects.sysconfig.sys_config_get(ctxt, "image_name")
+            ctxt, ConfigKey.DSPACE_REPO)
+        image_name = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAME)
         tmp_image = '/tmp/{}'.format(image_name)
         fetch_url = '{}/images/{}'.format(dspace_repo, image_name)
         file_tool.fetch_from_url(tmp_image, fetch_url)
@@ -694,7 +697,7 @@ class InstallDocker(BaseTask):
 
     def get_dspace_repo(self, ctxt):
         dspace_repo = objects.sysconfig.sys_config_get(
-            ctxt, "dspace_repo")
+            ctxt, ConfigKey.DSPACE_REPO)
         tpl = template.get('dspace.repo.j2')
         repo = tpl.render(dspace_repo=dspace_repo)
         return repo
@@ -705,7 +708,8 @@ class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
         super(DSpaceAgentUninstall, self).execute(task_info)
         ssh = node.executer
         self._node_remove_container(ctxt, ssh, "dsa", "dspace")
-        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR)
         # rm config file
         file_tool = FileTool(ssh)
         file_tool.rm("{}/dsa.conf".format(config_dir))
@@ -717,28 +721,31 @@ class DSpaceAgentInstall(BaseTask):
 
         ssh = node.executer
         # get global config
-        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir = objects.sysconfig.sys_config_get(ctxt, ConfigKey.LOG_DIR)
         log_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "log_dir_container")
-        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
-        run_dir = objects.sysconfig.sys_config_get(ctxt, "run_dir")
+            ctxt, ConfigKey.LOG_DIR_CONTAINER)
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR)
+        dsa_run_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSA_RUN_DIR)
         config_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir_container")
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(ctxt,
-                                                          "dspace_version")
+            ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
+        dspace_version = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSPACE_VERSION)
 
         # write config
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
-        file_tool.mkdir(run_dir)
+        file_tool.mkdir(dsa_run_dir)
         file_tool.write("{}/dsa.conf".format(config_dir),
                         self.get_dsa_conf(ctxt, node))
         # run container
         # TODO: remove code_dir
-        code_dir = objects.sysconfig.sys_config_get(ctxt, "dspace_dir")
-        debug_mode = objects.sysconfig.sys_config_get(ctxt, "debug_mode")
+        code_dir = objects.sysconfig.sys_config_get(ctxt, ConfigKey.DSPACE_DIR)
+        debug_mode = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DEBUG_MODE)
         volumes = [
             (config_dir, config_dir_container),
             (log_dir, log_dir_container),
@@ -760,7 +767,7 @@ class DSpaceAgentInstall(BaseTask):
             volumes=volumes
         )
         agent_port = objects.sysconfig.sys_config_get(
-            ctxt, "agent_port")
+            ctxt, ConfigKey.AGENT_PORT)
         endpoint = {"ip": str(node.ip_address), "port": agent_port}
         rpc_service = objects.RPCService(
             ctxt, service_name='agent',
@@ -795,13 +802,13 @@ class DSpaceAgentInstall(BaseTask):
 
     def get_dsa_conf(self, ctxt, node):
         admin_ip_address = objects.sysconfig.sys_config_get(
-            ctxt, "admin_ip_address")
+            ctxt, ConfigKey.ADMIN_IP_ADDRESS)
         admin_port = objects.sysconfig.sys_config_get(
-            ctxt, "admin_port")
+            ctxt, ConfigKey.ADMIN_PORT)
         agent_port = objects.sysconfig.sys_config_get(
-            ctxt, "agent_port")
+            ctxt, ConfigKey.AGENT_PORT)
         socket_file = objects.sysconfig.sys_config_get(
-            ctxt, "dsa_socket_file")
+            ctxt, ConfigKey.DSA_SOCKET_FILE)
 
         tpl = template.get('dsa.conf.j2')
         dsa_conf = tpl.render(
@@ -822,7 +829,8 @@ class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
         ssh = node.executer
         # remove container and image
         self._node_remove_container(ctxt, ssh, "chrony", "chrony")
-        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR)
         # rm config file
         file_tool = FileTool(ssh)
         try:
@@ -837,16 +845,17 @@ class DSpaceChronyInstall(BaseTask, NodeTask):
 
         ssh = node.executer
         # install package
-        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir = objects.sysconfig.sys_config_get(ctxt, ConfigKey.LOG_DIR)
         log_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "log_dir_container")
-        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+            ctxt, ConfigKey.LOG_DIR_CONTAINER)
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR)
         config_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir_container")
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(ctxt,
-                                                          "dspace_version")
+            ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
+        dspace_version = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSPACE_VERSION)
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
         file_tool.write("{}/chrony.conf".format(config_dir),
@@ -927,15 +936,16 @@ class DSpaceExpoterInstall(BaseTask):
         ssh = node.executer
         # run container
         docker_tool = DockerTool(ssh)
-        config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        config_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR)
         config_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir_container")
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(ctxt,
-                                                          "dspace_version")
+            ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
+        dspace_version = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSPACE_VERSION)
         node_exporter_port = objects.sysconfig.sys_config_get(
-            ctxt, "node_exporter_port")
+            ctxt, ConfigKey.NODE_EXPORTER_PORT)
         docker_tool.run(
             image="{}/node_exporter:{}".format(image_namespace,
                                                dspace_version),
@@ -974,17 +984,17 @@ class HaproxyInstall(BaseTask):
 
         ssh = node.executer
         # get global config
-        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir = objects.sysconfig.sys_config_get(ctxt, ConfigKey.LOG_DIR)
         log_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "log_dir_container")
+            ctxt, ConfigKey.LOG_DIR_CONTAINER)
         config_dir = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir") + "/radosgw_haproxy/"
+            ctxt, ConfigKey.CONFIG_DIR) + "/radosgw_haproxy/"
         config_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir_container") + "/haproxy"
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(ctxt,
-                                                          "dspace_version")
+            ctxt, ConfigKey.CONFIG_DIR_CONTAINER) + "/haproxy"
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
+        dspace_version = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSPACE_VERSION)
 
         router_service = objects.RouterService(
             ctxt, name="haproxy",
@@ -1045,9 +1055,9 @@ def haproxy_update(ctxt, node):
     ssh = node.executer
     # get global config
     config_dir = objects.sysconfig.sys_config_get(
-        ctxt, "config_dir") + "/radosgw_haproxy/"
-    image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                       "image_namespace")
+        ctxt, ConfigKey.CONFIG_DIR) + "/radosgw_haproxy/"
+    image_namespace = objects.sysconfig.sys_config_get(
+        ctxt, ConfigKey.IMAGE_NAMESPACE)
 
     docker_tool = DockerTool(ssh)
     file_tool = FileTool(ssh)
@@ -1103,17 +1113,17 @@ class KeepalivedInstall(BaseTask):
 
         ssh = node.executer
         # get global config
-        log_dir = objects.sysconfig.sys_config_get(ctxt, "log_dir")
+        log_dir = objects.sysconfig.sys_config_get(ctxt, ConfigKey.LOG_DIR)
         log_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "log_dir_container")
+            ctxt, ConfigKey.LOG_DIR_CONTAINER)
         config_dir = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir") + "/radosgw_keepalived/"
+            ctxt, ConfigKey.CONFIG_DIR) + "/radosgw_keepalived/"
         config_dir_container = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir_container") + "/keepalived"
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
-        dspace_version = objects.sysconfig.sys_config_get(ctxt,
-                                                          "dspace_version")
+            ctxt, ConfigKey.CONFIG_DIR_CONTAINER) + "/keepalived"
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
+        dspace_version = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSPACE_VERSION)
         router_service = objects.RouterService(
             ctxt, name="keepalived",
             status='creating',
@@ -1169,9 +1179,9 @@ class KeepalivedUninstall(BaseTask):
         ssh = node.executer
         # get global config
         config_dir = objects.sysconfig.sys_config_get(
-            ctxt, "config_dir") + "/radosgw_keepalived/"
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
+            ctxt, ConfigKey.CONFIG_DIR) + "/radosgw_keepalived/"
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
         container_name = "{}_radosgw_keepalived".format(image_namespace)
 
         file_tool = FileTool(ssh)
