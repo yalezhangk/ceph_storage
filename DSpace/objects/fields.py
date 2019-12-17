@@ -465,3 +465,8 @@ class RouterServiceStatus(BaseStorEnum):
 
 class RouterServiceStatusField(BaseEnumField):
     AUTO_TYPE = RouterServiceStatus()
+
+
+class ConfigKey(BaseStorEnum):
+    ENABLE_CEPH_REPO = 'enable_ceph_repo'
+    REMOVE_ANOTHER_REPO = 'remove_another_repo'

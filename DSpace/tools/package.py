@@ -17,6 +17,9 @@ class PackageBase(ToolBase):
     def uninstall(self, names, **kwargs):
         raise NotImplementedError("Method Not ImplementedError")
 
+    def clean(self):
+        raise NotImplementedError("Method Not ImplementedError")
+
 
 class YumPackage(PackageBase):
     def install(self, names, **kwargs):
@@ -49,6 +52,15 @@ class YumPackage(PackageBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def clean(self):
+        logger.debug("Clean all Package cache")
+        cmd = ["yum", "clean", 'all']
+        rc, stdout, stderr = self.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
 
 class Package(ToolBase):
     def __init__(self, executor, *args, **kwargs):
@@ -61,3 +73,6 @@ class Package(ToolBase):
 
     def uninstall(self, names, **kwargs):
         self.tool.uninstall(names=names, **kwargs)
+
+    def clean(self):
+        self.tool.clean()
