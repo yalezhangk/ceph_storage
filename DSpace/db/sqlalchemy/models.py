@@ -154,12 +154,14 @@ class DiskPartition(BASE, StorBase):
     name = Column(String(32))
     size = Column(BigInteger)  # bytes
     status = Column(String(32))
+    uuid = Column(String(36))  # partition uuid
     type = Column(String(32))
     role = Column(String(32), index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     _disk = relationship("Disk", backref="_partitions")
+    _node = relationship("Node", backref="_partitions")
 
 
 class Network(BASE, StorBase):

@@ -292,6 +292,24 @@ class AdminClient(BaseClient):
             start=start, end=end)
         return response
 
+    def osd_accelerate_disk_replace_prepare(self, ctxt, disk_id):
+        response = self.call(
+            ctxt, "osd_accelerate_disk_replace_prepare", disk_id=disk_id)
+        return response
+
+    def osd_accelerate_disk_replace(self, ctxt, disk_id):
+        response = self.call(
+            ctxt, "osd_accelerate_disk_replace", disk_id=disk_id)
+        return response
+
+    def osd_disk_replace_prepare(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_disk_replace_prepare", osd_id=osd_id)
+        return response
+
+    def osd_disk_replace(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_disk_replace", osd_id=osd_id)
+        return response
+
     def osd_disk_metrics_get(self, ctxt, osd_id):
         response = self.call(ctxt, "osd_disk_metrics_get", osd_id=osd_id)
         return response
@@ -454,6 +472,16 @@ class AdminClient(BaseClient):
 
     def disk_reporter(self, ctxt, disks, node_id):
         response = self.call(ctxt, "disk_reporter", disks=disks,
+                             node_id=node_id)
+        return response
+
+    def disk_offline(self, ctxt, slot, node_id):
+        response = self.call(ctxt, "disk_offline", slot=slot,
+                             node_id=node_id)
+        return response
+
+    def disk_online(self, ctxt, disk_info, node_id):
+        response = self.call(ctxt, "disk_online", disk_info=disk_info,
                              node_id=node_id)
         return response
 

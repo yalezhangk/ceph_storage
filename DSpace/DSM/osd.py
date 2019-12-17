@@ -5,6 +5,7 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -422,3 +423,208 @@ class OsdHandler(AdminBaseHandler):
             sr["slow_request_sum"] = sr["slow_request_sum"][:osd_top]
             sr["slow_request_ops"] = sr["slow_request_ops"][:op_top]
         return sr
+
+    def _osd_disk_replace_prepare(self, ctxt, osd):
+        """
+          prepare to replace osd disk
+          1. set noout,norecover,nobackfill flag
+          2. stop osd service
+          3. umount osd path
+          4. remove osd from cluster (don't remove osd from crush)
+        """
+        logger.info("prepare to replace disk for osd.%s", osd.osd_id)
+        try:
+            ceph_client = CephTask(ctxt)
+            ceph_client.osds_add_noout([osd.osd_id])
+            task = NodeTask(ctxt, osd.node)
+            osd = task.ceph_osd_clean(osd)
+            status = s_fields.OsdStatus.REPLACE_PREPARED
+            msg = _("osd.{} replace prepare success").format(osd.osd_id)
+            op_status = "OSD_CLEAN_SUCCESS"
+        except Exception as e:
+            logger.exception("osd.%s replace prepare error: %s", osd.osd_id, e)
+            status = s_fields.OsdStatus.ERROR
+            msg = _("osd.{} replace prepare error").format(osd.osd_id)
+            op_status = "OSD_CLEAN_ERROR"
+
+        osd.status = status
+        osd.save()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, osd, op_status, msg)
+        return osd
+
+    def osd_disk_replace_prepare(self, ctxt, osd_id):
+        osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        if osd.status not in [s_fields.OsdStatus.MAINTAIN,
+                              s_fields.OsdStatus.ACTIVE,
+                              s_fields.OsdStatus.WARNING,
+                              s_fields.OsdStatus.ERROR]:
+            raise exception.InvalidInput(_("In the operation osd can "
+                                           "not replace disk"))
+        osd.status = s_fields.OsdStatus.REPLACE_PREPARING
+        osd.disk.status = s_fields.DiskStatus.REPLACING
+        osd.disk.save()
+        osd.save()
+        self.task_submit(self._osd_disk_replace_prepare, ctxt, osd)
+        return osd
+
+    def _accelerate_disk_prepare(self, ctxt, disk):
+        logger.info("start to clean osd from accelerate disk %s", disk.name)
+        osds = self._osds_get_by_accelerate_disk(ctxt, disk.id)
+        osd_clean = True
+        for tmp_osd in osds:
+            # get osd again, insure osd status is latest
+            osd = objects.Osd.get_by_id(ctxt, tmp_osd.id, joined_load=True)
+            if not osd:
+                continue
+            if osd.status in [s_fields.OsdStatus.CREATING,
+                              s_fields.OsdStatus.DELETING]:
+                logger.error("can not clean osd.%s, status:"
+                             " %s", osd.osd_id, osd.status)
+                continue
+            if osd.status == s_fields.OsdStatus.REPLACE_PREPARED:
+                logger.info('osd.%s has been cleaned, continue', osd.osd_id)
+                continue
+            osd.disk.status = s_fields.DiskStatus.REPLACING
+            osd.disk.save()
+            osd.status = s_fields.OsdStatus.REPLACE_PREPARING
+            osd.save()
+            osd = self._osd_disk_replace_prepare(ctxt, osd)
+            if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
+                osd_clean = False
+        if not osd_clean:
+            msg = _("accelerate disk {} osd clean error").format(disk.name)
+            op_status = "DISK_CLEAN_ERROR"
+            logger.error(msg)
+        else:
+            msg = _("accelerate disk {} osd clean success").format(disk.name)
+            op_status = "DISK_CLEAN_SUCCESS"
+            logger.info(msg)
+        # send websocket
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, disk, op_status, msg)
+
+    def osd_accelerate_disk_replace_prepare(self, ctxt, disk_id):
+        disk = objects.Disk.get_by_id(
+            ctxt, disk_id, expected_attrs=['partition_used', 'node',
+                                           'partitions'])
+        if disk.role != s_fields.DiskRole.ACCELERATE:
+            raise exception.InvalidInput(_("disk role should be "
+                                           "accelerate"))
+        disk.status = s_fields.DiskStatus.REPLACING
+        disk.save()
+        self.task_submit(self._accelerate_disk_prepare, ctxt, disk)
+        return disk
+
+    def _osd_disk_replace(self, ctxt, osd, begin_action=None):
+        logger.info("replace disk for osd %s", osd.osd_id)
+        try:
+            task = NodeTask(ctxt, osd.node)
+            osd = task.ceph_osd_replace(osd)
+            osd.status = s_fields.OsdStatus.ACTIVE
+            osd.save()
+            osd.disk.status = s_fields.DiskStatus.INUSE
+            osd.disk.save()
+            ceph_client = CephTask(ctxt)
+            ceph_client.osds_rm_noout([osd.osd_id])
+            logger.info("osd.%s replace success", osd.osd_id)
+            op_status = 'OSD_REPLACE_SUCCESS'
+            msg = _("create success: osd.{}".format(osd.osd_id))
+            err_msg = None
+        except exception.StorException as e:
+            logger.error(e)
+            osd.status = s_fields.OsdStatus.ERROR
+            osd.save()
+            logger.info("osd.%s create error", osd.osd_id)
+            msg = _("create error: osd.{}").format(osd.osd_id)
+            op_status = 'OSD_REPLACE_ERROR'
+            err_msg = str(e)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, osd, op_status, msg)
+        if begin_action:
+            self.finish_action(begin_action, osd.id,
+                               'osd.{}'.format(osd.osd_id),
+                               objects.json_encode(osd.node), osd.status,
+                               err_msg=err_msg)
+
+    def osd_disk_replace(self, ctxt, osd_id):
+        osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
+            raise exception.InvalidInput(_("Osd status should be "
+                                           "REPLACE_PREPARED"))
+        # check db/cache/journal status
+        begin_action = self.begin_action(ctxt, Resource.OSD,
+                                         Action.OSD_REPLACE)
+
+        # apply async
+        self.task_submit(self._osd_disk_replace, ctxt, osd, begin_action)
+        logger.debug("Osd create task apply.")
+
+        return osd
+
+    def _osd_accelerate_disk_replace(self, ctxt, disk, osds, values):
+        logger.info("start to replace accelerate disk %s", disk.name)
+        client = AgentClientManager(
+            ctxt, cluster_id=disk.cluster_id
+        ).get_client(node_id=disk.node.id)
+
+        partitions = client.disk_partitions_create(
+            ctxt, node=disk.node, disk=disk, values=values)
+
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+
+        disk_partitions = objects.DiskPartitionList.get_all(
+            ctxt, filters={'disk_id': disk.id})
+
+        if not partitions or len(disk_partitions) != len(partitions):
+            msg = _("create disk {} partitions failed".format(disk.name))
+            op_status = "DISK_CREATE_PART_ERROR"
+            logger.error(msg)
+            wb_client.send_message(ctxt, disk, op_status, msg)
+            return
+
+        for disk_part in disk_partitions:
+            for part in partitions:
+                if disk_part.role == part.get('role'):
+                    disk_part.uuid = part.get('uuid')
+                    disk_part.size = part.get('size')
+                    disk_part.name = part.get('name')
+                    disk_part.save()
+                    partitions.remove(part)
+                    break
+        for tmp_osd in osds:
+            # get osd again, insure osd status is latest
+            osd = objects.Osd.get_by_id(ctxt, tmp_osd.id, joined_load=True)
+            self._osd_disk_replace(ctxt, osd)
+        disk.status = s_fields.DiskStatus.AVAILABLE
+        disk.save()
+        logger.info("accelerate disk %s replace finish", disk.name)
+        msg = _("accelerate disk {} replace success".format(disk.name))
+        wb_client.send_message(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
+
+    def osd_accelerate_disk_replace(self, ctxt, disk_id):
+        disk = objects.Disk.get_by_id(
+            ctxt, disk_id, expected_attrs=['partition_used', 'node',
+                                           'partitions'])
+        if not disk.partitions:
+            raise exception.InvalidInput(_("accelerate disk has no "
+                                           "partitions"))
+        accelerate_role = []
+        for partition in disk.partitions:
+            if partition.role not in accelerate_role:
+                accelerate_role.append(partition.role)
+        values = {}
+        if len(accelerate_role) > 1:
+            values['partition_role'] = s_fields.DiskPartitionRole.MIX
+            values['partition_num'] = disk.partition_num / 2
+        else:
+            values['partition_role'] = accelerate_role[0]
+            values['partition_num'] = disk.partition_num
+        osds = self._osds_get_by_accelerate_disk(ctxt, disk.id)
+        for osd in osds:
+            if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
+                raise exception.InvalidInput(_("Osd status should be "
+                                               "REPLACE_PREPARED"))
+        self.task_submit(
+            self._osd_accelerate_disk_replace, ctxt, disk, osds, values)
+        return disk

@@ -96,6 +96,18 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_slow_request", osds=osds)
         return response
 
+    def ceph_osd_clean(self, ctxt, osd):
+        response = self.call(ctxt, "ceph_osd_clean", osd=osd)
+        return response
+
+    def ceph_osd_offline(self, ctxt, osd, umount):
+        response = self.call(ctxt, "ceph_osd_offline", osd=osd, umount=umount)
+        return response
+
+    def ceph_osd_restart(self, ctxt, osd):
+        response = self.call(ctxt, "ceph_osd_restart", osd=osd)
+        return response
+
     def package_install(self, ctxt, packages):
         response = self.call(ctxt, "package_install", packages=packages)
         return response

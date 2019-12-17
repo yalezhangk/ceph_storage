@@ -169,6 +169,7 @@ class DbCommands(object):
             'admin_port': s_fields.ConfigType.INT,
             'dspace_repo': s_fields.ConfigType.STRING,
             'config_dir': s_fields.ConfigType.STRING,
+            'run_dir': s_fields.ConfigType.STRING,
             'config_dir_container': s_fields.ConfigType.STRING,
             'log_dir': s_fields.ConfigType.STRING,
             'log_dir_container': s_fields.ConfigType.STRING,
@@ -179,7 +180,8 @@ class DbCommands(object):
             'node_exporter_port': s_fields.ConfigType.INT,
             'debug_mode': s_fields.ConfigType.BOOL,
             'ceph_monitor_port': s_fields.ConfigType.INT,
-            'mgr_dspace_port': s_fields.ConfigType.INT
+            'mgr_dspace_port': s_fields.ConfigType.INT,
+            'dsa_socket_file': s_fields.ConfigType.STRING
         }
         for c in configs:
             key, value = c.split("=", 1)

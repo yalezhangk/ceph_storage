@@ -119,9 +119,11 @@ class DiskStatus(BaseStorEnum):
     """
     AVAILABLE = 'available'
     UNAVAILABLE = 'unavailable'
+    ERROR = 'error'
     INUSE = 'inuse'
+    REPLACING = 'replacing'
 
-    ALL = (AVAILABLE, UNAVAILABLE, INUSE)
+    ALL = (AVAILABLE, UNAVAILABLE, INUSE, ERROR, REPLACING)
 
 
 class DiskStatusField(BaseEnumField):
@@ -221,9 +223,13 @@ class OsdStatus(BaseStorEnum):
     ERROR = 'error'
     RESTARTING = 'restarting'
     PROCESSING = 'processing'
+    REPLACE_PREPARING = 'replace_preparing'
+    REPLACE_PREPARED = 'replace_prepared'
+    REPLACING = 'replacing'
 
     ALL = (CREATING, DELETING, ERROR, ACTIVE,
-           OFFLINE, RESTARTING, PROCESSING, MAINTAIN, WARNING)
+           OFFLINE, RESTARTING, PROCESSING, MAINTAIN, WARNING,
+           REPLACE_PREPARING, REPLACE_PREPARED, REPLACING)
 
 
 class OsdStatusField(BaseEnumField):
@@ -299,13 +305,15 @@ class AllActionType(BaseStorEnum):
     RACK_UPDATE_TOPLOGY = 'rack_update_toplogy'
     NODE_UPDATE_RACK = 'node_update_rack'
     PAUSE = 'pause'
+    OSD_REPLACE_PREPARE = 'osd_replace_prepare'
+    OSD_REPLACE = 'osd_replace'
 
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
-           CLUSTER_INCLUDE_CLEAN, PAUSE)
+           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE)
 
 
 class AllActionStatus(BaseStorEnum):

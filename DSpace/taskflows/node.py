@@ -240,6 +240,30 @@ class NodeTask(object):
         except Exception as e:
             logger.warning("uninstall ceph package failed: %s", e)
 
+    def ceph_osd_replace(self, osd):
+        logger.debug("recreate %s(osd.%s)", osd.id, osd.osd_id)
+        agent = self.get_agent()
+        osd = agent.ceph_osd_create(self.ctxt, osd)
+        return osd
+
+    def ceph_osd_clean(self, osd):
+        logger.info("clean %s(osd.%s) for replace disk", osd.id, osd.osd_id)
+        agent = self.get_agent()
+        osd = agent.ceph_osd_clean(self.ctxt, osd)
+        return osd
+
+    def ceph_osd_offline(self, osd, umount=True):
+        logger.info("set osd %s(osd.%s) offline", osd.id, osd.osd_id)
+        agent = self.get_agent()
+        osd = agent.ceph_osd_offline(self.ctxt, osd, umount)
+        return osd
+
+    def ceph_osd_restart(self, osd):
+        logger.info("restart osd %s(osd.%s) ", osd.id, osd.osd_id)
+        agent = self.get_agent()
+        osd = agent.ceph_osd_restart(self.ctxt, osd)
+        return osd
+
     def ceph_osd_install(self, osd):
         # write ceph.conf
         logger.debug("write config")
@@ -250,7 +274,6 @@ class NodeTask(object):
         # TODO: key
         logger.debug("osd create on node")
         osd = agent.ceph_osd_create(self.ctxt, osd)
-
         return osd
 
     def ceph_osd_uninstall(self, osd):
@@ -699,6 +722,7 @@ class DSpaceAgentInstall(BaseTask):
         log_dir_container = objects.sysconfig.sys_config_get(
             ctxt, "log_dir_container")
         config_dir = objects.sysconfig.sys_config_get(ctxt, "config_dir")
+        run_dir = objects.sysconfig.sys_config_get(ctxt, "run_dir")
         config_dir_container = objects.sysconfig.sys_config_get(
             ctxt, "config_dir_container")
         image_namespace = objects.sysconfig.sys_config_get(ctxt,
@@ -709,6 +733,7 @@ class DSpaceAgentInstall(BaseTask):
         # write config
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
+        file_tool.mkdir(run_dir)
         file_tool.write("{}/dsa.conf".format(config_dir),
                         self.get_dsa_conf(ctxt, node))
         # run container
@@ -776,6 +801,8 @@ class DSpaceAgentInstall(BaseTask):
             ctxt, "admin_port")
         agent_port = objects.sysconfig.sys_config_get(
             ctxt, "agent_port")
+        socket_file = objects.sysconfig.sys_config_get(
+            ctxt, "dsa_socket_file")
 
         tpl = template.get('dsa.conf.j2')
         dsa_conf = tpl.render(
@@ -784,7 +811,8 @@ class DSpaceAgentInstall(BaseTask):
             admin_port=admin_port,
             agent_port=agent_port,
             node_id=node.id,
-            cluster_id=node.cluster_id
+            cluster_id=node.cluster_id,
+            socket_file=socket_file
         )
         return dsa_conf
 

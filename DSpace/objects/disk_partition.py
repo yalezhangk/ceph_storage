@@ -19,7 +19,8 @@ class DiskPartition(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'name': fields.StringField(),
+        'name': fields.StringField(nullable=True),
+        'uuid': fields.UUIDField(nullable=True),
         'size': fields.IntegerField(),
         'status': s_field.DiskPartitionStatusField(),
         'type': s_field.DiskPartitionTypeField(),
@@ -53,6 +54,20 @@ class DiskPartition(base.StorPersistentObject, base.StorObject,
         updated_values = db.disk_partition_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
+
+    @classmethod
+    def get_by_uuid(cls, context, uuid, node_id, expected_attrs=None):
+        db_disk_partition = db.disk_partition_get_by_uuid(
+            context, uuid, node_id, expected_attrs=expected_attrs)
+        if not db_disk_partition:
+            return None
+        kwargs = {}
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
+        return cls._from_db_object(context,
+                                   cls(context),
+                                   db_disk_partition,
+                                   **kwargs)
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):

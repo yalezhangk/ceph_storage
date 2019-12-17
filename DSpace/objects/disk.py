@@ -16,10 +16,10 @@ class Disk(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'name': fields.StringField(),
+        'name': fields.StringField(nullable=True),
         'status': s_field.DiskStatusField(),
-        'type': s_field.DiskTypeField(),
-        'size': fields.IntegerField(),
+        'type': s_field.DiskTypeField(nullable=True),
+        'size': fields.IntegerField(nullable=True),
         'rotate_speed': fields.IntegerField(nullable=True),
         'slot': fields.StringField(nullable=True),
         'model': fields.StringField(nullable=True),
@@ -64,6 +64,17 @@ class Disk(base.StorPersistentObject, base.StorObject,
         updated_values = db.disk_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
+
+    @classmethod
+    def get_by_slot(cls, context, slot, node_id, expected_attrs=None):
+        db_disk = db.disk_get_by_slot(
+            context, slot, node_id, expected_attrs=expected_attrs)
+        if not db_disk:
+            return None
+        kwargs = {}
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
+        return cls._from_db_object(context, cls(context), db_disk, **kwargs)
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):

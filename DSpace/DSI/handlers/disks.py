@@ -37,7 +37,8 @@ update_disk_schema = {
     "properties": {
         "action": {
             "type": "string",
-            "enum": ["light", "partition_create", "partition_remove"]
+            "enum": ["light", "partition_create", "partition_remove",
+                     "disk_replace_prepare", "disk_replace"]
         },
     },
     "allOf": [
@@ -294,6 +295,13 @@ class DiskActionHandler(ClusterAPIHandler):
         return client.disk_partitions_remove(ctxt, disk_id=disk_id,
                                              values=values)
 
+    def _disk_replace_prepare(self, ctxt, client, disk_id, values):
+        return client.osd_accelerate_disk_replace_prepare(ctxt,
+                                                          disk_id=disk_id)
+
+    def _disk_replace(self, ctxt, client, disk_id, values):
+        return client.osd_accelerate_disk_replace(ctxt, disk_id=disk_id)
+
     @gen.coroutine
     def post(self, disk_id):
         """
@@ -395,6 +403,8 @@ class DiskActionHandler(ClusterAPIHandler):
             "light": self._disk_light,
             "partition_create": self._disk_partitions_create,
             "partition_remove": self._disk_partitions_remove,
+            "disk_replace_prepare": self._disk_replace_prepare,
+            "disk_replace": self._disk_replace,
         }
         fun_action = action_map.get(action)
         if fun_action is None:

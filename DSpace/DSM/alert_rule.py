@@ -89,6 +89,20 @@ class AlertRuleInitMixin(object):
                 'level': 'WARN',
                 'trigger_period': '1440'
             },
+            {
+                'resource_type': 'disk',
+                'type': 'disk_online',
+                'trigger_value': 'online',
+                'level': 'MESSAGE',
+                'trigger_period': '0'
+            },
+            {
+                'resource_type': 'disk',
+                'type': 'disk_offline',
+                'trigger_value': 'offline',
+                'level': 'ERROR',
+                'trigger_period': '0'
+            },
         ]
 
         for init_data in init_datas:
