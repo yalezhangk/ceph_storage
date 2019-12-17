@@ -26,6 +26,7 @@ from DSpace.tools.probe import ProbeTool
 from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
 from DSpace.utils import template
+from DSpace.utils.cluster_config import get_full_ceph_version
 
 logger = logging.getLogger(__name__)
 CODE_DIR_CONTAINER = "/root/.local/lib/python3.6/site-packages/DSpace/"
@@ -1159,3 +1160,18 @@ class KeepalivedUninstall(BaseTask):
         if not router_service:
             docker_tool.rm(container_name, force=True)
             file_tool.rm("{}/keepalived.conf".format(config_dir))
+
+
+class SyncCephVersion(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(SyncCephVersion, self).execute(task_info)
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CEPH_VERSION)
+        if not ceph_version:
+            probe_tool = ProbeTool(node.executer)
+            checks = probe_tool.check(['ceph_version'])
+            ceph_version = checks['ceph_version']
+            installed = ceph_version.get('installed')
+            version = get_full_ceph_version(installed)
+            objects.sysconfig.sys_config_set(
+                ctxt, ConfigKey.CEPH_VERSION, version)

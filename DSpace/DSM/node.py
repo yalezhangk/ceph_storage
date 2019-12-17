@@ -20,6 +20,7 @@ from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config
 from DSpace.utils import logical_xor
 from DSpace.utils import validator
+from DSpace.utils.cluster_config import get_full_ceph_version
 
 logger = logging.getLogger(__name__)
 
@@ -652,7 +653,8 @@ class NodeHandler(AdminBaseHandler):
 
     def node_check(self, ctxt, data):
         check_items = ["hostname", "selinux", "ceph_ports", "ceph_package",
-                       "network", "athena_ports", "firewall", "container"]
+                       "network", "athena_ports", "firewall", "container",
+                       "ceph_version"]
         res = self._node_check(ctxt, data, check_items)
         return res
 
@@ -816,6 +818,43 @@ class NodeHandler(AdminBaseHandler):
         infos = probe_task.check_planning()
         return infos
 
+    def _check_compatibility(self, v):
+        version = get_full_ceph_version(v)
+        if version:
+            return True
+        return False
+
+    def _node_check_version(self, data):
+        pkgs = data.get('ceph_version')
+        available = pkgs.get('available')
+        if available and not self._check_compatibility(available):
+            return {
+                "check": False,
+                "msg": _("Repository version not support")
+            }
+        elif not available:
+            return {
+                "check": False,
+                "msg": _("Repository not found Ceph")
+            }
+        return {
+                "check": True,
+                "msg": None
+        }
+
+    def _node_inclusion_check_version(self, data):
+        pkgs = data.get('ceph_version')
+        installed = pkgs.get('installed')
+        if not installed or not self._check_compatibility(installed):
+            return {
+                "check": False,
+                "msg": _("Installed version not support")
+            }
+        return {
+                "check": True,
+                "msg": None
+        }
+
     def _node_check_port(self, node_task, ports):
         res = []
         for po in ports:
@@ -901,6 +940,9 @@ class NodeHandler(AdminBaseHandler):
             password=data.get('password'))
         node_task = NodeTask(ctxt, node)
         node_infos = node_task.node_get_infos()
+        probe_task = ProbeTask(ctxt, node)
+        info = probe_task.check(["ceph_version"])
+        logger.info("get ceph version %s", info)
 
         # check connection
         hostname = node_infos.get('hostname')
@@ -974,6 +1016,10 @@ class NodeHandler(AdminBaseHandler):
             res['check_firewall'] = node_task.check_firewall()
         if "container" in items:
             res['check_container'] = node_task.check_container()
+        if "ceph_version" in items:
+            res['ceph_version'] = self._node_check_version(info)
+        if "ceph_version_include" in items:
+            res['check_version'] = self._node_inclusion_check_version(info)
         return res
 
     def nodes_inclusion_check(self, ctxt, datas):
@@ -999,7 +1045,8 @@ class NodeHandler(AdminBaseHandler):
                 "roles",
                 "athena_ports",
                 "firewall",
-                "container"
+                "container",
+                "ceph_version_include"
             ])
             res['admin_ip'] = admin_ip
             status['nodes'].append(res)

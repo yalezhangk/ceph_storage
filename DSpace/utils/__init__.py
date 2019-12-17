@@ -67,3 +67,10 @@ def retry(exceptions, interval=1, retries=3, backoff_rate=2,
         return _wrapper
 
     return _decorator
+
+
+def versiontuple(v):
+    filled = []
+    for point in v.split("."):
+        filled.append(point.zfill(8))
+    return tuple(filled)

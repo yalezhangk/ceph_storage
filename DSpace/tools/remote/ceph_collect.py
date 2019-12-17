@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import argparse
 import ConfigParser
 import errno
 import json
 import os
 import re
 import subprocess
-import sys
+
+import yum
 
 ALLOWED_FAULT_DOMAIN = ['root', 'rack', 'datacenter', 'host', 'osd']
+PKGS = ['ceph-common', 'ceph-base', 'ceph-mgr', 'ceph-osd', 'python-cephfs',
+        'ceph-selinux', 'ceph-mds', 'libcephfs2', 'ceph-mon', 'librbd1',
+        'librados2']
 
 
 def _bytes2str(string):
@@ -287,8 +292,60 @@ def check_planning():
     return response
 
 
+def _get_pkg_version_by_yum(pkg):
+    yb = yum.YumBase()
+    yb.doConfigSetup(init_plugins=False)
+    installed = None
+    available = None
+    data = yb.doPackageLists(pkgnarrow='all', patterns=PKGS,
+                             showdups=True)
+    for item in data.available:
+        available = {
+            "version": item.version,
+            "release": item.release.split('.')[0]
+        }
+        break
+    for item in data.installed:
+        installed = {
+            "version": item.version,
+            "release": item.release.split('.')[0]
+        }
+        break
+
+    return {
+        "installed": installed,
+        "available": available,
+    }
+
+
+def get_pkg_version(pkg):
+    return _get_pkg_version_by_yum(pkg)
+
+
+def get_ceph_version():
+    for pkg in PKGS:
+        v = get_pkg_version(pkg)
+        if v:
+            return v
+    return None
+
+
+def include_check(args):
+    response = {
+    }
+    if args.ceph_version:
+        response["ceph_version"] = get_ceph_version()
+    return response
+
+
 def main():
-    action = sys.argv[1]
+    # TODO: Merge check
+    parser = argparse.ArgumentParser(description='Node info collect.')
+    parser.add_argument("action")
+    parser.add_argument('--ceph_version', action='store_true',
+                        help='get ceph version')
+    args = parser.parse_args()
+    action = args.action
     if action == "collect_nodes":
         data = collect_nodes()
         print(json.dumps(data))
@@ -307,6 +364,10 @@ def main():
         print(json.dumps(data))
     elif action == "check_planning":
         data = check_planning()
+        print(json.dumps(data))
+    elif action == "check":
+        # TODO: move all check to include_check
+        data = include_check(args)
         print(json.dumps(data))
 
 

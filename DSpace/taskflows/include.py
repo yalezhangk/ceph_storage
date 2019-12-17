@@ -31,6 +31,7 @@ from DSpace.taskflows.node import DSpaceChronyUninstall
 from DSpace.taskflows.node import DSpaceExpoterInstall
 from DSpace.taskflows.node import DSpaceExpoterUninstall
 from DSpace.taskflows.node import InstallDocker
+from DSpace.taskflows.node import SyncCephVersion
 from DSpace.taskflows.utils import CleanDataMixin
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.probe import ProbeTool
@@ -101,6 +102,7 @@ class InstallService(BaseTask):
         super(InstallService, self).execute(task_info)
         all_node_install_wf = uf.Flow('Nodes Install')
         kwargs = {}
+        sync_version = True
         for node in nodes:
             node.executer = self.get_ssh_executor(node)
             arg = "node-%s" % node.id
@@ -121,8 +123,13 @@ class InstallService(BaseTask):
                 "DSpace Agent Intall %s" % node.id,
                 rebind={'node': arg}))
             node_install_flow.add(MarkNodeActive(
-                "Mark node active  %s" % node.id,
+                "Mark node active %s" % node.id,
                 rebind={'node': arg}))
+            if sync_version:
+                node_install_flow.add(SyncCephVersion(
+                    "Sync Ceph Version %s" % node.id,
+                    rebind={'node': arg}))
+                sync_version = False
             all_node_install_wf.add(node_install_flow)
             kwargs[arg] = node
         kwargs.update({

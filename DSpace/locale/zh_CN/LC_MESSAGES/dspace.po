@@ -597,6 +597,15 @@ msgstr "请先清理集群"
 msgid "Please Import First"
 msgstr "请先导入集群"
 
+msgid "Repository version not support"
+msgstr "安装源中的Ceph版本还未被支持"
+
+msgid "Repository not found Ceph"
+msgstr "安装源中未找到Ceph"
+
+msgid "Installed version not support"
+msgstr "已安装的Ceph版本还未被支持"
+
 msgid "admin_ip,cluster_ip,public_ip is required"
 msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
 
@@ -856,3 +865,4 @@ msgstr "协调器未初始化"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
