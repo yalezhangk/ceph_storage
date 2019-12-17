@@ -528,6 +528,7 @@ class NodeTask(object):
                 # default 9283
                 port = objects.sysconfig.sys_config_get(
                     self.ctxt, "mgr_dspace_port")
+        port = str(port)
         ip = self.node.ip_address
         hostname = self.node.hostname
 
