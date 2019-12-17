@@ -147,7 +147,7 @@ class NodeHandler(AdminBaseHandler):
                         s_fields.NodeStatus.REMOVING_ROLE]
         nodes = objects.NodeList.get_all(
             ctxt, filters={'status': roles_status})
-        if len(nodes) and (node.role_monitor or node.role_storage):
+        if len(nodes) and node.role_monitor:
             raise exc.InvalidInput(_("Only one node can set roles at the"
                                      " same time"))
         if node.role_monitor:
@@ -733,10 +733,10 @@ class NodeHandler(AdminBaseHandler):
         nodes = objects.NodeList.get_all(
             ctxt, filters={'status': roles_status})
         roles = data.get('roles', "").split(',')
-        if len(nodes) and len(roles):
+        role_monitor = "monitor" in roles
+        if len(nodes) and role_monitor:
             raise exc.InvalidInput(_("Only one node can set roles at the"
                                      " same time"))
-        role_monitor = "monitor" in roles
         if role_monitor:
             self._mon_install_check(ctxt)
 
