@@ -22,6 +22,7 @@ class RouterService(base.StorPersistentObject, base.StorObject,
         'cluster_id': fields.StringField(),
         'net_id': fields.IntegerField(),
         'router_id': fields.IntegerField(),
+        'counter': fields.IntegerField(),
     }
 
     def create(self):

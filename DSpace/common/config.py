@@ -78,6 +78,21 @@ global_opts = [
     cfg.IntOpt('slow_request_get_time_interval',
                default=10,
                help='Gets the time interval for slow requests'),
+    cfg.IntOpt('osd_check_interval',
+               default=5,
+               help='The interval of osd status check'),
+    cfg.IntOpt('dsa_check_interval',
+               default=10,
+               help='The interval of dsa status check'),
+    cfg.IntOpt('node_check_interval',
+               default=5,
+               help='The interval of node status check'),
+    cfg.IntOpt('service_max_interval',
+               default=30,
+               help='The max interval of services to mark down'),
+    cfg.IntOpt('service_heartbeat_interval',
+               default=5,
+               help='The interval to check services status in dsa'),
 ]
 
 CONF.register_cli_opts(core_opts)

@@ -191,11 +191,12 @@ class DiskLedStatusField(BaseEnumField):
 class ServiceStatus(BaseStorEnum):
     ACTIVE = 'active'
     INACTIVE = 'inactive'
+    STARTING = 'starting'
 
     ERROR = 'error'
     FAILED = 'failed'
 
-    ALL = (ACTIVE, INACTIVE, ERROR, FAILED)
+    ALL = (ACTIVE, INACTIVE, STARTING, ERROR, FAILED)
 
 
 class ServiceStatusField(BaseEnumField):
@@ -431,13 +432,15 @@ class RadosgwStatus(BaseStorEnum):
     CREATING = 'creating'
     DELETING = 'deleting'
     STOPPING = "stopping"
+    STOPPED = "stopped"
     STARTING = "starting"
     ERROR = 'error'
 
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
-    ALL = (CREATING, DELETING, STOPPING, STARTING, ERROR, ACTIVE, INACTIVE)
+    ALL = (CREATING, DELETING, STOPPING, STOPPED, STARTING, STARTING, ERROR,
+           ACTIVE, INACTIVE)
 
 
 class RadosgwStatusField(BaseEnumField):
@@ -463,12 +466,13 @@ class RadosgwRouterStatusField(BaseEnumField):
 class RouterServiceStatus(BaseStorEnum):
     CREATING = 'creating'
     DELETING = 'deleting'
+    STARTING = 'starting'
     ERROR = 'error'
 
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
-    ALL = (CREATING, DELETING, ERROR, ACTIVE, INACTIVE)
+    ALL = (CREATING, DELETING, STARTING, ERROR, ACTIVE, INACTIVE)
 
 
 class RouterServiceStatusField(BaseEnumField):

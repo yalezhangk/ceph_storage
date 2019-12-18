@@ -4,9 +4,11 @@ import time
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -22,13 +24,35 @@ logger = logging.getLogger(__name__)
 
 class RadosgwRouterHandler(AdminBaseHandler):
 
+    def _check_router_status(self, routers):
+        for router in routers:
+            router_health = True
+            for service in router.router_services:
+                time_now = timeutils.utcnow(with_timezone=True)
+                if service.updated_at:
+                    update_time = service.updated_at
+                else:
+                    update_time = service.created_at
+                time_diff = time_now - update_time
+                if time_diff.total_seconds() > CONF.service_max_interval:
+                    service.status = s_fields.ServiceStatus.INACTIVE
+                    service.save()
+                if service.status == s_fields.ServiceStatus.INACTIVE:
+                    router_health = False
+            if router_health:
+                router.status = s_fields.RadosgwRouterStatus.ACTIVE
+            else:
+                router.status = s_fields.RadosgwRouterStatus.ERROR
+            router.save()
+
     def rgw_router_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                            sort_dirs=None, filters=None, offset=None):
-        services = objects.RadosgwRouterList.get_all(
+        routers = objects.RadosgwRouterList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=['radosgws', 'router_services'])
-        return services
+        self._check_router_status(routers)
+        return routers
 
     def rgw_router_get_count(self, ctxt, filters=None):
         return objects.RadosgwRouterList.get_count(ctxt, filters=filters)
@@ -114,6 +138,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
                 node = objects.Node.get_by_id(ctxt, n['node_id'])
                 node_task = NodeTask(ctxt, node)
                 node_task.rgw_router_install(rgw_router, n['net_id'])
+                self.notify_node_update(ctxt, node)
             if rgw_router.virtual_ip:
                 self._wait_for_vip_ready(rgw_router)
             rgw_router.status = s_fields.RadosgwRouterStatus.ACTIVE

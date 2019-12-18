@@ -1258,3 +1258,21 @@ class RADOSClient(object):
         res = self._send_mon_command(command_str)
         logger.info("balancer status res: %s", res)
         return res
+
+    def get_osd_tree(self):
+        ret, outbuf, __ = self.client.mon_command(
+            '{"prefix":"osd tree", "format":"json"}', '')
+        if ret:
+            return None
+        outbuf = encodeutils.safe_decode(outbuf)
+        df_data = json.loads(outbuf)
+        return df_data
+
+    def get_osd_stat(self):
+        ret, outbuf, __ = self.client.mon_command(
+            '{"prefix":"osd stat", "format":"json"}', '')
+        if ret:
+            return None
+        outbuf = encodeutils.safe_decode(outbuf)
+        df_data = json.loads(outbuf)
+        return df_data

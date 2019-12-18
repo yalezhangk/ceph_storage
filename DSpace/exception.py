@@ -458,3 +458,7 @@ class ClusterUnpauseError(StorException):
 
 class IPConnectError(StorException):
     message = _('Connect to %(ip)s error')
+
+
+class LockCreationFailed(StorException):
+    message = _("%(msg)s")
