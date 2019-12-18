@@ -10,6 +10,7 @@ from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.DSA.base import AgentBaseHandler
 from DSpace.tools.disk import DiskTool
+from DSpace.tools.file import File as FileTool
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +18,14 @@ logger = logging.getLogger(__name__)
 class SocketDomainHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(SocketDomainHandler, self).__init__(*args, **kwargs)
+        self.ssh = self._get_executor()
         self.queue = queue.Queue()
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         if not self.sock:
             raise exception.StorException("socket get error: %s", self.sock)
         socket_file = CONF.socket_file
+        file_tool = FileTool(self.ssh)
+        socket_file = file_tool.map(socket_file)
         if os.path.exists(socket_file):
             os.unlink(socket_file)
         if self.sock.bind(socket_file):
