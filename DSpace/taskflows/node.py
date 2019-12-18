@@ -754,7 +754,7 @@ class DSpaceAgentInstall(BaseTask):
             ("/root/.ssh/", "/root/.ssh", "ro,rslave")
         ]
         restart = True
-        if debug_mode == "yes":
+        if debug_mode:
             volumes.append((code_dir, CODE_DIR_CONTAINER))
             restart = False
         docker_tool = DockerTool(ssh)
