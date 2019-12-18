@@ -363,6 +363,7 @@ def define_tables(meta):
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(32)),
+        Column('uuid', String(36)),
         Column('size', BigInteger),
         Column('status', String(32)),
         Column('type', String(32)),
