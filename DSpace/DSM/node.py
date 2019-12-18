@@ -487,7 +487,7 @@ class NodeHandler(AdminBaseHandler):
     def _notify_dsa_update(self, ctxt, node):
         logger.info("Send node update info to %s", node.id)
         node = objects.Node.get_by_id(ctxt, node.id)
-        self._notify_dsa_update(ctxt, node)
+        self.notify_node_update(ctxt, node)
         services = objects.ServiceList.get_all(
             ctxt, filters={'node_id': node.id})
         for service in services:
