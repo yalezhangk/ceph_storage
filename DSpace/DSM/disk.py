@@ -502,6 +502,8 @@ class DiskHandler(AdminBaseHandler):
             partitions = data.get("partitions")
             if slot in all_disks:
                 disk = all_disks.pop(slot)
+                if disk.status == s_fields.DiskStatus.REPLACING:
+                    continue
                 osds = objects.OsdList.get_all(
                     ctxt, filters={'disk_id': disk.id})
                 osd_disk = False

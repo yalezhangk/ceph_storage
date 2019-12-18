@@ -122,6 +122,7 @@ class DiskTool(ToolBase):
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,
                                       stdout=out, stderr=err)
+            self.partprobe()
             disk_part = self._wapper("/dev/%s" % part['name'])
             cmd = ["blkid", disk_part, "-o", "udev"]
             code, out, err = self.run_command(cmd)
@@ -188,7 +189,8 @@ class DiskTool(ToolBase):
             part_size = open(
                 os.path.join(path, block, partition, 'size')
             ).read().strip()
-            cmd = ["blkid", "/dev/%s" % partition, "-o", "udev"]
+            disk_part = self._wapper("/dev/%s" % partition)
+            cmd = ["blkid", disk_part, "-o", "udev"]
             code, out, err = self.run_command(cmd)
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,

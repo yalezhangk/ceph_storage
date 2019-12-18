@@ -52,6 +52,32 @@ class CephTool(ToolBase):
 
         return cluster_network, public_network
 
+    def ceph_package_uninstall(self):
+        ceph_packages = [
+            'ceph-resource-agents', 'ceph', 'ceph-base', 'ceph-common',
+            'ceph-selinux', 'ceph-mds', 'ceph-mon', 'ceph-osd', 'ceph-mgr',
+            'libcephfs2', 'libcephfs-devel', 'python-cephfs',
+            'libcephfs_jni1-devel', 'libcephfs_jni1', 'cephfs-java',
+            'librbd1', 'librbd-devel', 'python-rbd', 'rbd-fuse',
+            'rbd-nbd', 'rbd-mirror', 'librgw2', 'librgw-devel',
+            'python-rgw', 'librados2', 'librados-devel',
+            'libradosstriper1-devel', 'python-rados', 'libradosstriper1',
+            'ceph-radosgw', 'python-ceph-compat', 'ceph-fuse',
+            'ceph-libs-compat', 'ceph-devel-compat'
+        ]
+        for package in ceph_packages:
+            cmd = ["rpm", "-e", package, "--nodeps"]
+            rc, stdout, stderr = self.run_command(cmd)
+            if rc == 0:
+                logger.info("uninstall package: %s success", package)
+                continue
+            elif rc == 1:
+                logger.info("uninstall package: %s notfound", package)
+                continue
+            else:
+                raise RunCommandError(cmd=cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+
     def check_ceph_is_installed(self):
         cmd = ["ceph", "-v"]
         rc, stdout, stderr = self.run_command(cmd)
