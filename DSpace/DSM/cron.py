@@ -257,7 +257,7 @@ class CronHandler(AdminBaseHandler):
         logger.debug("Start node check crontab")
         while True:
             try:
-                self.node_check()
+                self.node_services_check()
             except LockAcquireFailed as e:
                 logger.debug(e)
                 time.sleep(CONF.dsa_check_interval * 2)
@@ -266,8 +266,8 @@ class CronHandler(AdminBaseHandler):
                 logger.exception("Dsa check cron Exception: %s", e)
             time.sleep(CONF.node_check_interval)
 
-    @synchronized("cron_node_check", blocking=False)
-    def node_check(self):
+    @synchronized("cron_node_services_check", blocking=False)
+    def node_services_check(self):
         nodes = objects.NodeList.get_all(
             self.ctxt, filters={'cluster_id': '*'})
         for node in nodes:
