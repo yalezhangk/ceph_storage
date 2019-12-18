@@ -143,6 +143,8 @@ class CronHandler(AdminBaseHandler):
         elif status == "out&up":
             osd.status = s_fields.OsdStatus.OFFLINE
         elif status == "out&down":
+            if osd.status == s_fields.OsdStatus.ERROR:
+                return
             osd.status = s_fields.OsdStatus.OFFLINE
         else:
             return
