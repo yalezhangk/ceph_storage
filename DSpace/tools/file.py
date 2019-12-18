@@ -74,3 +74,7 @@ class File(ToolBase):
             return True
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
+
+    def map(self, filename):
+        filename = self._wapper(filename)
+        return filename
