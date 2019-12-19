@@ -59,7 +59,14 @@ class RadosgwHandler(AdminBaseHandler):
                 _("The role of node %s is not role_object_gateway")
                 % data['ip_address'])
 
-        # Check if radosgw is used
+        # Check if name is used
+        rgw_db = objects.RadosgwList.get_all(
+            ctxt, filters={'display_name': data.get('name')})
+        if rgw_db:
+            raise exception.InvalidInput(
+                _("The name %s is used by another radosgw") % data['name'])
+
+        # Check if port is used
         rgw_db = objects.RadosgwList.get_all(
             ctxt, filters={'node_id': node.id, 'port': data.get('port')})
         if rgw_db:
