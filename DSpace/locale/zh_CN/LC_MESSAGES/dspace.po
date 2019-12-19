@@ -405,6 +405,9 @@ msgstr "邮件服务未传入数据"
 msgid "smtp could not be found."
 msgstr "参数 'smtp' 未找到"
 
+msgid "New password not allow equal to old password"
+msgstr "新密码不能与旧密码相同"
+
 msgid "has not active mon host, can not do any ceph actions"
 msgstr "健康状态监控节点不存在，无法进行任何Ceph操作"
 
@@ -816,6 +819,9 @@ msgstr "节点{}: 服务{}已停止"
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
 
+msgid "User(%s) not found"
+msgstr "用户(%s) 未找到"
+
 msgid "Must supply a positive value for age"
 msgstr "必须给寿命提供一个正值"
 
@@ -910,5 +916,3 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-
