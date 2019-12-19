@@ -478,6 +478,17 @@ class NodeTask(object):
             'task_info': {}
         })
 
+    def router_images_uninstall(self):
+        logger.info("uninstall router images")
+        wf = lf.Flow('Router images Uninstall')
+        wf.add(RouterImagesUninstall('Router images uninstall'))
+        self.node.executer = self.get_ssh_executor()
+        taskflow.engines.run(wf, store={
+            "ctxt": self.ctxt,
+            "node": self.node,
+            'task_info': {}
+        })
+
     def pull_logfile(self, directory, filename, local_logfile_dir):
         try:
             sftp_client, transport = self.get_sftp_client()
@@ -766,6 +777,16 @@ class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
         # rm config file
         file_tool = FileTool(ssh)
         file_tool.rm("{}/dsa.conf".format(config_dir))
+
+
+class RouterImagesUninstall(BaseTask, ContainerUninstallMixin):
+    def execute(self, ctxt, node, task_info):
+        super(RouterImagesUninstall, self).execute(task_info)
+        ssh = node.executer
+        self._node_remove_container(ctxt, ssh, "radosgw_keepalived",
+                                    "keepalived")
+        self._node_remove_container(ctxt, ssh, "radosgw_haproxy",
+                                    "haproxy")
 
 
 class InstallDSpaceTool(BaseTask):
