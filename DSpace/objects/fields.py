@@ -618,6 +618,7 @@ class ConfigKey(BaseStorEnum):
     DSA_RUN_DIR = 'dsa_run_dir'
     UDEV_DIR = 'udev_dir'
     ENABLE_CEPHX = 'enable_cephx'
+    OS_DISTRO = 'os_distro'
 
 
 class DSMStatus(BaseStorEnum):

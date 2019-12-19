@@ -69,6 +69,7 @@ class File(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def chmod(self, path, mode='0644'):
+        path = self._wapper(path)
         cmd = ["chmod", "-R", mode, path]
         rc, stdout, stderr = self.executor.run_command(cmd)
         if not rc:

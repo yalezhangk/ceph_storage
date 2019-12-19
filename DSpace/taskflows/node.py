@@ -32,6 +32,7 @@ from DSpace.utils import template
 from DSpace.utils import validator
 from DSpace.utils.cluster_config import CEPH_CONFIG_DIR
 from DSpace.utils.cluster_config import CEPH_LIB_DIR
+from DSpace.utils.cluster_config import UDEV_DIR
 from DSpace.utils.cluster_config import get_full_ceph_version
 
 logger = logging.getLogger(__name__)
@@ -219,6 +220,7 @@ class NodeTask(object):
         fsid = objects.ceph_config.ceph_config_get(self.ctxt, 'global', 'fsid')
         mgr_dspace_port = objects.sysconfig.sys_config_get(
             self.ctxt, ConfigKey.MGR_DSPACE_PORT)
+
         agent.ceph_mon_create(self.ctxt, fsid, mon_secret=mon_secret,
                               mgr_dspace_port=mgr_dspace_port)
 
@@ -629,18 +631,14 @@ class InstallCephRepo(BaseTask):
         ssh = node.executer
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
+        ceph_repo = objects.sysconfig.sys_config_get(ctxt, "ceph_repo")
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
-        file_tool.write("/etc/yum.repos.d/ceph.repo",
-                        self.get_ceph_repo(ctxt))
-
-    def get_ceph_repo(self, ctxt):
-        ceph_repo = objects.sysconfig.sys_config_get(ctxt, "ceph_repo")
-        logger.info("ceph_repo: %s", ceph_repo)
-        tpl = template.get('ceph.repo.j2')
-        repo = tpl.render(ceph_repo=ceph_repo)
-        logger.info("ceph_repo content: %s", repo)
-        return repo
+        package_tool = PackageTool(ssh)
+        repo_content = package_tool.render_repo(
+            "ceph", ceph_repo=ceph_repo)
+        logger.info("ceph repo_content: %s", repo_content)
+        package_tool.configure_repo("ceph", repo_content)
 
 
 class InstallDocker(BaseTask):
@@ -651,22 +649,22 @@ class InstallDocker(BaseTask):
         file_tool = FileTool(ssh)
         # backup repo
         # not remove old repo
+
+        package_tool = PackageTool(ssh)
         remove_repo = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.REMOVE_ANOTHER_REPO)
-        if remove_repo:
-            file_tool.mkdir("/etc/yum.repos.d/bak")
-            file_tool.mv("/etc/yum.repos.d/*.repo",
-                         "/etc/yum.repos.d/bak/")
-        # set repo
-        file_tool.write("/etc/yum.repos.d/dspace.repo",
-                        self.get_dspace_repo(ctxt))
-        # clean repo cache
-        package_tool = PackageTool(ssh)
-        package_tool.clean()
 
-        # install docker
-        package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"],
-                             enable_repos="dspace-base")
+        if remove_repo:
+            package_tool.backup_repo("dspace")
+
+        # set repo
+        dspace_repo = objects.sysconfig.sys_config_get(ctxt, "dspace_repo")
+
+        repo_content = package_tool.render_repo(
+            "dspace", dspace_repo=dspace_repo)
+        package_tool.configure_repo("dspace", repo_content)
+        package_tool.install_docker()
+
         # start docker
         service_tool = ServiceTool(ssh)
         service_tool.enable('docker')
@@ -694,13 +692,6 @@ class InstallDocker(BaseTask):
         fetch_url = '{}/images/{}'.format(dspace_repo, image_name)
         file_tool.fetch_from_url(tmp_image, fetch_url)
         docker_tool.image_load(tmp_image)
-
-    def get_dspace_repo(self, ctxt):
-        dspace_repo = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.DSPACE_REPO)
-        tpl = template.get('dspace.repo.j2')
-        repo = tpl.render(dspace_repo=dspace_repo)
-        return repo
 
 
 class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin,
@@ -740,8 +731,12 @@ class InstallDSpaceTool(BaseTask):
         package_tool = PackageTool(ssh)
         # install dspace-disk
         package_tool.install(["dspace-disk"], enable_repos="dspace-base")
-        udev_dir = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.UDEV_DIR)
+
+        os_distro = CONF.os_distro
+        udev_dir = UDEV_DIR[os_distro]
+        logger.info("install dspace tool, current os distro: %s, "
+                    "get udev_dir: %s", os_distro, udev_dir)
+
         file_tool = FileTool(ssh)
         file_tool.write("{}/95-dspace-hotplug.rules".format(udev_dir),
                         self.get_hotplug_rules(ctxt, node))
@@ -765,8 +760,12 @@ class UninstallDSpaceTool(BaseTask):
         package_tool = PackageTool(ssh)
         # uninstall dspace-disk
         package_tool.uninstall(["dspace-disk"])
-        udev_dir = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.UDEV_DIR)
+
+        os_distro = CONF.os_distro
+        udev_dir = UDEV_DIR[os_distro]
+        logger.info("uninstall dspace tool, current os distro: %s, "
+                    "get udev_dir: %s", os_distro, udev_dir)
+
         file_tool = FileTool(ssh)
         file_tool.rm("{}/95-dspace-hotplug.rules".format(udev_dir))
 
@@ -806,6 +805,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             (config_dir, config_dir_container),
             (log_dir, log_dir_container),
             ("/", "/host"),
+            ("/var/run", "/host/var/run"),
             ("/sys", "/sys"),
             ("/root/.ssh/", "/root/.ssh", "ro,rslave")
         ]
@@ -858,6 +858,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ctxt, ConfigKey.DSA_RUN_DIR)
         socket_file = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSA_SOCKET_FILE)
+        os_distro = objects.sysconfig.sys_config_get(
+            ctxt, "os_distro")
 
         tpl = template.get('dsa.conf.j2')
         dsa_conf = tpl.render(
@@ -868,7 +870,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             node_id=node.id,
             cluster_id=node.cluster_id,
             dsa_run_dir=dsa_run_dir,
-            socket_file=socket_file
+            socket_file=socket_file,
+            os_distro=os_distro
         )
         return dsa_conf
 

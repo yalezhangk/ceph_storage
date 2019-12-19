@@ -6,8 +6,10 @@ import struct
 
 import six
 
+from DSpace.common.config import CONF
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
+from DSpace.utils import cluster_config
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +156,14 @@ class System(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def check_package(self, pkg_name):
-        cmd = ['rpm', '-qa', '|', 'grep', pkg_name]
+        os_distro = CONF.os_distro
+        pkg_mgr = cluster_config.PKG_MGR[os_distro]
+        logger.info("current system distro: %s, pkg_mgr: %s",
+                    os_distro, pkg_mgr)
+        if pkg_mgr == "yum":
+            cmd = ['rpm', '-qa', '|', 'grep', pkg_name]
+        elif pkg_mgr == "apt":
+            cmd = ['dpkg', '-l', '|', 'grep', pkg_name]
         rc, stdout, stderr = self.run_command(cmd)
         if rc == 0:
             return True

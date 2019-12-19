@@ -12,6 +12,20 @@ SUPPORT_CEPH_VERSION = [{
     "release": "0"
 }]
 
+PKG_MGR = {
+    "Kylin": "apt",
+    "Debian": "apt",
+    "NeoKylin": "yum",
+    "RedHat": "yum"
+}
+
+UDEV_DIR = {
+    "Kylin": "/lib/udev/rules.d/",
+    "Debian": "/lib/udev/rules.d/",
+    "NeoKylin": "/usr/lib/udev/rules.d/",
+    "RedHat": "/usr/lib/udev/rules.d/"
+}
+
 # cluster configs
 # TODO add other configs
 cluster_sys_configs = ['chrony_server', 'cluster_name', 'mon_available']
@@ -56,6 +70,7 @@ default_cluster_configs = {
     'osd_pool_default_type': {'type': 'string', 'value': 'replicated'},
     'osd_pool_default_size': {'type': 'int', 'value': 1},
     'osd_pool_default_min_size': {'type': 'int', 'value': 1},
+    'backend_type': {'type': 'string', 'value': 'kernel'},
 }
 
 auth_none_config = {

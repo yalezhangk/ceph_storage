@@ -117,6 +117,9 @@ global_opts = [
     cfg.StrOpt('time_zone',
                default="Asia/Shanghai",
                help='Local time zone'),
+    cfg.StrOpt('os_distro',
+               default=None,
+               help="Current OS Distro"),
 ]
 
 CONF.register_cli_opts(core_opts)
