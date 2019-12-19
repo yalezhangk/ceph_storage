@@ -219,13 +219,13 @@ class NodeTask(object):
         res = agent.ceph_config_update(ctxt, values)
         return res
 
-    def ceph_mon_uninstall(self, last_mon=False):
+    def ceph_mon_uninstall(self):
         # update ceph.conf
         logger.info("uninstall ceph mon")
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
-        agent.ceph_mon_remove(self.ctxt, last_mon=last_mon)
+        agent.ceph_mon_remove(self.ctxt)
 
     def ceph_osd_package_install(self):
         logger.info("install ceph-osd package on node")
@@ -995,7 +995,7 @@ class MonUninstall(NodeBaseTask):
         super(MonUninstall, self).execute(task_info)
         logger.info("uninstall ceph mon on node %s", node.id)
         agent = self._get_agent(ctxt, node)
-        agent.ceph_mon_remove(ctxt, last_mon=True)
+        agent.ceph_mon_remove(ctxt)
         node.role_monitor = False
         node.save()
 

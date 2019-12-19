@@ -33,6 +33,8 @@ class Service(ToolBase):
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
             return True
+        if "not loaded" in stderr:
+            return False
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 

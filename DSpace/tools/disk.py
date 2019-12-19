@@ -56,12 +56,15 @@ class DiskTool(ToolBase):
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,
                                       stdout=out, stderr=err)
+            slot = None
             out = out.split('\n')
             for scsi in out:
                 if block in scsi:
                     slot = re.search(r"(?<=\[).*?(?=\])", scsi).group()
                     break
 
+            if not slot:
+                continue
             size = open(os.path.join(path, block, 'size')).read().strip()
             res[slot] = {
                 "partitions": {},

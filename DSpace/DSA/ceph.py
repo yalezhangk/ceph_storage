@@ -267,12 +267,11 @@ class CephHandler(AgentBaseHandler):
         ceph_tool.module_enable("dspace", str(public_ip), mgr_dspace_port)
         return True
 
-    def ceph_mon_remove(self, context, last_mon=False):
+    def ceph_mon_remove(self, context):
         client = self._get_ssh_executor()
         # remove mon service
         ceph_tool = CephTool(client)
-        if not last_mon:
-            ceph_tool.mon_uninstall(self.node.hostname)
+        ceph_tool.mon_remove(self.node.hostname)
         # stop and disable ceph-mon
         service_tool = ServiceTool(client)
         service_tool.stop("ceph-mon@{}".format(self.node.hostname))
