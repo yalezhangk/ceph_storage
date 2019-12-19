@@ -681,8 +681,8 @@ class NodeHandler(AdminBaseHandler):
 
         node = objects.Node.get_by_id(ctxt, node_id)
         if node.status != s_fields.NodeStatus.ACTIVE:
-            raise exc.InvalidInput(_("Only host's status is active can set"
-                                     "role(host_name: %s)" % node.hostname))
+            raise exc.InvalidInput(_("Only host's status is active can set "
+                                     "role(host_name: %s)") % node.hostname)
 
         i_roles = set(data.get('install_roles'))
         u_roles = set(data.get('uninstall_roles'))
