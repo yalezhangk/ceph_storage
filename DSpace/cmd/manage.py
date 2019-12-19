@@ -25,6 +25,7 @@ from DSpace.db.sqlalchemy import api as db_api
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
+from DSpace.utils.user_token import UserToken
 
 try:
     import collections.abc as collections
@@ -224,6 +225,21 @@ class DbCommands(object):
                 rpc_service.service_name = value
         rpc_service.endpoint = endpint
         rpc_service.create()
+
+    @args('user_name', type=str, help='generate access_token')
+    def generate_access_token(self, user_name):
+        # TODO: get alert_manager user
+        ctxt = context.get_context()
+        users = objects.UserList.get_all(ctxt, filters={'name': user_name})
+        if users:
+            user = users[0]
+            user_token = UserToken()
+            token = user_token.generate_token(user.id)
+            LOG.info('access_token:{}'.format(token))
+            return token
+        else:
+            raise exception.InvalidInput(
+                "Not User:{}, can not generate access_token".format(user_name))
 
     def version(self):
         """Print the current database version."""
