@@ -355,85 +355,53 @@ class NodeHandler(AdminBaseHandler):
                                 value_type="string")
             logger.info("create or update client.admin: <%s>", admin_keyring)
 
-    def _mon_install(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
-        node.role_monitor = True
-        node.save()
+    def _init_ceph_config(self, ctxt, enable_cephx=False):
+        logger.info("init ceph config before install first monitor")
+        public_network = objects.sysconfig.sys_config_get(
+            ctxt, key="public_cidr"
+        )
+        cluster_network = objects.sysconfig.sys_config_get(
+            ctxt, key="cluster_cidr"
+        )
+        init_configs = {
+            'fsid': {'type': 'string', 'value': ctxt.cluster_id},
+            'osd_objectstore': {'type': 'string', 'value': 'bluestore',
+                                'group': 'mon'},
+            'public_network': {'type': 'string', 'value': public_network},
+            'cluster_network': {'type': 'string', 'value': cluster_network}
+        }
+        init_configs.update(cluster_config.default_cluster_configs)
+        mon_secret = None
+        if enable_cephx:
+            mon_secret = self._generate_mon_secret()
+            self._set_ceph_conf(ctxt,
+                                group="keyring",
+                                key="mon.",
+                                value=mon_secret,
+                                value_type="string")
+            init_configs.update(cluster_config.auth_cephx_config)
+        else:
+            init_configs.update(cluster_config.auth_none_config)
+        for key, value in init_configs.items():
+            self._set_ceph_conf(ctxt,
+                                group=value.get('group'),
+                                key=key,
+                                value=value.get('value'),
+                                value_type=value.get('type'))
 
+    def _sync_ceph_configs(self, ctxt):
         mon_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_monitor": True}
         )
-        enable_cephx = objects.sysconfig.sys_config_get(
-            ctxt, key="enable_cephx"
+        mon_host = ",".join(
+            [str(n.public_ip) for n in mon_nodes]
         )
-        mon_secret = None
-        if len(mon_nodes) == 1:
-            # init ceph config
-            public_network = objects.sysconfig.sys_config_get(
-                ctxt, key="public_cidr"
-            )
-            cluster_network = objects.sysconfig.sys_config_get(
-                ctxt, key="cluster_cidr"
-            )
-            mon_host = str(node.public_ip)
-            mon_initial_members = node.hostname
-            new_cluster_config = {
-                'fsid': {'type': 'string', 'value': ctxt.cluster_id},
-                'mon_host': {'type': 'string',
-                             'value': mon_host},
-                'osd_objectstore': {'type': 'string', 'value': 'bluestore',
-                                    'group': 'mon'},
-                'mon_pg_warn_min_per_osd': {'type': 'int', 'value': 0},
-                'debug_mon': {'type': 'int', 'value': 10},
-                'mon_initial_members': {'type': 'string',
-                                        'value': mon_initial_members},
-                'public_network': {'type': 'string', 'value': public_network},
-                'cluster_network': {'type': 'string', 'value': cluster_network}
-            }
-            configs = {}
-            configs.update(cluster_config.default_cluster_configs)
-            # Save initial mon key to DB
-            if enable_cephx:
-                mon_secret = self._generate_mon_secret()
-                self._set_ceph_conf(ctxt,
-                                    group="keyring",
-                                    key="mon.",
-                                    value=mon_secret,
-                                    value_type="string")
-                configs.update(cluster_config.auth_cephx_config)
-            else:
-                configs.update(cluster_config.auth_none_config)
-            configs.update(new_cluster_config)
-            for key, value in configs.items():
-                self._set_ceph_conf(ctxt,
-                                    group=value.get('group'),
-                                    key=key,
-                                    value=value.get('value'),
-                                    value_type=value.get('type'))
-        else:
-            mon_host = ",".join(
-                [str(n.public_ip) for n in mon_nodes]
-            )
-            mon_initial_members = ",".join([n.hostname for n in mon_nodes])
-            self._set_ceph_conf(ctxt,
-                                key="mon_host",
-                                value=mon_host,
-                                value_type='string')
-            self._set_ceph_conf(ctxt,
-                                key="mon_initial_members",
-                                value=mon_initial_members,
-                                value_type='string')
-            if enable_cephx:
-                db_mon_secret = objects.CephConfig.get_by_key(
-                    ctxt, 'keyring', 'mon.')
-                mon_secret = db_mon_secret.value
-        node_task = NodeTask(ctxt, node)
-        node_task.ceph_mon_install(mon_secret)
-
-        if enable_cephx:
-            self._save_admin_keyring(ctxt, node_task)
-
-        # sync config file
+        mon_initial_members = ",".join([n.hostname for n in mon_nodes])
+        self._set_ceph_conf(
+            ctxt, key="mon_host", value=mon_host, value_type='string')
+        self._set_ceph_conf(
+            ctxt, key="mon_initial_members",
+            value=mon_initial_members, value_type='string')
         osd_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_storage": True}
         )
@@ -447,69 +415,133 @@ class NodeHandler(AdminBaseHandler):
             task = NodeTask(ctxt, n)
             for config in configs:
                 task.ceph_config_update(ctxt, config)
-        node_task.prometheus_target_config(action='add', service='mgr')
-        return node
 
-    def _mon_uninstall(self, ctxt, node):
-        node.status = s_fields.NodeStatus.REMOVING_ROLE
-        node.role_monitor = False
+    def _mon_install(self, ctxt, node):
+        logger.info("mon install on node %s, ip:%s", node.id, node.ip_address)
+        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.save()
-
         mon_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_monitor": True}
         )
-        task = NodeTask(ctxt, node)
-        if len(mon_nodes):
-            # update ceph config
+        mon_nodes = list(mon_nodes)
+        mon_nodes.append(node)
+        node_task = NodeTask(ctxt, node)
+        enable_cephx = objects.sysconfig.sys_config_get(
+            ctxt, key="enable_cephx"
+        )
+        try:
+            if len(mon_nodes) == 1:
+                self._init_ceph_config(ctxt, enable_cephx=enable_cephx)
             mon_host = ",".join(
                 [str(n.public_ip) for n in mon_nodes]
             )
             mon_initial_members = ",".join([n.hostname for n in mon_nodes])
-            self._set_ceph_conf(ctxt,
-                                key="mon_host",
-                                value=mon_host,
-                                value_type='string')
-            self._set_ceph_conf(ctxt,
-                                key="mon_initial_members",
-                                value=mon_initial_members,
-                                value_type='string')
-            task.ceph_mon_uninstall(last_mon=False)
-            osd_nodes = objects.NodeList.get_all(
-                ctxt, filters={"role_storage": True}
+            self._set_ceph_conf(
+                ctxt, key="mon_host", value=mon_host, value_type='string')
+            self._set_ceph_conf(
+                ctxt, key="mon_initial_members", value=mon_initial_members,
+                value_type='string')
+            mon_secret = None
+            if enable_cephx:
+                db_mon_secret = objects.CephConfig.get_by_key(
+                    ctxt, 'keyring', 'mon.')
+                mon_secret = db_mon_secret.value
+            node_task.ceph_mon_install(mon_secret)
+            if enable_cephx:
+                self._save_admin_keyring(ctxt, node_task)
+            node.role_monitor = True
+            node.save()
+            node_task.prometheus_target_config(action='add', service='mgr')
+            self._sync_ceph_configs(ctxt)
+            msg = _("set mon role success: {}").format(node.hostname)
+            op_status = "SET_ROLE_MON_SUCCESS"
+        except Exception as e:
+            logger.exception('set mon role failed %s', e)
+            # restore monitor
+            node_task.ceph_mon_uninstall()
+            node.role_monitor = False
+            node.save()
+            mon_nodes.remove(node)
+            mon_host = ",".join(
+                [str(n.public_ip) for n in mon_nodes]
             )
-            configs = [
-                {"group": "global", "key": "mon_host", "value": mon_host},
-                {"group": "global", "key": "mon_initial_members",
-                 "value": mon_initial_members}
-            ]
-            nodes = mon_nodes + osd_nodes
-            for n in nodes:
-                task = NodeTask(ctxt, n)
-                for config in configs:
-                    task.ceph_config_update(ctxt, config)
-        else:
-            task.ceph_mon_uninstall(last_mon=True)
-        task.prometheus_target_config(action='remove', service='mgr')
+            mon_initial_members = ",".join([n.hostname for n in mon_nodes])
+            self._set_ceph_conf(
+                ctxt, key="mon_host", value=mon_host, value_type='string')
+            self._set_ceph_conf(
+                ctxt, key="mon_initial_members", value=mon_initial_members,
+                value_type='string')
+            msg = _("set mon role error {}".format(str(e)))
+            op_status = "SET_ROLE_MON_ERROR"
+        # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
+        return node
+
+    def _mon_uninstall(self, ctxt, node):
+        logger.info("mon uninstall on node %s, ip:%s",
+                    node.id, node.ip_address)
+        node.status = s_fields.NodeStatus.REMOVING_ROLE
+        node.save()
+        task = NodeTask(ctxt, node)
+        try:
+            task.ceph_mon_uninstall()
+            node.role_monitor = False
+            node.save()
+            self._sync_ceph_configs(ctxt)
+            msg = _("unset mon role success: {}").format(node.hostname)
+            op_status = "UNSET_ROLE_MON_SUCCESS"
+            task.prometheus_target_config(action='remove', service='mgr')
+        except Exception as e:
+            logger.exception('unset mon role failed %s', e)
+            msg = _("unset mon role error {}".format(str(e)))
+            op_status = "UNSET_ROLE_MON_ERROR"
+        # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
     def _storage_install(self, ctxt, node):
+        logger.info("storage install on node %s, ip:%s",
+                    node.id, node.ip_address)
         node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.save()
         node_task = NodeTask(ctxt, node)
-        node_task.ceph_osd_package_install()
-
-        node.role_storage = True
-        node.save()
+        try:
+            node_task.ceph_osd_package_install()
+            node.role_storage = True
+            node.save()
+            msg = _("set storage role success: {}").format(node.hostname)
+            op_status = "SET_ROLE_STORAGE_SUCCESS"
+        except Exception as e:
+            logger.exception('set storage role failed %s', e)
+            node_task.ceph_osd_package_uninstall()
+            msg = _("set storage role error {}".format(str(e)))
+            op_status = "SET_ROLE_STORAGE_ERROR"
+        # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
     def _storage_uninstall(self, ctxt, node):
+        logger.info("storage uninstall on node %s, ip:%s",
+                    node.id, node.ip_address)
         node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.save()
-        node_task = NodeTask(ctxt, node)
-        node_task.ceph_osd_package_uninstall()
-
-        node.role_storage = False
-        node.save()
+        try:
+            node_task = NodeTask(ctxt, node)
+            node_task.ceph_osd_package_uninstall()
+            node.role_storage = False
+            node.save()
+            msg = _("unset storage role success: {}").format(node.hostname)
+            op_status = "UNSET_ROLE_STORAGE_SUCCESS"
+        except Exception as e:
+            logger.exception('unset storage role failed %s', e)
+            msg = _("unset storage role error {}".format(str(e)))
+            op_status = "UNSET_ROLE_STORAGE_ERROR"
+        # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
     def _mds_install(self, ctxt, node):
@@ -519,21 +551,46 @@ class NodeHandler(AdminBaseHandler):
         pass
 
     def _rgw_install(self, ctxt, node):
+        logger.info("rgw install on node %s, ip:%s",
+                    node.id, node.ip_address)
         node.status = s_fields.NodeStatus.DEPLOYING_ROLE
-        node_task = NodeTask(ctxt, node)
-        node_task.ceph_rgw_package_install()
-
-        node.role_object_gateway = True
         node.save()
+        node_task = NodeTask(ctxt, node)
+        try:
+            node_task.ceph_rgw_package_install()
+            node.role_object_gateway = True
+            node.save()
+            msg = _("set rgw role success: {}").format(node.hostname)
+            op_status = "SET_ROLE_RGW_SUCCESS"
+        except Exception as e:
+            logger.exception('set rgw role failed %s', e)
+            node_task.ceph_rgw_package_uninstall()
+            msg = _("set rgw role error {}".format(str(e)))
+            op_status = "SET_ROLE_RGW_ERROR"
+        # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
     def _rgw_uninstall(self, ctxt, node):
+        logger.info("rgw uninstall on node %s, ip:%s",
+                    node.id, node.ip_address)
         node.status = s_fields.NodeStatus.REMOVING_ROLE
-        node_task = NodeTask(ctxt, node)
-        node_task.ceph_rgw_package_uninstall()
-
-        node.role_object_gateway = False
         node.save()
+        try:
+            node_task = NodeTask(ctxt, node)
+            node_task.ceph_rgw_package_uninstall()
+            node.role_object_gateway = False
+            node.save()
+            msg = _("unset rgw role success: {}").format(node.hostname)
+            op_status = "UNSET_ROLE_RGW_SUCCESS"
+        except Exception as e:
+            logger.exception('unset rgw role failed %s', e)
+            msg = _("unset rgw role error {}".format(str(e)))
+            op_status = "UNSET_ROLE_RGW_ERROR"
+        # send ws message
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
     def _bgw_install(self, ctxt, node):
@@ -588,7 +645,7 @@ class NodeHandler(AdminBaseHandler):
             err_msg = None
             op_status = "SET_ROLES_SUCCESS"
         except Exception as e:
-            status = s_fields.NodeStatus.ERROR
+            status = s_fields.NodeStatus.ACTIVE
             logger.exception('set node roles failed %s', e)
             msg = _("set roles error {}".format(str(e)))
             err_msg = str(e)

@@ -80,8 +80,8 @@ class AgentClient(BaseClient):
             mgr_dspace_port=mgr_dspace_port)
         return response
 
-    def ceph_mon_remove(self, ctxt, last_mon=False):
-        response = self.call(ctxt, "ceph_mon_remove", last_mon=last_mon)
+    def ceph_mon_remove(self, ctxt):
+        response = self.call(ctxt, "ceph_mon_remove")
         return response
 
     def ceph_osd_destroy(self, ctxt, osd):

@@ -195,12 +195,15 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
-    def mon_uninstall(self, monitor_name):
+    def mon_remove(self, monitor_name):
         cmd = ['ceph', 'mon', 'remove', monitor_name]
         rc, stdout, stderr = self.run_command(cmd, timeout=60)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
+        if not rc:
+            return True
+        if "refusing removal of last monitor" in stderr:
+            return False
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
 
     def disk_clear_partition_table(self, diskname):
         cmd = ['wipefs', '-a', "/dev/%s" % diskname]

@@ -583,7 +583,43 @@ msgid "set roles success: {}"
 msgstr "{} 设置角色成功"
 
 msgid "set roles error {}"
-msgstr "设置角色错误: {}"
+msgstr "{} 设置角色错误"
+
+msgid "set mon role success: {}"
+msgstr "{} 添加主控角色成功"
+
+msgid "set mon role error {}"
+msgstr "{} 添加主控角色失败"
+
+msgid "unset mon role success: {}"
+msgstr "{} 移除主控角色成功"
+
+msgid "unset mon role error {}"
+msgstr "{} 移除主控角色失败"
+
+msgid "set storage role success: {}"
+msgstr "{} 添加存储角色成功"
+
+msgid "set storage role error {}"
+msgstr "{} 添加存储角色失败"
+
+msgid "unset storage role success: {}"
+msgstr "{} 移除存储角色成功"
+
+msgid "unset storage role error {}"
+msgstr "{} 移除存储角色失败"
+
+msgid "set rgw role success: {}"
+msgstr "{} 添加对象存储网关角色成功"
+
+msgid "set rgw role error {}"
+msgstr "{} 添加对象存储网关角色失败"
+
+msgid "unset rgw role success: {}"
+msgstr "{} 移除对象存储网关角色成功"
+
+msgid "unset rgw role error {}"
+msgstr "{} 移除对象存储网关角色失败"
 
 msgid "Only host's status is active can setrole(host_name: %s)"
 msgstr "%s：仅当服务器状态健康才能设置角色"
