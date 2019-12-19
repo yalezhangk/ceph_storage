@@ -15,6 +15,8 @@ class MailHandler(AdminBaseHandler):
     def send_mail(self, ctxt, subject, content, config):
         try:
             send_mail(subject, content, config)
+            to_email = config.get('smtp_to_email')
+            logger.info('send test email success, to_mail:%s', to_email)
         except Exception as e:
             logger.exception('send test email error: %s', e)
             return False
