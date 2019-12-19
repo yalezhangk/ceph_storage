@@ -231,5 +231,6 @@ class AlertLogHandler(AdminBaseHandler):
         result = objects.AlertLogList.update(
             ctxt, filters, updates)
         self.finish_action(
-            begin_action, resource_name='alert_log')
+            begin_action, resource_name='alert_log',
+            diff_data='del before:{} alert_logs'.format(before_time))
         return result

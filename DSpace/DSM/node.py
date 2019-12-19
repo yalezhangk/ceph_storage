@@ -108,10 +108,12 @@ class NodeHandler(AdminBaseHandler):
             msg = _("node remove error: {}").format(node.hostname)
             err_msg = str(e)
             op_status = "DELETE_ERROR"
+
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
+
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        self.finish_action(begin_action, node.id, node.hostname,
-                           objects.json_encode(node), status, err_msg=err_msg)
 
     def node_update_rack(self, ctxt, node_id, rack_id):
         node = objects.Node.get_by_id(ctxt, node_id, expected_attrs=['osds'])
@@ -126,11 +128,10 @@ class NodeHandler(AdminBaseHandler):
             raise exc.NodeMoveNotAllow(node=node.hostname,
                                        pool=pools[0].display_name)
         begin_action = self.begin_action(ctxt, Resource.NODE,
-                                         Action.NODE_UPDATE_RACK)
+                                         Action.NODE_UPDATE_RACK, node)
         node.rack_id = rack_id
         node.save()
-        self.finish_action(begin_action, node_id, node.hostname,
-                           objects.json_encode(node))
+        self.finish_action(begin_action, node_id, node.hostname, node)
         return node
 
     def _node_delete_check(self, ctxt, node):
@@ -169,7 +170,8 @@ class NodeHandler(AdminBaseHandler):
         node = objects.Node.get_by_id(ctxt, node_id)
         # judge node could be delete
         self._node_delete_check(ctxt, node)
-        begin_action = self.begin_action(ctxt, Resource.NODE, Action.DELETE)
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.DELETE, node)
         node.status = s_fields.NodeStatus.DELETING
         node.save()
         self.task_submit(self._node_delete, ctxt, node, begin_action)
@@ -658,12 +660,12 @@ class NodeHandler(AdminBaseHandler):
         except Exception as e:
             logger.error("Update dsa node info failed: %s", e)
 
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
+
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        self.finish_action(begin_action, node.id, node.hostname,
-                           objects.json_encode(node), status,
-                           err_msg=err_msg)
 
     def node_roles_set(self, ctxt, node_id, data):
         # TODO concurrence not support now, need remove when support
@@ -723,7 +725,8 @@ class NodeHandler(AdminBaseHandler):
         else:
             node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.save()
-        begin_action = self.begin_action(ctxt, Resource.NODE, Action.SET_ROLES)
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         logger.info('node %s roles check pass', node.hostname)
         self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles,
                          begin_action)
@@ -774,8 +777,7 @@ class NodeHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
         self.finish_action(begin_action, node.id, node.hostname,
-                           objects.json_encode(node), status,
-                           err_msg=err_msg)
+                           node, status, err_msg=err_msg)
         return node
 
     def node_create(self, ctxt, data):
@@ -882,8 +884,7 @@ class NodeHandler(AdminBaseHandler):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         cluster_name = cluster.display_name
         self.finish_action(begin_action, cluster_id, cluster_name,
-                           objects.json_encode(cluster), status,
-                           err_msg=err_msg)
+                           cluster, status, err_msg=err_msg)
 
     def nodes_inclusion(self, ctxt, datas):
         logger.debug("include nodes: {}", datas)
@@ -923,8 +924,7 @@ class NodeHandler(AdminBaseHandler):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         cluster_name = cluster.display_name
         self.finish_action(begin_action, cluster_id, cluster_name,
-                           objects.json_encode(cluster), status,
-                           err_msg=err_msg)
+                           cluster, status, err_msg=err_msg)
 
     def nodes_inclusion_clean(self, ctxt):
         logger.debug("include delete nodes")
