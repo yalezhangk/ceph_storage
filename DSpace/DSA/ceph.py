@@ -75,11 +75,11 @@ class CephHandler(AgentBaseHandler):
         return True
 
     def ceph_package_uninstall(self, context):
-        logger.info('uninstall ceph-common package')
+        logger.info('uninstall ceph package')
         client = self._get_ssh_executor()
         # install package
-        package_tool = PackageTool(client)
-        package_tool.uninstall(["ceph-common", "libcephfs2"])
+        ceph_tool = CephTool(client)
+        ceph_tool.ceph_package_uninstall()
         file_tool = FileTool(client)
         file_tool.rm("/var/lib/ceph/")
         file_tool.rm("/etc/ceph/")

@@ -29,6 +29,7 @@ class TestDiskTool(test.TestCase):
                  "--typecode=1:30cd0809-c2b2-499c-8879-2d6b78529876",
                  "--mbrtogpt", "--", "/host/dev/sdg"]
             ),
+            mock.call(["partprobe"]),
             mock.call(["blkid", "/host/dev/sdg1", "-o", "udev"])
         ])
 
