@@ -237,13 +237,23 @@ class RadosgwHandler(AdminBaseHandler):
                            objects.json_encode(radosgw), status,
                            err_msg=err_msg)
 
+    def _radosgw_delete_check(self, radosgw):
+        # check radosgw router on radosgw
+        if radosgw.router_id:
+            raise exception.InvalidInput(
+                _("Must remove radosgw router before radosgw"))
+
     def radosgw_delete(self, ctxt, rgw_id):
         radosgw = objects.Radosgw.get_by_id(ctxt, rgw_id)
         logger.info("Radosgw delete %s.", radosgw.name)
         if radosgw.status not in [s_fields.RadosgwStatus.ACTIVE,
+                                  s_fields.RadosgwStatus.INACTIVE,
+                                  s_fields.RadosgwStatus.STOPPED,
                                   s_fields.RadosgwStatus.ERROR]:
-            raise exception.InvalidInput(_("Only available and error"
-                                           " radosgw can be deleted"))
+            raise exception.InvalidInput(
+                _("Only available 、inactive 、stopped or error radosgw can "
+                  "be deleted"))
+        self._radosgw_delete_check(radosgw)
         begin_action = self.begin_action(ctxt, Resource.RADOSGW, Action.DELETE)
         radosgw.status = s_fields.RadosgwStatus.DELETING
         radosgw.save()

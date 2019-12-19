@@ -736,7 +736,7 @@ msgid "create radosgw success: {}"
 msgstr "创建对象存储网关成功：{}"
 
 msgid "create error: {}"
-msgstr "创建硬盘失败：osd.{}"
+msgstr "创建失败：{}"
 
 msgid "delete radosgw {} success"
 msgstr "删除对象存储网关成功：{}"
@@ -744,8 +744,11 @@ msgstr "删除对象存储网关成功：{}"
 msgid "delete radosgw {} error"
 msgstr "删除对象存储网关失败：{}"
 
-msgid "Only available and error radosgw can be deleted"
-msgstr "只能删除可用与错误的对象存储网关"
+msgid "Only available 、inactive 、stopped or error radosgw can be deleted"
+msgstr "只能删除健康、已停止与错误状态的对象存储网关"
+
+msgid "Must remove radosgw router before radosgw"
+msgstr "必须在删除对象存储网关前删除对象路由"
 
 msgid "The radosgw %s has router"
 msgstr "对象存储网关 %s 已经绑定路由"
