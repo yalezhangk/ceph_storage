@@ -387,7 +387,7 @@ class PoolHandler(AdminBaseHandler):
             logger.error("can't remove osds more than pool's rep size: %s",
                          rep_size)
             raise exception.InvalidInput(
-                reason="can't remove osds more than pool's rep size")
+                _("can't remove osds more than pool's rep size"))
         if dec_domain >= pool_avail_domain:
             logger.error("can't remove osds more than pool's available domain")
             raise exception.InvalidInput(
@@ -475,7 +475,7 @@ class PoolHandler(AdminBaseHandler):
         if pool.failure_domain_type == "rack" and fault_domain == "host":
             logger.error("can't set fault_domain from rack to host")
             raise exception.InvalidInput(
-                reason="can't set fault_domain from rack to host")
+                _("can't set fault_domain from rack to host"))
         crush = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id)
         pools = objects.PoolList.get_all(
             ctxt, filters={"crush_rule_id": crush.id})
