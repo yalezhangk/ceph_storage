@@ -88,7 +88,7 @@ class RadosgwHandler(AdminBaseHandler):
         # Check if port is used
         if not node_task.check_port(data['port']):
             raise exception.InvalidInput(
-                _("The port %s is used") % data['ip_address'])
+                _("The port %s is used") % data['port'])
 
     def _radosgw_config_set(self, ctxt, node, radosgw, zone):
         radosgw_configs = {

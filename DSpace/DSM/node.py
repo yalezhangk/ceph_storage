@@ -312,7 +312,7 @@ class NodeHandler(AdminBaseHandler):
             ctxt, filters={"node_id": node.id}
         )
         if node_rgws:
-            raise exc.InvalidInput(_("Node %s has radosgw!" % node.hostname))
+            raise exc.InvalidInput(_("Node %s has radosgw!") % node.hostname)
 
     def _bgw_install_check(self, ctxt, node):
         if node.role_block_gateway:
