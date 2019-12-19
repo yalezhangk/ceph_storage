@@ -74,12 +74,9 @@ class RadosgwListHandler(ClusterAPIHandler):
         context = self.get_context()
         page_args = self.get_paginated_args()
 
-        node_id = self.get_query_argument('node', default=None)
-        filters = {}
-        if node_id:
-            filters.update({
-                'node_id': node_id
-            })
+        exact_filters = ["node_id"]
+        fuzzy_filters = ["display_name"]
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
 
         client = self.get_admin_client(context)
         radosgws = yield client.radosgw_get_all(

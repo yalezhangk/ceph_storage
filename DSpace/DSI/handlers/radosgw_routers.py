@@ -103,7 +103,9 @@ class RadosgwRouterListHandler(ClusterAPIHandler):
         """
         context = self.get_context()
         page_args = self.get_paginated_args()
-        filters = {}
+        exact_filters = []
+        fuzzy_filters = ["name"]
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(context)
         rgw_routers = yield client.rgw_router_get_all(
             context, filters=filters, **page_args)
