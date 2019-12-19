@@ -245,11 +245,9 @@ class OsdListHandler(ClusterAPIHandler):
                     disk_info = yield client.get_disk_info(ctxt, data)
                     hostname = disk_info['hostname']
                     disk_name = disk_info['disk_name']
-                    logger.exception(
-                        'osd:hostname=%s,disk_name=%s create error:%s',
-                        hostname, disk_name, e)
+                    self.log_exception("create osd", e)
                     err_ms = _('osd:hostname={},disk_name={} create '
-                               'error').format(hostname, disk_name)
+                               'error: {}').format(hostname, disk_name, str(e))
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
                     wb_client.send_message(
