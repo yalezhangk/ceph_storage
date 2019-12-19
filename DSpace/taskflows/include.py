@@ -31,7 +31,9 @@ from DSpace.taskflows.node import DSpaceChronyUninstall
 from DSpace.taskflows.node import DSpaceExpoterInstall
 from DSpace.taskflows.node import DSpaceExpoterUninstall
 from DSpace.taskflows.node import InstallDocker
+from DSpace.taskflows.node import InstallDSpaceTool
 from DSpace.taskflows.node import SyncCephVersion
+from DSpace.taskflows.node import UninstallDSpaceTool
 from DSpace.taskflows.utils import CleanDataMixin
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.probe import ProbeTool
@@ -119,6 +121,9 @@ class InstallService(BaseTask):
             node_install_flow.add(DSpaceExpoterInstall(
                 "DSpace Exporter Intall %s" % node.id,
                 rebind={'node': arg}))
+            node_install_flow.add(InstallDSpaceTool(
+                "DSpace Tool Intall %s" % node.id,
+                rebind={'node': arg}))
             node_install_flow.add(DSpaceAgentInstall(
                 "DSpace Agent Intall %s" % node.id,
                 rebind={'node': arg}))
@@ -166,6 +171,9 @@ class UninstallService(BaseTask):
                 rebind={'node': arg}))
             wf.add(DSpaceExpoterUninstall(
                 "DSpace Exporter Unintall %s" % node.id,
+                rebind={'node': arg}))
+            wf.add(UninstallDSpaceTool(
+                "DSpace Tool UnIntall %s" % node.id,
                 rebind={'node': arg}))
             wf.add(DSpaceAgentUninstall(
                 "DSpace Agent Unintall %s" % node.id,

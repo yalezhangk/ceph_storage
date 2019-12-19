@@ -183,7 +183,8 @@ class DbCommands(object):
             ConfigKey.CEPH_MONITOR_PORT: s_fields.ConfigType.STRING,
             ConfigKey.MGR_DSPACE_PORT: s_fields.ConfigType.STRING,
             ConfigKey.DSA_SOCKET_FILE: s_fields.ConfigType.STRING,
-            ConfigKey.DSA_RUN_DIR: s_fields.ConfigType.STRING
+            ConfigKey.DSA_RUN_DIR: s_fields.ConfigType.STRING,
+            ConfigKey.UDEV_DIR: s_fields.ConfigType.STRING
         }
         for c in configs:
             key, value = c.split("=", 1)

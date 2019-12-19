@@ -93,7 +93,7 @@ class AlertRuleInitMixin(object):
                 'resource_type': 'disk',
                 'type': 'disk_online',
                 'trigger_value': 'online',
-                'level': 'MESSAGE',
+                'level': 'INFO',
                 'trigger_period': '0'
             },
             {

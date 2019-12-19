@@ -402,6 +402,7 @@ class NodeTask(object):
     def dspace_agent_install(self):
         wf = lf.Flow('DSpace Agent Install')
         wf.add(InstallDocker('Install Docker'))
+        wf.add(InstallDSpaceTool('Install DSpace tool'))
         wf.add(DSpaceAgentInstall('DSpace Agent Install'))
         enable_ceph_repo = objects.sysconfig.sys_config_get(
             self.ctxt, ConfigKey.ENABLE_CEPH_REPO)
@@ -417,6 +418,7 @@ class NodeTask(object):
     def dspace_agent_uninstall(self):
         logger.info("uninstall agent")
         wf = lf.Flow('DSpace Agent Uninstall')
+        wf.add(UninstallDSpaceTool('DSpace tool uninstall'))
         wf.add(DSpaceAgentUninstall('DSpace Agent Uninstall'))
         self.node.executer = self.get_ssh_executor()
         taskflow.engines.run(wf, store={
@@ -713,6 +715,45 @@ class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
         # rm config file
         file_tool = FileTool(ssh)
         file_tool.rm("{}/dsa.conf".format(config_dir))
+
+
+class InstallDSpaceTool(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(InstallDSpaceTool, self).execute(task_info)
+        logger.info("install dspace-disk tool")
+        ssh = node.executer
+        package_tool = PackageTool(ssh)
+        # install dspace-disk
+        package_tool.install(["dspace-disk"])
+        udev_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.UDEV_DIR)
+        file_tool = FileTool(ssh)
+        file_tool.write("{}/95-dspace-hotplug.rules".format(udev_dir),
+                        self.get_hotplug_rules(ctxt, node))
+
+    def get_hotplug_rules(self, ctxt, node):
+        socket_file = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSA_SOCKET_FILE)
+
+        tpl = template.get('95-dspace-hotplug.rules.j2')
+        hotplug_rules = tpl.render(
+            socket_file=socket_file
+        )
+        return hotplug_rules
+
+
+class UninstallDSpaceTool(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(UninstallDSpaceTool, self).execute(task_info)
+        logger.info("uninstall dspace-disk tool")
+        ssh = node.executer
+        package_tool = PackageTool(ssh)
+        # uninstall dspace-disk
+        package_tool.uninstall(["dspace-disk"])
+        udev_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.UDEV_DIR)
+        file_tool = FileTool(ssh)
+        file_tool.rm("{}/95-dspace-hotplug.rules".format(udev_dir))
 
 
 class DSpaceAgentInstall(BaseTask):

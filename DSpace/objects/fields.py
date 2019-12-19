@@ -504,3 +504,4 @@ class ConfigKey(BaseStorEnum):
     MGR_DSPACE_PORT = 'mgr_dspace_port'
     DSA_SOCKET_FILE = 'dsa_socket_file'
     DSA_RUN_DIR = 'dsa_run_dir'
+    UDEV_DIR = 'udev_dir'
