@@ -19,10 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAPIHandler(RequestHandler):
+    ctxt = None
 
     def initialize(self):
         session_cls = get_session()
         self.session = session_cls(self)
+
+    def prepare(self):
+        self.ctxt = self.get_context()
+        logger.info("uri(%s), method(%s), body(%s)",
+                    self.request.uri, self.request.method, self.request.body)
 
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
@@ -46,6 +52,8 @@ class BaseAPIHandler(RequestHandler):
         self.write({"error": msg})
 
     def get_context(self):
+        if self.ctxt:
+            return self.ctxt
         fake_user = self.request.headers.get("X-Fake-User", None)
         if not self.current_user and not fake_user:
             raise exception.NotAuthorized()
@@ -125,14 +133,19 @@ class BaseAPIHandler(RequestHandler):
 
     def _handle_request_exception(self, e):
         """Overide to handle StorException"""
-        logger.exception(e)
         if isinstance(e, exception.StorException):
             self.send_error(e.code, reason=str(e))
+            # log exception
+            if e.code >= 500:
+                logger.exception("%s raise exception: %s", self.request.uri, e)
         elif isinstance(e, ValidationError):
+            # tornado will log exception
             message = '.'.join([str(i) for i in e.path])
             message += ": " + e.message
             self.send_error(400, reason=message)
         else:
+            # log exception
+            logger.exception("%s raise exception: %s", self.request.uri, e)
             super(BaseAPIHandler, self)._handle_request_exception(e)
 
     def get_admin_client(self, ctxt):
