@@ -69,13 +69,17 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return True
 
     def _admin_node_delete(self, ctxt, node):
+        node_task = NodeTask(ctxt, node)
         try:
-            node_task = NodeTask(ctxt, node)
+            node_task.prometheus_target_config(action='remove',
+                                               service='node_exporter')
+        except Exception as e:
+            logger.error(e)
+
+        try:
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
-            node_task.prometheus_target_config(action='remove',
-                                               service='node_exporter')
 
             rpc_services = objects.RPCServiceList.get_all(
                 ctxt,
