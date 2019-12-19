@@ -35,8 +35,8 @@ class LogFileHandler(AdminBaseHandler):
                 raise exception.InvalidInput(
                     reason=_('node_id {} is not storage role').format(node_id))
         else:
-            raise exception.InvalidInput(reason=_('service_type must is mon or'
-                                                  'osd'))
+            raise exception.InvalidInput(reason=_('service_type must is mon '
+                                                  'or osd'))
         # 2 agent获取日志文件元数据
         client = AgentClientManager(
             ctxt, cluster_id=ctxt.cluster_id
