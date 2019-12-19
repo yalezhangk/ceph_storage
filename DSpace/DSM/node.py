@@ -275,7 +275,7 @@ class NodeHandler(AdminBaseHandler):
         if not public_network or not cluster_network:
             raise exc.InvalidInput(_("Please set network planning"))
         if mon_num >= max_mon_num:
-            raise exc.InvalidInput(_("Max monitor num is %s" % max_mon_num))
+            raise exc.InvalidInput(_("Max monitor num is %s") % max_mon_num)
 
     def _mon_uninstall_check(self, ctxt, node):
         if not node.role_monitor:
@@ -300,7 +300,7 @@ class NodeHandler(AdminBaseHandler):
             ctxt, filters={"node_id": node.id}
         )
         if node_osds:
-            raise exc.InvalidInput(_("Node %s has osd!" % node.hostname))
+            raise exc.InvalidInput(_("Node %s has osd!") % node.hostname)
 
     def _mds_install_check(self, ctxt, node):
         if node.role_admin:
@@ -473,7 +473,7 @@ class NodeHandler(AdminBaseHandler):
             self._set_ceph_conf(
                 ctxt, key="mon_initial_members", value=mon_initial_members,
                 value_type='string')
-            msg = _("set mon role error {}".format(str(e)))
+            msg = _("set mon role error {}").format(str(e))
             op_status = "SET_ROLE_MON_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -496,7 +496,7 @@ class NodeHandler(AdminBaseHandler):
             task.prometheus_target_config(action='remove', service='mgr')
         except Exception as e:
             logger.exception('unset mon role failed %s', e)
-            msg = _("unset mon role error {}".format(str(e)))
+            msg = _("unset mon role error {}").format(str(e))
             op_status = "UNSET_ROLE_MON_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -518,7 +518,7 @@ class NodeHandler(AdminBaseHandler):
         except Exception as e:
             logger.exception('set storage role failed %s', e)
             node_task.ceph_osd_package_uninstall()
-            msg = _("set storage role error {}".format(str(e)))
+            msg = _("set storage role error {}").format(str(e))
             op_status = "SET_ROLE_STORAGE_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -539,7 +539,7 @@ class NodeHandler(AdminBaseHandler):
             op_status = "UNSET_ROLE_STORAGE_SUCCESS"
         except Exception as e:
             logger.exception('unset storage role failed %s', e)
-            msg = _("unset storage role error {}".format(str(e)))
+            msg = _("unset storage role error {}").format(str(e))
             op_status = "UNSET_ROLE_STORAGE_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -567,7 +567,7 @@ class NodeHandler(AdminBaseHandler):
         except Exception as e:
             logger.exception('set rgw role failed %s', e)
             node_task.ceph_rgw_package_uninstall()
-            msg = _("set rgw role error {}".format(str(e)))
+            msg = _("set rgw role error {}").format(str(e))
             op_status = "SET_ROLE_RGW_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -588,7 +588,7 @@ class NodeHandler(AdminBaseHandler):
             op_status = "UNSET_ROLE_RGW_SUCCESS"
         except Exception as e:
             logger.exception('unset rgw role failed %s', e)
-            msg = _("unset rgw role error {}".format(str(e)))
+            msg = _("unset rgw role error {}").format(str(e))
             op_status = "UNSET_ROLE_RGW_ERROR"
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -649,7 +649,7 @@ class NodeHandler(AdminBaseHandler):
         except Exception as e:
             status = s_fields.NodeStatus.ACTIVE
             logger.exception('set node roles failed %s', e)
-            msg = _("set roles error {}".format(str(e)))
+            msg = _("set roles error {}").format(str(e))
             err_msg = str(e)
             op_status = "SET_ROLES_ERROR"
         node.status = status
@@ -765,7 +765,7 @@ class NodeHandler(AdminBaseHandler):
             status = s_fields.NodeStatus.ERROR
             logger.exception('create node error, node ip: %s, reason: %s',
                              node.ip_address, e)
-            msg = _("node create error, reason: {}".format(str(e)))
+            msg = _("node create error, reason: {}").format(str(e))
             err_msg = str(e)
             op_status = "CREATE_ERROR"
         node.status = status

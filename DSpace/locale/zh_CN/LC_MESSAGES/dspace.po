@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-19 09:56-0500\n"
+"POT-Creation-Date: 2019-12-20 00:03+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -502,7 +502,7 @@ msgid "create disk partitions failed"
 msgstr "创建磁盘分区失败"
 
 msgid "Partition type not support"
-msgstr "不支持此标签页"
+msgstr "分区类型不支持"
 
 msgid "remove disk partitions success"
 msgstr "移除磁盘分区成功"
@@ -528,7 +528,7 @@ msgstr "节点 {} 不是监控节点"
 msgid "node_id {} is not storage role"
 msgstr "节点 {} 不是存储节点"
 
-msgid "service_type must is mon orosd"
+msgid "service_type must is mon or osd"
 msgstr "服务类型只支持 'mon'或'osd'"
 
 msgid "node remove success: {}"
@@ -1000,5 +1000,3 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-

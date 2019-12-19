@@ -241,7 +241,7 @@ class OsdHandler(AdminBaseHandler):
         )
         osd_num = objects.OsdList.get_count(ctxt)
         if osd_num >= max_osd_num:
-            raise exception.InvalidInput(_("Max osd num is %s" % max_osd_num))
+            raise exception.InvalidInput(_("Max osd num is %s") % max_osd_num)
 
     def osd_create(self, ctxt, data):
         logger.info("Osd create with %s.", data)
@@ -532,7 +532,7 @@ class OsdHandler(AdminBaseHandler):
             ceph_client.osds_rm_noout([osd.osd_id])
             logger.info("osd.%s replace success", osd.osd_id)
             op_status = 'OSD_REPLACE_SUCCESS'
-            msg = _("create success: osd.{}".format(osd.osd_id))
+            msg = _("create success: osd.{}").format(osd.osd_id)
             err_msg = None
         except exception.StorException as e:
             logger.error(e)
@@ -579,7 +579,7 @@ class OsdHandler(AdminBaseHandler):
             ctxt, filters={'disk_id': disk.id})
 
         if not partitions or len(disk_partitions) != len(partitions):
-            msg = _("create disk {} partitions failed".format(disk.name))
+            msg = _("create disk {} partitions failed").format(disk.name)
             op_status = "DISK_CREATE_PART_ERROR"
             logger.error(msg)
             wb_client.send_message(ctxt, disk, op_status, msg)
@@ -601,7 +601,7 @@ class OsdHandler(AdminBaseHandler):
         disk.status = s_fields.DiskStatus.AVAILABLE
         disk.save()
         logger.info("accelerate disk %s replace finish", disk.name)
-        msg = _("accelerate disk {} replace success".format(disk.name))
+        msg = _("accelerate disk {} replace success").format(disk.name)
         wb_client.send_message(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
 
     def osd_accelerate_disk_replace(self, ctxt, disk_id):
