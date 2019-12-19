@@ -195,19 +195,23 @@ class NodeTask(object):
             'task_info': {}
         })
 
-    def ceph_mon_install(self):
+    def ceph_mon_install(self, mon_secret=None):
         logger.info("install ceph mon")
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
 
-        ceph_auth = objects.ceph_config.ceph_config_get(
-            self.ctxt, 'global', 'auth_cluster_required')
         fsid = objects.ceph_config.ceph_config_get(self.ctxt, 'global', 'fsid')
         mgr_dspace_port = objects.sysconfig.sys_config_get(
             self.ctxt, ConfigKey.MGR_DSPACE_PORT)
-        agent.ceph_mon_create(self.ctxt, fsid, ceph_auth=ceph_auth,
+        agent.ceph_mon_create(self.ctxt, fsid, mon_secret=mon_secret,
                               mgr_dspace_port=mgr_dspace_port)
+
+    def collect_keyring(self, entity):
+        logger.info("collect admin keyring")
+        agent = self.get_agent()
+        admin_keyring = agent.collect_keyring(self.ctxt, entity)
+        return admin_keyring
 
     def ceph_config_update(self, ctxt, values):
         logger.info("update ceph config")
@@ -265,6 +269,41 @@ class NodeTask(object):
         osd = agent.ceph_osd_restart(self.ctxt, osd)
         return osd
 
+    def init_admin_key(self):
+        agent = self.get_agent()
+        ssh = self.get_ssh_executor()
+        admin_entity = "client.admin"
+        file_tool = FileTool(ssh)
+        ceph_config_dir = "/etc/ceph"
+        file_tool.mkdir(ceph_config_dir)
+        keyring_path = "{}/ceph.client.admin.keyring".format(ceph_config_dir)
+        admin_keyring = objects.CephConfig.get_by_key(
+            self.ctxt, 'keyring', 'client.admin')
+        if not admin_keyring:
+            logger.error("cephx is enable, but no admin keyring found")
+            raise exc.CephException(message='cephx is enable, but no admin'
+                                            'keyring found')
+        agent.ceph_key_write(self.ctxt, admin_entity, keyring_path,
+                             admin_keyring.value)
+        file_tool.chown(ceph_config_dir, user='ceph', group='ceph')
+
+    def init_bootstrap_keys(self, bootstrap_type):
+        agent = self.get_agent()
+        ssh = self.get_ssh_executor()
+        file_tool = FileTool(ssh)
+        bootstrap_entity = "client.bootstrap-{}".format(bootstrap_type)
+        bootstrap_key_dir = "/var/lib/ceph/bootstrap-{}".format(bootstrap_type)
+        file_tool.mkdir(bootstrap_key_dir)
+        keyring_path = "{}/ceph.keyring".format(bootstrap_key_dir)
+        bootstrap_key = self.collect_keyring(bootstrap_entity)
+        if not bootstrap_key:
+            logger.error("cephx is enable, but no bootstrap keyring found")
+            raise exc.CephException(message='cephx is enable, but no bootstrap'
+                                            'keyring found')
+        agent.ceph_key_write(self.ctxt, bootstrap_entity, keyring_path,
+                             bootstrap_key)
+        file_tool.chown(bootstrap_key_dir, user='ceph', group='ceph')
+
     def ceph_osd_install(self, osd):
         # write ceph.conf
         logger.debug("write config")
@@ -272,7 +311,12 @@ class NodeTask(object):
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
 
-        # TODO: key
+        enable_cephx = objects.sysconfig.sys_config_get(
+            self.ctxt, key="enable_cephx"
+        )
+        if enable_cephx:
+            self.init_admin_key()
+            self.init_bootstrap_keys("osd")
         logger.debug("osd create on node")
         osd = agent.ceph_osd_create(self.ctxt, osd)
         return osd
@@ -294,11 +338,18 @@ class NodeTask(object):
         agent.ceph_rgw_package_uninstall(self.ctxt)
 
     def ceph_rgw_install(self, radosgw, zone_params):
+        enable_cephx = objects.sysconfig.sys_config_get(
+            self.ctxt, key="enable_cephx"
+        )
         # write ceph.conf
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
         logger.debug("Write radosgw config for %s", radosgw.name)
         agent = self.get_agent()
         agent.ceph_conf_write(self.ctxt, ceph_conf_content)
+
+        if enable_cephx:
+            self.init_admin_key()
+            agent.create_rgw_keyring(self.ctxt, radosgw)
 
         logger.debug("Radosgw %s create on node %s",
                      radosgw.name, radosgw.node_id)

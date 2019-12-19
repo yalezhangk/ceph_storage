@@ -94,9 +94,12 @@ def ceph_config_get(ctxt, group, key, default=None):
 
 
 def ceph_config_content(ctxt):
+    ignore_section = ["keyring"]
     configer = configparser.ConfigParser()
     configs = objects.CephConfigList.get_all(ctxt)
     for config in configs:
+        if config.group in ignore_section:
+            continue
         if not configer.has_section(config.group):
             configer[config.group] = {}
         configer[config.group][config.key] = config.value

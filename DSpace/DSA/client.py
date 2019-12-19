@@ -25,6 +25,11 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_conf_write", content=content)
         return response
 
+    def ceph_key_write(self, ctxt, entity, keyring_path, content):
+        response = self.call(ctxt, "ceph_key_write", entity=entity,
+                             keyring_path=keyring_path, content=content)
+        return response
+
     def ceph_osd_package_install(self, ctxt):
         response = self.call(ctxt, "ceph_osd_package_install")
         return response
@@ -64,10 +69,14 @@ class AgentClient(BaseClient):
                              types=types, service=service)
         return response
 
-    def ceph_mon_create(self, ctxt, fsid, ceph_auth='none',
+    def collect_keyring(self, ctxt, entity):
+        response = self.call(ctxt, "collect_keyring", entity=entity)
+        return response
+
+    def ceph_mon_create(self, ctxt, fsid, mon_secret=None,
                         mgr_dspace_port=None):
         response = self.call(
-            ctxt, "ceph_mon_create", fsid=fsid, ceph_auth=ceph_auth,
+            ctxt, "ceph_mon_create", fsid=fsid, mon_secret=mon_secret,
             mgr_dspace_port=mgr_dspace_port)
         return response
 
@@ -85,6 +94,10 @@ class AgentClient(BaseClient):
 
     def ceph_rgw_package_uninstall(self, ctxt):
         response = self.call(ctxt, "ceph_rgw_package_uninstall")
+        return response
+
+    def create_rgw_keyring(self, ctxt, radosgw):
+        response = self.call(ctxt, "create_rgw_keyring", radosgw=radosgw)
         return response
 
     def ceph_rgw_create(self, ctxt, radosgw, zone_params):

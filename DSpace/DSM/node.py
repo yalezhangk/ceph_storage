@@ -1,3 +1,8 @@
+import base64
+import os
+import struct
+import time
+
 import six
 from netaddr import IPAddress
 from netaddr import IPNetwork
@@ -324,6 +329,27 @@ class NodeHandler(AdminBaseHandler):
             raise exc.InvalidInput(_(
                 "The block gateway role has not yet been installed"))
 
+    def _generate_mon_secret(self):
+        key = os.urandom(16)
+        header = struct.pack('<hiih', 1, int(time.time()), 0, len(key))
+        mon_secret = base64.b64encode(header + key).decode()
+        logger.info("Generate mon secret for first mon: <%s>", mon_secret)
+        return mon_secret
+
+    def _save_admin_keyring(self, ctxt, node_task):
+        # Save  client.admin keyring to DB
+        admin_keyring = node_task.collect_keyring("client.admin")
+        if not admin_keyring:
+            logger.error("no admin keyring, clients can't connect to cluster")
+            raise exc.ProgrammingError("items empty!")
+        else:
+            self._set_ceph_conf(ctxt,
+                                group="keyring",
+                                key="client.admin",
+                                value=admin_keyring,
+                                value_type="string")
+            logger.info("create or update client.admin: <%s>", admin_keyring)
+
     def _mon_install(self, ctxt, node):
         node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.role_monitor = True
@@ -332,6 +358,10 @@ class NodeHandler(AdminBaseHandler):
         mon_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_monitor": True}
         )
+        enable_cephx = objects.sysconfig.sys_config_get(
+            ctxt, key="enable_cephx"
+        )
+        mon_secret = None
         if len(mon_nodes) == 1:
             # init ceph config
             public_network = objects.sysconfig.sys_config_get(
@@ -357,6 +387,17 @@ class NodeHandler(AdminBaseHandler):
             }
             configs = {}
             configs.update(cluster_config.default_cluster_configs)
+            # Save initial mon key to DB
+            if enable_cephx:
+                mon_secret = self._generate_mon_secret()
+                self._set_ceph_conf(ctxt,
+                                    group="keyring",
+                                    key="mon.",
+                                    value=mon_secret,
+                                    value_type="string")
+                configs.update(cluster_config.auth_cephx_config)
+            else:
+                configs.update(cluster_config.auth_none_config)
             configs.update(new_cluster_config)
             for key, value in configs.items():
                 self._set_ceph_conf(ctxt,
@@ -377,8 +418,16 @@ class NodeHandler(AdminBaseHandler):
                                 key="mon_initial_members",
                                 value=mon_initial_members,
                                 value_type='string')
+            if enable_cephx:
+                db_mon_secret = objects.CephConfig.get_by_key(
+                    ctxt, 'keyring', 'mon.')
+                mon_secret = db_mon_secret.value
         node_task = NodeTask(ctxt, node)
-        node_task.ceph_mon_install()
+        node_task.ceph_mon_install(mon_secret)
+
+        if enable_cephx:
+            self._save_admin_keyring(ctxt, node_task)
+
         # sync config file
         osd_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_storage": True}

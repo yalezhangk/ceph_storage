@@ -50,10 +50,19 @@ cluster_configs = {
 
 default_cluster_configs = {
     'mon_allow_pool_delete': {'type': 'bool', 'value': True},
+    'osd_crush_update_on_start': {'type': 'bool', 'value': False},
+}
+
+auth_none_config = {
     'auth_cluster_required': {'type': 'string', 'value': 'none'},
     'auth_service_required': {'type': 'string', 'value': 'none'},
     'auth_client_required': {'type': 'string', 'value': 'none'},
-    'osd_crush_update_on_start': {'type': 'bool', 'value': False},
+}
+
+auth_cephx_config = {
+    'auth_cluster_required': {'type': 'string', 'value': 'cephx'},
+    'auth_service_required': {'type': 'string', 'value': 'cephx'},
+    'auth_client_required': {'type': 'string', 'value': 'cephx'},
 }
 
 

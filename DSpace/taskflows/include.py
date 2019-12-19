@@ -210,7 +210,7 @@ class SyncCephConfig(BaseTask):
                 logger.info(admin_keyring)
                 key = admin_keyring.get('entity')
                 value = admin_keyring.get('key')
-                self._update_config(ctxt, "global", key, value)
+                self._update_config(ctxt, "keyring", key, value)
 
     def _update_config(self, ctxt, section, key, value):
         objs = objects.CephConfigList.get_all(

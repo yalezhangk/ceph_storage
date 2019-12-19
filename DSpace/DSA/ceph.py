@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import configparser
 import logging
 import time
+from io import StringIO
 
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
@@ -23,6 +25,17 @@ class CephHandler(AgentBaseHandler):
         file_tool.mkdir("/etc/ceph")
         file_tool.write("/etc/ceph/ceph.conf", content)
         return True
+
+    def ceph_key_write(self, context, entity, keyring_path, content):
+        logger.info("write ceph keys to %s", keyring_path)
+        configer = configparser.ConfigParser()
+        configer[entity] = {}
+        configer[entity]["key"] = content
+        buf = StringIO()
+        configer.write(buf)
+        client = self._get_executor()
+        file_tool = FileTool(client)
+        file_tool.write(keyring_path, buf.getvalue())
 
     def ceph_prepare_disk(self, context, osd):
         kwargs = {
@@ -199,7 +212,12 @@ class CephHandler(AgentBaseHandler):
             time.sleep(1)
         logger.debug("mon is ready")
 
-    def ceph_mon_create(self, context, fsid, ceph_auth='none',
+    def collect_keyring(self, context, entity):
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        return ceph_tool.collect_keyring(entity)
+
+    def ceph_mon_create(self, context, fsid, mon_secret=None,
                         mgr_dspace_port=None):
         client = self._get_ssh_executor()
         # install package
@@ -223,12 +241,21 @@ class CephHandler(AgentBaseHandler):
         ceph_tool = CephTool(client)
         ceph_tool.mon_install(self.node.hostname,
                               fsid,
-                              ceph_auth=ceph_auth)
-
+                              mon_secret=mon_secret)
         # enable and start ceph-mon
         service_tool = ServiceTool(client)
         service_tool.enable("ceph-mon@{}".format(self.node.hostname))
         service_tool.start("ceph-mon@{}".format(self.node.hostname))
+
+        # Generate client.admin key and bootstrap key when mon is ready
+        # If not enable cephx, these keys exists but no effect
+        if mon_secret:
+            file_tool.rm("/etc/ceph/*.keyring")
+            file_tool.rm("/var/lib/ceph/bootstrap-*/*")
+            ceph_tool.create_keys(self.node.hostname)
+            ceph_tool.create_mgr_keyring(self.node.hostname)
+            ceph_tool.create_mds_keyring(self.node.hostname)
+
         service_tool.enable("ceph-mgr@{}".format(self.node.hostname))
         service_tool.start("ceph-mgr@{}".format(self.node.hostname))
         service_tool.enable("ceph-mds@{}".format(self.node.hostname))
@@ -262,6 +289,7 @@ class CephHandler(AgentBaseHandler):
         file_tool.rm("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
         file_tool.rm("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
         file_tool.rm("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
+        file_tool.rm("/etc/ceph/*.keyring")
         return True
 
     def osd_create(self, ctxt, node, osd):
@@ -303,6 +331,15 @@ class CephHandler(AgentBaseHandler):
         if not status:
             raise exception.StorException(
                 message='Radosgw service start failed')
+
+    def create_rgw_keyring(self, ctxt, radosgw):
+        client = self._get_ssh_executor()
+        file_tool = FileTool(client)
+        ceph_tool = CephTool(client)
+        rgw_data_dir = "/var/lib/ceph/radosgw/ceph-rgw.{}".format(radosgw.name)
+        file_tool.mkdir(rgw_data_dir)
+        ceph_tool.create_rgw_keyring(radosgw.name, rgw_data_dir)
+        file_tool.chown(rgw_data_dir, user='ceph', group='ceph')
 
     def ceph_rgw_create(self, ctxt, radosgw, zone_params):
         logger.info('Create ceph-radosgw service')
