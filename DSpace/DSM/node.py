@@ -71,6 +71,13 @@ class NodeHandler(AdminBaseHandler):
             service.destroy()
 
     def _node_delete(self, ctxt, node, begin_action):
+        node_task = NodeTask(ctxt, node)
+        try:
+            node_task.prometheus_target_config(action='remove',
+                                               service='node_exporter')
+        except Exception as e:
+            logger.error(e)
+
         try:
             if node.role_monitor:
                 self._mon_uninstall(ctxt, node)
@@ -80,13 +87,11 @@ class NodeHandler(AdminBaseHandler):
                 self._bgw_uninstall(ctxt, node)
             if node.role_object_gateway:
                 self._rgw_uninstall(ctxt, node)
-            node_task = NodeTask(ctxt, node)
+
             node_task.ceph_package_uninstall()
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
-            node_task.prometheus_target_config(action='remove',
-                                               service='node_exporter')
             self._remove_node_resource(ctxt, node)
 
             node.destroy()
