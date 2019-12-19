@@ -148,7 +148,7 @@ class RadosgwHandler(AdminBaseHandler):
             self.notify_node_update(ctxt, node)
             logger.info("client.rgw.%s create success", radosgw.name)
             op_status = 'CREATE_SUCCESS'
-            msg = _("create success: {}").format(radosgw.display_name)
+            msg = _("create radosgw success: {}").format(radosgw.display_name)
             err_msg = None
         except exception.StorException as e:
             logger.error(e)

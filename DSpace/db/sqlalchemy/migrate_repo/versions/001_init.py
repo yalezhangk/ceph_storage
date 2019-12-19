@@ -522,7 +522,7 @@ def define_tables(meta):
         Column('resource_type', String(32)),
         Column('level', String(32)),
         Column('alert_value', String(1024)),
-        Column('resource_id', String(32)),
+        Column('resource_id', String(64)),
         Column('resource_name', String(64)),
         Column('alert_rule_id', Integer, ForeignKey('alert_rules.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),

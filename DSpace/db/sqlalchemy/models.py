@@ -487,7 +487,7 @@ class AlertLog(BASE, StorBase):
     resource_type = Column(String(32))
     level = Column(String(32))
     alert_value = Column(String(1024))
-    resource_id = Column(String(32))
+    resource_id = Column(String(64))
     resource_name = Column(String(64))
     alert_rule_id = Column(Integer, ForeignKey('alert_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))

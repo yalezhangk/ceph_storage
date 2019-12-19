@@ -542,7 +542,10 @@ class NodeHandler(AdminBaseHandler):
         node.status = status
         node.save()
         # notify dsa to update node info
-        self._notify_dsa_update(ctxt, node)
+        try:
+            self._notify_dsa_update(ctxt, node)
+        except Exception as e:
+            logger.error("Update dsa node info failed: %s", e)
 
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()

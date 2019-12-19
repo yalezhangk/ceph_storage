@@ -9,6 +9,7 @@ from DSpace import exception as exc
 from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.DSA.client import AgentClientManager
+from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
@@ -117,6 +118,30 @@ class AdminBaseHandler(object):
 
     def notify_node_update(self, ctxt, node):
         client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node.id)
+            ctxt, cluster_id=ctxt.cluster_id).get_client(node.id)
         client.node_update_infos(ctxt, node)
+
+    def send_service_alert(self, ctxt, service, alert_type, resource_name,
+                           alert_level, alert_msg, wb_op_status):
+        alert_rule = objects.AlertRuleList.get_all(
+            ctxt, filters={
+                'type': alert_type, 'cluster_id': ctxt.cluster_id
+            })
+        if not alert_rule:
+            return
+        alert_rule = alert_rule[0]
+        if not alert_rule.enabled:
+            return
+        alert_log_data = {
+            'resource_type': alert_rule.resource_type,
+            'resource_name': resource_name,
+            'resource_id': ctxt.cluster_id,
+            'level': alert_level,
+            'alert_value': alert_msg,
+            'alert_rule_id': alert_rule.id,
+            'cluster_id': ctxt.cluster_id
+        }
+        alert_log = objects.AlertLog(ctxt, **alert_log_data)
+        alert_log.create()
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, service, wb_op_status, alert_msg)
