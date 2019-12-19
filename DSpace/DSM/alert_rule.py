@@ -22,7 +22,7 @@ class AlertRuleHandler(AdminBaseHandler):
         rule = self.alert_rule_get(ctxt, alert_rule_id)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.ALERT_RULE,
-            action=AllActionType.OPEN_ALERT_RULE)
+            action=AllActionType.OPEN_ALERT_RULE, before_obj=rule)
         rule_data = {
             'enabled': data.get('enabled')
         }
@@ -35,7 +35,7 @@ class AlertRuleHandler(AdminBaseHandler):
         self.finish_action(begin_action, resource_id=rule.id,
                            resource_name=rule.type,
                            resource_data=objects.json_encode(rule),
-                           action=action)
+                           action=action, after_obj=rule)
         return rule
 
     def alert_rule_get_count(self, ctxt, filters=None):

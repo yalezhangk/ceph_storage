@@ -139,8 +139,10 @@ class PoolHandler(AdminBaseHandler):
             status = s_fields.PoolStatus.ACTIVE
             msg = _("create pool success: {}").format(pool.display_name)
             op_status = "CREATE_SUCCESS"
+            err_msg = None
         except Exception as e:
             logger.exception("create pool error: %s", e)
+            err_msg = str(e)
             db_pool_id = None
             rule_id = None
             status = s_fields.PoolStatus.ERROR
@@ -153,7 +155,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
-                           resource_data=objects.json_encode(pool))
+                           after_obj=pool, status=status, err_msg=err_msg)
 
     def _check_pool_display_name(self, ctxt, display_name):
         filters = {"display_name": display_name}
@@ -204,10 +206,7 @@ class PoolHandler(AdminBaseHandler):
         self._update_osd_info(
             ctxt, osds, None)
 
-    def _pool_delete(self, ctxt, pool):
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.DELETE)
+    def _pool_delete(self, ctxt, pool, begin_action):
         crush_rule = pool.crush_rule
         try:
             ceph_client = CephTask(ctxt)
@@ -218,8 +217,10 @@ class PoolHandler(AdminBaseHandler):
             op_status = "DELETE_SUCCESS"
             pool.crush_rule_id = None
             pool.osd_num = None
+            err_msg = None
         except exception.StorException as e:
             logger.error("delete pool error: %s", e)
+            err_msg = str(e)
             status = s_fields.PoolStatus.ERROR
             msg = _("delete pool error: {}").format(pool.display_name)
             op_status = "DELETE_ERROR"
@@ -231,22 +232,22 @@ class PoolHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
-                           resource_data=objects.json_encode(pool))
+                           after_obj=pool, status=status, err_msg=err_msg)
 
     def pool_delete(self, ctxt, pool_id):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.DELETE, before_obj=pool)
         pool.status = s_fields.PoolStatus.DELETING
         pool.save()
         objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
-        self.task_submit(self._pool_delete, ctxt, pool)
+        self.task_submit(self._pool_delete, ctxt, pool, begin_action)
         return pool
 
-    def _pool_increase_disk(self, ctxt, pool, osd_db_ids):
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.POOL_ADD_DISK)
+    def _pool_increase_disk(self, ctxt, pool, osd_db_ids, begin_action=None):
         try:
             crush = objects.CrushRule.get_by_id(ctxt, pool.crush_rule_id,
                                                 expected_attrs=["osds"])
@@ -263,7 +264,8 @@ class PoolHandler(AdminBaseHandler):
             ceph_client.pool_add_disk(pool, crush.content)
             msg = _("pool {} increase disk success").format(pool.display_name)
             pool.osd_num = len(new_osds)
-            pool.status = s_fields.PoolStatus.ACTIVE
+            status = s_fields.PoolStatus.ACTIVE
+            pool.status = status
             pool.save()
             self._update_osd_info(ctxt, osd_db_ids, crush.id)
             undo_data = {
@@ -278,8 +280,10 @@ class PoolHandler(AdminBaseHandler):
             }
             op_status = "INCREASE_DISK_SUCCESS"
             objects.sysconfig.sys_config_set(ctxt, 'pool_undo', undo_data)
+            err_msg = None
         except Exception as e:
             logger.error("increase disk error: {}".format(e))
+            err_msg = str(e)
             msg = _("pool {} increase disk error").format(pool.display_name)
             status = s_fields.PoolStatus.ERROR
             pool.status = status
@@ -289,15 +293,19 @@ class PoolHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
-                           resource_data=objects.json_encode(pool))
+                           after_obj=pool, status=status, err_msg=err_msg)
 
     def pool_increase_disk(self, ctxt, id, data):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_ADD_DISK, before_obj=pool)
         osds = data.get('osds')
         pool.status = s_fields.PoolStatus.PROCESSING
         pool.save()
-        self.task_submit(self._pool_increase_disk, ctxt, pool, osds)
+        self.task_submit(self._pool_increase_disk, ctxt, pool, osds,
+                         begin_action)
         return pool
 
     def _pool_decrease_disk(self, ctxt, pool, osd_db_ids):
@@ -322,18 +330,18 @@ class PoolHandler(AdminBaseHandler):
         pool.save()
         self._update_osd_info(ctxt, osd_db_ids, None)
 
-    def _pool_decrease_task(self, ctxt, pool, osd_db_ids):
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.POOL_DEL_DISK)
+    def _pool_decrease_task(self, ctxt, pool, osd_db_ids, begin_action=None):
         try:
             self._pool_decrease_disk(ctxt, pool, osd_db_ids)
             msg = _("{} decrease disk success").format(pool.display_name)
             op_status = "DECREASE_DISK_SUCCESS"
+            status = 'success'
+            err_msg = None
         except exception.StorException as e:
             logger.error("increase disk error: {}".format(e))
             msg = _("{} decrease disk error").format(pool.display_name)
             status = s_fields.PoolStatus.ERROR
+            err_msg = str(e)
             pool.status = status
             pool.save()
             op_status = "DECREASE_DISK_ERROR"
@@ -341,7 +349,7 @@ class PoolHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
-                           resource_data=objects.json_encode(pool))
+                           after_obj=pool, status=status, err_msg=err_msg)
 
     def _get_osd_fault_domains(self, ctxt, fault_domain, osd_ids):
         nodes = []
@@ -393,9 +401,13 @@ class PoolHandler(AdminBaseHandler):
         osds = data.get('osds')
         self._check_data_lost(ctxt, pool, osds)
         objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_DEL_DISK, before_obj=pool)
         pool.status = s_fields.PoolStatus.PROCESSING
         pool.save()
-        self.task_submit(self._pool_decrease_task, ctxt, pool, osds)
+        self.task_submit(self._pool_decrease_task, ctxt, pool, osds,
+                         begin_action)
         return pool
 
     def pool_update_display_name(self, ctxt, id, name):
@@ -403,19 +415,16 @@ class PoolHandler(AdminBaseHandler):
         self._check_pool_display_name(ctxt, name)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.UPDATE)
+            action=AllActionType.UPDATE, before_obj=pool)
         logger.info("update pool name from %s to %s", pool.display_name, name)
         pool.display_name = name
         pool.save()
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
-                           resource_data=objects.json_encode(pool))
+                           after_obj=pool)
         return pool
 
-    def _pool_update_policy(self, ctxt, pool):
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.POOL,
-            action=AllActionType.POOL_UPDATE_POLICY)
+    def _pool_update_policy(self, ctxt, pool, begin_action=None):
         try:
             crush = objects.CrushRule.get_by_id(
                 ctxt, pool.crush_rule_id,
@@ -443,6 +452,7 @@ class PoolHandler(AdminBaseHandler):
             op_status = "UPDATE_POLICY_SUCCESS"
             pool.status = status
             pool.save()
+            err_msg = None
         except exception.StorException as e:
             logger.exception("update pool policy error: %s", e)
             msg = _("{} update policy error").format(pool.display_name)
@@ -450,11 +460,12 @@ class PoolHandler(AdminBaseHandler):
             op_status = "UPDATE_POLICY_ERROR"
             pool.status = status
             pool.save()
+            err_msg = str(e)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
-                           resource_data=objects.json_encode(pool))
+                           after_obj=pool, status=status, err_msg=err_msg)
 
     def pool_update_policy(self, ctxt, id, data):
         self.check_mon_host(ctxt)
@@ -472,12 +483,15 @@ class PoolHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("More than one pool use this crush,"
                   " not allow change fault domain"))
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.POOL,
+            action=AllActionType.POOL_UPDATE_POLICY, before_obj=pool)
         pool.failure_domain_type = fault_domain
         pool.replicate_size = rep_size
         pool.status = s_fields.PoolStatus.PROCESSING
         pool.save()
         objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
-        self.task_submit(self._pool_update_policy, ctxt, pool)
+        self.task_submit(self._pool_update_policy, ctxt, pool, begin_action)
         return pool
 
     def pool_fact_total_size_bytes(self, ctxt, pool_id):
@@ -564,13 +578,13 @@ class PoolHandler(AdminBaseHandler):
         undo = objects.sysconfig.sys_config_get(ctxt, 'pool_undo')
         pool = None
         if undo:
-            begin_action = self.begin_action(
-                ctxt, resource_type=AllResourceType.POOL,
-                action=AllActionType.POOL_UPDATE_POLICY)
             logger.info("pool undo: %s", undo)
             pool = objects.Pool.get_by_id(
                 ctxt, undo['pool']['id'],
                 expected_attrs=['crush_rule', 'osds'])
+            begin_action = self.begin_action(
+                ctxt, resource_type=AllResourceType.POOL,
+                action=AllActionType.POOL_UPDATE_POLICY, before_obj=pool)
             osd_db_ids = [osd['id'] for osd in undo['osds']]
             objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
             try_out = False
@@ -591,7 +605,7 @@ class PoolHandler(AdminBaseHandler):
             logger.exception("pool undo finish")
             self.finish_action(begin_action, resource_id=pool.id,
                                resource_name=pool.display_name,
-                               resource_data=objects.json_encode(pool))
+                               after_obj=pool, status=pool.status)
             return pool
         else:
             raise exception.InvalidInput(_("No available undo"))

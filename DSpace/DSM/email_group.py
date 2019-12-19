@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from oslo_log import log as logging
 
 from DSpace import exception as exc
@@ -52,10 +50,9 @@ class EmailGroupHandler(AdminBaseHandler):
     def email_group_update(self, ctxt, email_group_id, data):
         logger.debug('email_group:%s begin update', email_group_id)
         email_group = self.email_group_get(ctxt, email_group_id)
-        before_obj = deepcopy(email_group)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
-            action=AllActionType.UPDATE, before_obj=before_obj)
+            action=AllActionType.UPDATE, before_obj=email_group)
         name = data.get('name')
         emails = data.get('emails')
         email_group.name = name
@@ -74,10 +71,9 @@ class EmailGroupHandler(AdminBaseHandler):
         if email_group.alert_groups:
             raise exc.InvalidInput(reason=_(
                 'can not delete email_group used by alert_group'))
-        before_obj = deepcopy(email_group)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
-            action=AllActionType.DELETE, before_obj=before_obj)
+            action=AllActionType.DELETE, before_obj=email_group)
         email_group.destroy()
         self.finish_action(begin_action, resource_id=email_group.id,
                            resource_name=email_group.name,

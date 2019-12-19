@@ -1,5 +1,3 @@
-import json
-
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -158,8 +156,15 @@ class CephConfigHandler(AdminBaseHandler):
             cephconf.save()
         return cephconf
 
-    def _ceph_config_set(self, ctxt, values, begin_action=None):
+    def _ceph_config_set(self, ctxt, values):
         nodes = self._get_config_nodes(ctxt, values)
+        filters = {
+            "group": values['group'],
+            "key": values['key']
+        }
+        before_obj = objects.CephConfigList.get_all(ctxt, filters=filters)
+        begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
+                                         Action.UPDATE, before_obj=before_obj)
         if nodes:
             _success = self._ceph_confg_update(ctxt, nodes, values)
             msg = _('Ceph config update failed')
@@ -167,6 +172,8 @@ class CephConfigHandler(AdminBaseHandler):
                 cephconf = self._ceph_config_db(ctxt, values)
                 msg = _('Ceph config update successful')
                 op_status = "SET_CONFIG_SUCCESS"
+            else:
+                cephconf = {}
             status = 'success'
         else:
             cephconf = {}
@@ -174,14 +181,12 @@ class CephConfigHandler(AdminBaseHandler):
             op_status = "SET_CONFIG_ERROR"
             status = 'fail'
         self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
-                           json.dumps(values), status)
+                           after_obj=cephconf, status=status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cephconf, op_status, msg,
                                resource_type="CephConfig")
 
     def ceph_config_set(self, ctxt, values):
-        begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
-                                         Action.UPDATE)
-        self._ceph_config_set(ctxt, values, begin_action)
+        self._ceph_config_set(ctxt, values)
         return values

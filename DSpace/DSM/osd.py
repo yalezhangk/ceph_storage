@@ -129,11 +129,11 @@ class OsdHandler(AdminBaseHandler):
             msg = _("create error: osd.{}").format(osd.osd_id)
             op_status = 'CREATE_ERROR'
             err_msg = str(e)
+
+        self.finish_action(begin_action, osd.id, osd.osd_name,
+                           osd, osd.status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, op_status, msg)
-        self.finish_action(begin_action, osd.id, 'osd.{}'.format(osd.osd_id),
-                           objects.json_encode(node), osd.status,
-                           err_msg=err_msg)
 
     def _set_osd_partation_role(self, ctxt, osd):
         osd.disk.status = s_fields.DiskStatus.INUSE
@@ -363,12 +363,12 @@ class OsdHandler(AdminBaseHandler):
             msg = _("delete osd.{} error").format(osd.osd_id)
             op_status = "DELETE_ERROR"
         logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
+
+        self.finish_action(begin_action, osd.id, osd.osd_name,
+                           osd, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
-        self.finish_action(begin_action, osd.id, 'osd.{}'.format(osd.osd_id),
-                           objects.json_encode(osd), status,
-                           err_msg=err_msg)
 
     def osd_delete(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
@@ -377,7 +377,8 @@ class OsdHandler(AdminBaseHandler):
                               s_fields.OsdStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " osd can be delete"))
-        begin_action = self.begin_action(ctxt, Resource.OSD, Action.DELETE)
+        begin_action = self.begin_action(
+            ctxt, Resource.OSD, Action.DELETE, osd)
         osd.status = s_fields.OsdStatus.DELETING
         osd.save()
         self.task_submit(self._osd_delete, ctxt, osd.node, osd, begin_action)
@@ -544,10 +545,9 @@ class OsdHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, op_status, msg)
         if begin_action:
-            self.finish_action(begin_action, osd.id,
-                               'osd.{}'.format(osd.osd_id),
-                               objects.json_encode(osd.node), osd.status,
-                               err_msg=err_msg)
+            self.finish_action(
+                begin_action, osd.id, osd.osd_name, osd,
+                osd.status, err_msg=err_msg)
 
     def osd_disk_replace(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
@@ -555,8 +555,8 @@ class OsdHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Osd status should be "
                                            "REPLACE_PREPARED"))
         # check db/cache/journal status
-        begin_action = self.begin_action(ctxt, Resource.OSD,
-                                         Action.OSD_REPLACE)
+        begin_action = self.begin_action(
+            ctxt, Resource.OSD, Action.OSD_REPLACE, osd)
 
         # apply async
         self.task_submit(self._osd_disk_replace, ctxt, osd, begin_action)

@@ -55,11 +55,11 @@ class DiskHandler(AdminBaseHandler):
     def disk_update(self, ctxt, disk_id, disk_type):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         begin_action = self.begin_action(ctxt, Resource.DISK,
-                                         Action.CHANGE_DISK_TYPE)
+                                         Action.CHANGE_DISK_TYPE, disk)
         disk.type = disk_type
         disk.save()
         self.finish_action(begin_action, disk_id, disk.name,
-                           objects.json_encode(disk))
+                           after_obj=disk)
         return disk
 
     def disk_light(self, ctxt, disk_id, led):
@@ -70,7 +70,7 @@ class DiskHandler(AdminBaseHandler):
                     reason=_("disk: repeated actions, led is {}".format(led)))
             node = objects.Node.get_by_id(ctxt, disk.node_id)
             begin_action = self.begin_action(ctxt, Resource.DISK,
-                                             Action.DISK_LIGHT)
+                                             Action.DISK_LIGHT, disk)
             client = AgentClientManager(
                 ctxt, cluster_id=disk.cluster_id
             ).get_client(node_id=disk.node_id)
@@ -83,7 +83,7 @@ class DiskHandler(AdminBaseHandler):
             else:
                 status = 'fail'
             self.finish_action(begin_action, disk_id, disk.name,
-                               objects.json_encode(disk), status)
+                               disk, status)
         else:
             raise exception.LedNotSupport(disk_id=disk_id)
         return disk
@@ -127,7 +127,7 @@ class DiskHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, op_status, msg)
         self.finish_action(begin_action, disk.id, disk.name,
-                           objects.json_encode(disk), status)
+                           disk, status)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
         ceph_version = objects.sysconfig.sys_config_get(
@@ -148,8 +148,9 @@ class DiskHandler(AdminBaseHandler):
             ]
             if values['partition_role'] not in luminous_support_type:
                 raise exception.InvalidInput(_("Partition type not support"))
-        begin_action = self.begin_action(ctxt, Resource.DISK, Action.CREATE)
         disk = objects.Disk.get_by_id(ctxt, disk_id)
+        begin_action = self.begin_action(
+            ctxt, Resource.DISK, Action.CREATE, disk)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         self.task_submit(self._disk_partitions_create, ctxt, node, disk,
                          values, begin_action)
@@ -180,9 +181,9 @@ class DiskHandler(AdminBaseHandler):
             logger.error("Disk partitions remove: Failed")
             msg = _("remove disk partitions failed")
             status = 'fail'
-            self.finish_action(begin_action, disk.id, disk.name,
-                               objects.json_encode(disk), status)
             op_status = "REMOVE_PART_ERROR"
+        self.finish_action(begin_action, disk.id, disk.name,
+                           disk, status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, op_status, msg)
@@ -196,7 +197,8 @@ class DiskHandler(AdminBaseHandler):
                 reason=_('current disk:{} partition has used, '
                          'can not del').format(disk.name))
         node = objects.Node.get_by_id(ctxt, disk.node_id)
-        begin_action = self.begin_action(ctxt, Resource.DISK, Action.DELETE)
+        begin_action = self.begin_action(
+            ctxt, Resource.DISK, Action.DELETE, disk)
         self.task_submit(self._disk_partitions_remove, ctxt, node, disk,
                          values, begin_action)
         return disk

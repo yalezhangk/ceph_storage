@@ -216,7 +216,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster.create()
 
         ctxt.cluster_id = cluster.id
-        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.CREATE)
+        begin_action = self.begin_action(
+            ctxt, Resource.CLUSTER, Action.CREATE)
         # TODO check key value
         for key, value in six.iteritems(data):
             sysconf = objects.SysConfig(
@@ -226,7 +227,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
         self.task_submit(self.init_alert_rule, ctxt, cluster.id)
         self.finish_action(begin_action, cluster.id, cluster.display_name,
-                           objects.json_encode(cluster))
+                           after_obj=cluster)
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
         return cluster
 
@@ -262,7 +263,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             err_msg = str(e)
 
         self.finish_action(begin_action, cluster.id, cluster.display_name,
-                           objects.json_encode(cluster), status,
+                           cluster, status,
                            err_msg=err_msg)
         ctxt.cluster_id = src_cluster_id
         logger.debug("delete cluster %s finish: %s", cluster.id, msg)
@@ -307,7 +308,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         ctxt.cluster_id = cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         self._cluster_delete_check(ctxt, cluster)
-        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.DELETE)
+        begin_action = self.begin_action(
+            ctxt, Resource.CLUSTER, Action.DELETE, before_obj=cluster)
         cluster.status = s_fields.ClusterStatus.DELETING
         cluster.save()
         self.task_submit(self._cluster_delete,
