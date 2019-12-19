@@ -585,6 +585,9 @@ msgstr "对象网关角色还未安装"
 msgid "Node %s has radosgw!"
 msgstr "节点 %s 还存在对象存储网关"
 
+msgid "Node %s has radosgw router!"
+msgstr "节点 %s 还存在对象路由"
+
 msgid "The block gateway role has been installed."
 msgstr "块存储网关角色已被安装"
 

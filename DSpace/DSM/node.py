@@ -92,6 +92,7 @@ class NodeHandler(AdminBaseHandler):
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
+            node_task.router_images_uninstall()
             self._remove_node_resource(ctxt, node)
 
             node.destroy()
@@ -320,11 +321,15 @@ class NodeHandler(AdminBaseHandler):
         if not node.role_object_gateway:
             raise exc.InvalidInput(_(
                 "The object gateway role has not yet been installed"))
-        node_rgws = objects.RadosgwList.get_count(
-            ctxt, filters={"node_id": node.id}
-        )
+        filters = {"node_id": node.id}
+        node_rgws = objects.RadosgwList.get_count(ctxt, filters=filters)
         if node_rgws:
             raise exc.InvalidInput(_("Node %s has radosgw!") % node.hostname)
+        router_service = objects.RouterServiceList.get_all(
+            ctxt, filters=filters)
+        if router_service:
+            raise exc.InvalidInput(
+                _("Node %s has radosgw router!") % node.hostname)
 
     def _bgw_install_check(self, ctxt, node):
         if node.role_block_gateway:
