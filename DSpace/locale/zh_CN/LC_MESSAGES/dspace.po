@@ -633,7 +633,7 @@ msgstr "{} 设置角色成功"
 msgid "set roles error {}"
 msgstr "{} 设置角色错误"
 
-msgid "Only host's status is active can setrole(host_name: %s)"
+msgid "Only host's status is active can set role(host_name: %s)"
 msgstr "%s：仅当服务器状态健康才能设置角色"
 
 msgid "Please provide roles"
