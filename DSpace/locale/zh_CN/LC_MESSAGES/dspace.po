@@ -723,8 +723,11 @@ msgstr "节点 %s 的角色不是对象存储网关"
 msgid "The port %s is used by another radosgw"
 msgstr "端口 %s 已被其他对象存储网关使用"
 
+msgid "The name %s is used by another radosgw"
+msgstr "名称 %s 已被其他对象存储网关使用"
+
 msgid "The ip address %s is invalid"
-msgstr "此IP %s 地址不合法"
+msgstr "此IP地址 %s 不合法"
 
 msgid "The ip address %s is not in gateway_cidr"
 msgstr "此IP地址 %s 不在对象存储网关地址范围内"
