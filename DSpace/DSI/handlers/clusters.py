@@ -388,8 +388,8 @@ class ClusterServiceStatus(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        names = ["NODE_EXPORTER", "PROMETHEUS", "MON", "DSM", "DSI", "NGINX",
-                 "MARIADB", "ETCD", ]
+        names = ["NODE_EXPORTER", "PROMETHEUS", "MON", "DSM", "DSI", "DSA",
+                 "NGINX", "MARIADB", "ETCD", ]
         service_status = yield client.service_status_get(ctxt, names=names)
         self.write(json.dumps(service_status))
 
