@@ -571,8 +571,9 @@ class AdminClient(BaseClient):
             ctxt, "service_get_count", filters=filters)
         return response
 
-    def service_update(self, ctxt, services):
-        response = self.call(ctxt, "service_update", services=services)
+    def service_update(self, ctxt, services, node_id):
+        response = self.call(ctxt, "service_update", services=services,
+                             node_id=node_id)
         return response
 
     def service_status_get(self, ctxt, names):
