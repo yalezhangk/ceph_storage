@@ -236,8 +236,8 @@ class DbCommands(object):
             user = users[0]
             user_token = UserToken()
             token = user_token.generate_token(user.id)
+            print(token)
             LOG.info('access_token:{}'.format(token))
-            return token
         else:
             raise exception.InvalidInput(
                 "Not User:{}, can not generate access_token".format(user_name))
