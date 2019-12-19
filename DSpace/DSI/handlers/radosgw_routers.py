@@ -26,7 +26,17 @@ create_router_schema = {
                 },
                 "description": {"type": ["string", "null"]},
                 "virtual_ip": {"type": ["string", "null"], "format": "ipv4"},
+                "virtual_router_id": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255
+                },
                 "port": {
+                    "type": "integer",
+                    "minimum": CONF.rgw_min_port,
+                    "maximum": CONF.rgw_max_port
+                },
+                "https_port": {
                     "type": "integer",
                     "minimum": CONF.rgw_min_port,
                     "maximum": CONF.rgw_max_port
@@ -44,7 +54,8 @@ create_router_schema = {
                     "uniqueItems": True
                 }
             },
-            "required": ["name", "virtual_ip", "port", "nodes", "radosgws"],
+            "required": ["name", "virtual_ip", "virtual_router_id", "port",
+                         "https_port", "nodes", "radosgws"],
         },
     },
     "additionalProperties": False,

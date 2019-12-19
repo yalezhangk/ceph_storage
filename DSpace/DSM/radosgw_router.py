@@ -39,6 +39,10 @@ class RadosgwRouterHandler(AdminBaseHandler):
                     service.save()
                 if service.status == s_fields.ServiceStatus.INACTIVE:
                     router_health = False
+            if router.status in [s_fields.RadosgwRouterStatus.CREATING,
+                                 s_fields.RadosgwRouterStatus.DELETING,
+                                 s_fields.RadosgwRouterStatus.UPDATING]:
+                continue
             if router_health:
                 router.status = s_fields.RadosgwRouterStatus.ACTIVE
             else:
@@ -73,6 +77,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("The Router name %s has been used") % data.get('name'))
 
+        # check vip
         virtual_ip = data.get('virtual_ip')
         if not virtual_ip:
             data['virtual_router_id'] = None
@@ -87,7 +92,8 @@ class RadosgwRouterHandler(AdminBaseHandler):
             ctxt, filters={'virtual_router_id': data.get('virtual_router_id')})
         if rgw_router:
             raise exception.InvalidInput(
-                _("The virtual router id %s has been used") % virtual_ip)
+                _("The virtual router id %s has been used")
+                % data.get('virtual_router_id'))
 
         # Check if virtual ip address is in gateway_cidr
         gateway_cidr = objects.sysconfig.sys_config_get(
@@ -96,6 +102,24 @@ class RadosgwRouterHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("The virtual ip address %s is not in gateway_cidr")
                 % virtual_ip)
+
+        # Check http and https port
+        http_port = data.get('port')
+        https_port = data.get('https_port')
+        if http_port == https_port:
+            raise exception.InvalidInput(
+                _("HTTP port and HTTPS port can not be same"))
+
+        # check node
+        nodes = data.get("nodes")
+        for n in nodes:
+            service = objects.RouterServiceList.get_all(
+                ctxt, filters={"node_id": n.get("node_id")}
+            )
+            if service:
+                node = objects.Node.get_by_id(ctxt, n.get("node_id"))
+                raise exception.InvalidInput(
+                    _("The node %s has radosgw router") % node.hostname)
 
         # Check if vip can be used
         ssh_client = SSHExecutor()
