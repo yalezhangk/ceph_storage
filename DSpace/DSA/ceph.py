@@ -57,7 +57,7 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
-        package_tool.install(["ceph-osd", "dspace-disk"])
+        package_tool.install(["ceph-osd"])
         # create osd dir
         file_tool = FileTool(client)
         file_tool.mkdir("/var/lib/ceph/osd/")
@@ -68,7 +68,7 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # install package
         package_tool = PackageTool(client)
-        package_tool.uninstall(["ceph-osd", "dspace-disk"])
+        package_tool.uninstall(["ceph-osd"])
         # remove osd dir
         file_tool = FileTool(client)
         file_tool.rm("/var/lib/ceph/osd/")

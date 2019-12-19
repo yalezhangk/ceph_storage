@@ -77,6 +77,8 @@ class Docker(ToolBase):
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
             return True
+        if "No such container" in stderr:
+            return False
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
