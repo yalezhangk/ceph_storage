@@ -342,6 +342,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return cluster_info
 
     def service_status_get(self, ctxt, names):
+        if not objects.NodeList.get_count(ctxt):
+            return {}
         return objects.ServiceList.service_status_get(ctxt, names=names)
 
     def cluster_host_status_get(self, ctxt):
