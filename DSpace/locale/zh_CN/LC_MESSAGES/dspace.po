@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-18 10:56+0800\n"
+"POT-Creation-Date: 2019-12-19 09:56-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -360,6 +360,9 @@ msgstr "文件名不存在"
 msgid "file not yet generate or file path is error"
 msgstr "文件没有生成或文件路径错误"
 
+msgid "Only one node can set roles at the same time"
+msgstr "同时只有一个节点可以设置或者取消角色"
+
 msgid "node:{} create error"
 msgstr "节点 {} 创建错误"
 
@@ -510,6 +513,15 @@ msgstr "移除磁盘分区失败"
 msgid "current disk:{} partition has used, can not del"
 msgstr "当前磁盘 {} 分区使用中，无法删除"
 
+msgid "disk {} offline"
+msgstr "物理盘 {} 下线"
+
+msgid "disk %s plug partition different"
+msgstr "新插入物理盘 {} 与原物理盘分区不匹配"
+
+msgid "disk {} online"
+msgstr "物理盘 {} 上线"
+
 msgid "node_id {} is not monitor role"
 msgstr "节点 {} 不是监控节点"
 
@@ -579,12 +591,6 @@ msgstr "块存储网关角色已被安装"
 msgid "The block gateway role has not yet been installed"
 msgstr "块存储角色还未安装"
 
-msgid "set roles success: {}"
-msgstr "{} 设置角色成功"
-
-msgid "set roles error {}"
-msgstr "{} 设置角色错误"
-
 msgid "set mon role success: {}"
 msgstr "{} 添加主控角色成功"
 
@@ -621,6 +627,12 @@ msgstr "{} 移除对象存储网关角色成功"
 msgid "unset rgw role error {}"
 msgstr "{} 移除对象存储网关角色失败"
 
+msgid "set roles success: {}"
+msgstr "{} 设置角色成功"
+
+msgid "set roles error {}"
+msgstr "{} 设置角色错误"
+
 msgid "Only host's status is active can setrole(host_name: %s)"
 msgstr "%s：仅当服务器状态健康才能设置角色"
 
@@ -629,9 +641,6 @@ msgstr "请先移除硬盘"
 
 msgid "Can't not set and unset the same role"
 msgstr "无法设置并移除相同角色"
-
-msgid "Only one node can set roles at the same time"
-msgstr "同时只有一个节点可以设置或者取消角色"
 
 msgid "node create success"
 msgstr "节点创建成功"
@@ -711,6 +720,36 @@ msgstr "只能删除可用与错误的硬盘"
 msgid "Invalid osd_top or op_top."
 msgstr "osd_top或op_top参数无效"
 
+msgid "osd.{} replace prepare success"
+msgstr "osd.{} 清理成功"
+
+msgid "osd.{} replace prepare error"
+msgstr "osd.{} 清理失败"
+
+msgid "In the operation osd can not replace disk"
+msgstr "操作中的osd不能进行换盘"
+
+msgid "accelerate disk {} osd clean error"
+msgstr "加速盘 {} 清理错误"
+
+msgid "accelerate disk {} osd clean success"
+msgstr "加速盘 {} 清理成功"
+
+msgid "disk role should be accelerate"
+msgstr "该物理盘不是加速盘"
+
+msgid "Osd status should be REPLACE_PREPARED"
+msgstr "osd 未清理完成"
+
+msgid "create disk {} partitions failed"
+msgstr "物理盘 {} 创建分区失败"
+
+msgid "accelerate disk {} replace success"
+msgstr "加速盘 {} 换盘成功"
+
+msgid "accelerate disk has no partitions"
+msgstr "加速盘上没有分区"
+
 msgid "create pool success: {}"
 msgstr "创建存储池成功：{}"
 
@@ -756,11 +795,11 @@ msgstr "机架 {} 已存在"
 msgid "The role of node %s is not role_object_gateway"
 msgstr "节点 %s 的角色不是对象存储网关"
 
-msgid "The port %s is used by another radosgw"
-msgstr "端口 %s 已被其他对象存储网关使用"
-
 msgid "The name %s is used by another radosgw"
 msgstr "名称 %s 已被其他对象存储网关使用"
+
+msgid "The port %s is used by another radosgw"
+msgstr "端口 %s 已被其他对象存储网关使用"
 
 msgid "The ip address %s is invalid"
 msgstr "此IP地址 %s 不合法"
@@ -786,11 +825,11 @@ msgstr "删除对象存储网关成功：{}"
 msgid "delete radosgw {} error"
 msgstr "删除对象存储网关失败：{}"
 
-msgid "Only available 、inactive 、stopped or error radosgw can be deleted"
-msgstr "只能删除健康、已停止与错误状态的对象存储网关"
-
 msgid "Must remove radosgw router before radosgw"
 msgstr "必须在删除对象存储网关前删除对象路由"
+
+msgid "Only available 、inactive 、stopped or error radosgw can be deleted"
+msgstr "只能删除健康、已停止与错误状态的对象存储网关"
 
 msgid "The radosgw %s has router"
 msgstr "对象存储网关 %s 已经绑定路由"
@@ -807,17 +846,14 @@ msgstr "虚拟路由ID %s 已被使用"
 msgid "The virtual ip address %s is not in gateway_cidr"
 msgstr "此虚拟IP地址 %s 不在对象存储网关地址范围内"
 
-msgid "The virtual ip %s is used by another node"
-msgstr "虚拟IP地址 %s 已被其他对象存储网关使用"
+msgid "HTTP port and HTTPS port can not be same"
+msgstr "HTTP端口和HTTPS端口不能相同"
 
 msgid "The node %s has radosgw router"
 msgstr "节点%s上已存在对象路由"
 
-msgid "HTTP port and HTTPS port can not be same"
-msgstr "HTTP端口和HTTPS端口不能相同"
-
-msgid "Port {} or {} has been used by other router"
-msgstr "端口{}或{}已被其他对象路由使用"
+msgid "The virtual ip %s is used by another node"
+msgstr "虚拟IP地址 %s 已被其他对象存储网关使用"
 
 msgid "delete radosgw router {} success"
 msgstr "删除对象路由成功：{}"
@@ -965,8 +1001,4 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
 
-msgid "radosgw.port: None is not of type 'integer'"
-msgstr "radosgw端口:None不是'integer'类型"
 
-msgid "Only host's status is active can set role(host_name: %s)"
-msgstr "只有状态为健康服务器可以设置角色（服务器: %s）"
