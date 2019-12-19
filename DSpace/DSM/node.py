@@ -130,6 +130,16 @@ class NodeHandler(AdminBaseHandler):
             raise exc.InvalidInput(_("Node status not allow!"))
         if node.role_admin:
             raise exc.InvalidInput(_("admin role could not delete!"))
+        # TODO concurrence not support now, need remove when support
+        roles_status = [s_fields.NodeStatus.CREATING,
+                        s_fields.NodeStatus.DELETING,
+                        s_fields.NodeStatus.DEPLOYING_ROLE,
+                        s_fields.NodeStatus.REMOVING_ROLE]
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={'status': roles_status})
+        if len(nodes) and (node.role_monitor or node.role_storage):
+            raise exc.InvalidInput(_("Only one node can set roles at the"
+                                     " same time"))
         if node.role_monitor:
             self._mon_uninstall_check(ctxt, node)
         if node.role_storage:
@@ -542,6 +552,17 @@ class NodeHandler(AdminBaseHandler):
                            err_msg=err_msg)
 
     def node_roles_set(self, ctxt, node_id, data):
+        # TODO concurrence not support now, need remove when support
+        roles_status = [s_fields.NodeStatus.CREATING,
+                        s_fields.NodeStatus.DELETING,
+                        s_fields.NodeStatus.DEPLOYING_ROLE,
+                        s_fields.NodeStatus.REMOVING_ROLE]
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={'status': roles_status})
+        if len(nodes):
+            raise exc.InvalidInput(_("Only one node can set roles at the"
+                                     " same time"))
+
         node = objects.Node.get_by_id(ctxt, node_id)
         if node.status != s_fields.NodeStatus.ACTIVE:
             raise exc.InvalidInput(_("Only host's status is active can set"
@@ -647,7 +668,17 @@ class NodeHandler(AdminBaseHandler):
         logger.debug("add node to cluster {}".format(data.get('ip_address')))
 
         NodeMixin._check_node_ip_address(ctxt, data)
+        # TODO concurrence not support now, need remove when support
+        roles_status = [s_fields.NodeStatus.CREATING,
+                        s_fields.NodeStatus.DELETING,
+                        s_fields.NodeStatus.DEPLOYING_ROLE,
+                        s_fields.NodeStatus.REMOVING_ROLE]
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={'status': roles_status})
         roles = data.get('roles', "").split(',')
+        if len(nodes) and len(roles):
+            raise exc.InvalidInput(_("Only one node can set roles at the"
+                                     " same time"))
         role_monitor = "monitor" in roles
         if role_monitor:
             self._mon_install_check(ctxt)
