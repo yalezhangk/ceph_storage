@@ -774,6 +774,9 @@ msgstr "{} 移除硬盘成功"
 msgid "{} decrease disk error"
 msgstr "{} 移除硬盘失败"
 
+msgid "can't remove osds more than pool's rep size"
+msgstr "移除的osd数量不能超过副本数"
+
 msgid "can't remove osds more than pool's available domain"
 msgstr "移除的osd数量不能超过副本数"
 
@@ -782,6 +785,9 @@ msgstr "{} 修改数据安全策略成功"
 
 msgid "{} update policy error"
 msgstr "{} 修改数据安全策略错误"
+
+msgid "can't set fault_domain from rack to host"
+msgstr "无法将故障域从机架变更到服务器"
 
 msgid "More than one pool use this crush, not allow change fault domain"
 msgstr "超过一个存储池使用这个故障域规划，不允许修改故障域"
@@ -1000,5 +1006,3 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-
