@@ -302,18 +302,21 @@ class CronHandler(AdminBaseHandler):
             ctxt = RequestContext(user_id='admin',
                                   is_admin=True,
                                   cluster_id=dsa.cluster_id)
+            dsa_status = dsa.status
             self.check_service_status(self.ctxt, dsa)
             if (dsa.status == s_fields.ServiceStatus.INACTIVE and
-                    not self.debug_mode):
+                    dsa_status == s_fields.ServiceStatus.ACTIVE):
                 logger.error("DSA in node %s is inactive", dsa.node_id)
-                dsa.status = s_fields.ServiceStatus.STARTING
-                dsa.save()
                 node = objects.Node.get_by_id(ctxt, dsa.node_id)
                 msg = _("Node {}: DSA in status is inactive"
                         ).format(node.hostname)
                 self.send_service_alert(
                     ctxt, dsa, "service_status", "DSA", "WARN", msg,
                     "SERVICE_INACTIVE")
+                if self.debug_mode:
+                    continue
+                dsa.status = s_fields.ServiceStatus.STARTING
+                dsa.save()
                 self.task_submit(self._restart_dsa, ctxt, dsa, node)
 
     def _node_check_cron(self):

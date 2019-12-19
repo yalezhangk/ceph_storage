@@ -35,12 +35,8 @@ class ServiceHandler(AdminBaseHandler):
     def service_get_count(self, ctxt, filters=None):
         return objects.ServiceList.get_count(ctxt, filters=filters)
 
-    def _restart_systemd_service(self, ctxt, name, service):
+    def _restart_systemd_service(self, ctxt, name, service, node):
         if self.debug_mode:
-            return
-        node = objects.Node.get_by_id(ctxt, service.node_id)
-        if node.status in [s_fields.NodeStatus.REMOVING_ROLE,
-                           s_fields.NodeStatus.DELETING]:
             return
         logger.info("Try to restart systemd service: %s", name)
         service.status = s_fields.ServiceStatus.STARTING
@@ -77,7 +73,7 @@ class ServiceHandler(AdminBaseHandler):
                 "SERVICE_ERROR"
             )
 
-    def _restart_radosgw_service(self, ctxt, radosgw):
+    def _restart_radosgw_service(self, ctxt, radosgw, node):
         if self.debug_mode:
             return
         logger.info("Try to restart rgw service: %s", radosgw.name)
@@ -85,7 +81,6 @@ class ServiceHandler(AdminBaseHandler):
         radosgw.save()
         target = radosgw.name
         type = "rgw"
-        node = objects.Node.get_by_id(ctxt, radosgw.node_id)
         msg = _("Node {}: radosgw {} status is inactive, trying to restart"
                 ).format(node.hostname, radosgw.display_name)
         self.send_service_alert(
@@ -107,14 +102,13 @@ class ServiceHandler(AdminBaseHandler):
                 "SERVICE_ERROR"
             )
 
-    def _restart_docker_service(self, ctxt, service, container_name):
+    def _restart_docker_service(self, ctxt, service, container_name, node):
         if self.debug_mode:
             return
         logger.info("Try to restart docker service: %s", container_name)
         service.status = \
             s_fields.ServiceStatus.STARTING
         service.save()
-        node = objects.Node.get_by_id(ctxt, service.node_id)
         msg = _("Node {}：service {} status is down, trying to restart")\
             .format(node.hostname, service.name)
         self.send_service_alert(
@@ -143,7 +137,7 @@ class ServiceHandler(AdminBaseHandler):
                         msg, "SERVICE_ERROR"
                     )
 
-    def _update_object_gateway(self, ctxt, filters, status):
+    def _update_object_gateway(self, ctxt, filters, status, node):
         rgws = objects.RadosgwList.get_all(ctxt, filters=filters)
         if not rgws:
             return
@@ -161,7 +155,6 @@ class ServiceHandler(AdminBaseHandler):
             return rgw
         if status == s_fields.RadosgwStatus.INACTIVE and \
                 rgw.status == s_fields.RadosgwStatus.ACTIVE:
-            node = objects.Node.get_by_id(ctxt, rgw.node_id)
             msg = _("Node {}: radosgw {} status is inactive") \
                 .format(node.hostname, rgw.display_name)
             self.send_service_alert(
@@ -173,7 +166,8 @@ class ServiceHandler(AdminBaseHandler):
         rgw.save()
         return rgw
 
-    def _update_radosgw_router(self, ctxt, filters, status, service_name):
+    def _update_radosgw_router(self, ctxt, filters, status, service_name,
+                               node):
         if "keepalived" in service_name:
             filters["name"] = "keepalived"
         if "haproxy" in service_name:
@@ -198,7 +192,6 @@ class ServiceHandler(AdminBaseHandler):
             return service
         if status == s_fields.RouterServiceStatus.INACTIVE \
                 and service.status == s_fields.RouterServiceStatus.ACTIVE:
-            node = objects.Node.get_by_id(ctxt, service.node_id)
             msg = _("Node {}: radosgw router service {} status is inactive"
                     ).format(node.hostname, service.name)
             self.send_service_alert(
@@ -210,14 +203,14 @@ class ServiceHandler(AdminBaseHandler):
         service.save()
         return service
 
-    def _update_normal_service(self, ctxt, filters, name, status, node_id,
+    def _update_normal_service(self, ctxt, filters, name, status, node,
                                role):
         service = objects.ServiceList.get_all(ctxt,
                                               filters=filters)
         if not service:
             service_new = objects.Service(
                 ctxt, name=name, status=status,
-                node_id=node_id, cluster_id=ctxt.cluster_id,
+                node_id=node.id, cluster_id=ctxt.cluster_id,
                 counter=0, role=role
             )
             service_new.create()
@@ -239,7 +232,6 @@ class ServiceHandler(AdminBaseHandler):
                 return service
             if status == s_fields.ServiceStatus.INACTIVE \
                     and service.status == s_fields.ServiceStatus.ACTIVE:
-                node = objects.Node.get_by_id(ctxt, node_id)
                 msg = _("Node {}: service {} status is inactive") \
                     .format(node.hostname, service.name)
                 self.send_service_alert(
@@ -251,7 +243,15 @@ class ServiceHandler(AdminBaseHandler):
             service.save()
             return service
 
-    def service_update(self, ctxt, services):
+    def service_update(self, ctxt, services, node_id):
+        node = objects.Node.get_by_id(ctxt, node_id)
+        if node.status in [s_fields.NodeStatus.CREATING,
+                           s_fields.NodeStatus.DELETING,
+                           s_fields.NodeStatus.DEPLOYING_ROLE,
+                           s_fields.NodeStatus.REMOVING_ROLE]:
+            logger.info("Node status is %s, ignore service update",
+                        node.status)
+            return True
         services = json.loads(services)
         logger.debug('Update service status')
         for role, sers in six.iteritems(services):
@@ -265,30 +265,31 @@ class ServiceHandler(AdminBaseHandler):
                 node_id = s.get('node_id')
                 service_name = s.get('service_name')
                 if role == "role_object_gateway":
-                    rgw = self._update_object_gateway(ctxt, filters, status)
+                    rgw = self._update_object_gateway(
+                        ctxt, filters, status, node)
                     if not rgw:
                         continue
                     if rgw.status == s_fields.RadosgwStatus.INACTIVE:
                         self.task_submit(self._restart_radosgw_service,
-                                         ctxt, rgw)
+                                         ctxt, rgw, node)
                 elif role == "role_radosgw_router":
                     service = self._update_radosgw_router(
-                        ctxt, filters, status, service_name)
+                        ctxt, filters, status, service_name, node)
                     if not service:
                         continue
                     if service.status == s_fields.RouterServiceStatus.INACTIVE:
                         self.task_submit(self._restart_docker_service,
-                                         ctxt, service, service_name)
+                                         ctxt, service, service_name, node)
                 else:
                     service = self._update_normal_service(
-                        ctxt, filters, name, status, node_id, role)
+                        ctxt, filters, name, status, node, role)
                     if service.status == s_fields.ServiceStatus.INACTIVE:
                         if role in self.container_roles:
                             self.task_submit(self._restart_docker_service,
-                                             ctxt, service, service_name)
+                                             ctxt, service, service_name, node)
                         else:
                             self.task_submit(self._restart_systemd_service,
-                                             ctxt, name, service)
+                                             ctxt, name, service, node)
         return True
 
     def service_infos_get(self, ctxt, node):

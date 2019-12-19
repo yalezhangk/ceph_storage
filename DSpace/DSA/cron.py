@@ -134,7 +134,8 @@ class CronHandler(AgentBaseHandler):
                     "service_name": v
                 })
         logger.debug(services)
-        response = self.admin.service_update(self.ctxt, json.dumps(services))
+        response = self.admin.service_update(
+            self.ctxt, json.dumps(services), self.node.id)
         if not response:
             logger.debug('Update service status failed!')
             return False
