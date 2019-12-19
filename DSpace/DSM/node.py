@@ -137,6 +137,7 @@ class NodeHandler(AdminBaseHandler):
 
     def _node_delete_check(self, ctxt, node):
         allowed_status = [s_fields.NodeStatus.ACTIVE,
+                          s_fields.NodeStatus.WARNING,
                           s_fields.NodeStatus.ERROR]
         if node.status not in allowed_status:
             raise exc.InvalidInput(_("Node status not allow!"))
