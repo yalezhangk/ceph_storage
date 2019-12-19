@@ -26,7 +26,8 @@ class BaseAPIHandler(RequestHandler):
         self.session = session_cls(self)
 
     def prepare(self):
-        self.ctxt = self.get_context()
+        if self.request.method != "OPTIONS":
+            self.ctxt = self.get_context()
         logger.info("uri(%s), method(%s), body(%s)",
                     self.request.uri, self.request.method, self.request.body)
 
