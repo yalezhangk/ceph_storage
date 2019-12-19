@@ -3,6 +3,7 @@ import time
 from itertools import groupby
 from operator import itemgetter
 
+import six
 from tooz.coordination import LockAcquireFailed
 
 from DSpace import exception
@@ -134,7 +135,10 @@ class CronHandler(AdminBaseHandler):
         if not up_down:
             return
         status += up_down
-        osd = objects.Osd.get_by_osd_id(context, osd_id)
+        osd = objects.OsdList.get_all(context, filters={"osd_id": osd_id})
+        if not osd:
+            return
+        osd = osd[0]
         if osd.status in [s_fields.OsdStatus.DELETING,
                           s_fields.OsdStatus.CREATING,
                           s_fields.OsdStatus.REPLACE_PREPARED,
@@ -209,19 +213,26 @@ class CronHandler(AdminBaseHandler):
             return self._get_osd_status_from_dsa(context)
         return {}
 
+    def _make_osd_list(self, osds):
+        res = {}
+        for osd in osds:
+            res.update({osd.osd_id: osd})
+        return res
+
     @synchronized('cron_osd_tree', blocking=False)
     def osd_check(self):
         for cluster in self.clusters:
             context = RequestContext(user_id="admin", project_id="stor",
                                      is_admin=False, cluster_id=cluster.id)
             ceph_client = CephTask(context)
-            osds = objects.OsdList.get_count(context)
+            osds = objects.OsdList.get_all(context)
             if not osds:
                 logger.debug("Cluster %s has no osd, ignore", cluster.id)
                 continue
+            osds = self._make_osd_list(osds)
             status = self._check_ceph_osd_status(context, ceph_client)
             osd_tree = ceph_client.get_osd_tree()
-            nodes = osd_tree.get("nodes")
+            nodes = osd_tree.get("nodes") + osd_tree.get("stray")
             for osd_status in nodes:
                 if osd_status.get('id') < 0:
                     continue
@@ -230,13 +241,12 @@ class CronHandler(AdminBaseHandler):
                 else:
                     up_down = osd_status.get('status')
                 self._set_osd_status(context, osd_status, up_down)
-            stray = osd_tree.get("stray")
-            for osd_status in stray:
-                if status:
-                    up_down = status.get("osd.{}".format(osd_status.get('id')))
-                else:
-                    up_down = osd_status.get('status')
-                self._set_osd_status(context, osd_status, up_down)
+                osds.pop(str(osd_status.get('id')))
+            if osds:
+                for osd_id, osd in six.iteritems(osds):
+                    logger.error("Osd.%s is not in cluster", osd_id)
+                    osd.status = s_fields.OsdStatus.ERROR
+                    osd.save()
 
     def _dsa_check_cron(self):
         logger.debug("Start dsa check crontab")
@@ -293,9 +303,9 @@ class CronHandler(AdminBaseHandler):
                                   is_admin=True,
                                   cluster_id=dsa.cluster_id)
             self.check_service_status(self.ctxt, dsa)
-            logger.error("DSA in node %s is inactive", dsa.node_id)
-            if dsa.status == s_fields.ServiceStatus.INACTIVE \
-                    and not self.debug_mode:
+            if (dsa.status == s_fields.ServiceStatus.INACTIVE and
+                    not self.debug_mode):
+                logger.error("DSA in node %s is inactive", dsa.node_id)
                 dsa.status = s_fields.ServiceStatus.STARTING
                 dsa.save()
                 node = objects.Node.get_by_id(ctxt, dsa.node_id)
