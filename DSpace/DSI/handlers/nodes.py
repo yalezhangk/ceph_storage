@@ -305,6 +305,10 @@ class NodeListHandler(ClusterAPIHandler):
             client = self.get_admin_client(ctxt)
             nodes = []
             for data in datas:
+                if 'monitor' in data.get('roles', ''):
+                    raise exception.InvalidInput(_("Only one node can set "
+                                                   "roles at the same time"))
+            for data in datas:
                 try:
                     node = yield client.node_create(ctxt, data)
                     nodes.append(node)
