@@ -361,7 +361,7 @@ msgid "file not yet generate or file path is error"
 msgstr "文件没有生成或文件路径错误"
 
 msgid "Only one node can set roles at the same time"
-msgstr "同时只有一个节点可以设置或者取消角色"
+msgstr "同时只有一个节点可以添加或者移除角色"
 
 msgid "node:{} create error"
 msgstr "节点 {} 创建错误"
