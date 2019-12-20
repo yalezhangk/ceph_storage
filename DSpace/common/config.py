@@ -93,6 +93,9 @@ global_opts = [
     cfg.IntOpt('service_heartbeat_interval',
                default=5,
                help='The interval to check services status in dsa'),
+    cfg.StrOpt('time_zone',
+               default="Asia/Shanghai",
+               help='Local time zone'),
 ]
 
 CONF.register_cli_opts(core_opts)

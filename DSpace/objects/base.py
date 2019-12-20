@@ -13,7 +13,9 @@ from oslo_versionedobjects import fields
 from DSpace import db
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.i18n import _
+from DSpace.utils import utc_to_local
 
 logger = logging.getLogger(__name__)
 obj_make_list = base.obj_make_list
@@ -155,7 +157,8 @@ class JsonEncoder(json.JSONEncoder):
             for k, field in six.iteritems(obj.fields):
                 v = getattr(obj, k)
                 if isinstance(v, datetime.datetime):
-                    v = datetime.datetime.isoformat(v)
+                    local_time = utc_to_local(v, CONF.time_zone)
+                    v = datetime.datetime.isoformat(local_time)
                 elif isinstance(v, netaddr.IPAddress):
                     v = str(v)
                 elif isinstance(field, fields.SensitiveStringField):
