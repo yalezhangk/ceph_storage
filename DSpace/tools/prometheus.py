@@ -370,14 +370,14 @@ class PrometheusTool(object):
                 pg_total += 1
                 if 'active+clean' == state:
                     healthy += 1
+                elif ('unactive' in state) or ('stale' in state) or (
+                        'down' in state) or ('unknown' in state):
+                    unactive += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
                     recovering += 1
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
-                elif ('unactive' in state) or ('stale' in state) or (
-                        'down' in state) or ('unknown' in state):
-                    unactive += 1
 
             cluster_metrics.update({'cluster_pg_state': {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
@@ -448,14 +448,14 @@ class PrometheusTool(object):
                 pg_total += 1
                 if 'active+clean' == state:
                     healthy += 1
+                elif ('unactive' in state) or ('stale' in state) or (
+                        'down' in state) or ('unknown' in state):
+                    unactive += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
                     recovering += 1
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
-                elif ('unactive' in state) or ('stale' in state) or (
-                        'down' in state) or ('unknown' in state):
-                    unactive += 1
 
             pool.metrics.update({'pg_state': {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
@@ -588,14 +588,14 @@ class PrometheusTool(object):
                 pg_total += 1
                 if 'active+clean' == state:
                     healthy += 1
+                elif ('unactive' in state) or ('stale' in state) or (
+                        'down' in state) or ('unknown' in state):
+                    unactive += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
                     recovering += 1
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
-                elif ('unactive' in state) or ('stale' in state) or (
-                        'down' in state) or ('unknown' in state):
-                    unactive += 1
 
             osd.metrics.update({'pg_state': {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
