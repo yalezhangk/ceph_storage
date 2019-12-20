@@ -481,10 +481,20 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         else:
             logger.error("The cluster has no mon role.")
             return "The cluster has no mon role."
+        action_map = {
+            'on': Action.DATA_BALANCE_ON,
+            'off': Action.DATA_BALANCE_OFF
+        }
+        begin_action = self.begin_action(
+            ctxt, Resource.CLUSTER, action_map[action])
         objects.sysconfig.sys_config_set(
             ctxt, "data_balance", res.get("active"), "bool")
         objects.sysconfig.sys_config_set(
             ctxt, "data_balance_mode", res.get("mode"), "string")
+        cluster_id = ctxt.cluster_id
+        cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+        self.finish_action(begin_action, cluster_id, cluster.display_name,
+                           after_obj=res)
         return res
 
     def cluster_pause(self, ctxt, enable=True):
@@ -498,6 +508,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             else:
                 msg = _("Cluster Unpause Success")
             action = "CLUSTER_PAUSE"
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('get cluster info error: %s', e)
             if enable:
@@ -505,8 +517,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             else:
                 msg = _("Cluster Unpause Error")
             action = "CLUSTER_PAUSE_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         self.finish_action(begin_action, ctxt.cluster_id, cluster.display_name,
-                           objects.json_encode(cluster))
+                           after_obj=cluster, status=status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cluster, action, msg)
 

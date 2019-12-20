@@ -169,8 +169,7 @@ class RadosgwHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, radosgw, op_status, msg)
         self.finish_action(begin_action, radosgw.id,
                            'client.rgw.{}'.format(radosgw.name),
-                           objects.json_encode(node), radosgw.status,
-                           err_msg=err_msg)
+                           radosgw, radosgw.status, err_msg=err_msg)
 
     def radosgw_create(self, ctxt, data):
         logger.info("Radosgw create with %s.", data)
@@ -241,8 +240,7 @@ class RadosgwHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, radosgw, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, radosgw.id, radosgw.name,
-                           objects.json_encode(radosgw), status,
-                           err_msg=err_msg)
+                           radosgw, status, err_msg=err_msg)
 
     def _radosgw_delete_check(self, radosgw):
         # check radosgw router on radosgw
@@ -261,7 +259,8 @@ class RadosgwHandler(AdminBaseHandler):
                 _("Only available 、inactive 、stopped or error radosgw can "
                   "be deleted"))
         self._radosgw_delete_check(radosgw)
-        begin_action = self.begin_action(ctxt, Resource.RADOSGW, Action.DELETE)
+        begin_action = self.begin_action(
+            ctxt, Resource.RADOSGW, Action.DELETE, radosgw)
         radosgw.status = s_fields.RadosgwStatus.DELETING
         radosgw.save()
         self.task_submit(self._radosgw_delete, ctxt, radosgw, begin_action)

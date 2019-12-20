@@ -35,10 +35,9 @@ class RackHandler(AdminBaseHandler):
     def rack_delete(self, ctxt, rack_id):
         rack = self.rack_get(ctxt, rack_id)
         begin_action = self.begin_action(ctxt, Resource.RACK,
-                                         Action.DELETE)
+                                         Action.DELETE, rack)
         rack.destroy()
-        self.finish_action(begin_action, rack_id, rack.name,
-                           objects.json_encode(rack))
+        self.finish_action(begin_action, rack_id, rack.name, rack)
         return rack
 
     def rack_get_all(self, ctxt, marker=None, limit=None,
@@ -61,11 +60,10 @@ class RackHandler(AdminBaseHandler):
         rack = objects.Rack.get_by_id(ctxt, id)
         self._check_rack_by_name(ctxt, name)
         begin_action = self.begin_action(ctxt, Resource.RACK,
-                                         Action.UPDATE)
+                                         Action.UPDATE, rack)
         rack.name = name
         rack.save()
-        self.finish_action(begin_action, id, name,
-                           objects.json_encode(rack))
+        self.finish_action(begin_action, id, name, rack)
         return rack
 
     def rack_update_toplogy(self, ctxt, id, datacenter_id):
@@ -83,9 +81,8 @@ class RackHandler(AdminBaseHandler):
                              node.hostname)
                 raise exception.RackMoveNotAllow(rack=rack.name)
         begin_action = self.begin_action(ctxt, Resource.RACK,
-                                         Action.RACK_UPDATE_TOPLOGY)
+                                         Action.RACK_UPDATE_TOPLOGY, rack)
         rack.datacenter_id = datacenter_id
         rack.save()
-        self.finish_action(begin_action, id, rack.name,
-                           objects.json_encode(rack))
+        self.finish_action(begin_action, id, rack.name, rack)
         return rack

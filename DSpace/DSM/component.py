@@ -7,6 +7,8 @@ from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +36,11 @@ class ComponentHandler(AdminBaseHandler):
     def _mon_restart(self, ctxt, id, agent_client):
         node = objects.Node.get_by_id(ctxt, id)
         if node:
+            begin_action = self.begin_action(
+                ctxt, Resource.NODE, Action.MON_RESTART, node)
             res = agent_client.ceph_services_restart(
                 ctxt, "mon", node.hostname)
+            self.finish_action(begin_action, id, node.hostname, node)
             return res
         else:
             raise exception.NodeNotFound(id)
@@ -43,8 +48,11 @@ class ComponentHandler(AdminBaseHandler):
     def _mgr_restart(self, ctxt, id, agent_client):
         node = objects.Node.get_by_id(ctxt, id)
         if node:
+            begin_action = self.begin_action(
+                ctxt, Resource.NODE, Action.MGR_RESTART, node)
             res = agent_client.ceph_services_restart(
                 ctxt, "mgr", node.hostname)
+            self.finish_action(begin_action, id, node.hostname, node)
             return res
         else:
             raise exception.NodeNotFound(id)
@@ -52,7 +60,10 @@ class ComponentHandler(AdminBaseHandler):
     def _osd_restart(self, ctxt, id, agent_client):
         osd = objects.Osd.get_by_id(ctxt, id)
         if osd:
+            begin_action = self.begin_action(
+                ctxt, Resource.OSD, Action.OSD_RESTART, osd)
             res = agent_client.ceph_services_restart(ctxt, "osd", osd.osd_id)
+            self.finish_action(begin_action, id, osd.osd_name, osd)
             return res
         else:
             raise exception.OsdNotFound(id)
@@ -107,24 +118,31 @@ class ComponentHandler(AdminBaseHandler):
         res = restart[service](ctxt, component.get("id"), client)
         return res
 
-    def _rgw_start_op(self, ctxt, radosgw):
+    def _rgw_start_op(self, ctxt, radosgw, begin_action=None):
         client = AgentClientManager(
             ctxt, cluster_id=ctxt.cluster_id
         ).get_client(node_id=radosgw.node_id)
         try:
             client.ceph_services_start(ctxt, "rgw", radosgw.name)
-            radosgw.status = s_fields.RadosgwStatus.ACTIVE
+            status = s_fields.RadosgwStatus.ACTIVE
+            radosgw.status = status
             radosgw.save()
             logger.info("client.rgw.%s start success", radosgw.name)
             op_status = 'START_SUCCESS'
             msg = _("Start success: {}").format(radosgw.display_name)
+            err_msg = None
         except exception.StorException as e:
             logger.error(e)
-            radosgw.status = s_fields.RadosgwStatus.ERROR
+            err_msg = str(e)
+            status = s_fields.RadosgwStatus.ERROR
+            radosgw.status = status
             radosgw.save()
             logger.info("client.rgw.%s start failed", radosgw.name)
             op_status = 'START_FAILD'
             msg = _("Start failed: {}").format(radosgw.display_name)
+        self.finish_action(
+            begin_action, radosgw.id, radosgw.display_name, radosgw,
+            status=status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, radosgw, op_status, msg)
 
@@ -137,9 +155,11 @@ class ComponentHandler(AdminBaseHandler):
                                   s_fields.RadosgwStatus.ERROR]:
             logger.error("Service status is %s, cannot start", radosgw.status)
             return ("Service status is %s, cannot start", radosgw.status)
+        begin_action = self.begin_action(
+            ctxt, Resource.RADOSGW, Action.RGW_START, radosgw)
         radosgw.status = s_fields.RadosgwStatus.STARTING
         radosgw.save()
-        self.task_submit(self._rgw_start_op, ctxt, radosgw)
+        self.task_submit(self._rgw_start_op, ctxt, radosgw, begin_action)
         return radosgw
 
     def component_start(self, ctxt, component):
@@ -154,7 +174,7 @@ class ComponentHandler(AdminBaseHandler):
         res = start[service](ctxt, component.get("id"))
         return res
 
-    def _rgw_stop_op(self, ctxt, radosgw):
+    def _rgw_stop_op(self, ctxt, radosgw, begin_action=None):
         client = AgentClientManager(
             ctxt, cluster_id=ctxt.cluster_id
         ).get_client(node_id=radosgw.node_id)
@@ -165,13 +185,21 @@ class ComponentHandler(AdminBaseHandler):
             logger.info("client.rgw.%s stop success", radosgw.name)
             op_status = 'STOP_SUCCESS'
             msg = _("Stop success: {}").format(radosgw.display_name)
+            status = 'success'
+            err_msg = None
         except exception.StorException as e:
+            status = 'fail'
+            err_msg = str(e)
             logger.error(e)
             radosgw.status = s_fields.RadosgwStatus.ERROR
             radosgw.save()
             logger.info("client.rgw.%s stop failed", radosgw.name)
             op_status = 'STOP_FAILD'
             msg = _("Stop failed: {}").format(radosgw.display_name)
+
+        self.finish_action(
+            begin_action, radosgw.id, radosgw.display_name, radosgw,
+            status=status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, radosgw, op_status, msg)
 
@@ -183,9 +211,11 @@ class ComponentHandler(AdminBaseHandler):
                                   s_fields.RadosgwStatus.ERROR]:
             logger.error("Service status is %s, cannot stop", radosgw.status)
             return ("Service status is %s, cannot stop", radosgw.status)
+        begin_action = self.begin_action(
+            ctxt, Resource.RADOSGW, Action.RGW_STOP, radosgw)
         radosgw.status = s_fields.RadosgwStatus.STOPPING
         radosgw.save()
-        self.task_submit(self._rgw_stop_op, ctxt, radosgw)
+        self.task_submit(self._rgw_stop_op, ctxt, radosgw, begin_action)
         return radosgw
 
     def component_stop(self, ctxt, component):
