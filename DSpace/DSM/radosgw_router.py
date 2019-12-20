@@ -182,8 +182,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, rgw_router, op_status, msg)
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
-                           objects.json_encode(rgw_router), rgw_router.status,
-                           err_msg=err_msg)
+                           rgw_router, rgw_router.status, err_msg=err_msg)
 
     def rgw_router_create(self, ctxt, data):
         logger.info("Radosgw router create with %s.", data)
@@ -248,8 +247,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, rgw_router, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
-                           objects.json_encode(rgw_router), status,
-                           err_msg=err_msg)
+                           rgw_router, status, err_msg=err_msg)
 
     def rgw_router_delete(self, ctxt, rgw_router_id):
         rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id,
@@ -260,7 +258,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Only available and error"
                                            " radosgw router can be deleted"))
         begin_action = self.begin_action(ctxt, Resource.RADOSGW_ROUTER,
-                                         Action.DELETE)
+                                         Action.DELETE, rgw_router)
         rgw_router.status = s_fields.RadosgwRouterStatus.DELETING
         rgw_router.save()
         self.task_submit(self._rgw_router_delete, ctxt, rgw_router,
@@ -316,8 +314,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, rgw_router, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
-                           objects.json_encode(rgw_router), status,
-                           err_msg=err_msg)
+                           rgw_router, status, err_msg=err_msg)
 
     def rgw_router_update(self, ctxt, rgw_router_id, data):
         rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id,
@@ -329,7 +326,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Only available and error"
                                            " radosgw router can be updated"))
         begin_action = self.begin_action(ctxt, Resource.RADOSGW_ROUTER,
-                                         Action.UPDATE)
+                                         Action.UPDATE, rgw_router)
         rgw_router.status = s_fields.RadosgwRouterStatus.UPDATING
         rgw_router.save()
         self.task_submit(self._rgw_router_update, ctxt, rgw_router, data,

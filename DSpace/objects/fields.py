@@ -266,7 +266,7 @@ class AllResourceType(BaseStorEnum):
     VOLUME = 'volume'
     SNAPSHOT = 'snapshot'
     ALERT_LOG = 'alert_log'
-    SMTP_SYSCONFS = 'smtp_sysconfs'
+    SMTP_SYSCONF = 'smtp_sysconf'
     DISK = 'disk'
     SYSCONFIG = 'sysconfig'
     DATACENTER = 'datacenter'
@@ -275,7 +275,7 @@ class AllResourceType(BaseStorEnum):
     RADOSGW = 'radosgw'
     RADOSGW_ROUTER = 'radosgw_router'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG,
+           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER)
 
 
@@ -308,13 +308,22 @@ class AllActionType(BaseStorEnum):
     PAUSE = 'pause'
     OSD_REPLACE_PREPARE = 'osd_replace_prepare'
     OSD_REPLACE = 'osd_replace'
+    DATA_BALANCE_ON = 'data_balance_on'
+    DATA_BALANCE_OFF = 'data_balance_off'
+    MON_RESTART = 'mon_restart'
+    MGR_RESTART = 'mgr_restart'
+    OSD_RESTART = 'osd_restart'
+    RGW_START = 'rgw_start'
+    RGW_STOP = 'rgw_stop'
 
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
-           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE)
+           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE,
+           DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
+           OSD_RESTART, RGW_START, RGW_STOP)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -364,7 +373,7 @@ class ResourceAction(object):
                  AllActionType.VOLUME_SHRINK, AllActionType.VOLUME_ROLLBACK,
                  AllActionType.VOLUME_UNLINK],
 
-            AllResourceType.SMTP_SYSCONFS:
+            AllResourceType.SMTP_SYSCONF:
                 [AllActionType.UPDATE],
 
             AllResourceType.POOL:
@@ -375,10 +384,12 @@ class ResourceAction(object):
 
             AllResourceType.NODE:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.SET_ROLES, AllActionType.NODE_UPDATE_RACK],
+                 AllActionType.SET_ROLES, AllActionType.NODE_UPDATE_RACK,
+                 AllActionType.MON_RESTART, AllActionType.MGR_RESTART],
 
             AllResourceType.OSD:
-                [AllActionType.CREATE, AllActionType.DELETE],
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.OSD_RESTART],
 
             AllResourceType.DISK:
                 [AllActionType.CREATE, AllActionType.DELETE,
@@ -399,10 +410,15 @@ class ResourceAction(object):
             AllResourceType.CLUSTER:
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.CLUSTER_INCLUDE,
-                 AllActionType.CLUSTER_INCLUDE_CLEAN],
+                 AllActionType.CLUSTER_INCLUDE_CLEAN,
+                 AllActionType.DATA_BALANCE_ON,
+                 AllActionType.DATA_BALANCE_OFF],
 
             AllResourceType.CEPH_CONFIG:
                 [AllActionType.UPDATE],
+
+            AllResourceType.RADOSGW:
+                [AllActionType.RGW_START, AllActionType.RGW_STOP],
 
         }
         return relation
