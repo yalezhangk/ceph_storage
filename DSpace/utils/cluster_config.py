@@ -51,6 +51,7 @@ cluster_configs = {
 default_cluster_configs = {
     'mon_allow_pool_delete': {'type': 'bool', 'value': True},
     'osd_crush_update_on_start': {'type': 'bool', 'value': False},
+    'osd_pool_default_min_size': {'type': 'int', 'value': 1},
 }
 
 auth_none_config = {
