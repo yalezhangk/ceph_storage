@@ -20,7 +20,7 @@ class Datacenter(base.StorPersistentObject, base.StorObject,
         'racks': fields.ListOfObjectsField("Rack", nullable=True)
     }
 
-    OPTIONAL_FIELDS = ('racks')
+    OPTIONAL_FIELDS = ('racks', )
 
     def create(self):
         if self.obj_attr_is_set('id'):
