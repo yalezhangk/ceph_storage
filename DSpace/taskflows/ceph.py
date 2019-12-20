@@ -763,3 +763,8 @@ class CephTask(object):
         logger.info("Get ceph osd stat")
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.get_osd_stat()
+
+    def ceph_status_check(self):
+        logger.debug("Check ceph cluster status")
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.status()

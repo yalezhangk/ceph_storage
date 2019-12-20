@@ -30,6 +30,7 @@ class AdminBaseHandler(object):
         self.container_namespace = objects.sysconfig.sys_config_get(
             ctxt, "image_namespace")
         self.map_util = ServiceMap(self.container_namespace)
+        self.ceph_cluster_status = {}
 
     def _wapper(self, fun, *args, **kwargs):
         try:
@@ -88,17 +89,21 @@ class AdminBaseHandler(object):
 
     def has_monitor_host(self, ctxt):
         cluster_id = ctxt.cluster_id
+        if not self.ceph_cluster_status.get(cluster_id):
+            logger.warning('Could not connect to ceph cluster {}'.format(
+                cluster_id))
+            return False
         filters = {'role_monitor': True}
         mon_host = objects.NodeList.get_count(ctxt, filters=filters)
         if not mon_host:
-            logger.info('cluster {} has no active mon host'.format(
+            logger.warning('cluster {} has no active mon host'.format(
                 cluster_id))
             return False
         filters = {'status': s_fields.ServiceStatus.ACTIVE, 'name': 'MON'}
         services = objects.ServiceList.get_count(ctxt, filters=filters)
         if services / mon_host > 0.5:
             return True
-        logger.info('cluster {} has no enough active mon host'.format(
+        logger.warning('cluster {} has no enough active mon host'.format(
             cluster_id))
         return False
 

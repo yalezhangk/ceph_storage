@@ -6,10 +6,10 @@ from operator import itemgetter
 import six
 from tooz.coordination import LockAcquireFailed
 
+from DSpace import context as context_tool
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.context import RequestContext
 from DSpace.DSA.client import AgentClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 class CronHandler(AdminBaseHandler):
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
-        self.ctxt = RequestContext(user_id="admin", project_id="stor",
-                                   is_admin=False)
+        self.ctxt = context_tool.get_context()
         self.clusters = objects.ClusterList.get_all(self.ctxt)
+        self.task_submit(self._check_ceph_cluster_status)
         self.task_submit(self._osd_slow_requests_set_all)
         self.task_submit(self._osd_tree_cron)
         self.task_submit(self._dsa_check_cron)
@@ -81,9 +81,7 @@ class CronHandler(AdminBaseHandler):
 
     def _osd_slow_requests_set_all(self):
         for cluster in self.clusters:
-            ctxt = RequestContext(user_id='admin',
-                                  is_admin=True,
-                                  cluster_id=cluster.id)
+            ctxt = context_tool.get_context(cluster_id=cluster.id)
             logger.info("Get cluster %s osds slow request "
                         "from agent" % cluster.id)
             self._osd_slow_requests_set(ctxt)
@@ -222,8 +220,9 @@ class CronHandler(AdminBaseHandler):
     @synchronized('cron_osd_tree', blocking=False)
     def osd_check(self):
         for cluster in self.clusters:
-            context = RequestContext(user_id="admin", project_id="stor",
-                                     is_admin=False, cluster_id=cluster.id)
+            if not self.ceph_cluster_status.get(cluster.id):
+                continue
+            context = context_tool.get_context(cluster_id=cluster.id)
             ceph_client = CephTask(context)
             osds = objects.OsdList.get_all(context)
             if not osds:
@@ -241,7 +240,8 @@ class CronHandler(AdminBaseHandler):
                 else:
                     up_down = osd_status.get('status')
                 self._set_osd_status(context, osd_status, up_down)
-                osds.pop(str(osd_status.get('id')))
+                if osds.get(str(osd_status.get('id'))):
+                    osds.pop(str(osd_status.get('id')))
             if osds:
                 for osd_id, osd in six.iteritems(osds):
                     logger.error("Osd.%s is not in cluster", osd_id)
@@ -299,9 +299,7 @@ class CronHandler(AdminBaseHandler):
             self.ctxt, filters={'name': 'DSA', 'cluster_id': '*'})
         logger.debug("dsa_check: %s", dsas)
         for dsa in dsas:
-            ctxt = RequestContext(user_id='admin',
-                                  is_admin=True,
-                                  cluster_id=dsa.cluster_id)
+            ctxt = context_tool.get_context(cluster_id=dsa.cluster_id)
             dsa_status = dsa.status
             self.check_service_status(self.ctxt, dsa)
             if (dsa.status == s_fields.ServiceStatus.INACTIVE and
@@ -337,9 +335,7 @@ class CronHandler(AdminBaseHandler):
         nodes = objects.NodeList.get_all(
             self.ctxt, filters={'cluster_id': '*'})
         for node in nodes:
-            ctxt = RequestContext(user_id='admin',
-                                  is_admin=True,
-                                  cluster_id=node.cluster_id)
+            ctxt = context_tool.get_context(cluster_id=node.cluster_id)
             check_ok = True
             filters = {"node_id": node.id}
             services = objects.ServiceList.get_all(ctxt, filters=filters)
@@ -369,3 +365,33 @@ class CronHandler(AdminBaseHandler):
                 if node.status == s_fields.NodeStatus.ACTIVE:
                     node.status = s_fields.NodeStatus.WARNING
                     node.save()
+
+    def _check_ceph_cluster_status(self):
+        logger.debug("Start ceph cluster check crontab")
+        while True:
+            try:
+                self._ceph_status_check()
+            except Exception as e:
+                logger.exception("Ceph cluster check cron Exception: %s", e)
+            time.sleep(3)
+
+    def _ceph_status_check(self):
+        self.clusters = objects.ClusterList.get_all(self.ctxt)
+        for cluster in self.clusters:
+            context = context_tool.get_context(cluster_id=cluster.id)
+            ceph_client = CephTask(context)
+            status = self.ceph_cluster_status.get(cluster.id)
+            try:
+                ceph_client.ceph_status_check()
+                self.ceph_cluster_status.update({cluster.id: True})
+            except exception.StorException as e:
+                logger.error("Could not connect to ceph cluster %s: %s",
+                             cluster.id, e)
+                self.ceph_cluster_status.update({cluster.id: False})
+                if status:
+                    msg = _("Could not connect to ceph cluster {}"
+                            ).format(cluster.id)
+                    self.send_service_alert(
+                        context, cluster, "service_status", "MON", "ERROR",
+                        msg, "SERVICE_ERROR")
+        logger.debug("Ceph cluster status: %s", self.ceph_cluster_status)

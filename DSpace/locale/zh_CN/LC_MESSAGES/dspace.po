@@ -489,6 +489,9 @@ msgstr "节点{}: DSA服务重启失败，标记为错误状态"
 msgid "Node {}: DSA in status is inactive"
 msgstr "节点{}: DSA服务已停止"
 
+msgid "Could not connect to ceph cluster {}"
+msgstr "无法连接到ceph集群{}"
+
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"
 
