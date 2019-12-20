@@ -87,15 +87,20 @@ class AdminBaseHandler(object):
         begin_action.save()
 
     def has_monitor_host(self, ctxt):
-        filters = {'status': s_fields.NodeStatus.ACTIVE,
-                   'role_monitor': True}
-        mon_host = objects.NodeList.get_all(ctxt, filters=filters)
         cluster_id = ctxt.cluster_id
+        filters = {'role_monitor': True}
+        mon_host = objects.NodeList.get_count(ctxt, filters=filters)
         if not mon_host:
-            logger.info('has not active mon host, cluster_id={}'.format(
+            logger.info('cluster {} has no active mon host'.format(
                 cluster_id))
             return False
-        return True
+        filters = {'status': s_fields.ServiceStatus.ACTIVE, 'name': 'MON'}
+        services = objects.ServiceList.get_count(ctxt, filters=filters)
+        if services / mon_host > 0.5:
+            return True
+        logger.info('cluster {} has no enough active mon host'.format(
+            cluster_id))
+        return False
 
     def check_mon_host(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)

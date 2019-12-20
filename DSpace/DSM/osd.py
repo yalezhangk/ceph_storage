@@ -226,14 +226,7 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_create_check(self, ctxt, data):
         # check mon is ready
-        active_mon_num = objects.NodeList.get_count(
-            ctxt,
-            filters={
-                "role_monitor": True,
-                "status": s_fields.NodeStatus.ACTIVE
-            }
-        )
-        if not active_mon_num:
+        if not self.has_monitor_host(ctxt):
             raise exception.InvalidInput(_("No active monitor"))
         # osd num check
         max_osd_num = objects.sysconfig.sys_config_get(
