@@ -23,7 +23,7 @@ class CrushRule(base.StorPersistentObject, base.StorObject,
         'osds': fields.ListOfObjectsField("Osd", nullable=True)
     }
 
-    OPTIONAL_FIELDS = ('osds')
+    OPTIONAL_FIELDS = ('osds', )
 
     def create(self):
         if self.obj_attr_is_set('id'):
