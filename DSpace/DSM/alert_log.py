@@ -84,6 +84,7 @@ class AlertLogHandler(AdminBaseHandler):
                 email_groups = al_group.email_groups
                 for email_group in email_groups:
                     to_emails = email_group.emails.strip().split(',')
+                    logger.info('to_emails is:%s', to_emails)
                     # send per email
                     self._per_send_email(
                         alert_rule, alert_value, mail_conf, to_emails)
@@ -98,10 +99,10 @@ class AlertLogHandler(AdminBaseHandler):
         for alert in receive_datas:
             resource_name = None
             resource_id = None
-            labels = alert.get('labels')
-            alert_value = alert['annotations']['description']
-            alert_name = labels['alertname']
-            cluster_id = labels['cluster_id']
+            labels = alert.get('labels', {})
+            alert_value = alert.get('annotations', {}).get('description')
+            alert_name = labels.get('alertname')
+            cluster_id = labels.get('cluster_id')
             alert_rules = objects.AlertRuleList.get_all(
                 ctxt, filters={'type': alert_name, 'cluster_id': cluster_id})
             if not alert_rules:
@@ -197,6 +198,7 @@ class AlertLogHandler(AdminBaseHandler):
 
     def send_alert_messages(self, ctxt, receive_datas):
         # 1. receive_datas
+        logger.debug('get receive_datas:%s', receive_datas)
         to_datas = self._receive_datas(ctxt, receive_datas)
         logger.debug('has handled to_datas:%s', to_datas)
         # 2. send_email
