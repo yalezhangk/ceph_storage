@@ -14,6 +14,7 @@ from tornado.escape import json_decode
 from DSpace import ROOT
 from DSpace import exception
 from DSpace import objects
+from DSpace.context import get_context
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.DSI.wsclient import WebSocketClientManager
@@ -1108,3 +1109,6 @@ class TplDownload(ClusterAPIHandler):
             file_content = f.read()
             self.write(file_content)
         self.finish()
+
+    def get_context(self):
+        return get_context()
