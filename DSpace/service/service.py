@@ -59,15 +59,15 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
             )
         except Exception as e:
             code = getattr(e, 'code', 500)
-            if code >= 500:
+            if isinstance(e, exception.StorException) and code < 500:
+                # exception content will auto add to log
+                logger.warning("%s", func.__name__)
+            else:
                 logger.exception("%s raise exception: %s" % (
                     func.__name__, e
                 ))
                 if self.debug_mode:
                     sys.exit(1)
-            else:
-                # exception content will auto add to log
-                logger.warning("%s", func.__name__)
             res = stor_pb2.Response(
                 value=json.dumps(self.serializer.serialize_exception(ctxt, e))
             )
