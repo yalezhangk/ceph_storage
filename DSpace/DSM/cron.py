@@ -381,19 +381,34 @@ class CronHandler(AdminBaseHandler):
         self.clusters = objects.ClusterList.get_all(self.ctxt)
         for cluster in self.clusters:
             context = context_tool.get_context(cluster_id=cluster.id)
+
+            # check monitor role
+            nodes = objects.NodeList.get_all(
+                self.ctxt, filters={"role_monitor": True})
+            if not nodes:
+                self.ceph_cluster_status.update({cluster.id: False})
+                continue
+
+            # check ceph status
             ceph_client = CephTask(context)
             status = self.ceph_cluster_status.get(cluster.id)
             try:
                 ceph_client.ceph_status_check()
                 self.ceph_cluster_status.update({cluster.id: True})
+                if not status:
+                    msg = _("reconnect to ceph cluster {}"
+                            ).format(cluster.id)
+                    self.send_service_alert(
+                        context, cluster, "service_status", "MON", "ACTIVE",
+                        msg, "SERVICE_")
             except exception.StorException as e:
-                logger.error("Could not connect to ceph cluster %s: %s",
-                             cluster.id, e)
+                logger.warning("Could not connect to ceph cluster %s: %s",
+                               cluster.id, e)
                 self.ceph_cluster_status.update({cluster.id: False})
                 if status:
                     msg = _("Could not connect to ceph cluster {}"
                             ).format(cluster.id)
                     self.send_service_alert(
                         context, cluster, "service_status", "MON", "ERROR",
-                        msg, "SERVICE_ERROR")
+                        msg, "SERVICE_ACTIVE")
         logger.debug("Ceph cluster status: %s", self.ceph_cluster_status)

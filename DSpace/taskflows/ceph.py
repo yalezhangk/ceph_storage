@@ -41,8 +41,9 @@ class CephTask(object):
         return content
 
     def rados_args(self):
-        obj = objects.CephConfig.get_by_key(self.ctxt, "global", "mon_host")
-        res = {'mon_host': obj.value}
+        mon_host = objects.ceph_config.ceph_config_get(
+            self.ctxt, "global", "mon_host")
+        res = {'mon_host': mon_host}
         admin_keyring = self.ceph_admin_keyring()
         if admin_keyring:
             res["keyring"] = self.key_file
