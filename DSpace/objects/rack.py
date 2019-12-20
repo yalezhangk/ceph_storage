@@ -20,7 +20,7 @@ class Rack(base.StorPersistentObject, base.StorObject,
         'nodes': fields.ListOfObjectsField("Node", nullable=True)
     }
 
-    OPTIONAL_FIELDS = ('nodes')
+    OPTIONAL_FIELDS = ('nodes', )
 
     def create(self):
         updates = self.stor_obj_get_changes()
