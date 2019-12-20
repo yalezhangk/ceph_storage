@@ -205,9 +205,10 @@ class ServiceHandler(AdminBaseHandler):
 
     def _update_normal_service(self, ctxt, filters, name, status, node,
                                role):
-        service = objects.ServiceList.get_all(ctxt,
-                                              filters=filters)
+        service = objects.ServiceList.get_all(ctxt, filters=filters)
         if not service:
+            if name in ["MON", "MGR"]:
+                return
             service_new = objects.Service(
                 ctxt, name=name, status=status,
                 node_id=node.id, cluster_id=ctxt.cluster_id,
@@ -224,16 +225,19 @@ class ServiceHandler(AdminBaseHandler):
                 s_fields.ServiceStatus.ERROR
             ]:
                 return service
-            if (service.status == s_fields.ServiceStatus.STARTING) \
-                    and (status != s_fields.ServiceStatus.ACTIVE):
+            if ((service.status == s_fields.ServiceStatus.STARTING) and
+                    (status != s_fields.ServiceStatus.ACTIVE)):
                 return service
-            if (service.status == s_fields.ServiceStatus.ERROR) \
-                    and (status != s_fields.ServiceStatus.ACTIVE):
+            if ((service.status == s_fields.ServiceStatus.ERROR) and
+                    (status != s_fields.ServiceStatus.ACTIVE)):
                 return service
-            if status == s_fields.ServiceStatus.INACTIVE \
-                    and service.status == s_fields.ServiceStatus.ACTIVE:
-                msg = _("Node {}: service {} status is inactive") \
-                    .format(node.hostname, service.name)
+            if (status == s_fields.ServiceStatus.INACTIVE and
+                    service.status == s_fields.ServiceStatus.ACTIVE):
+                if (node.status == s_fields.NodeStatus.REMOVING_ROLE and
+                        name in ["MON", "MGR"]):
+                    return service
+                msg = _("Node {}: service {} status is inactive"
+                        ).format(node.hostname, service.name)
                 self.send_service_alert(
                     ctxt, service, "service_status", service.name, "WARN",
                     msg, "SERVICE_INACTIVE")
@@ -246,11 +250,9 @@ class ServiceHandler(AdminBaseHandler):
     def service_update(self, ctxt, services, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
         if node.status in [s_fields.NodeStatus.CREATING,
-                           s_fields.NodeStatus.DELETING,
-                           s_fields.NodeStatus.DEPLOYING_ROLE,
-                           s_fields.NodeStatus.REMOVING_ROLE]:
-            logger.info("Node status is %s, ignore service update",
-                        node.status)
+                           s_fields.NodeStatus.DELETING]:
+            logger.warning("Node status is %s, ignore service update",
+                           node.status)
             return True
         services = json.loads(services)
         logger.debug('Update service status')
@@ -283,6 +285,8 @@ class ServiceHandler(AdminBaseHandler):
                 else:
                     service = self._update_normal_service(
                         ctxt, filters, name, status, node, role)
+                    if not service:
+                        continue
                     if service.status == s_fields.ServiceStatus.INACTIVE:
                         if role in self.container_roles:
                             self.task_submit(self._restart_docker_service,

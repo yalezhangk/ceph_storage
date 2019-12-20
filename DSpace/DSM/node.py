@@ -424,6 +424,16 @@ class NodeHandler(AdminBaseHandler):
             for config in configs:
                 task.ceph_config_update(ctxt, config)
 
+    def _create_mon_service(self, ctxt, node):
+        logger.debug("Create service for mon and mgr in database")
+        for name in ["MON", "MGR"]:
+            service = objects.Service(
+                ctxt, name=name, status=s_fields.ServiceStatus.ACTIVE,
+                node_id=node.id, cluster_id=ctxt.cluster_id, counter=0,
+                role="role_monitor"
+            )
+            service.create()
+
     def _mon_install(self, ctxt, node):
         logger.info("mon install on node %s, ip:%s", node.id, node.ip_address)
         node.status = s_fields.NodeStatus.DEPLOYING_ROLE
@@ -461,6 +471,7 @@ class NodeHandler(AdminBaseHandler):
             node.save()
             node_task.prometheus_target_config(action='add', service='mgr')
             self._sync_ceph_configs(ctxt)
+            self._create_mon_service(ctxt, node)
             msg = _("set mon role success: {}").format(node.hostname)
             op_status = "SET_ROLE_MON_SUCCESS"
         except Exception as e:

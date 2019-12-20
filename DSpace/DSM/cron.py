@@ -306,6 +306,8 @@ class CronHandler(AdminBaseHandler):
                     dsa_status == s_fields.ServiceStatus.ACTIVE):
                 logger.error("DSA in node %s is inactive", dsa.node_id)
                 node = objects.Node.get_by_id(ctxt, dsa.node_id)
+                if node.status == s_fields.NodeStatus.DELETING:
+                    continue
                 msg = _("Node {}: DSA in status is inactive"
                         ).format(node.hostname)
                 self.send_service_alert(
