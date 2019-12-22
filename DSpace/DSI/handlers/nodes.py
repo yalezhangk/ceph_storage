@@ -920,10 +920,7 @@ class NodeCheckHandler(ClusterAPIHandler):
         validate(nodes_data, schema=check_node_schema,
                  format_checker=draft7_format_checker)
         client = self.get_admin_client(ctxt)
-        res = []
-        for data in nodes_data:
-            check_result = yield client.node_check(ctxt, data)
-            res.append(check_result)
+        res = yield client.nodes_check(ctxt, nodes_data)
 
         self.write(objects.json_encode({
             "data": res

@@ -5,8 +5,9 @@ import re
 import sys
 
 import six
-import taskflow.engines
+import taskflow
 from oslo_log import log as logging
+from taskflow import engines
 from taskflow.patterns import linear_flow as lf
 from taskflow.patterns import unordered_flow as uf
 from taskflow.types.failure import Failure
@@ -19,6 +20,7 @@ from DSpace.common.config import CONF
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects import utils as obj_utils
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.base import BaseTask
 from DSpace.taskflows.base import CompleteTask
 from DSpace.taskflows.base import PrepareTask
@@ -30,14 +32,19 @@ from DSpace.taskflows.node import DSpaceChronyInstall
 from DSpace.taskflows.node import DSpaceChronyUninstall
 from DSpace.taskflows.node import DSpaceExpoterInstall
 from DSpace.taskflows.node import DSpaceExpoterUninstall
+from DSpace.taskflows.node import GetNodeInfo
 from DSpace.taskflows.node import InstallDocker
 from DSpace.taskflows.node import InstallDSpaceTool
+from DSpace.taskflows.node import NodesCheck
+from DSpace.taskflows.node import ReduceNodesInfo
 from DSpace.taskflows.node import SyncCephVersion
 from DSpace.taskflows.node import UninstallDSpaceTool
 from DSpace.taskflows.utils import CleanDataMixin
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.probe import ProbeTool
 from DSpace.tools.system import System as SystemTool
+from DSpace.utils import cidr2network
+from DSpace.utils import logical_xor
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +148,8 @@ class InstallService(BaseTask):
             "ctxt": ctxt,
             'task_info': {}
         })
-        taskflow.engines.run(all_node_install_wf, store=kwargs,
-                             engine='parallel')
+        engines.run(all_node_install_wf, store=kwargs,
+                    engine='parallel')
         logger.info("Install Service flow run success")
         return True
 
@@ -682,6 +689,243 @@ class CleanIncludeCluster(BaseTask, CleanDataMixin):
         )
 
 
+class GetClusterCheckInfo(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(GetClusterCheckInfo, self).execute(task_info)
+        tool = ProbeTool(node.executer)
+        try:
+            data = tool.cluster_check()
+        except exception.SSHAuthInvalid:
+            # exception info will auto add to end
+            logger.warning("%s connect error")
+            data = {}
+        return data
+
+
+class InclusionNodesCheck(NodesCheck):
+    def __init__(self, *args, **kwargs):
+        super(InclusionNodesCheck, self).__init__(*args, **kwargs)
+
+    def _node_inclusion_check_version(self, data):
+        pkgs = data.get('ceph_version')
+        installed = pkgs.get('installed')
+        if not installed:
+            return {
+                "check": False,
+                "msg": _("Ceph package not found")
+            }
+        elif not self._check_compatibility(installed):
+            return {
+                "check": False,
+                "msg": _("Installed version not support")
+            }
+        return {
+                "check": True,
+                "msg": None
+        }
+
+    def _node_check_roles(self, roles, services):
+        logger.info("check roles: roles(%s), services(%s)", roles, services)
+        res = {}
+        # add default value
+        roles = roles or []
+        for s in roles:
+            res[s] = True
+
+        # update value
+        if logical_xor("ceph-osd" in services, "storage" in roles):
+            res['storage'] = False
+        if logical_xor("ceph-mon" in services, "monitor" in roles):
+            res['monitor'] = False
+
+        data = []
+        for k, v in six.iteritems(res):
+            data.append({
+                'role': k,
+                'status': v
+            })
+        return data
+
+    def _inclusion_check_admin_ips(self,  datas):
+        """Check admin_ips in nodes
+
+        :return list: The admin_ip not in datas
+        """
+        cluster = objects.Cluster.get_by_id(self.ctxt, self.ctxt.cluster_id)
+        if not cluster.is_admin:
+            return []
+        admin_ips = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.ADMIN_IPS)
+        if admin_ips:
+            admin_ips = admin_ips.split(',')
+        for data in datas:
+            admin_ip = data.get("admin_ip")
+            if admin_ip in admin_ips:
+                admin_ips.pop(admin_ip)
+        return admin_ips
+
+    def _inclusion_check_public_ip(self, datas, infos):
+        res = {}
+        submit_ips = [item.get('public_ip') for item in datas]
+        leaks = []
+        for n in infos:
+            if n not in submit_ips:
+                leaks.append(n)
+        extras = []
+        for n in submit_ips:
+            if n not in infos:
+                extras.append(n)
+        res['leak_public_ips'] = leaks
+        res['extra_public_ips'] = extras
+        logger.info("leak_public_ips: %s", res['leak_public_ips'])
+        logger.info("extra_public_ips: %s", res['extra_public_ips'])
+        return res
+
+    def _inclusion_check_network(self, infos):
+        logger.info("inclusion check network infos: %s", infos)
+        res = {}
+        public_cidr = objects.sysconfig.sys_config_get(
+            self.ctxt, key="public_cidr"
+        )
+        ceph_public_cidr = infos.get('public_network')
+        logger.info("cluster public_cidr(%s), ceph public_network(%s)",
+                    public_cidr, ceph_public_cidr)
+
+        if not ceph_public_cidr:
+            res["public_network"] = {
+                "check": False,
+                "msg": _("Ceph public_network not found")
+            }
+        elif cidr2network(public_cidr) == cidr2network(ceph_public_cidr):
+            res["public_network"] = {
+                "check": True,
+                "msg": ""
+            }
+        else:
+            res["public_network"] = {
+                "check": False,
+                "msg": _("Ceph public_network not equal to cluster "
+                         "public_network")
+            }
+        cluster_cidr = objects.sysconfig.sys_config_get(
+            self.ctxt, key="cluster_cidr"
+        )
+        ceph_cluster_cidr = infos.get('cluster_network')
+        logger.info("cluster cluster_cidr(%s), ceph cluster_network(%s)",
+                    cluster_cidr, ceph_cluster_cidr)
+
+        if not ceph_cluster_cidr:
+            res["cluster_network"] = {
+                "check": False,
+                "msg": _("Ceph cluster_network not found")
+            }
+        elif cidr2network(cluster_cidr) == cidr2network(ceph_cluster_cidr):
+            res["cluster_network"] = {
+                "check": True,
+                "msg": ""
+            }
+        else:
+            res["cluster_network"] = {
+                "check": False,
+                "msg": _("Ceph cluster_network not equal to cluster "
+                         "cluster_network")
+            }
+        return res
+
+    def check(self, datas):
+        datas_map = {}
+        nodes_map = {}
+        logger.info("check inclusion data: %s", datas)
+        checks = {}
+        node_checks = {}
+        checks['leak_admin_ips'] = self._inclusion_check_admin_ips(datas)
+        logger.info("leak_admin_ips: %s", checks['leak_admin_ips'])
+        for item in datas:
+            item["roles"] = item["roles"].split(',')
+            admin_ip = item.get('ip_address')
+            datas_map[admin_ip] = item
+            node_checks[admin_ip], skip = self._check_ip_by_db(item)
+            node_checks[admin_ip]['admin_ip'] = admin_ip
+            if not skip:
+                node = self._get_node(item)
+                nodes_map[admin_ip] = node
+                node_checks[admin_ip]['check_admin_ip'] = {
+                    "check": True,
+                    "msg": ""
+                }
+            else:
+                node_checks[admin_ip]['check_admin_ip'] = {
+                    "check": False,
+                    "msg": _("Admin ip(%s) alreay in platform") % admin_ip
+                }
+
+        nodes = list(six.itervalues(nodes_map))
+        if not nodes:
+            checks['node'] = [v for v in six.itervalues(node_checks)]
+            return checks
+
+        infos = self.get_infos(nodes)
+
+        cluster_check = infos.pop('cluster_check')
+        checks.update(
+            self._inclusion_check_public_ip(datas, cluster_check['nodes']))
+        checks['check_planning'] = cluster_check['check_crush']
+        checks.update(
+            self._inclusion_check_network(cluster_check['configs']))
+
+        for info in six.itervalues(infos):
+            admin_ip = str(info.get('node').ip_address)
+            item = datas_map[admin_ip]
+            res = {}
+            if "hostname" not in info:
+                res['check_through'] = False
+                continue
+            res.update(self._common_check(info))
+            res['ceph_version'] = self._node_inclusion_check_version(info)
+            res['check_Installation_package'] = info.get("ceph_package")
+            res['check_roles'] = self._node_check_roles(
+                item['roles'], info.get("ceph_service"))
+            res['check_ceph_port'] = self._check_ceph_port(info.get("ports"))
+            res['check_version'] = self._node_inclusion_check_version(info)
+            res.update(self._check_network(info['node'], info['network']))
+            node_checks[admin_ip].update(res)
+        checks['node'] = [v for v in six.itervalues(node_checks)]
+        return checks
+
+    def get_infos(self, nodes):
+        logger.info("Get nodes info")
+        store = {}
+        provided = []
+        wf = lf.Flow('NodesCheckTaskFlow')
+        nodes_wf = uf.Flow("GetNodesInof")
+        for node in nodes:
+            ip = str(node.ip_address)
+            arg = "node-%s" % ip
+            provided.append("info-%s" % ip)
+            wf.add(GetNodeInfo("GetNodeInfo-%s" % ip,
+                               provides=provided[-1],
+                               rebind={'node': arg}))
+            store[arg] = node
+        wf.add(GetClusterCheckInfo("cluster_check"))
+        store["node"] = nodes[0]
+        store.update({
+            "ctxt": self.ctxt,
+            "info_names": ["ceph_version", 'hostname', 'ceph_package',
+                           "firewall", "containers", "ports", "selinux",
+                           "network", 'ceph_service'],
+            "prefix": "info-",
+            'task_info': {}
+        })
+        wf.add(nodes_wf)
+        wf.add(ReduceNodesInfo("reducer", requires=provided))
+        e = engines.load(wf, engine='parallel', store=store,
+                         max_workers=CONF.taskflow_max_workers)
+        e.run()
+        infos = e.storage.get('reducer')
+        infos['cluster_check'] = e.storage.get('cluster_check')
+        return infos
+
+
 def include_flow(ctxt, t, datas):
     # update task
     t.step_num = 5
@@ -696,7 +940,7 @@ def include_flow(ctxt, t, datas):
     wf.add(SyncClusterInfo("Sync Cluster Info"))
     wf.add(UpdateIncludeFinish("Update Include Finish"))
     wf.add(CompleteTask('Complete'))
-    taskflow.engines.run(wf, store={
+    engines.run(wf, store={
         "ctxt": ctxt,
         "datas": datas,
         'task_info': {
@@ -718,7 +962,7 @@ def include_clean_flow(ctxt, t):
     wf.add(UninstallService("Uninstall Services"))
     wf.add(CleanIncludeCluster("Clean Include Cluster"))
     wf.add(CompleteTask('Complete'))
-    taskflow.engines.run(wf, store={
+    engines.run(wf, store={
         "ctxt": ctxt,
         'task_info': {
             "task": t,

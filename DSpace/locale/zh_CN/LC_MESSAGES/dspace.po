@@ -489,6 +489,9 @@ msgstr "节点{}: DSA服务重启失败，标记为错误状态"
 msgid "Node {}: DSA in status is inactive"
 msgstr "节点{}: DSA服务已停止"
 
+msgid "reconnect to ceph cluster {}"
+msgstr "已连接到ceph集群{}"
+
 msgid "Could not connect to ceph cluster {}"
 msgstr "无法连接到ceph集群{}"
 
@@ -668,18 +671,6 @@ msgstr "请先清理集群"
 
 msgid "Please Import First"
 msgstr "请先导入集群"
-
-msgid "Repository version not support"
-msgstr "安装源中的Ceph版本还未被支持"
-
-msgid "Repository not found Ceph"
-msgstr "安装源中未找到Ceph"
-
-msgid "Installed version not support"
-msgstr "已安装的Ceph版本还未被支持"
-
-msgid "admin_ip,cluster_ip,public_ip is required"
-msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
 
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
@@ -1004,8 +995,50 @@ msgstr "机架无效"
 msgid "Datacenter Invalid"
 msgstr "数据中心需要参数 'name'"
 
+msgid "Ceph package not found"
+msgstr "Ceph软件包未找到"
+
+msgid "Installed version not support"
+msgstr "已安装的Ceph版本还未被支持"
+
+msgid "Ceph public_network not found"
+msgstr "Ceph public_network 未找到"
+
+msgid "Ceph public_network not equal to cluster public_network"
+msgstr "Ceph public_network 与集群业务网络配置不同"
+
+msgid "Ceph cluster_network not found"
+msgstr "Ceph cluster_network 未找到"
+
+msgid "Ceph cluster_network not equal to cluster cluster_network"
+msgstr "Ceph cluster_network 与集群存储网络配置不同"
+
+msgid "Admin ip(%s) alreay in platform"
+msgstr "管理网Ip(%s) 在平台中已经存在"
+
 msgid "SSH Error: %s"
 msgstr "SSH错误：%s"
+
+msgid "Repository version not support"
+msgstr "安装源中的Ceph版本还未被支持"
+
+msgid "Repository not found Ceph"
+msgstr "安装源中未找到Ceph"
+
+msgid "cluster ip not found"
+msgstr "集群网络ip未找到"
+
+msgid "cluster ip not in cluster_cidr"
+msgstr "集群网络ip未找到"
+
+msgid "public ip not found"
+msgstr "业务网络ip未找到"
+
+msgid "public ip not in public_cidr"
+msgstr "业务网络ip未找到"
+
+msgid "admin_ip,cluster_ip,public_ip is required"
+msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
 
 msgid "old style configuration can use only dictionary or memcached backends"
 msgstr "旧样式的配置只能使用字典或缓存后端"
