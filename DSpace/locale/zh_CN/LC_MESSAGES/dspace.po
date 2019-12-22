@@ -127,8 +127,8 @@ msgstr "数据平衡 %(action)s 错误， 启用的模式：%(mode)s"
 msgid "%(msg)s"
 msgstr "%(msg)s"
 
-msgid "SSH Authentication failed: ip(%(ip)s) password(%(password)s)"
-msgstr "远程连接认证异常: 地址(%(ip)s) 密码(%(password)s)"
+msgid "SSH Authentication failed: ip(%(ip)s)"
+msgstr "远程连接认证异常: 地址(%(ip)s)"
 
 msgid "VolumeAccessPath %(access_path_id)s could not be found."
 msgstr "访问路径 %(access_path_id)s 未找到"
