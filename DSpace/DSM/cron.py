@@ -384,9 +384,10 @@ class CronHandler(AdminBaseHandler):
 
             # check monitor role
             nodes = objects.NodeList.get_all(
-                self.ctxt, filters={"role_monitor": True})
+                context, filters={"role_monitor": True})
             if not nodes:
                 self.ceph_cluster_status.update({cluster.id: False})
+                logger.info("no monitor found")
                 continue
 
             # check ceph status
