@@ -6,6 +6,7 @@ import random
 import netaddr
 import retrying
 import six
+from dateutil import tz
 
 logger = logging.getLogger(__name__)
 
@@ -74,3 +75,15 @@ def versiontuple(v):
     for point in v.split("."):
         filled.append(point.zfill(8))
     return tuple(filled)
+
+
+def utc_to_local(source, zone):
+    from_zone = tz.gettz('UTC')
+    to_zone = tz.gettz(zone)
+
+    # Tell the datetime object that it's in UTC time zone since
+    # datetime objects are 'naive' by default
+    source = source.replace(tzinfo=from_zone)
+
+    # Convert time zone
+    return source.astimezone(to_zone)
