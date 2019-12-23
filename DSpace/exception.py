@@ -443,6 +443,10 @@ class DownloadFileError(StorException):
     message = _('download file error: %(reason)s')
 
 
+class GetFileSizeError(StorException):
+    message = _('get file size error: %(reason)s')
+
+
 class ActionTimeoutError(StorException):
     code = 400
     message = _('Timeout error: %(reason)s')

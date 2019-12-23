@@ -13,6 +13,9 @@ from DSpace.DSI.handlers.base import ClusterAPIHandler
 logger = logging.getLogger(__name__)
 
 
+CHUNK_SIZE = 1048576
+
+
 @URLRegistry.register(r"/log_files/")
 class LogFileListHandler(ClusterAPIHandler):
     @gen.coroutine
@@ -127,15 +130,23 @@ class LogFileHandler(ClusterAPIHandler):
         # 日志文件下载
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        file_message = yield client.download_log_file(ctxt, log_file_id)
-        file_name = file_message['file_name']
-        file_content = file_message['content']
-        self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition',
-                        'attachment; filename={}'.format(file_name))
-        file_content = base64.b64decode(file_content)
-        # todo stream 传输
-        self.write(file_content)
+
+        file_size = yield client.log_file_size(ctxt, log_file_id)
+        file_seg_size = CHUNK_SIZE
+        file_segs = int(file_size / file_seg_size) + 1
+        for i in range(0, file_segs):
+            logger.info("get file content, offset: %s", i * file_seg_size)
+            file_message = yield client.download_log_file(
+                ctxt, log_file_id, i * file_seg_size, file_seg_size)
+            file_name = file_message['file_name']
+            file_content = file_message['content']
+
+            self.set_header('Content-Type', 'application/octet-stream')
+            self.set_header('Content-Disposition',
+                            'attachment; filename={}'.format(file_name))
+            file_content = base64.b64decode(file_content)
+            self.write(file_content)
+            self.flush()
 
     @gen.coroutine
     def put(self, log_file_id):
