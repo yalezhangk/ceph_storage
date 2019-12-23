@@ -51,17 +51,33 @@ class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
             metadata = None
         return metadata
 
-    def read_log_file_content(self, ctxt, node, directory, filename):
+    def read_log_file_content(self, ctxt, node, directory, filename, offset,
+                              length):
         logger.info('begin read_log_file_content, file_name:%s', filename)
         executor = self._get_executor()
         log_file_tool = LogFileTool(executor)
         try:
-            content = log_file_tool.read_log_file_content(directory, filename)
+            content = log_file_tool.read_log_file_content(
+                directory, filename, offset, length)
             logger.info('read log_file success, file_name:%s', filename)
         except Exception as e:
             logger.exception('read log_file error:%s', e)
             raise exception.DownloadFileError(reason=_(str(e)))
         return content
+
+    def log_file_size(self, ctxt, node, directory, filename):
+        logger.info('begin get log_file_size, file_name:%s', filename)
+        executor = self._get_executor()
+        log_file_tool = LogFileTool(executor)
+        file_size = 0
+        try:
+            file_size = log_file_tool.log_file_size(directory, filename)
+            logger.info('read log_file success, file_name: %s, file_size: %s',
+                        filename, file_size)
+        except Exception as e:
+            logger.exception('read log_file error:%s', e)
+            raise exception.GetFileSizeError(reason=_(str(e)))
+        return file_size
 
 
 class AgentService(ServiceBase):

@@ -763,8 +763,15 @@ class AdminClient(BaseClient):
                              log_file_id=log_file_id)
         return response
 
-    def download_log_file(self, ctxt, log_file_id=None):
+    def download_log_file(self, ctxt, log_file_id=None, offset=None,
+                          length=None):
         response = self.call(ctxt, "download_log_file",
+                             log_file_id=log_file_id, offset=offset,
+                             length=length)
+        return response
+
+    def log_file_size(self, ctxt, log_file_id=None):
+        response = self.call(ctxt, "log_file_size",
                              log_file_id=log_file_id)
         return response
 

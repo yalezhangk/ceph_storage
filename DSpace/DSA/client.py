@@ -166,8 +166,15 @@ class AgentClient(BaseClient):
                              directory=directory, filename=filename)
         return response
 
-    def read_log_file_content(self, ctxt, node, directory, filename):
+    def read_log_file_content(self, ctxt, node, directory, filename, offset,
+                              length):
         response = self.call(ctxt, 'read_log_file_content', node=node,
+                             directory=directory, filename=filename,
+                             offset=offset, length=length)
+        return response
+
+    def log_file_size(self, ctxt, node, directory, filename):
+        response = self.call(ctxt, 'log_file_size', node=node,
                              directory=directory, filename=filename)
         return response
 
