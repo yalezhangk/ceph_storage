@@ -207,7 +207,7 @@ class ServiceHandler(AdminBaseHandler):
                                role):
         service = objects.ServiceList.get_all(ctxt, filters=filters)
         if not service:
-            if name in ["MON", "MGR"]:
+            if role in ["base", "role_monitor"]:
                 return
             service_new = objects.Service(
                 ctxt, name=name, status=status,
@@ -233,8 +233,11 @@ class ServiceHandler(AdminBaseHandler):
                 return service
             if (status == s_fields.ServiceStatus.INACTIVE and
                     service.status == s_fields.ServiceStatus.ACTIVE):
-                if (node.status == s_fields.NodeStatus.REMOVING_ROLE and
-                        name in ["MON", "MGR"]):
+                node = objects.Node.get_by_id(ctxt, node.id)
+                if node.status in [s_fields.NodeStatus.CREATING,
+                                   s_fields.NodeStatus.DELETING,
+                                   s_fields.NodeStatus.DEPLOYING_ROLE,
+                                   s_fields.NodeStatus.REMOVING_ROLE]:
                     return service
                 msg = _("Node {}: service {} status is inactive"
                         ).format(node.hostname, service.name)
