@@ -166,6 +166,11 @@ class PoolHandler(AdminBaseHandler):
 
     def pool_create(self, ctxt, data):
         self.check_mon_host(ctxt)
+        if data['role'] == "gateway":
+            filters = {"role": "gateway"}
+            pools = objects.PoolList.get_all(ctxt, filters=filters)
+            if pools:
+                raise exception.InvalidInput(_("Object index pool exists"))
         uid = str(uuid.uuid4())
         pool_display_name = data.get("name")
         self._check_pool_display_name(ctxt, pool_display_name)
