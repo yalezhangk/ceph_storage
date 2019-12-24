@@ -67,3 +67,6 @@ class CleanDataMixin(object):
 
     def _clean_action_log(self, ctxt):
         self._clean_data(ctxt, objects.ActionLogList)
+
+    def _clean_service(self, ctxt):
+        self._clean_data(ctxt, objects.ServiceList)

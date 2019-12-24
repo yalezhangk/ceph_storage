@@ -742,16 +742,6 @@ class NodeHandler(AdminBaseHandler):
                          begin_action)
         return node
 
-    def _create_base_services(self, ctxt, node):
-        logger.debug("Create service for base in database")
-        for name in ["NODE_EXPORTER", "CHRONY", "DSA"]:
-            service = objects.Service(
-                ctxt, name=name, status=s_fields.ServiceStatus.ACTIVE,
-                node_id=node.id, cluster_id=ctxt.cluster_id, counter=0,
-                role="base"
-            )
-            service.create()
-
     def _node_create(self, ctxt, node, data):
         begin_action = self.begin_action(ctxt, Resource.NODE, Action.CREATE)
         node_task = NodeTask(ctxt, node)
@@ -759,7 +749,6 @@ class NodeHandler(AdminBaseHandler):
             node_task.dspace_agent_install()
             node_task.chrony_install()
             node_task.node_exporter_install()
-            self._create_base_services(ctxt, node)
             roles = data.get('roles', "").split(',')
             role_monitor = "monitor" in roles
             role_storage = "storage" in roles

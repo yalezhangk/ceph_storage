@@ -666,7 +666,8 @@ class CleanIncludeCluster(BaseTask, CleanDataMixin):
         4. clean disk partition
         5. clean disk
         6. clean network
-        6. clean node
+        7. clean node
+        8. clean service
         """
         super(CleanIncludeCluster, self).execute(task_info)
 
@@ -680,6 +681,7 @@ class CleanIncludeCluster(BaseTask, CleanDataMixin):
         self._clean_ceph_config(ctxt)
         self._clean_rack(ctxt)
         self._clean_datacenter(ctxt)
+        self._clean_service(ctxt)
 
         # mark finish
         objects.sysconfig.sys_config_set(
