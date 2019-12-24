@@ -303,14 +303,19 @@ def _get_pkg_version_by_yum(pkg):
     yb.doConfigSetup(init_plugins=False)
     installed = None
     available = None
-    data = yb.doPackageLists(pkgnarrow='all', patterns=PKGS,
-                             showdups=True)
-    for item in data.available:
-        available = {
-            "version": item.version,
-            "release": item.release.split('.')[0]
-        }
-        break
+
+    try:
+        data = yb.doPackageLists(pkgnarrow='available', patterns=PKGS)
+        for item in data.available:
+            available = {
+                "version": item.version,
+                "release": item.release.split('.')[0]
+            }
+            break
+    except Exception:
+        available = None
+
+    data = yb.doPackageLists(pkgnarrow='installed', patterns=PKGS)
     for item in data.installed:
         installed = {
             "version": item.version,
