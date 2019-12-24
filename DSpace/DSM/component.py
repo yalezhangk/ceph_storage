@@ -59,14 +59,15 @@ class ComponentHandler(AdminBaseHandler):
 
     def _osd_restart(self, ctxt, id, agent_client):
         osd = objects.Osd.get_by_id(ctxt, id)
-        if osd:
+        if osd.status in s_fields.OsdStatus.OPERATION_STATUS:
+            raise exception.InvalidInput(_("Osd is {} status, can not "
+                                           "restart".format(osd.status)))
+        else:
             begin_action = self.begin_action(
                 ctxt, Resource.OSD, Action.OSD_RESTART, osd)
             res = agent_client.ceph_services_restart(ctxt, "osd", osd.osd_id)
             self.finish_action(begin_action, id, osd.osd_name, osd)
             return res
-        else:
-            raise exception.OsdNotFound(id)
 
     def _rgw_restart(self, ctxt, id):
         # TODO rgw尚未开发，数据库无数据
