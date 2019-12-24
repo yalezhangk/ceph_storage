@@ -849,19 +849,19 @@ class InclusionNodesCheck(NodesCheck):
             if not skip:
                 node = self._get_node(item)
                 nodes_map[admin_ip] = node
-                node_checks[admin_ip]['check_admin_ip'] = {
+                node_checks[admin_ip]['check'] = {
                     "check": True,
                     "msg": ""
                 }
             else:
-                node_checks[admin_ip]['check_admin_ip'] = {
+                node_checks[admin_ip]['check'] = {
                     "check": False,
                     "msg": _("Admin ip(%s) alreay in platform") % admin_ip
                 }
 
         nodes = list(six.itervalues(nodes_map))
         if not nodes:
-            checks['node'] = [v for v in six.itervalues(node_checks)]
+            checks['nodes'] = [v for v in six.itervalues(node_checks)]
             return checks
 
         infos = self.get_infos(nodes)
@@ -889,7 +889,7 @@ class InclusionNodesCheck(NodesCheck):
             res['check_version'] = self._node_inclusion_check_version(info)
             res.update(self._check_network(info['node'], info['network']))
             node_checks[admin_ip].update(res)
-        checks['node'] = [v for v in six.itervalues(node_checks)]
+        checks['nodes'] = [v for v in six.itervalues(node_checks)]
         return checks
 
     def get_infos(self, nodes):
