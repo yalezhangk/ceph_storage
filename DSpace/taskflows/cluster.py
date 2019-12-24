@@ -183,6 +183,7 @@ class CleanCluster(BaseTask, CleanDataMixin):
         self._clean_alert_rule(ctxt)
         self._clean_alert_log(ctxt)
         self._clean_action_log(ctxt)
+        self._clean_service(ctxt)
         logger.info("Clean database flow success")
 
 

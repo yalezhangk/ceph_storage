@@ -103,6 +103,22 @@ class NodeMixin(object):
         return node_data
 
 
+class ServiceMixin(object):
+    def service_create(self, ctxt, name, node_id):
+        service = objects.Service(
+            ctxt, name=name, status=s_fields.ServiceStatus.ACTIVE,
+            node_id=node_id, cluster_id=ctxt.cluster_id, counter=0,
+            role="base"
+        )
+        service.create()
+
+    def service_delete(self, ctxt, name, node_id):
+        services = objects.ServiceList.get_all(
+            ctxt, filters={"name": name, "node_id": node_id})
+        for s in services:
+            s.destroy()
+
+
 class NodeTask(object):
     ctxt = None
     node = None
@@ -774,12 +790,12 @@ class InstallDocker(BaseTask):
         return repo
 
 
-class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
+class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceAgentUninstall, self).execute(task_info)
         ssh = node.executer
+        self.service_delete(ctxt, "DSA", node.id)
         self._node_remove_container(ctxt, ssh, "dsa", "dspace")
-        remove_service(ctxt, node, "DSA")
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
         # rm config file
@@ -836,7 +852,7 @@ class UninstallDSpaceTool(BaseTask):
         file_tool.rm("{}/95-dspace-hotplug.rules".format(udev_dir))
 
 
-class DSpaceAgentInstall(BaseTask):
+class DSpaceAgentInstall(BaseTask, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceAgentInstall, self).execute(task_info)
 
@@ -898,6 +914,7 @@ class DSpaceAgentInstall(BaseTask):
             node_id=node.id)
         rpc_service.create()
         self.wait_agent_ready(ctxt, node)
+        self.service_create(ctxt, "DSA", node.id)
 
     def wait_agent_ready(self, ctxt, node):
         logger.debug("wait agent ready to work")
@@ -944,22 +961,13 @@ class DSpaceAgentInstall(BaseTask):
         return dsa_conf
 
 
-def remove_service(ctxt, node, name):
-    # remove service
-    service = objects.ServiceList.get_all(
-        ctxt, filters={"node_id": node.id, "name": name})
-    if service:
-        service = service[0]
-        service.destroy()
-
-
-class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
+class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceChronyUninstall, self).execute(task_info)
         ssh = node.executer
         # remove container and image
+        self.service_delete(ctxt, "CHRONY", node.id)
         self._node_remove_container(ctxt, ssh, "chrony", "chrony")
-        remove_service(ctxt, node, "CHRONY")
 
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
@@ -971,7 +979,7 @@ class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
             logger.warning("remove chrony config failed, %s", e)
 
 
-class DSpaceChronyInstall(BaseTask, NodeTask):
+class DSpaceChronyInstall(BaseTask, NodeTask, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceChronyInstall, self).execute(task_info)
 
@@ -1002,16 +1010,17 @@ class DSpaceChronyInstall(BaseTask, NodeTask):
             volumes=[(config_dir, config_dir_container),
                      (log_dir, log_dir_container)]
         )
+        self.service_create(ctxt, "CHRONY", node.id)
 
 
-class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin):
+class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceExpoterUninstall, self).execute(task_info)
 
         ssh = node.executer
+        self.service_delete(ctxt, "NODE_EXPORTER", node.id)
         self._node_remove_container(ctxt, ssh, "node_exporter",
                                     "node_exporter")
-        remove_service(ctxt, node, "NODE_EXPORTER")
 
 
 class NodeBaseTask(BaseTask):
@@ -1062,7 +1071,7 @@ class CephPackageUninstall(NodeBaseTask):
             logger.warning("uninstall ceph package failed: %s", e)
 
 
-class DSpaceExpoterInstall(BaseTask):
+class DSpaceExpoterInstall(BaseTask, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceExpoterInstall, self).execute(task_info)
 
@@ -1089,6 +1098,7 @@ class DSpaceExpoterInstall(BaseTask):
             envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
                   ("NODE_EXPORTER_PORT", node_exporter_port)]
         )
+        self.service_create(ctxt, "NODE_EXPORTER", node.id)
 
 
 def get_haproxy_cfg(ctxt, node):
