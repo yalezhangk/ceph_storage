@@ -25,6 +25,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 DEFAULT_POOL = 'rbd'
+REQUIRED_VERSION = 'luminous'
 
 
 class CephTool(ToolBase):
@@ -996,8 +997,8 @@ class RADOSClient(object):
         ret, outbuf, err = self.client.mon_command(command_str, '')
         if ret:
             raise CephException(
-                message="execute command failed: {}, outbuf: {}, err: {}"
-                "".format(command_str, outbuf, err))
+                message="execute command failed: {}, ret: {}, outbuf: {}, "
+                "err: {}".format(command_str, ret, outbuf, err))
         return get_json_output(outbuf)
 
     def _send_osd_command(self, osd_id, command_str):
@@ -1176,35 +1177,80 @@ class RADOSClient(object):
 
         return mon_hosts
 
-    def data_balance(self, action, mode):
-        run_cmd = '{"prefix":"balancer %s","target": ["mgr", ""]}' % action
-        status_cmd = '{"prefix": "balancer status",' \
-                     '"target": ["mgr", ""], "format": "json"}'
-        enable_cmd = '{"prefix":"mgr module enable balancer"}'
-        mode_cmd = '{"prefix": "balancer mode", "mode": "%s",' \
-                   '"target": ["mgr", ""]}' % mode
-        v_cmd = '{"prefix": "osd set-require-min-compat-client",' \
-                '"version": "luminous"}'
-        map = {True: 'on', False: 'off'}
-        ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
-        # 查看状态 22未开启， 开启之后再查询
-        if ret == 22:
-            self.client.mon_command(enable_cmd, '')
-            ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
-        # 解析数据
-        st_data = json.loads(encodeutils.safe_decode(st_outbuf))
-        # 判断action与mode是否与传入一致， 不一致才设置
-        if not action and not mode:
+    def set_balance_mode(self, balance_mode):
+        logger.debug("set balance mode to: %s", balance_mode)
+        cmd = {
+            "prefix": "balancer mode",
+            "mode": balance_mode,
+            "target": [
+                "mgr", ""
+            ]
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("set balancer status success %s", res)
+        return res
+
+    def set_balance_status(self, action):
+        logger.info("set balancer: %s", action)
+        cmd = {
+            "prefix": "balancer {}".format(action),
+            "target": [
+                "mgr", ""
+            ]
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("set balancer status success %s", res)
+        return res
+
+    def set_min_compat_version(self, version):
+        logger.debug("set require min compat client version to: %s", version)
+        cmd = {
+            "prefix": "osd set-require-min-compat-client",
+            "version": version
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("get all pools: %s", res)
+        return res
+
+    @retry(RunCommandError)
+    def data_balancer_available(self):
+        cmd = {
+            "prefix": "balancer status",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        ret, outbuf, err = self.client.mon_command(command_str, '')
+        # can't get balancer status if we enable module just now
+        if ret == -110:
+            logger.error("can't connect to cluster")
+            return False
+        elif ret == -22:
+            logger.error("can't get balancer status now")
+            raise RunCommandError(cmd=command_str, return_code=ret,
+                                  stdout=outbuf, stderr=err)
+        elif ret == 0:
+            return True
+
+    def set_data_balance(self, action, mode):
+        # always enable balancer when setting balance on/off
+        res = self.mgr_module_ls()
+        if "balancer" not in res["enabled_modules"]:
+            self.mgr_module_enable("balancer")
+        if not self.data_balancer_available():
+            st_data = {
+                "active": False,
+                "mode": "none"
+            }
             return st_data
-        if mode and st_data.get("mode") != mode:
-            if mode == 'upmap':
-                self.client.mon_command(v_cmd, '')
-            self.client.mon_command(mode_cmd, '')
-        if map[st_data.get("active")] != action:
-            self.client.mon_command(run_cmd, '')
-        ret, st_outbuf, __ = self.client.mon_command(status_cmd, '')
-        st_data = json.loads(encodeutils.safe_decode(st_outbuf))
-        logger.info("ceph banlancer status: %s" % st_data)
+
+        if mode == 'upmap':
+            self.set_min_compat_version(REQUIRED_VERSION)
+        self.set_balance_mode(mode)
+        self.set_balance_status(action)
+        st_data = self.balancer_status()
         return st_data
 
     def osd_new(self, osd_fsid):
@@ -1338,6 +1384,17 @@ class RADOSClient(object):
         logger.info("mgr model ls res: %s", res)
         return res
 
+    def mgr_module_enable(self, module_name):
+        logger.info("mgr module enable: %s", module_name)
+        cmd = {
+            "prefix": "mgr module enable",
+            "module": module_name
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("mgr model enable res: %s", res)
+        return res
+
     def balancer_status(self):
         logger.info("balancer status")
         cmd = {
@@ -1345,7 +1402,16 @@ class RADOSClient(object):
             "format": "json"
         }
         command_str = json.dumps(cmd)
-        res = self._send_mon_command(command_str)
+        try:
+            # Get balancer status failed when we enable balancer module_enable
+            # just now, and failed when timedout or other reason.
+            res = self._send_mon_command(command_str)
+        except CephException as e:
+            logger.error(e)
+            res = {
+                "active": False,
+                "mode": "none"
+            }
         logger.info("balancer status res: %s", res)
         return res
 

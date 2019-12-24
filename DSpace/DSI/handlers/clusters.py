@@ -608,7 +608,7 @@ class ClusterDataBalance(ClusterAPIHandler):
     def post(self):
         """
         {"data_balance": {
-            "action": on|off",
+            "action": "on|off",
             "mode": "crush-compat|upmap"
         }}"""
         ctxt = self.get_context()
@@ -616,7 +616,7 @@ class ClusterDataBalance(ClusterAPIHandler):
         data = json_decode(self.request.body)
         data_balance = data.get("data_balance")
         res = yield client.cluster_data_balance_set(ctxt, data_balance)
-        self.write(json.dumps({"res": res}))
+        self.write(json.dumps({"data_balance": res}))
 
 
 @URLRegistry.register(r"/clusters/pause/")
