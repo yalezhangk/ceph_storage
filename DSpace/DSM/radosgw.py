@@ -138,6 +138,11 @@ class RadosgwHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("Need to create index pool before radosgw"))
         pool = pools[0]
+        if pool.status not in [s_fields.PoolStatus.ACTIVE,
+                               s_fields.PoolStatus.DEGRADED,
+                               s_fields.PoolStatus.RECOVERING]:
+            raise exception.InvalidInput(
+                _("Index pool must be active、degraded or recovering"))
         tpl = template.get('radosgw_zone.json.j2')
         zone_params = tpl.render(zone_id=zone.zone_id,
                                  zone_name=zone.name,
