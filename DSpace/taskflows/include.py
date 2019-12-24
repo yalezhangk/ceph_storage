@@ -259,7 +259,8 @@ class SyncClusterInfo(BaseTask):
 
     def _update_disk_status(self, ctxt):
         disks = objects.DiskList.get_all(
-            ctxt, expected_attrs=['partition_used'])
+            ctxt, filters={"role": s_fields.DiskRole.ACCELERATE},
+            expected_attrs=['partition_used'])
         for disk in disks:
             if disk.partition_used < disk.partition_num:
                 disk.status = s_fields.DiskStatus.AVAILABLE
