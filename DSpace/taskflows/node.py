@@ -104,11 +104,11 @@ class NodeMixin(object):
 
 
 class ServiceMixin(object):
-    def service_create(self, ctxt, name, node_id):
+    def service_create(self, ctxt, name, node_id, role):
         service = objects.Service(
             ctxt, name=name, status=s_fields.ServiceStatus.ACTIVE,
             node_id=node_id, cluster_id=ctxt.cluster_id, counter=0,
-            role="base"
+            role=role
         )
         service.create()
 
@@ -914,7 +914,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin):
             node_id=node.id)
         rpc_service.create()
         self.wait_agent_ready(ctxt, node)
-        self.service_create(ctxt, "DSA", node.id)
+        self.service_create(ctxt, "DSA", node.id, "base")
 
     def wait_agent_ready(self, ctxt, node):
         logger.debug("wait agent ready to work")
@@ -1010,7 +1010,7 @@ class DSpaceChronyInstall(BaseTask, NodeTask, ServiceMixin):
             volumes=[(config_dir, config_dir_container),
                      (log_dir, log_dir_container)]
         )
-        self.service_create(ctxt, "CHRONY", node.id)
+        self.service_create(ctxt, "CHRONY", node.id, "base")
 
 
 class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
@@ -1098,7 +1098,7 @@ class DSpaceExpoterInstall(BaseTask, ServiceMixin):
             envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
                   ("NODE_EXPORTER_PORT", node_exporter_port)]
         )
-        self.service_create(ctxt, "NODE_EXPORTER", node.id)
+        self.service_create(ctxt, "NODE_EXPORTER", node.id, "base")
 
 
 def get_haproxy_cfg(ctxt, node):
