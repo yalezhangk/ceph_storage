@@ -3526,6 +3526,7 @@ def _service_get(context, service_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def service_create(context, values):
     service_ref = models.Service()
     service_ref.update(values)

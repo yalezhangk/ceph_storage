@@ -314,7 +314,9 @@ class DiskHandler(AdminBaseHandler):
                 for partition in disk.partitions:
                     osd = self._osd_get_by_accelerate_partition(
                         ctxt, partition, expected_attrs=['node'])
-                    if osd:
+                    if (osd and
+                            (osd.status not in
+                             s_fields.OsdStatus.REPLACE_STATUS)):
                         logger.info('accelerate disk has osd.%s, set offline',
                                     osd.osd_id)
                         task = NodeTask(ctxt, osd.node)
@@ -407,7 +409,14 @@ class DiskHandler(AdminBaseHandler):
             for disk_partition in disk_partitions:
                 osd = self._osd_get_by_accelerate_partition(
                     ctxt, disk_partition, expected_attrs=['node'])
-                if osd:
+                if not osd:
+                    disk_partition.status = s_fields.DiskStatus.AVAILABLE
+                elif osd.status in s_fields.OsdStatus.REPLACE_STATUS:
+                    logger.info('osd.%s is replacing, do not restart',
+                                osd.osd_id)
+                    disk_partition.status = s_fields.DiskStatus.INUSE
+                    disk_status = s_fields.DiskStatus.INUSE
+                else:
                     logger.info('accelerate disk has osd.%s, restarting',
                                 osd.osd_id)
                     task = NodeTask(ctxt, osd.node)
@@ -416,17 +425,16 @@ class DiskHandler(AdminBaseHandler):
                     osd.save()
                     disk_partition.status = s_fields.DiskStatus.INUSE
                     disk_status = s_fields.DiskStatus.INUSE
-                else:
-                    disk_partition.status = s_fields.DiskStatus.AVAILABLE
                 disk_partition.save()
             disk.status = disk_status
+        disk.type = s_fields.DiskType.SSD
         disk.save()
 
     def _disk_update_data(self, ctxt, disk, disk_info, node_id):
         logger.info('update data disk: %s', disk.name)
         osds = objects.OsdList.get_all(
             ctxt, filters={'disk_id': disk.id}, expected_attrs=['node'])
-        if disk.status == s_fields.DiskStatus.REPLACING:
+        if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
             logger.info("%s in replacing task, do nothing", disk.name)
         elif len(osds):
             osd = osds[0]

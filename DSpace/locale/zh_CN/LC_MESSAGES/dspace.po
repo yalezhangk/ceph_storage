@@ -1051,3 +1051,12 @@ msgstr "IP地址格式错误"
 
 msgid "Object index pool exists"
 msgstr "对象索引池已存在"
+
+msgid "Osd is {} status, can not restarting"
+msgstr "Osd状态为{}, 不能进行重启操作"
+
+msgid "accelerate disk %s is replacing, please wait"
+msgstr "加速盘%s正在换盘中, 请稍等"
+
+msgid "osd.%s is replacing, please wait"
+msgstr "osd.%s正在换盘中, 请稍等"

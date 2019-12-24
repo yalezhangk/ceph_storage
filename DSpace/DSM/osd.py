@@ -367,6 +367,7 @@ class OsdHandler(AdminBaseHandler):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
         if osd.status not in [s_fields.OsdStatus.ACTIVE,
                               s_fields.OsdStatus.OFFLINE,
+                              s_fields.OsdStatus.REPLACE_PREPARED,
                               s_fields.OsdStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " osd can be delete"))
@@ -449,6 +450,25 @@ class OsdHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, osd, op_status, msg)
         return osd
 
+    def _osd_replace_prepare_check(self, ctxt, osd):
+        accelerate_disk_ids = []
+        if osd.db_partition_id:
+            accelerate_disk_ids.append(osd.db_partition.disk_id)
+        if osd.wal_partition_id:
+            accelerate_disk_ids.append(osd.wal_partition.disk_id)
+        if osd.cache_partition_id:
+            accelerate_disk_ids.append(osd.cache_partition.disk_id)
+        if osd.journal_partition_id:
+            accelerate_disk_ids.append(osd.journal_partition.disk_id)
+        accelerate_disk_ids = list(set(accelerate_disk_ids))
+        for disk_id in accelerate_disk_ids:
+            disk = objects.Disk.get_by_id(ctxt, disk_id)
+            if not disk:
+                raise exception.DiskNotFound(disk_id)
+            elif disk.status in s_fields.DiskStatus.REPLACE_STATUS:
+                raise exception.Invalid(_("accelerate disk %s is replacing, "
+                                          "please wait" % disk.slot))
+
     def osd_disk_replace_prepare(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
         if osd.status not in [s_fields.OsdStatus.MAINTAIN,
@@ -457,6 +477,7 @@ class OsdHandler(AdminBaseHandler):
                               s_fields.OsdStatus.ERROR]:
             raise exception.InvalidInput(_("In the operation osd can "
                                            "not replace disk"))
+        self._osd_replace_prepare_check(ctxt, osd)
         osd.status = s_fields.OsdStatus.REPLACE_PREPARING
         osd.disk.status = s_fields.DiskStatus.REPLACING
         osd.disk.save()
@@ -491,11 +512,15 @@ class OsdHandler(AdminBaseHandler):
         if not osd_clean:
             msg = _("accelerate disk {} osd clean error").format(disk.name)
             op_status = "DISK_CLEAN_ERROR"
+            status = s_fields.DiskStatus.ERROR
             logger.error(msg)
         else:
             msg = _("accelerate disk {} osd clean success").format(disk.name)
             op_status = "DISK_CLEAN_SUCCESS"
+            status = s_fields.DiskStatus.REPLACE_PREPARED
             logger.info(msg)
+        disk.status = status
+        disk.save()
         # send websocket
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, op_status, msg)
@@ -507,7 +532,12 @@ class OsdHandler(AdminBaseHandler):
         if disk.role != s_fields.DiskRole.ACCELERATE:
             raise exception.InvalidInput(_("disk role should be "
                                            "accelerate"))
-        disk.status = s_fields.DiskStatus.REPLACING
+        osds = self._osds_get_by_accelerate_disk(ctxt, disk.id)
+        for osd in osds:
+            if osd.status in s_fields.OsdStatus.REPLACE_STATUS:
+                raise exception.Invalid(_("osd.%s is replacing, please "
+                                          "wait" % osd.osd_id))
+        disk.status = s_fields.DiskStatus.REPLACE_PREPARING
         disk.save()
         self.task_submit(self._accelerate_disk_prepare, ctxt, disk)
         return disk
@@ -550,7 +580,8 @@ class OsdHandler(AdminBaseHandler):
         # check db/cache/journal status
         begin_action = self.begin_action(
             ctxt, Resource.OSD, Action.OSD_REPLACE, osd)
-
+        osd.status = s_fields.OsdStatus.REPLACING
+        osd.save()
         # apply async
         self.task_submit(self._osd_disk_replace, ctxt, osd, begin_action)
         logger.debug("Osd create task apply.")
@@ -620,6 +651,8 @@ class OsdHandler(AdminBaseHandler):
             if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
                 raise exception.InvalidInput(_("Osd status should be "
                                                "REPLACE_PREPARED"))
+        disk.status = s_fields.DiskStatus.REPLACING
+        disk.save()
         self.task_submit(
             self._osd_accelerate_disk_replace, ctxt, disk, osds, values)
         return disk
