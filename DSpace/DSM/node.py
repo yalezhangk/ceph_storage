@@ -17,16 +17,14 @@ from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.objects.fields import ConfigKey
+from DSpace.taskflows.include import InclusionNodesCheck
 from DSpace.taskflows.include import include_clean_flow
 from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodeMixin
+from DSpace.taskflows.node import NodesCheck
 from DSpace.taskflows.node import NodeTask
-from DSpace.taskflows.probe import ProbeTask
 from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config
-from DSpace.utils import logical_xor
-from DSpace.utils import validator
-from DSpace.utils.cluster_config import get_full_ceph_version
 
 logger = logging.getLogger(__name__)
 
@@ -839,11 +837,9 @@ class NodeHandler(AdminBaseHandler):
         node_infos['admin_ip'] = data.get('ip_address')
         return node_infos
 
-    def node_check(self, ctxt, data):
-        check_items = ["hostname", "selinux", "ceph_ports", "ceph_package",
-                       "network", "athena_ports", "firewall", "container",
-                       "ceph_version"]
-        res = self._node_check(ctxt, data, check_items)
+    def nodes_check(self, ctxt, data):
+        checker = NodesCheck(ctxt)
+        res = checker.check(data)
         return res
 
     def _node_check_ip(self, ctxt, data):
@@ -962,94 +958,6 @@ class NodeHandler(AdminBaseHandler):
             self._nodes_inclusion_clean, ctxt, t, begin_action)
         return t
 
-    def _nodes_inclusion_check_admin_ips(self, ctxt, datas):
-        """Check admin_ips in nodes
-
-        :return list: The admin_ip not in datas
-        """
-        cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
-        if not cluster.is_admin:
-            return []
-        admin_ips = objects.sysconfig.sys_config_get(ctxt, ConfigKey.ADMIN_IPS)
-        if admin_ips:
-            admin_ips = admin_ips.split(',')
-        for data in datas:
-            admin_ip = data.get("admin_ip")
-            if admin_ip in admin_ips:
-                admin_ips.pop(admin_ip)
-        return admin_ips
-
-    def _nodes_inclusion_check_all_ips(self, ctxt, datas):
-        node_ips = [data.get('ip_address') for data in datas]
-        data = datas[0]
-        node = objects.Node(ip_address=data.get('ip_address'),
-                            password=data.get('password'))
-        node_task = ProbeTask(ctxt, node)
-        infos = node_task.probe_cluster_nodes()
-        leaks = []
-        for n in infos['nodes']:
-            if n not in node_ips:
-                leaks.append(n)
-        extras = []
-        for n in node_ips:
-            if n not in infos['nodes']:
-                extras.append(n)
-        return leaks, extras
-
-    def _nodes_inclusion_check_planning(self, ctxt, datas):
-        data = datas[0]
-        node = objects.Node(ip_address=data.get('ip_address'),
-                            password=data.get('password'))
-        probe_task = ProbeTask(ctxt, node)
-        infos = probe_task.check_planning()
-        return infos
-
-    def _check_compatibility(self, v):
-        version = get_full_ceph_version(v)
-        if version:
-            return True
-        return False
-
-    def _node_check_version(self, data):
-        pkgs = data.get('ceph_version')
-        available = pkgs.get('available')
-        if available and not self._check_compatibility(available):
-            return {
-                "check": False,
-                "msg": _("Repository version not support")
-            }
-        elif not available:
-            return {
-                "check": False,
-                "msg": _("Repository not found Ceph")
-            }
-        return {
-                "check": True,
-                "msg": None
-        }
-
-    def _node_inclusion_check_version(self, data):
-        pkgs = data.get('ceph_version')
-        installed = pkgs.get('installed')
-        if not installed or not self._check_compatibility(installed):
-            return {
-                "check": False,
-                "msg": _("Installed version not support")
-            }
-        return {
-                "check": True,
-                "msg": None
-        }
-
-    def _node_check_port(self, node_task, ports):
-        res = []
-        for po in ports:
-            if not node_task.check_port(po):
-                res.append({"port": po, "status": False})
-            else:
-                res.append({"port": po, "status": True})
-        return res
-
     def _node_get_by_ip(self, ctxt, key, ip, cluster_id):
         nodes = objects.NodeList.get_all(
             ctxt,
@@ -1063,185 +971,11 @@ class NodeHandler(AdminBaseHandler):
         else:
             return None
 
-    def _node_check_ips(self, ctxt, data):
-        res = {}
-        admin_ip = data.get('ip_address')
-        public_ip = data.get('public_ip')
-        cluster_ip = data.get('cluster_ip')
-        li_ip = [admin_ip, public_ip, cluster_ip]
-        if not all(li_ip):
-            raise exc.Invalid(_('admin_ip,cluster_ip,public_ip is required'))
-        # format
-        for ip in li_ip:
-            validator.validate_ip(ip)
-        # admin_ip
-        node = self._node_get_by_ip(
-            ctxt, "ip_address", admin_ip, "*")
-        res['check_admin_ip'] = False if node else True
-        # cluster_ip
-        node = self._node_get_by_ip(
-            ctxt, "cluster_ip", cluster_ip, ctxt.cluster_id)
-        res['check_cluster_ip'] = False if node else True
-        # public_ip
-        node = self._node_get_by_ip(
-            ctxt, "public_ip", public_ip, ctxt.cluster_id)
-        res['check_public_ip'] = False if node else True
-        # TODO delete it
-        res['check_gateway_ip'] = True
-        return res
-
-    def _node_check_roles(self, roles, services):
-        res = {}
-        # add default value
-        roles = roles or []
-        for s in roles:
-            res[s] = True
-
-        # update value
-        if logical_xor("ceph-osd" in services, "storage" in roles):
-            res['storage'] = False
-        if logical_xor("ceph-mon" in services, "monitor" in roles):
-            res['monitor'] = False
-
-        data = []
-        for k, v in six.iteritems(res):
-            data.append({
-                'role': k,
-                'status': v
-            })
-        return data
-
-    def _node_check(self, ctxt, data, items=None):
-        if not items:
-            logger.error("items empty!")
-            raise exc.ProgrammingError("items empty!")
-        res = {}
-
-        # check input info
-        res.update(self._node_check_ips(ctxt, data))
-
-        # connection
-        node = objects.Node(
-            ctxt, ip_address=data.get('ip_address'),
-            password=data.get('password'))
-        node_task = NodeTask(ctxt, node)
-        node_infos = node_task.node_get_infos()
-        probe_task = ProbeTask(ctxt, node)
-        info = probe_task.check(["ceph_version"])
-        logger.info("get ceph version %s", info)
-
-        # check connection
-        hostname = node_infos.get('hostname')
-        res['check_through'] = True if hostname else False
-        if not hostname:
-            return res
-        if "hostname" in items:
-            if objects.NodeList.get_all(ctxt, filters={"hostname": hostname}):
-                res['check_hostname'] = False
-            else:
-                res['check_hostname'] = True
-        # check ceph package
-        if "ceph_package" in items:
-            r = node_task.check_ceph_is_installed()
-            if r:
-                res['check_Installation_package'] = False
-            else:
-                res['check_Installation_package'] = True
-
-        # check selinux
-        if "selinux" in items:
-            res['check_SELinux'] = node_task.check_selinux()
-        # check port
-        if "ceph_ports" in items:
-            # default [6789, 9100, 9284]
-            default_port = [ConfigKey.CEPH_MONITOR_PORT,
-                            ConfigKey.NODE_EXPORTER_PORT,
-                            ConfigKey.MGR_DSPACE_PORT]
-            check_ports = []
-            for per_sys in default_port:
-                port = objects.sysconfig.sys_config_get(
-                    self.ctxt, per_sys)
-                if isinstance(port, int):
-                    check_ports.append(port)
-                elif isinstance(port, str) and port.isdecimal():
-                    check_ports.append(int(port))
-                else:
-                    logger.warning('port:%s shuld be int or str', port)
-            res['check_ceph_port'] = self._node_check_port(
-                node_task, check_ports)
-        if "athena_ports" in items:
-            # default [9100, 2083]
-            default_port = [ConfigKey.NODE_EXPORTER_PORT, ConfigKey.AGENT_PORT]
-            check_ports = []
-            for per_sys in default_port:
-                port = objects.sysconfig.sys_config_get(
-                    self.ctxt, per_sys)
-                if isinstance(port, int):
-                    check_ports.append(port)
-                elif isinstance(port, str) and port.isdecimal():
-                    check_ports.append(int(port))
-                else:
-                    logger.warning('port:%s shuld be int or str', port)
-            res['check_athena_port'] = self._node_check_port(
-                node_task, check_ports)
-        if "network" in items:
-            public_ip = data.get('public_ip')
-            cluster_ip = data.get('cluster_ip')
-            if (node_task.check_network(public_ip) and
-                    node_task.check_network(cluster_ip)):
-                res['check_network'] = True
-            else:
-                res['check_network'] = False
-        # TODO: check roles
-        if "roles" in items:
-            roles = data.get("roles") or None
-            if roles:
-                roles = roles.split(',')
-            services = node_task.probe_node_services()
-            res['check_roles'] = self._node_check_roles(roles, services)
-        if "firewall" in items:
-            res['check_firewall'] = node_task.check_firewall()
-        if "container" in items:
-            res['check_container'] = node_task.check_container()
-        if "ceph_version" in items:
-            res['ceph_version'] = self._node_check_version(info)
-        if "ceph_version_include" in items:
-            res['check_version'] = self._node_inclusion_check_version(info)
-        return res
-
     def nodes_inclusion_check(self, ctxt, datas):
         logger.info("check datas: %s", datas)
-        status = {}
-        status['leak_admin_ips'] = self._nodes_inclusion_check_admin_ips(
-            ctxt, datas)
-        logger.info("leak_admin_ips: %s", status['leak_admin_ips'])
-        leaks, extras = self._nodes_inclusion_check_all_ips(
-            ctxt, datas)
-        status['leak_cluster_ips'] = leaks
-        status['extra_cluster_ips'] = extras
-        logger.info("leak_cluster_ips: %s", status['leak_admin_ips'])
-        status['check_planning'] = self._nodes_inclusion_check_planning(
-            ctxt, datas)
-        status['nodes'] = []
-        for data in datas:
-            admin_ip = data.get('ip_address')
-            res = self._node_check(ctxt, data, [
-                "hostname",
-                "selinux",
-                "network",
-                "roles",
-                "athena_ports",
-                "firewall",
-                "container",
-                "ceph_version_include"
-            ])
-            res['admin_ip'] = admin_ip
-            status['nodes'].append(res)
-            logger.info("check node: %s, result: %s", admin_ip, res)
-        for node in status['nodes']:
-            if node['admin_ip'] not in extras:
-                node['check_Installation_package'] = True
-        return status
+        checker = InclusionNodesCheck(ctxt)
+        res = checker.check(datas)
+        return res
 
     def node_reporter(self, ctxt, node_summary, node_id):
         logger.info("node_reporter: %s", node_summary)

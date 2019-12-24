@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import random
+import socket
+import struct
 
 import netaddr
 import retrying
@@ -87,3 +89,16 @@ def utc_to_local(source, zone):
 
     # Convert time zone
     return source.astimezone(to_zone)
+
+
+def cidr2network(cidr):
+    items = cidr.split('/')
+    if len(items) != 2:
+        return None
+    address, netmask_length = items
+    address_bin = struct.unpack('!L', socket.inet_aton(address))[0]
+    netmask_bin = (1 << 32) - (1 << 32 >> int(netmask_length))
+    network = socket.inet_ntoa(
+        struct.pack('!L', address_bin & netmask_bin)
+    )
+    return network
