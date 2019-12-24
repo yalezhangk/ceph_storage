@@ -63,11 +63,6 @@ class NodeHandler(AdminBaseHandler):
         for network in networks:
             network.destroy()
 
-        services = objects.ServiceList.get_all(
-            ctxt, filters={"node_id": node.id})
-        for service in services:
-            service.destroy()
-
     def _node_delete(self, ctxt, node, begin_action):
         node_task = NodeTask(ctxt, node)
         try:
@@ -495,6 +490,12 @@ class NodeHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, node, op_status, msg)
         return node
 
+    def _remove_mon_services(self, ctxt, node):
+        services = objects.ServiceList.get_all(
+            ctxt, filters={"node_id": node.id, "role": "role_monitor"})
+        for service in services:
+            service.destroy()
+
     def _mon_uninstall(self, ctxt, node):
         logger.info("mon uninstall on node %s, ip:%s",
                     node.id, node.ip_address)
@@ -502,6 +503,7 @@ class NodeHandler(AdminBaseHandler):
         node.save()
         task = NodeTask(ctxt, node)
         try:
+            self._remove_mon_services(ctxt, node)
             task.ceph_mon_uninstall()
             node.role_monitor = False
             node.save()
@@ -626,13 +628,6 @@ class NodeHandler(AdminBaseHandler):
         logger.info("Send node update info to %s", node.id)
         node = objects.Node.get_by_id(ctxt, node.id)
         self.notify_node_update(ctxt, node)
-        services = objects.ServiceList.get_all(
-            ctxt, filters={'node_id': node.id})
-        for service in services:
-            if service.role == "role_admin":
-                continue
-            if service.role == "role_monitor" and not node.role_monitor:
-                service.destroy()
 
     def _node_roles_set(self, ctxt, node, i_roles, u_roles, begin_action):
         install_role_map = {
@@ -747,13 +742,24 @@ class NodeHandler(AdminBaseHandler):
                          begin_action)
         return node
 
+    def _create_base_services(self, ctxt, node):
+        logger.debug("Create service for base in database")
+        for name in ["NODE_EXPORTER", "CHRONY", "DSA"]:
+            service = objects.Service(
+                ctxt, name=name, status=s_fields.ServiceStatus.ACTIVE,
+                node_id=node.id, cluster_id=ctxt.cluster_id, counter=0,
+                role="base"
+            )
+            service.create()
+
     def _node_create(self, ctxt, node, data):
         begin_action = self.begin_action(ctxt, Resource.NODE, Action.CREATE)
+        node_task = NodeTask(ctxt, node)
         try:
-            node_task = NodeTask(ctxt, node)
             node_task.dspace_agent_install()
             node_task.chrony_install()
             node_task.node_exporter_install()
+            self._create_base_services(ctxt, node)
             roles = data.get('roles', "").split(',')
             role_monitor = "monitor" in roles
             role_storage = "storage" in roles
@@ -785,6 +791,12 @@ class NodeHandler(AdminBaseHandler):
             op_status = "CREATE_ERROR"
         node.status = status
         node.save()
+
+        # notify dsa to update node info
+        try:
+            self._notify_dsa_update(ctxt, node)
+        except Exception as e:
+            logger.error("Update dsa node info failed: %s", e)
 
         node_task.prometheus_target_config(action='add',
                                            service='node_exporter')

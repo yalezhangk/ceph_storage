@@ -779,6 +779,7 @@ class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin):
         super(DSpaceAgentUninstall, self).execute(task_info)
         ssh = node.executer
         self._node_remove_container(ctxt, ssh, "dsa", "dspace")
+        remove_service(ctxt, node, "DSA")
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
         # rm config file
@@ -943,12 +944,23 @@ class DSpaceAgentInstall(BaseTask):
         return dsa_conf
 
 
+def remove_service(ctxt, node, name):
+    # remove service
+    service = objects.ServiceList.get_all(
+        ctxt, filters={"node_id": node.id, "name": name})
+    if service:
+        service = service[0]
+        service.destroy()
+
+
 class DSpaceChronyUninstall(BaseTask, ContainerUninstallMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceChronyUninstall, self).execute(task_info)
         ssh = node.executer
         # remove container and image
         self._node_remove_container(ctxt, ssh, "chrony", "chrony")
+        remove_service(ctxt, node, "CHRONY")
+
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
         # rm config file
@@ -999,6 +1011,7 @@ class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin):
         ssh = node.executer
         self._node_remove_container(ctxt, ssh, "node_exporter",
                                     "node_exporter")
+        remove_service(ctxt, node, "NODE_EXPORTER")
 
 
 class NodeBaseTask(BaseTask):
