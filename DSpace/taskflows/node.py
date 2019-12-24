@@ -1569,7 +1569,7 @@ class NodesCheck(object):
         res['check_firewall'] = self._check_firewall(info.get("firewall"))
         res['check_container'] = self._check_container(info.get("containers"))
         res['check_SELinux'] = not info.get("selinux")
-        res['check_athena_port'] = self._check_ceph_port(info.get("ports"))
+        res['check_athena_port'] = self._check_athena_port(info.get("ports"))
         res.update(self._check_network(info['node'], info['network']))
         return res
 
