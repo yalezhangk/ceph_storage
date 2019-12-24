@@ -99,14 +99,12 @@ class CephTool(ToolBase):
         return False
 
     def module_enable(self, module, public_ip=None, mgr_dspace_port=None):
-        # set ip and port
-        cmd_ip = ['ceph', 'config-key', 'set', 'mgr/dspace/server_addr',
-                  public_ip]
-        rc, stdout, stderr = self.run_command(cmd_ip, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd_ip, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
+        # TODO: set mgr/dspace/server_addr
+        # config-key set ip时，是全局的，如已设置，待下一台mgr节点，启用dspace插件时，
+        # 会从集群全局配置中获取server_addr，该ip为第一台节点的ip, 导致设置失败
+        # 会报地址已被占用，待后期解决完善，暂时只设置port
 
+        # set port
         cmd_port = ['ceph', 'config-key', 'set', 'mgr/dspace/server_port',
                     mgr_dspace_port]
         rc, stdout, stderr = self.run_command(cmd_port, timeout=5)
