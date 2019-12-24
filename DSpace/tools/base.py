@@ -35,7 +35,7 @@ class Executor(object):
             args,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        stdout, stderr = cmd.communicate()
+        stdout, stderr = cmd.communicate(timeout=timeout)
         rc = cmd.returncode
         return (rc, _bytes2str(stdout), _bytes2str(stderr))
 
@@ -101,6 +101,7 @@ class SSHExecutor(Executor):
         if isinstance(args, list):
             args = ' '.join(args)
         stdin, stdout, stderr = self.ssh.exec_command(args, timeout=timeout)
+        # TODO timeout is not working, blocked here
         rc = stdout.channel.recv_exit_status()
         # TODO: Need a better way.
         stdout, stderr = stdout.read(), stderr.read()
