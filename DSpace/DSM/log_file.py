@@ -28,12 +28,14 @@ class LogFileHandler(AdminBaseHandler):
             raise exception.NodeNotFound(node_id=node_id)
         if service_type == s_fields.LogfileType.MON:
             if not node.role_monitor:
-                raise exception.InvalidInput(
-                    reason=_('node_id {} is not monitor role').format(node_id))
+                logger.info('current node is not mon storage, '
+                            'has not mon log files')
+                return []
         elif service_type == s_fields.LogfileType.OSD:
             if not node.role_storage:
-                raise exception.InvalidInput(
-                    reason=_('node_id {} is not storage role').format(node_id))
+                logger.info('current node is not storage rule, '
+                            'has not osd log files')
+                return []
         else:
             raise exception.InvalidInput(reason=_('service_type must is mon '
                                                   'or osd'))
