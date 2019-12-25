@@ -103,8 +103,7 @@ class CronHandler(AdminBaseHandler):
         logger.info("osd.%s is down, try to restart", osd.osd_id)
         msg = _("osd.{} service status is inactive, trying to restart").format(
             osd.osd_id)
-        self.send_service_alert(context, osd, "osd_status", "Osd", "INFO",
-                                msg, "OSD_RESTART")
+        self.send_websocket(context, osd, "OSD_RESTART", msg)
         node = objects.Node.get_by_id(context, osd.node_id)
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
@@ -141,11 +140,17 @@ class CronHandler(AdminBaseHandler):
                           s_fields.OsdStatus.CREATING,
                           s_fields.OsdStatus.REPLACE_PREPARED,
                           s_fields.OsdStatus.REPLACE_PREPARING,
-                          s_fields.OsdStatus.RESTARTING,
                           s_fields.OsdStatus.PROCESSING]:
             return
         try:
             if status == "in&up":
+                if osd.status in [s_fields.OsdStatus.OFFLINE,
+                                  s_fields.OsdStatus.RESTARTING,
+                                  s_fields.OsdStatus.ERROR]:
+                    msg = _("osd.{} is active").format(osd.osd_id)
+                    self.send_service_alert(
+                        context, osd, "osd_status", "Osd", "INFO", msg,
+                        "OSD_ACTIVE")
                 osd.status = s_fields.OsdStatus.ACTIVE
                 osd.save()
             elif status == "in&down":
@@ -275,9 +280,7 @@ class CronHandler(AdminBaseHandler):
         container_name = self.map_util.base['DSA']
         msg = _("Node {}: DSA service status is inactive, trying to restart.")\
             .format(node.hostname)
-        self.send_service_alert(
-            ctxt, dsa, "service_status", dsa.name, "INFO",
-            msg, "SERVICE_RESTART")
+        self.send_websocket(ctxt, dsa, "SERVICE_RESTART", msg)
         while retry_times < 10:
             try:
                 docker_tool.restart(container_name)
@@ -306,13 +309,13 @@ class CronHandler(AdminBaseHandler):
             ctxt = context_tool.get_context(cluster_id=dsa.cluster_id)
             dsa_status = dsa.status
             self.check_service_status(self.ctxt, dsa)
+            node = objects.Node.get_by_id(ctxt, dsa.node_id)
             if (dsa.status == s_fields.ServiceStatus.INACTIVE and
                     dsa_status == s_fields.ServiceStatus.ACTIVE):
                 logger.error("DSA in node %s is inactive", dsa.node_id)
-                node = objects.Node.get_by_id(ctxt, dsa.node_id)
                 if node.status == s_fields.NodeStatus.DELETING:
                     continue
-                msg = _("Node {}: DSA in status is inactive"
+                msg = _("Node {}: DSA status is inactive"
                         ).format(node.hostname)
                 self.send_service_alert(
                     ctxt, dsa, "service_status", "DSA", "WARN", msg,
@@ -322,6 +325,15 @@ class CronHandler(AdminBaseHandler):
                 dsa.status = s_fields.ServiceStatus.STARTING
                 dsa.save()
                 self.task_submit(self._restart_dsa, ctxt, dsa, node)
+            if (dsa.status == s_fields.ServiceStatus.ACTIVE and
+                    dsa_status == s_fields.ServiceStatus.INACTIVE):
+                if node.status == s_fields.NodeStatus.CREATING:
+                    continue
+                msg = _("Node {}: DSA status is active"
+                        ).format(node.hostname)
+                self.send_service_alert(
+                    ctxt, dsa, "service_status", "DSA", "INFO", msg,
+                    "SERVICE_ACTIVE")
 
     def _node_check_cron(self):
         logger.debug("Start node check crontab")
@@ -415,7 +427,7 @@ class CronHandler(AdminBaseHandler):
                             ).format(cluster.id)
                     self.send_service_alert(
                         context, cluster, "service_status", "MON", "INFO",
-                        msg, "SERVICE_")
+                        msg, "SERVICE_ACTIVE")
             except exception.StorException as e:
                 logger.warning("Could not connect to ceph cluster %s: %s",
                                cluster.id, e)

@@ -52,9 +52,7 @@ class ServiceHandler(AdminBaseHandler):
             return
         msg = _("Node {}: service {} in status is inactive, trying to restart"
                 ).format(node.hostname, name)
-        self.send_service_alert(
-            ctxt, service, "service_status", name, "INFO", msg,
-            "SERVICE_RESTART")
+        self.send_websocket(ctxt, service, "SERVICE_RESTART", msg)
         service.status = s_fields.ServiceStatus.STARTING
         service.save()
         ssh = SSHExecutor(hostname=str(node.ip_address),
@@ -86,6 +84,7 @@ class ServiceHandler(AdminBaseHandler):
         self.send_service_alert(
             ctxt, radosgw, "service_status", radosgw.display_name, "INFO", msg,
             "SERVICE_RESTART")
+
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
         ceph_tool = CephTool(ssh)
@@ -111,9 +110,7 @@ class ServiceHandler(AdminBaseHandler):
         service.save()
         msg = _("Node {}：service {} status is down, trying to restart")\
             .format(node.hostname, service.name)
-        self.send_service_alert(
-            ctxt, service, "service_status", service.name, "INFO", msg,
-            "SERVICE_RESTART")
+        self.send_websocket(ctxt, service, "SERVICE_RESTART", msg)
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
         docker_tool = DockerTool(ssh)
@@ -160,9 +157,17 @@ class ServiceHandler(AdminBaseHandler):
             self.send_service_alert(
                 ctxt, rgw, "service_status", rgw.display_name, "WARN",
                 msg, "SERVICE_INACTIVE")
-        rgw.status = status
         if status == s_fields.RadosgwStatus.ACTIVE:
             rgw.counter += 1
+            if rgw.status in [s_fields.RadosgwStatus.INACTIVE,
+                              s_fields.RadosgwStatus.STARTING,
+                              s_fields.RadosgwStatus.ERROR]:
+                msg = _("Node {}: radosgw {} status is active"
+                        ).format(node.hostname, rgw.name)
+                self.send_service_alert(
+                    ctxt, rgw, "service_status", rgw.name, "INFO",
+                    msg, "SERVICE_ACTIVE")
+        rgw.status = status
         rgw.save()
         return rgw
 
@@ -197,9 +202,17 @@ class ServiceHandler(AdminBaseHandler):
             self.send_service_alert(
                 ctxt, service, "service_status", service.name, "WARN",
                 msg, "SERVICE_INACTIVE")
-        service.status = status
         if status == s_fields.RouterServiceStatus.ACTIVE:
             service.counter += 1
+            if service.status in [s_fields.RouterServiceStatus.INACTIVE,
+                                  s_fields.RouterServiceStatus.STARTING,
+                                  s_fields.RouterServiceStatus.ERROR]:
+                msg = _("Node {}: radosgw router service {} status is active"
+                        ).format(node.hostname, service.name)
+                self.send_service_alert(
+                    ctxt, service, "service_status", service.name, "INFO",
+                    msg, "SERVICE_ACTIVE")
+        service.status = status
         service.save()
         return service
 
@@ -244,9 +257,17 @@ class ServiceHandler(AdminBaseHandler):
                 self.send_service_alert(
                     ctxt, service, "service_status", service.name, "WARN",
                     msg, "SERVICE_INACTIVE")
-            service.status = status
             if status == s_fields.ServiceStatus.ACTIVE:
                 service.counter += 1
+                if service.status in [s_fields.ServiceStatus.INACTIVE,
+                                      s_fields.ServiceStatus.STARTING,
+                                      s_fields.ServiceStatus.ERROR]:
+                    msg = _("Node {}: service {} status is active"
+                            ).format(node.hostname, service.name)
+                    self.send_service_alert(
+                        ctxt, service, "service_status", service.name, "INFO",
+                        msg, "SERVICE_ACTIVE")
+            service.status = status
             service.save()
             return service
 

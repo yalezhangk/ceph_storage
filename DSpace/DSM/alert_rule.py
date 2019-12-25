@@ -106,16 +106,48 @@ class AlertRuleInitMixin(object):
             {
                 'resource_type': 'service',
                 'type': 'service_status',
-                'trigger_value': '',
-                'level': '',
+                'trigger_value': 'inactive',
+                'level': 'WARN',
+                'trigger_period': '0',
+                'enabled': True
+            },
+            {
+                'resource_type': 'service',
+                'type': 'service_status',
+                'trigger_value': 'error',
+                'level': 'ERROR',
+                'trigger_period': '0',
+                'enabled': True
+            },
+            {
+                'resource_type': 'service',
+                'type': 'service_status',
+                'trigger_value': 'active',
+                'level': 'INFO',
                 'trigger_period': '0',
                 'enabled': True
             },
             {
                 'resource_type': 'osd',
                 'type': 'osd_status',
-                'trigger_value': '',
-                'level': '',
+                'trigger_value': 'offline',
+                'level': 'WARN',
+                'trigger_period': '0',
+                'enabled': True
+            },
+            {
+                'resource_type': 'osd',
+                'type': 'osd_status',
+                'trigger_value': 'error',
+                'level': 'ERROR',
+                'trigger_period': '0',
+                'enabled': True
+            },
+            {
+                'resource_type': 'osd',
+                'type': 'osd_status',
+                'trigger_value': 'active',
+                'level': 'INFO',
                 'trigger_period': '0',
                 'enabled': True
             },

@@ -477,6 +477,9 @@ msgstr "osd.{}服务已停止，尝试进行重启"
 msgid "osd.{} cannot be restarted, mark to offline"
 msgstr "osd.{}重启失败，标记为离线状态"
 
+msgid "osd.{} is active"
+msgstr "osd.{}已恢复健康"
+
 msgid "osd.{} is offline"
 msgstr "osd.{}已离线"
 
@@ -486,8 +489,11 @@ msgstr "节点{}：DSA服务已停止，尝试进行重启"
 msgid "Node {}: DSA restart failed, mark it to error"
 msgstr "节点{}: DSA服务重启失败，标记为错误状态"
 
-msgid "Node {}: DSA in status is inactive"
+msgid "Node {}: DSA status is inactive"
 msgstr "节点{}: DSA服务已停止"
+
+msgid "Node {}: DSA status is active"
+msgstr "节点{}: DSA服务已恢复健康"
 
 msgid "reconnect to ceph cluster {}"
 msgstr "已连接到ceph集群{}"
@@ -900,11 +906,20 @@ msgstr "节点{}: 服务{}重启失败，标记为错误状态"
 msgid "Node {}: radosgw {} status is inactive"
 msgstr "节点{}: 对象网关服务{}已停止"
 
+msgid "Node {}: radosgw {} status is active"
+msgstr "节点{}: 对象网关服务{}已恢复健康"
+
 msgid "Node {}: radosgw router service {} status is inactive"
 msgstr "节点{}: 对象路由服务{}已停止"
 
+msgid "Node {}: radosgw router service {} status is active"
+msgstr "节点{}: 对象路由服务{}已恢复健康"
+
 msgid "Node {}: service {} status is inactive"
 msgstr "节点{}: 服务{}已停止"
+
+msgid "Node {}: service {} status is active"
+msgstr "节点{}: 服务{}已恢复健康"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
