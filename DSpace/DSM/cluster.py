@@ -368,16 +368,23 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         query_all = objects.PoolList.get_status(ctxt)
         num = 0
         status = {s_fields.PoolStatus.ACTIVE: 0,
+                  s_fields.PoolStatus.DEGRADED: 0,
+                  s_fields.PoolStatus.RECOVERING: 0,
+                  s_fields.PoolStatus.PROCESSING: 0,
                   s_fields.PoolStatus.WARNING: 0,
                   s_fields.PoolStatus.ERROR: 0}
         for [k, v] in query_all:
             if k in [s_fields.PoolStatus.ACTIVE,
-                     s_fields.PoolStatus.ERROR,
-                     s_fields.PoolStatus.WARNING]:
+                     s_fields.PoolStatus.DEGRADED,
+                     s_fields.PoolStatus.RECOVERING,
+                     s_fields.PoolStatus.WARNING,
+                     s_fields.PoolStatus.ERROR]:
                 status[k] = v
-            elif k != s_fields.PoolStatus.DELETED:
+            elif k in [s_fields.PoolStatus.PROCESSING,
+                       s_fields.PoolStatus.CREATING,
+                       s_fields.PoolStatus.DELETING]:
                 num += v
-        status["progress"] = num
+        status[s_fields.PoolStatus.PROCESSING] = num
         logger.info("pool status: %s", status)
         return status
 
