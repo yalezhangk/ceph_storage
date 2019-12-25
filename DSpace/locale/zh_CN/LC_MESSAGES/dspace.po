@@ -1060,3 +1060,6 @@ msgstr "加速盘%s正在换盘中, 请稍等"
 
 msgid "osd.%s is replacing, please wait"
 msgstr "osd.%s正在换盘中, 请稍等"
+
+msgid "Please remove the Object storage gateway first"
+msgstr "请先移除对象存储网关"
