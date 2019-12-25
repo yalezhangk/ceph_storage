@@ -682,7 +682,19 @@ class CephTask(object):
 
     def ceph_data_balance(self, action=None, mode=None):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.data_balance(action=action, mode=mode)
+            return rados_client.set_data_balance(action=action, mode=mode)
+
+    def balancer_status(self):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.balancer_status()
+
+    def is_module_enable(self, module_name):
+        logger.info("get balancer module status")
+        with RADOSClient(self.rados_args(), timeout='5') as client:
+            res = client.mgr_module_ls()
+            if module_name not in res["enabled_modules"]:
+                return False
+            return True
 
     def _is_paush_in_ceph(self, client):
         status = client.status()
@@ -696,8 +708,7 @@ class CephTask(object):
 
     def _is_balancer_enable(self, client):
         # is module enable
-        res = client.mgr_module_ls()
-        if 'balancer' not in res["enabled_modules"]:
+        if not self.is_module_enable("balancer"):
             return False
         # blancer status
         status = client.balancer_status()

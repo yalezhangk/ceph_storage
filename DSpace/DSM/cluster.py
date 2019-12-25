@@ -449,38 +449,52 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_data_balance_get(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
+        data_balance = {
+            "active": False,
+            "mode": "none"
+        }
         if has_mon_host:
             ceph_client = CephTask(ctxt)
-            res = ceph_client.ceph_data_balance()
+            if not ceph_client.is_module_enable("balancer"):
+                balance_enable = False
+                balance_mode = "none"
+            else:
+                res = ceph_client.balancer_status()
+                balance_enable = res.get('active')
+                balance_mode = res.get('mode')
             objects.sysconfig.sys_config_set(
-                ctxt, "data_balance", res.get("active"), "bool")
+                ctxt, "data_balance", balance_enable, "bool")
             objects.sysconfig.sys_config_set(
-                ctxt, "data_balance_mode", res.get("mode"), "string")
-            data_balance = {
-                "active": res.get("active"),
-                "mode": res.get("mode"),
-            }
-            return data_balance
+                ctxt, "data_balance_mode", balance_mode, "string")
+            data_balance["active"] = balance_enable
+            data_balance["mode"] = balance_mode
         else:
-            logger.error("The cluster has no mon role.")
-            return "The cluster has no mon role."
+            logger.error("cluster has no mon role or can't connect to mon.")
+        return data_balance
 
     def cluster_data_balance_set(self, ctxt, data_balance):
         action = data_balance.get("action")
         mode = data_balance.get("mode")
+
+        data_balance = {
+            "active": False,
+            "mode": "none"
+        }
+
         if action not in ['on', 'off']:
             logger.error("Invaild action: %s" % action)
-            return "Invaild action: %s" % action
+            raise exc.InvalidInput(_('Invaild action: %s') % action)
         if mode not in ['crush-compat', 'upmap', None]:
             logger.error("Invaild mode: %s" % mode)
-            return "Invaild mode: %s" % mode
+            raise exc.InvalidInput(_('Invaild mode: %s') % action)
         has_mon_host = self.has_monitor_host(ctxt)
         if has_mon_host:
             ceph_client = CephTask(ctxt)
             res = ceph_client.ceph_data_balance(action, mode)
+            data_balance["active"] = res.get("active")
+            data_balance["mode"] = res.get("mode")
         else:
-            logger.error("The cluster has no mon role.")
-            return "The cluster has no mon role."
+            logger.error("cluster has no mon role or can't connect to mon.")
         action_map = {
             'on': Action.DATA_BALANCE_ON,
             'off': Action.DATA_BALANCE_OFF
@@ -488,14 +502,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         begin_action = self.begin_action(
             ctxt, Resource.CLUSTER, action_map[action])
         objects.sysconfig.sys_config_set(
-            ctxt, "data_balance", res.get("active"), "bool")
+            ctxt, "data_balance", data_balance.get("active"), "bool")
         objects.sysconfig.sys_config_set(
-            ctxt, "data_balance_mode", res.get("mode"), "string")
+            ctxt, "data_balance_mode", data_balance.get("mode"), "string")
         cluster_id = ctxt.cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         self.finish_action(begin_action, cluster_id, cluster.display_name,
-                           after_obj=res)
-        return res
+                           after_obj=data_balance)
+        return data_balance
 
     def cluster_pause(self, ctxt, enable=True):
         begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.PAUSE)
