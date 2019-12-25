@@ -384,7 +384,7 @@ class CephTool(ToolBase):
                    "dump_historic_slow_ops", '-f', 'json']
             rc, stdout, stderr = self.run_command(cmd, timeout=5)
             if rc == 22:
-                logger.error("osd.%s not found." % osd.osd_id)
+                logger.warning("osd.%s not found." % osd.osd_id)
                 continue
             elif rc:
                 logger.error("Command: %(cmd)s ReturnCode: %(return_code)s "
