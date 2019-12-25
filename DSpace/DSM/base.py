@@ -134,11 +134,16 @@ class AdminBaseHandler(object):
             ctxt, cluster_id=ctxt.cluster_id).get_client(node.id)
         client.node_update_infos(ctxt, node)
 
+    def send_websocket(self, ctxt, service, wb_op_status, alert_msg):
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, service, wb_op_status, alert_msg)
+
     def send_service_alert(self, ctxt, service, alert_type, resource_name,
                            alert_level, alert_msg, wb_op_status):
         alert_rule = objects.AlertRuleList.get_all(
             ctxt, filters={
-                'type': alert_type, 'cluster_id': ctxt.cluster_id
+                'type': alert_type, 'cluster_id': ctxt.cluster_id,
+                'level': alert_level
             })
         if not alert_rule:
             return
@@ -149,12 +154,11 @@ class AdminBaseHandler(object):
             'resource_type': alert_rule.resource_type,
             'resource_name': resource_name,
             'resource_id': ctxt.cluster_id,
-            'level': alert_level,
+            'level': alert_rule.level,
             'alert_value': alert_msg,
             'alert_rule_id': alert_rule.id,
             'cluster_id': ctxt.cluster_id
         }
         alert_log = objects.AlertLog(ctxt, **alert_log_data)
         alert_log.create()
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, service, wb_op_status, alert_msg)
+        self.send_websocket(ctxt, service, wb_op_status, alert_msg)
