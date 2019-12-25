@@ -95,7 +95,8 @@ class ServiceBase(object):
         logger.debug(self.rpc_endpoint)
 
     def start_rpc(self):
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        server = grpc.server(futures.ThreadPoolExecutor(
+            max_workers=CONF.task_workers))
         stor_pb2_grpc.add_rpc_server_servicer_to_server(
             RPCHandler(self.handler), server)
         port = '{}:{}'.format(self.rpc_ip, self.rpc_port)
