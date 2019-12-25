@@ -243,6 +243,11 @@ class PoolHandler(AdminBaseHandler):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
+        if pool['role'] == "gateway":
+            rgw_db = objects.RadosgwList.get_all(ctxt)
+            if rgw_db:
+                raise exception.InvalidInput(
+                    _("Please remove the Object storage gateway first"))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.DELETE, before_obj=pool)
