@@ -80,7 +80,7 @@ def versiontuple(v):
 
 
 def utc_to_local(source, zone):
-    from_zone = tz.gettz('UTC')
+    from_zone = tz.tzutc()
     to_zone = tz.gettz(zone)
 
     # Tell the datetime object that it's in UTC time zone since
