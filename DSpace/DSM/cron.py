@@ -144,39 +144,43 @@ class CronHandler(AdminBaseHandler):
                           s_fields.OsdStatus.RESTARTING,
                           s_fields.OsdStatus.PROCESSING]:
             return
-        if status == "in&up":
-            osd.status = s_fields.OsdStatus.ACTIVE
-            osd.save()
-        elif status == "in&down":
-            if osd.status in [s_fields.OsdStatus.ACTIVE]:
-                if self.debug_mode:
-                    osd.status = s_fields.OsdStatus.OFFLINE
-                    osd.save()
-                    msg = _("osd.{} is offline").format(osd.osd_id)
-                    self.send_service_alert(context, osd, "osd_status", "Osd",
-                                            "WARN", msg, "OSD_OFFLINE")
-                    return
-                osd.status = s_fields.OsdStatus.RESTARTING
+        try:
+            if status == "in&up":
+                osd.status = s_fields.OsdStatus.ACTIVE
                 osd.save()
-                self.task_submit(self._restart_osd, context, osd)
-                return
-        elif status == "out&up":
-            if osd.status in [s_fields.OsdStatus.OFFLINE]:
-                return
-            msg = _("osd.{} is offline").format(osd.osd_id)
-            self.send_service_alert(context, osd, "osd_status", "Osd",
-                                    "WARN", msg, "OSD_OFFLINE")
-            osd.status = s_fields.OsdStatus.OFFLINE
-            osd.save()
-        elif status == "out&down":
-            if osd.status in [s_fields.OsdStatus.OFFLINE,
-                              s_fields.OsdStatus.ERROR]:
-                return
-            msg = _("osd.{} is offline").format(osd.osd_id)
-            self.send_service_alert(context, osd, "osd_status", "Osd",
-                                    "WARN", msg, "OSD_OFFLINE")
-            osd.status = s_fields.OsdStatus.OFFLINE
-            osd.save()
+            elif status == "in&down":
+                if osd.status in [s_fields.OsdStatus.ACTIVE]:
+                    if self.debug_mode:
+                        osd.status = s_fields.OsdStatus.OFFLINE
+                        osd.save()
+                        msg = _("osd.{} is offline").format(osd.osd_id)
+                        self.send_service_alert(
+                            context, osd, "osd_status", "Osd", "WARN", msg,
+                            "OSD_OFFLINE")
+                        return
+                    osd.status = s_fields.OsdStatus.RESTARTING
+                    osd.save()
+                    self.task_submit(self._restart_osd, context, osd)
+                    return
+            elif status == "out&up":
+                if osd.status in [s_fields.OsdStatus.OFFLINE]:
+                    return
+                msg = _("osd.{} is offline").format(osd.osd_id)
+                self.send_service_alert(context, osd, "osd_status", "Osd",
+                                        "WARN", msg, "OSD_OFFLINE")
+                osd.status = s_fields.OsdStatus.OFFLINE
+                osd.save()
+            elif status == "out&down":
+                if osd.status in [s_fields.OsdStatus.OFFLINE,
+                                  s_fields.OsdStatus.ERROR]:
+                    return
+                msg = _("osd.{} is offline").format(osd.osd_id)
+                self.send_service_alert(context, osd, "osd_status", "Osd",
+                                        "WARN", msg, "OSD_OFFLINE")
+                osd.status = s_fields.OsdStatus.OFFLINE
+                osd.save()
+        except exception.OsdNotFound as e:
+            logger.warning(e)
 
     def _get_osd_status_from_dsa(self, context):
         osds = objects.OsdList.get_all(
@@ -220,9 +224,9 @@ class CronHandler(AdminBaseHandler):
     @synchronized('cron_osd_tree', blocking=False)
     def osd_check(self):
         for cluster in self.clusters:
-            if not self.ceph_cluster_status.get(cluster.id):
-                continue
             context = context_tool.get_context(cluster_id=cluster.id)
+            if not self.get_ceph_cluster_status(context):
+                continue
             ceph_client = CephTask(context)
             osds = objects.OsdList.get_all(context)
             if not osds:
@@ -373,43 +377,53 @@ class CronHandler(AdminBaseHandler):
         while True:
             try:
                 self._ceph_status_check()
+            except LockAcquireFailed as e:
+                logger.debug(e)
+                time.sleep(CONF.ceph_mon_check_interval * 2)
+                continue
             except Exception as e:
                 logger.exception("Ceph cluster check cron Exception: %s", e)
-            time.sleep(3)
+            time.sleep(CONF.ceph_mon_check_interval)
 
+    def _ceph_check_retry(self, ceph_client, cluster):
+        # check ceph status
+        ceph_client.ceph_status_check()
+        cluster.ceph_status = True
+        cluster.save()
+
+    @synchronized(lock_name="ceph_status_check", blocking=False)
     def _ceph_status_check(self):
         self.clusters = objects.ClusterList.get_all(self.ctxt)
+
         for cluster in self.clusters:
             context = context_tool.get_context(cluster_id=cluster.id)
-
             # check monitor role
             nodes = objects.NodeList.get_all(
                 context, filters={"role_monitor": True})
             if not nodes:
-                self.ceph_cluster_status.update({cluster.id: False})
+                cluster.ceph_status = False
+                cluster.save()
                 logger.info("no monitor found")
                 continue
 
-            # check ceph status
             ceph_client = CephTask(context)
-            status = self.ceph_cluster_status.get(cluster.id)
+            status = cluster.ceph_status
             try:
-                ceph_client.ceph_status_check()
-                self.ceph_cluster_status.update({cluster.id: True})
+                self._ceph_check_retry(ceph_client, cluster)
                 if not status:
                     msg = _("reconnect to ceph cluster {}"
                             ).format(cluster.id)
                     self.send_service_alert(
-                        context, cluster, "service_status", "MON", "ACTIVE",
+                        context, cluster, "service_status", "MON", "INFO",
                         msg, "SERVICE_")
             except exception.StorException as e:
                 logger.warning("Could not connect to ceph cluster %s: %s",
                                cluster.id, e)
-                self.ceph_cluster_status.update({cluster.id: False})
+                cluster.ceph_status = False
+                cluster.save()
                 if status:
                     msg = _("Could not connect to ceph cluster {}"
                             ).format(cluster.id)
                     self.send_service_alert(
                         context, cluster, "service_status", "MON", "ERROR",
                         msg, "SERVICE_ACTIVE")
-        logger.debug("Ceph cluster status: %s", self.ceph_cluster_status)
