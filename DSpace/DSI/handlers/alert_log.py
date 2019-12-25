@@ -68,7 +68,7 @@ update_alert_log_all_schema = {
                     "properties": {
                         "before_time": {
                             "type": "string",
-                            "format": "date-time"
+                            "format": "string"
                         }
                     },
                     "required": ["before_time"],

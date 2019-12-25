@@ -3285,7 +3285,7 @@ def alert_log_batch_update(context, filters=None, updates=None):
         if filters:
             before_time = filters.get('created_at')
             model_query(context, models.AlertLog, session=session).filter(
-                models.ActionLog.created_at <= before_time
+                models.AlertLog.created_at <= before_time
             ).update(updates, synchronize_session=False)
             LOG.info('alert_log set_deleted success,filters:<=%s', before_time)
         else:
