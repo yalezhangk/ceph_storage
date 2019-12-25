@@ -80,7 +80,7 @@ class SysConfigHandler(AdminBaseHandler):
             begin_action = self.begin_action(ctxt, Resource.SYSCONFIG,
                                              Action.UPDATE_CLOCK_SERVER)
             objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
-                                             cluster_cidr)
+                                             gateway_cidr)
             self.finish_action(begin_action, None, 'sysconfig', gateway_cidr)
 
     def image_namespace_get(self, ctxt):
