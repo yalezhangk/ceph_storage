@@ -447,7 +447,13 @@ def service_status_by_dbus(service):
                              '/org/freedesktop/systemd1')
     manager = dbus.Interface(
         systemd, dbus_interface='org.freedesktop.systemd1.Manager')
-    unit = manager.GetUnit("firewalld.service")
+    try:
+        unit = manager.GetUnit(service)
+    except dbus.exceptions.DBusException as e:
+        if "not loaded" in str(e):
+            return "inactive"
+        raise e
+
     unit_proxy = bus.get_object('org.freedesktop.systemd1', str(unit))
     unit_properties = dbus.Interface(
         unit_proxy, dbus_interface='org.freedesktop.DBus.Properties')
