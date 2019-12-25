@@ -384,7 +384,7 @@ def define_tables(meta):
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('key', String(255)),
-        Column('value', String(255)),
+        Column('value', Text()),
         Column('value_type', String(36)),
         Column('display_description', String(255)),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
