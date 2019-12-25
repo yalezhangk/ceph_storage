@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from oslo_log import log as logging
 from oslo_utils import strutils
 from oslo_utils import timeutils
@@ -224,6 +226,7 @@ class AlertLogHandler(AdminBaseHandler):
         before_time = alert_log_data.get('before_time')
         if not before_time:
             raise exc.InvalidInput(message="param 'before_time' is required")
+        datetime.strptime(before_time, '%Y-%m-%d %H:%M:%S')
         logger.info('begin alert_log set deleted')
         begin_action = self.begin_action(
             ctxt, Resource.ALERT_LOG, Action.DELETE)
