@@ -30,7 +30,6 @@ class AdminBaseHandler(object):
         self.container_namespace = objects.sysconfig.sys_config_get(
             ctxt, "image_namespace")
         self.map_util = ServiceMap(self.container_namespace)
-        self.ceph_cluster_status = {}
 
     def _wapper(self, fun, *args, **kwargs):
         try:
@@ -87,9 +86,13 @@ class AdminBaseHandler(object):
                      resource_name, action, finish_data['status'])
         begin_action.save()
 
+    def get_ceph_cluster_status(self, ctxt):
+        cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
+        return cluster.ceph_status
+
     def has_monitor_host(self, ctxt):
         cluster_id = ctxt.cluster_id
-        if not self.ceph_cluster_status.get(cluster_id):
+        if not self.get_ceph_cluster_status(ctxt):
             logger.warning('Could not connect to ceph cluster {}'.format(
                 cluster_id))
             return False
