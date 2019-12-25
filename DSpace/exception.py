@@ -230,7 +230,7 @@ class Invalid(StorException):
 
 
 class SSHAuthInvalid(Invalid):
-    message = _("SSH Authentication failed: ip(%(ip)s) password(%(password)s)")
+    message = _("SSH Authentication failed: ip(%(ip)s)")
     code = 400
 
 
