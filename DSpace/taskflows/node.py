@@ -1603,9 +1603,8 @@ class NodesCheck(object):
             admin_ip = item.get('ip_address')
             total[admin_ip], skip = self._check_ip_by_db(item)
             total[admin_ip]['admin_ip'] = admin_ip
-            if not skip:
-                node = self._get_node(item)
-                nodes.append(node)
+            node = self._get_node(item)
+            nodes.append(node)
 
         infos = self.get_infos(nodes)
         for info in six.itervalues(infos):
