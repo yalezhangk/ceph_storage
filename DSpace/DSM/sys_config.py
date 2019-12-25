@@ -3,6 +3,7 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.objects.fields import ConfigKey
@@ -45,8 +46,19 @@ class SysConfigHandler(AdminBaseHandler):
                                    chrony_server, status, err_msg=str(e))
                 raise e
 
+    def _gateway_check(self, ctxt):
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={"role_object_gateway": True})
+        if nodes:
+            raise exception.InvalidInput(
+                _("Object gateway role has been set, "
+                  "please remove all object gateway role")
+            )
+
     def update_sysinfo(self, ctxt, sysinfos):
         gateway_cidr = sysinfos.get('gateway_cidr')
+        if gateway_cidr:
+            self._gateway_check(ctxt)
         cluster_cidr = sysinfos.get('cluster_cidr')
         public_cidr = sysinfos.get('public_cidr')
         admin_cidr = sysinfos.get('admin_cidr')
