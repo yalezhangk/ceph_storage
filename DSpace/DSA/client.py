@@ -46,8 +46,8 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "check_dsa_status")
         return response
 
-    def ceph_osd_create(self, ctxt, osd):
-        response = self.call(ctxt, "ceph_osd_create", osd=osd)
+    def ceph_osd_create(self, ctxt, osd, configs):
+        response = self.call(ctxt, "ceph_osd_create", osd=osd, configs=configs)
         return response
 
     def get_osds_status(self, ctxt, osds):

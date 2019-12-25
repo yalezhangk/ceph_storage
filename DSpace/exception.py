@@ -466,3 +466,7 @@ class IPConnectError(StorException):
 
 class LockCreationFailed(StorException):
     message = _("%(msg)s")
+
+
+class OsdStatusNotUp(StorException):
+    message = _("Osd status not up")

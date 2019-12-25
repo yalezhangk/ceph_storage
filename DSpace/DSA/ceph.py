@@ -5,19 +5,24 @@ import logging
 import time
 from io import StringIO
 
+import six
+
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
-from DSpace.taskflows.node import NodeTask
 from DSpace.tools.ceph import CephTool
+from DSpace.tools.ceph_config import CephConfigTool
 from DSpace.tools.disk import DiskTool as DiskTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
 from DSpace.tools.service import Service as ServiceTool
+from DSpace.utils.cluster_config import CEPH_CONFIG_PATH
+from DSpace.utils.coordination import synchronized
 
 logger = logging.getLogger(__name__)
 
 
 class CephHandler(AgentBaseHandler):
+    @synchronized("ceph-config-{self.node.id}")
     def ceph_conf_write(self, context, content):
         logger.debug("Write Ceph Conf")
         client = self._get_executor()
@@ -56,7 +61,8 @@ class CephHandler(AgentBaseHandler):
 
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
-        ceph_tool.disk_clear_partition_table(osd.disk.name)
+        self._data_clear(client, osd.disk.name)
+        ceph_tool.osd_zap(osd.disk.name)
         ceph_tool.disk_prepare(**kwargs)
         return True
 
@@ -102,6 +108,9 @@ class CephHandler(AgentBaseHandler):
         logger.info("osd %s(osd.%s), clean", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
+        # deactivate
+        ceph_tool.osd_deactivate_flag(osd.osd_id)
+        logger.info("osd %s(osd.%s), set deactivate flag", osd.id, osd.osd_id)
         # stop
         ceph_tool.osd_stop(osd.osd_id)
         logger.info("osd %s(osd.%s), service stop", osd.id, osd.osd_id)
@@ -141,7 +150,28 @@ class CephHandler(AgentBaseHandler):
         osd_service = "ceph-osd@{}".format(osd.osd_id)
         service_tool.restart(osd_service)
 
-    def ceph_osd_create(self, context, osd):
+    @synchronized("ceph-config-{self.node.id}")
+    def ceph_config_set(self, context, configs):
+        logger.info("ceph config set: %s", configs)
+        client = self._get_executor()
+        config_tool = CephConfigTool(CEPH_CONFIG_PATH, client)
+        for group, key_values in six.iteritems(configs):
+            for key, value in six.iteritems(key_values):
+                config_tool.set_value(key, value, group)
+        config_tool.save()
+
+    @synchronized("ceph-config-{self.node.id}")
+    def ceph_config_clear_group(self, context, group):
+        logger.info("ceph config clear: %s", group)
+        client = self._get_executor()
+        config_tool = CephConfigTool(CEPH_CONFIG_PATH, client)
+        config_tool.clear_section(group)
+        config_tool.save()
+
+    def ceph_osd_create(self, context, osd, configs):
+        logger.info("ceph osd create: %s, disk(%s)",
+                    osd.osd_name, osd.disk.name)
+        self.ceph_config_set(context, configs)
         self.ceph_prepare_disk(context, osd)
         self.ceph_active_disk(context, osd)
         return osd
@@ -177,6 +207,8 @@ class CephHandler(AgentBaseHandler):
 
     def ceph_osd_destroy(self, context, osd):
         logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
+        # clear config
+        self.ceph_config_clear_group(context, osd.osd_name)
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
         # mark out
@@ -290,10 +322,6 @@ class CephHandler(AgentBaseHandler):
         file_tool.rm("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
         file_tool.rm("/etc/ceph/*.keyring")
         return True
-
-    def osd_create(self, ctxt, node, osd):
-        task = NodeTask(ctxt, node)
-        task.ceph_osd_install(osd)
 
     def ceph_config_update(self, ctxt, values):
         logger.debug('Update ceph config for this node')

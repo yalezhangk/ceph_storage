@@ -1,3 +1,7 @@
+from os import path
+
+CEPH_CONFIG_DIR = "/etc/ceph/"
+CEPH_CONFIG_PATH = path.join(CEPH_CONFIG_DIR, "ceph.conf")
 
 SUPPORT_CEPH_VERSION = [{
     "name": "luminous",

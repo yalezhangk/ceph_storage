@@ -8,6 +8,7 @@ from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.DSA.agent import service
+from DSpace.utils.coordination import COORDINATOR
 
 
 def main():
@@ -15,6 +16,7 @@ def main():
          version=version.version_string())
     logging.setup(CONF, "stor")
     objects.register_all()
+    COORDINATOR.start()
     service()
 
 
