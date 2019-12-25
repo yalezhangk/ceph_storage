@@ -29,13 +29,16 @@ class CronHandler(AdminBaseHandler):
         self.ctxt = context_tool.get_context()
         self.clusters = objects.ClusterList.get_all(self.ctxt)
         self.task_submit(self._check_ceph_cluster_status)
-        self.task_submit(self._osd_slow_requests_set_all)
+        self.task_submit(self._osd_slow_requests_get_all)
         self.task_submit(self._osd_tree_cron)
         self.task_submit(self._dsa_check_cron)
         self.task_submit(self._node_check_cron)
 
-    def _osd_slow_requests_set(self, ctxt):
-        while True:
+    def _osd_slow_requests_get(self):
+        for cluster in self.clusters:
+            ctxt = context_tool.get_context(cluster_id=cluster.id)
+            logger.info("Get cluster %s osds slow request "
+                        "from agent" % cluster.id)
             # 分组
             osds = objects.OsdList.get_all(ctxt, expected_attrs=['node'])
             osds.sort(key=itemgetter('node_id'))
@@ -68,7 +71,7 @@ class CronHandler(AdminBaseHandler):
                         total += len(data[i]["ops"])
                         data[i].pop("ops")
                 except exception.StorException as e:
-                    logger.exception("osd slow requests set error: %s", e)
+                    logger.exception("osd slow requests get error: %s", e)
                 res['slow_request_sum'].extend(data)
             # 集群慢请求汇总
             res['slow_request_total'] = total
@@ -77,14 +80,15 @@ class CronHandler(AdminBaseHandler):
             res["slow_request_ops"].sort(key=itemgetter('duration'),
                                          reverse=True)
             self.slow_requests.update({ctxt.cluster_id: res})
-            time.sleep(CONF.slow_request_get_time_interval)
 
-    def _osd_slow_requests_set_all(self):
-        for cluster in self.clusters:
-            ctxt = context_tool.get_context(cluster_id=cluster.id)
-            logger.info("Get cluster %s osds slow request "
-                        "from agent" % cluster.id)
-            self._osd_slow_requests_set(ctxt)
+    def _osd_slow_requests_get_all(self):
+        logger.debug("Start ceph cluster check crontab")
+        while True:
+            try:
+                self._osd_slow_requests_get()
+            except Exception as e:
+                logger.exception("Osd slow request set Exception: %s", e)
+            time.sleep(CONF.slow_request_get_time_interval)
 
     def _osd_tree_cron(self):
         logger.debug("Start osd check crontab")
