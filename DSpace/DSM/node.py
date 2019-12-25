@@ -161,6 +161,9 @@ class NodeHandler(AdminBaseHandler):
         if disk_partition_num:
             raise exc.InvalidInput(_("Please remove disk partition first!"))
 
+        if node.role_object_gateway:
+            self._rgw_uninstall_check(ctxt, node)
+
     def node_delete(self, ctxt, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
         # judge node could be delete
