@@ -661,6 +661,8 @@ class OsdHandler(AdminBaseHandler):
         for tmp_osd in osds:
             # get osd again, insure osd status is latest
             osd = objects.Osd.get_by_id(ctxt, tmp_osd.id, joined_load=True)
+            osd.status = s_fields.OsdStatus.REPLACING
+            osd.save()
             self._osd_disk_replace(ctxt, osd)
         disk.status = s_fields.DiskStatus.AVAILABLE
         disk.save()

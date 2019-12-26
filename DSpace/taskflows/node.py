@@ -717,6 +717,9 @@ class ContainerUninstallMixin(object):
             ctxt, ConfigKey.DSPACE_VERSION)
         docker_tool = DockerTool(ssh)
         container_name = '{}_{}'.format(image_namespace, container_name)
+        sys_tool = SystemTool(ssh)
+        if not sys_tool.check_package('docker'):
+            return
         status = docker_tool.status(container_name)
         if status:
             docker_tool.stop(container_name)

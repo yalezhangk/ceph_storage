@@ -280,7 +280,7 @@ class DiskHandler(AdminBaseHandler):
             logger.info('No disk found, slot: %s', slot)
             return
         # send websocket
-        msg = _('disk {} offline'.format(disk.name))
+        msg = _('disk %s offline') % disk.name
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, 'DISK_OFFLINE', msg)
         # create alert log
@@ -380,7 +380,7 @@ class DiskHandler(AdminBaseHandler):
             # check disk part table
             partitions = disk_info.get('partitions')
             if len(partitions) != disk.partition_num:
-                msg = _('disk %s plug partition different' % disk.name)
+                msg = _('disk %s plug partition different') % disk.name
                 logger.error(msg)
                 wb_client = WebSocketClientManager(context=ctxt).get_client()
                 wb_client.send_message(ctxt, disk, 'DISK_ONLINE_ERROR', msg)
@@ -392,7 +392,7 @@ class DiskHandler(AdminBaseHandler):
                     ctxt, partition.get('uuid'), disk.node_id,
                     expected_attrs=['node', 'disk'])
                 if not disk_partition:
-                    msg = _('disk %s plug partition different' % disk.name)
+                    msg = _('disk %s plug partition different') % disk.name
                     logger.error(msg)
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
@@ -470,7 +470,7 @@ class DiskHandler(AdminBaseHandler):
             else:
                 logger.error("Disk role type error")
         # send websocket
-        msg = _('disk {} online'.format(disk.name))
+        msg = _('disk %s online') % disk.name
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, 'DISK_ONLINE', msg)
         # create alert log
