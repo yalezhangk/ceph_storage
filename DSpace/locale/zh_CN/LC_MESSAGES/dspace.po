@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-26 10:29-0500\n"
+"POT-Creation-Date: 2019-12-26 18:00+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -420,6 +420,9 @@ msgstr "参数 'smtp' 未找到"
 msgid "New password not allow equal to old password"
 msgstr "新密码不能与旧密码相同"
 
+msgid "DSA service in node(%s) not available"
+msgstr "节点（%s）上 DSA 服务不可用"
+
 msgid "has not active mon host, can not do any ceph actions"
 msgstr "健康状态监控节点不存在，无法进行任何Ceph操作"
 
@@ -533,6 +536,9 @@ msgstr "创建磁盘分区失败"
 
 msgid "Partition type not support"
 msgstr "分区类型不支持"
+
+msgid "Disk status not available"
+msgstr "磁盘状态不可用"
 
 msgid "remove disk partitions success"
 msgstr "移除磁盘分区成功"
@@ -1025,8 +1031,14 @@ msgstr "未知的排序方向，仅支持 'desc'或'asc'"
 msgid "Sort direction array size exceeds sort key array size."
 msgstr "排序方向数组大小超过排序键数组大小"
 
+msgid "Couldn't find ORM model for Persistent Versioned Object %s."
+msgstr "找不到持久版本对象的ORM模型%s"
+
 msgid "attribute %s not lazy-loadable"
 msgstr "%s 属性不是懒加载"
+
+msgid "VersionedObject %s does not support conditional update."
+msgstr "模型 %s 不支持有条件的更新。"
 
 msgid "Invalid config type"
 msgstr "不合法的配置类型"

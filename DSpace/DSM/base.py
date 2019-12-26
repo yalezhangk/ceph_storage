@@ -115,6 +115,22 @@ class AdminBaseHandler(object):
             cluster_id))
         return False
 
+    def is_agent_available(self, ctxt, node_id):
+        agents = objects.ServiceList.get_all(ctxt, filters={
+            'status':  s_fields.ServiceStatus.ACTIVE,
+            'name': "DSA",
+            'node_id': node_id
+        })
+        if agents:
+            return True
+        else:
+            return False
+
+    def check_agent_available(self, ctxt, node):
+        if not self.is_agent_available(ctxt, node.id):
+            raise exc.InvalidInput(_("DSA service in node(%s) not available"
+                                     ) % node.hostname)
+
     def check_mon_host(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
         if not has_mon_host:
