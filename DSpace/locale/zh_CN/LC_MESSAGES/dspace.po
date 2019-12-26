@@ -592,7 +592,10 @@ msgid "The storage role has not yet been installed"
 msgstr "存储角色还未安装"
 
 msgid "Node %s has osd!"
-msgstr "节点%s还有硬盘存在"
+msgstr "节点%s还有硬盘未删除"
+
+msgid "Node %s has accelerate disk!"
+msgstr "节点%s还有加速盘未删除"
 
 msgid "The admin role has been installed."
 msgstr "管理角色已被安装"

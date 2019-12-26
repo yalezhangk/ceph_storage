@@ -55,6 +55,8 @@ class RadosgwHandler(AdminBaseHandler):
         node_task = NodeTask(ctxt, node)
         node_infos = node_task.node_get_infos()
 
+        # Check if dsa alive
+        self.check_agent_available(ctxt, node)
         # Check if the role of node is role_object_gateway
         if not node.role_object_gateway:
             raise exception.InvalidInput(
@@ -248,7 +250,10 @@ class RadosgwHandler(AdminBaseHandler):
         self.finish_action(begin_action, radosgw.id, radosgw.name,
                            radosgw, status, err_msg=err_msg)
 
-    def _radosgw_delete_check(self, radosgw):
+    def _radosgw_delete_check(self, ctxt, radosgw):
+        # check if dsa alive
+        node = objects.Node.get_by_id(ctxt, radosgw.node_id)
+        self.check_agent_available(ctxt, node)
         # check radosgw router on radosgw
         if radosgw.router_id:
             raise exception.InvalidInput(
@@ -264,7 +269,7 @@ class RadosgwHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("Only available 、inactive 、stopped or error radosgw can "
                   "be deleted"))
-        self._radosgw_delete_check(radosgw)
+        self._radosgw_delete_check(ctxt, radosgw)
         begin_action = self.begin_action(
             ctxt, Resource.RADOSGW, Action.DELETE, radosgw)
         radosgw.status = s_fields.RadosgwStatus.DELETING

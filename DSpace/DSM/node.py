@@ -304,6 +304,13 @@ class NodeHandler(AdminBaseHandler):
         )
         if node_osds:
             raise exc.InvalidInput(_("Node %s has osd!") % node.hostname)
+        node_accelerate_disks = objects.DiskList.get_count(
+            ctxt,
+            filters={"node_id": node.id, "role": s_fields.DiskRole.ACCELERATE}
+        )
+        if node_accelerate_disks:
+            raise exc.InvalidInput(_("Node %s has accelerate "
+                                     "disk!") % node.hostname)
 
     def _mds_install_check(self, ctxt, node):
         if node.role_admin:
@@ -735,7 +742,7 @@ class NodeHandler(AdminBaseHandler):
         if node.status not in allowed_status:
             raise exc.InvalidInput(_("Only host's status is active can set "
                                      "role(host_name: %s)") % node.hostname)
-
+        self.check_agent_available(ctxt, node)
         i_roles = set(data.get('install_roles'))
         u_roles = set(data.get('uninstall_roles'))
         if not len(i_roles) and not len(u_roles):
