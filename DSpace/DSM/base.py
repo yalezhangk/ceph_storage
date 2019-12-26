@@ -1,3 +1,4 @@
+import json
 from concurrent import futures
 
 from oslo_log import log as logging
@@ -11,6 +12,7 @@ from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.base import StorObject
 from DSpace.objects.fields import ConfigKey
 from DSpace.utils.service_map import ServiceMap
 
@@ -43,14 +45,17 @@ class AdminBaseHandler(object):
                      before_obj=None):
         logger.debug('begin action, resource_type:%s, action:%s',
                      resource_type, action)
+        if isinstance(before_obj, StorObject):
+            before_data = json.dumps(before_obj.to_dict())
+        else:
+            before_data = json.dumps(before_obj)
         action_data = {
             'begin_time': timeutils.utcnow(),
             'client_ip': ctxt.client_ip,
             'user_id': ctxt.user_id,
             'resource_type': resource_type,
             'action': action,
-            'before_data': (objects.json_encode(before_obj)
-                            if before_obj else None),
+            'before_data': (before_data if before_data else None),
             'cluster_id': ctxt.cluster_id
         }
         action_log = objects.ActionLog(ctxt, **action_data)
@@ -61,11 +66,14 @@ class AdminBaseHandler(object):
                       resource_name=None, after_obj=None, status=None,
                       action=None, err_msg=None, diff_data=None,
                       *args, **kwargs):
+        if isinstance(after_obj, StorObject):
+            after_data = json.dumps(after_obj.to_dict())
+        else:
+            after_data = json.dumps(after_obj)
         finish_data = {
             'resource_id': resource_id,
             'resource_name': resource_name,
-            'after_data': (objects.json_encode(after_obj) if
-                           after_obj else None),
+            'after_data': (after_data if after_data else None),
             'status': 'success',
             'finish_time': timeutils.utcnow(),
             'err_msg': err_msg,
