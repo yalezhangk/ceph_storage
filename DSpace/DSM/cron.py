@@ -171,15 +171,7 @@ class CronHandler(AdminBaseHandler):
                     osd.save()
                     self.task_submit(self._restart_osd, context, osd)
                     return
-            elif status == "out&up":
-                if osd.status in [s_fields.OsdStatus.OFFLINE]:
-                    return
-                msg = _("osd.{} is offline").format(osd.osd_id)
-                self.send_service_alert(context, osd, "osd_status", "Osd",
-                                        "WARN", msg, "OSD_OFFLINE")
-                osd.status = s_fields.OsdStatus.OFFLINE
-                osd.save()
-            elif status == "out&down":
+            elif status == "out&up" or status == "out&down":
                 if osd.status in [s_fields.OsdStatus.OFFLINE,
                                   s_fields.OsdStatus.ERROR]:
                     return
