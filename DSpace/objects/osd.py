@@ -75,6 +75,12 @@ class Osd(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    def need_size(self):
+        if self.status in [s_fields.OsdStatus.ACTIVE,
+                           s_fields.OsdStatus.WARNING]:
+            return True
+        return False
+
     @classmethod
     def get_by_osd_id(cls, context, osd_id, expected_attrs=None):
         kwargs = {}
