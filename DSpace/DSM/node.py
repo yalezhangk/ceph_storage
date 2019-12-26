@@ -74,13 +74,17 @@ class NodeHandler(AdminBaseHandler):
 
         try:
             if node.role_monitor:
-                self._mon_uninstall(ctxt, node)
+                if self._mon_uninstall(ctxt, node) != 'success':
+                    raise exc.NodeRolesUpdateError(node=node.hostname)
             if node.role_storage:
-                self._storage_uninstall(ctxt, node)
+                if self._storage_uninstall(ctxt, node) != 'success':
+                    raise exc.NodeRolesUpdateError(node=node.hostname)
             if node.role_block_gateway:
-                self._bgw_uninstall(ctxt, node)
+                if self._bgw_uninstall(ctxt, node) != 'success':
+                    raise exc.NodeRolesUpdateError(node=node.hostname)
             if node.role_object_gateway:
-                self._rgw_uninstall(ctxt, node)
+                if self._rgw_uninstall(ctxt, node) != 'success':
+                    raise exc.NodeRolesUpdateError(node=node.hostname)
 
             node_task.ceph_package_uninstall()
             node_task.chrony_uninstall()
@@ -434,8 +438,8 @@ class NodeHandler(AdminBaseHandler):
 
     def _mon_install(self, ctxt, node):
         logger.info("mon install on node %s, ip:%s", node.id, node.ip_address)
-        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
-        node.save()
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         mon_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_monitor": True}
         )
@@ -470,8 +474,10 @@ class NodeHandler(AdminBaseHandler):
             node_task.prometheus_target_config(action='add', service='mgr')
             self._sync_ceph_configs(ctxt)
             self._create_mon_service(ctxt, node)
-            msg = _("set mon role success: {}").format(node.hostname)
+            msg = _("node %s: set mon role success") % node.hostname
             op_status = "SET_ROLE_MON_SUCCESS"
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('set mon role failed %s', e)
             # restore monitor
@@ -488,12 +494,16 @@ class NodeHandler(AdminBaseHandler):
             self._set_ceph_conf(
                 ctxt, key="mon_initial_members", value=mon_initial_members,
                 value_type='string')
-            msg = _("set mon role error {}").format(str(e))
+            msg = _("node %s: set mon role error") % node.hostname
             op_status = "SET_ROLE_MON_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        return node
+        return status
 
     def _remove_mon_services(self, ctxt, node):
         services = objects.ServiceList.get_all(
@@ -504,8 +514,8 @@ class NodeHandler(AdminBaseHandler):
     def _mon_uninstall(self, ctxt, node):
         logger.info("mon uninstall on node %s, ip:%s",
                     node.id, node.ip_address)
-        node.status = s_fields.NodeStatus.REMOVING_ROLE
-        node.save()
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         task = NodeTask(ctxt, node)
         try:
             self._remove_mon_services(ctxt, node)
@@ -513,60 +523,78 @@ class NodeHandler(AdminBaseHandler):
             node.role_monitor = False
             node.save()
             self._sync_ceph_configs(ctxt)
-            msg = _("unset mon role success: {}").format(node.hostname)
+            msg = _("node %s: unset mon role success") % node.hostname
             op_status = "UNSET_ROLE_MON_SUCCESS"
             task.prometheus_target_config(action='remove', service='mgr')
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('unset mon role failed %s', e)
-            msg = _("unset mon role error {}").format(str(e))
+            msg = _("node %s: unset mon role error") % node.hostname
             op_status = "UNSET_ROLE_MON_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        return node
+        return status
 
     def _storage_install(self, ctxt, node):
         logger.info("storage install on node %s, ip:%s",
                     node.id, node.ip_address)
-        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
-        node.save()
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         node_task = NodeTask(ctxt, node)
         try:
             node_task.ceph_osd_package_install()
             node.role_storage = True
             node.save()
-            msg = _("set storage role success: {}").format(node.hostname)
+            msg = _("node %s: set storage role success") % node.hostname
             op_status = "SET_ROLE_STORAGE_SUCCESS"
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('set storage role failed %s', e)
             node_task.ceph_osd_package_uninstall()
-            msg = _("set storage role error {}").format(str(e))
+            msg = _("node %s: set storage role error") % node.hostname
             op_status = "SET_ROLE_STORAGE_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        return node
+        return status
 
     def _storage_uninstall(self, ctxt, node):
         logger.info("storage uninstall on node %s, ip:%s",
                     node.id, node.ip_address)
-        node.status = s_fields.NodeStatus.REMOVING_ROLE
-        node.save()
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         try:
             node_task = NodeTask(ctxt, node)
             node_task.ceph_osd_package_uninstall()
             node.role_storage = False
             node.save()
-            msg = _("unset storage role success: {}").format(node.hostname)
+            msg = _("node %s: unset storage role success") % node.hostname
             op_status = "UNSET_ROLE_STORAGE_SUCCESS"
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('unset storage role failed %s', e)
-            msg = _("unset storage role error {}").format(str(e))
+            msg = _("node %s: unset storage role error") % node.hostname
             op_status = "UNSET_ROLE_STORAGE_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        return node
+        return status
 
     def _mds_install(self, ctxt, node):
         pass
@@ -577,54 +605,64 @@ class NodeHandler(AdminBaseHandler):
     def _rgw_install(self, ctxt, node):
         logger.info("rgw install on node %s, ip:%s",
                     node.id, node.ip_address)
-        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
-        node.save()
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         node_task = NodeTask(ctxt, node)
         try:
             node_task.ceph_rgw_package_install()
             node.role_object_gateway = True
             node.save()
-            msg = _("set rgw role success: {}").format(node.hostname)
+            msg = _("node %s: set rgw role success") % node.hostname
             op_status = "SET_ROLE_RGW_SUCCESS"
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('set rgw role failed %s', e)
             node_task.ceph_rgw_package_uninstall()
-            msg = _("set rgw role error {}").format(str(e))
+            msg = _("node %s: set rgw role error") % node.hostname
             op_status = "SET_ROLE_RGW_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        return node
+        return status
 
     def _rgw_uninstall(self, ctxt, node):
         logger.info("rgw uninstall on node %s, ip:%s",
                     node.id, node.ip_address)
-        node.status = s_fields.NodeStatus.REMOVING_ROLE
-        node.save()
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
         try:
             node_task = NodeTask(ctxt, node)
             node_task.ceph_rgw_package_uninstall()
             node.role_object_gateway = False
             node.save()
-            msg = _("unset rgw role success: {}").format(node.hostname)
+            msg = _("node %s: unset rgw role success") % node.hostname
             op_status = "UNSET_ROLE_RGW_SUCCESS"
+            status = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception('unset rgw role failed %s', e)
-            msg = _("unset rgw role error {}").format(str(e))
+            msg = _("node %s: unset rgw role error") % node.hostname
             op_status = "UNSET_ROLE_RGW_ERROR"
+            status = 'fail'
+            err_msg = str(e)
         # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
-        return node
+        return status
 
     def _bgw_install(self, ctxt, node):
-        node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         node.role_block_gateway = True
         node.save()
         return node
 
     def _bgw_uninstall(self, ctxt, node):
-        node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.role_block_gateway = False
         node.save()
         return node
@@ -634,7 +672,7 @@ class NodeHandler(AdminBaseHandler):
         node = objects.Node.get_by_id(ctxt, node.id)
         self.notify_node_update(ctxt, node)
 
-    def _node_roles_set(self, ctxt, node, i_roles, u_roles, begin_action):
+    def _node_roles_set(self, ctxt, node, i_roles, u_roles):
         install_role_map = {
             'monitor': self._mon_install,
             'storage': self._storage_install,
@@ -651,32 +689,29 @@ class NodeHandler(AdminBaseHandler):
         }
         try:
             for role in i_roles:
+                node.status = s_fields.NodeStatus.DEPLOYING_ROLE
+                node.save()
                 func = install_role_map.get(role)
                 func(ctxt, node)
             for role in u_roles:
+                node.status = s_fields.NodeStatus.REMOVING_ROLE
+                node.save()
                 func = uninstall_role_map.get(role)
                 func(ctxt, node)
-            status = s_fields.NodeStatus.ACTIVE
             logger.info('set node roles success')
-            msg = _("set roles success: {}").format(node.hostname)
-            err_msg = None
+            msg = _("node %s: set roles success") % node.hostname
             op_status = "SET_ROLES_SUCCESS"
         except Exception as e:
-            status = s_fields.NodeStatus.ACTIVE
             logger.exception('set node roles failed %s', e)
-            msg = _("set roles error {}").format(str(e))
-            err_msg = str(e)
+            msg = _("node %s: set roles error") % node.hostname
             op_status = "SET_ROLES_ERROR"
-        node.status = status
+        node.status = s_fields.NodeStatus.ACTIVE
         node.save()
         # notify dsa to update node info
         try:
             self._notify_dsa_update(ctxt, node)
         except Exception as e:
             logger.error("Update dsa node info failed: %s", e)
-
-        self.finish_action(begin_action, node.id, node.hostname,
-                           node, status, err_msg=err_msg)
 
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -695,7 +730,9 @@ class NodeHandler(AdminBaseHandler):
                                      " same time"))
 
         node = objects.Node.get_by_id(ctxt, node_id)
-        if node.status != s_fields.NodeStatus.ACTIVE:
+        allowed_status = [s_fields.NodeStatus.ACTIVE,
+                          s_fields.NodeStatus.WARNING]
+        if node.status not in allowed_status:
             raise exc.InvalidInput(_("Only host's status is active can set "
                                      "role(host_name: %s)") % node.hostname)
 
@@ -740,11 +777,8 @@ class NodeHandler(AdminBaseHandler):
         else:
             node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.save()
-        begin_action = self.begin_action(
-            ctxt, Resource.NODE, Action.SET_ROLES, node)
         logger.info('node %s roles check pass', node.hostname)
-        self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles,
-                         begin_action)
+        self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles)
         return node
 
     def _node_create(self, ctxt, node, data):
@@ -773,14 +807,14 @@ class NodeHandler(AdminBaseHandler):
             status = s_fields.NodeStatus.ACTIVE
             logger.info('create node success, node ip: {}'.format(
                         node.ip_address))
-            msg = _("node create success")
+            msg = _("node {} create success").format(node.hostname)
             op_status = "CREATE_SUCCESS"
             err_msg = None
         except Exception as e:
             status = s_fields.NodeStatus.ERROR
             logger.exception('create node error, node ip: %s, reason: %s',
                              node.ip_address, e)
-            msg = _("node create error, reason: {}").format(str(e))
+            msg = _("node {} create error").format(node.hostname)
             err_msg = str(e)
             op_status = "CREATE_ERROR"
         node.status = status

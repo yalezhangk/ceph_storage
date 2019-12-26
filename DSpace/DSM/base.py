@@ -1,4 +1,3 @@
-import sys
 from concurrent import futures
 
 from oslo_log import log as logging
@@ -78,8 +77,6 @@ class AdminBaseHandler(object):
             if status in ['active', 'success', 'available']:
                 finish_data.update({'status': 'success'})
             else:
-                if self.debug_mode:
-                    sys.exit(1)
                 finish_data.update({'status': 'fail'})
         begin_action.update(finish_data)
         logger.debug('finish action, resource_name:%s, action:%s, status:%s',

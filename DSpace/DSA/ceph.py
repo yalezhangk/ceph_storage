@@ -15,6 +15,7 @@ from DSpace.tools.disk import DiskTool as DiskTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
 from DSpace.tools.service import Service as ServiceTool
+from DSpace.tools.system import System as SystemTool
 from DSpace.utils.cluster_config import CEPH_CONFIG_PATH
 from DSpace.utils.coordination import synchronized
 
@@ -85,9 +86,10 @@ class CephHandler(AgentBaseHandler):
     def ceph_osd_package_uninstall(self, context):
         logger.info('uninstall ceph-osd package')
         client = self._get_ssh_executor()
-        # install package
+        # uninstall package
         package_tool = PackageTool(client)
-        package_tool.uninstall(["ceph-osd"])
+        osd_packages = ['ceph-osd']
+        package_tool.uninstall_nodeps(osd_packages)
         # remove osd dir
         file_tool = FileTool(client)
         file_tool.rm("/var/lib/ceph/osd/")
@@ -96,9 +98,21 @@ class CephHandler(AgentBaseHandler):
     def ceph_package_uninstall(self, context):
         logger.info('uninstall ceph package')
         client = self._get_ssh_executor()
-        # install package
-        ceph_tool = CephTool(client)
-        ceph_tool.ceph_package_uninstall()
+        # uninstall package
+        package_tool = PackageTool(client)
+        ceph_packages = [
+            'ceph-resource-agents', 'ceph', 'ceph-base', 'ceph-common',
+            'ceph-selinux', 'ceph-mds', 'ceph-mon', 'ceph-osd', 'ceph-mgr',
+            'libcephfs2', 'libcephfs-devel', 'python-cephfs',
+            'libcephfs_jni1-devel', 'libcephfs_jni1', 'cephfs-java',
+            'librbd1', 'librbd-devel', 'python-rbd', 'rbd-fuse',
+            'rbd-nbd', 'rbd-mirror', 'librgw2', 'librgw-devel',
+            'python-rgw', 'librados2', 'librados-devel',
+            'libradosstriper1-devel', 'python-rados', 'libradosstriper1',
+            'ceph-radosgw', 'python-ceph-compat', 'ceph-fuse',
+            'ceph-libs-compat', 'ceph-devel-compat'
+        ]
+        package_tool.uninstall_nodeps(ceph_packages)
         file_tool = FileTool(client)
         file_tool.rm("/var/lib/ceph/")
         file_tool.rm("/etc/ceph/")
@@ -303,7 +317,9 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # remove mon service
         ceph_tool = CephTool(client)
-        ceph_tool.mon_remove(self.node.hostname)
+        sys_tool = SystemTool(client)
+        if sys_tool.check_package('ceph-mon'):
+            ceph_tool.mon_remove(self.node.hostname)
         # stop and disable ceph-mon
         service_tool = ServiceTool(client)
         service_tool.stop("ceph-mon@{}".format(self.node.hostname))
@@ -313,8 +329,10 @@ class CephHandler(AgentBaseHandler):
         service_tool.stop("ceph-mds@{}".format(self.node.hostname))
         service_tool.disable("ceph-mds@{}".format(self.node.hostname))
 
+        # uninstall package
         package_tool = PackageTool(client)
-        package_tool.uninstall(["ceph-mon", "ceph-mgr", "ceph-mds"])
+        mon_packages = ['ceph-mon', 'ceph-mgr', 'ceph-mgr-dspace', 'ceph-mds']
+        package_tool.uninstall_nodeps(mon_packages)
         # remove mon and dir
         file_tool = FileTool(client)
         file_tool.rm("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))

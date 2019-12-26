@@ -52,6 +52,21 @@ class YumPackage(PackageBase):
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
+    def uninstall_nodeps(self, packages):
+        logger.debug("Uninstall Package: {}".format(packages))
+        for package in packages:
+            cmd = ["rpm", "-e", "--nodeps", package]
+            rc, stdout, stderr = self.run_command(cmd)
+            if rc == 0:
+                logger.info("uninstall package: %s success", package)
+                continue
+            elif rc == 1:
+                logger.info("uninstall package: %s notfound", package)
+                continue
+            else:
+                raise RunCommandError(cmd=cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+
     def clean(self):
         logger.debug("Clean all Package cache")
         cmd = ["yum", "clean", 'all']
@@ -73,6 +88,9 @@ class Package(ToolBase):
 
     def uninstall(self, names, **kwargs):
         self.tool.uninstall(names=names, **kwargs)
+
+    def uninstall_nodeps(self, packages, **kwargs):
+        self.tool.uninstall_nodeps(packages=packages, **kwargs)
 
     def clean(self):
         self.tool.clean()
