@@ -118,6 +118,9 @@ class PrometheusTool(object):
         """Get metrics from prometheus
         Returns: metrics value
         """
+        filter = filter or {}
+        if "cluster_id" not in filter.keys():
+            filter['cluster_id'] = self.ctxt.cluster_id
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
@@ -160,6 +163,9 @@ class PrometheusTool(object):
         """Get metrics from prometheus
         Returns: metrics value
         """
+        filter = filter or {}
+        if "cluster_id" not in filter.keys():
+            filter['cluster_id'] = self.ctxt.cluster_id
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query_rang(
