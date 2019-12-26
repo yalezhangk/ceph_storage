@@ -95,6 +95,22 @@ class StorPersistentObject(object):
             logger.exception("Failed to initialize object.")
             raise exception.ProgrammingError(reason=msg)
 
+    def to_dict(self, optional=False):
+        _obj = {}
+        for k, field in six.iteritems(self.fields):
+            if k in self.OPTIONAL_FIELDS and not optional:
+                continue
+            v = getattr(self, k)
+            if isinstance(v, datetime.datetime):
+                local_time = utc_to_local(v, CONF.time_zone)
+                v = datetime.datetime.isoformat(local_time)
+            elif isinstance(v, netaddr.IPAddress):
+                v = str(v)
+            elif isinstance(field, fields.SensitiveStringField):
+                v = "***"
+            _obj[k] = v
+        return _obj
+
     @classmethod
     def _get_expected_attrs(cls, context, *args, **kwargs):
         return cls.OPTIONAL_FIELDS
@@ -265,18 +281,7 @@ class StorObjectSerializer(base.VersionedObjectSerializer):
 class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, StorPersistentObject):
-            _obj = {}
-            for k, field in six.iteritems(obj.fields):
-                v = getattr(obj, k)
-                if isinstance(v, datetime.datetime):
-                    local_time = utc_to_local(v, CONF.time_zone)
-                    v = datetime.datetime.isoformat(local_time)
-                elif isinstance(v, netaddr.IPAddress):
-                    v = str(v)
-                elif isinstance(field, fields.SensitiveStringField):
-                    v = "***"
-                _obj[k] = v
-            return _obj
+            return obj.to_dict(optional=True)
 
         if isinstance(obj, ObjectListBase):
             return list(obj)
