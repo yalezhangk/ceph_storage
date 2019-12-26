@@ -88,7 +88,7 @@ class StorPersistentObject(object):
         # they don't, then we have a problem and we must raise an exception on
         # registration.
         try:
-            cls.model = db.get_model_for_versioned_object(cls)
+            cls._db_model = db.get_model_for_versioned_object(cls)
         except (ImportError, AttributeError):
             msg = _("Couldn't find ORM model for Persistent Versioned "
                     "Object %s.") % cls.obj_name()
@@ -200,7 +200,7 @@ class StorPersistentObject(object):
             changes.update(values)
             values = changes
 
-        result = db.conditional_update(self._context, self.model, values,
+        result = db.conditional_update(self._context, self._db_model, values,
                                        expected, filters, order=order)
 
         # If we were able to update the DB then we need to update this object
@@ -241,7 +241,7 @@ class StorPersistentObject(object):
 
     @classmethod
     def exists(cls, context, id_):
-        return db.resource_exists(context, cls.model, id_)
+        return db.resource_exists(context, cls._db_model, id_)
 
 
 class StorComparableObject(base.ComparableVersionedObject):
