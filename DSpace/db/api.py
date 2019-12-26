@@ -1166,6 +1166,10 @@ def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 
 
+def get_model_for_versioned_object(versioned_object):
+    return IMPL.get_model_for_versioned_object(versioned_object)
+
+
 def get_by_id(context, model, id, *args, **kwargs):
     return IMPL.get_by_id(context, model, id, *args, **kwargs)
 
@@ -1232,7 +1236,7 @@ def is_orm_value(obj):
 
 
 def conditional_update(context, model, values, expected_values, filters=(),
-                       include_deleted='no', project_only=False, order=None):
+                       include_deleted='no', order=None):
     """Compare-and-swap conditional update.
 
     Update will only occur in the DB if conditions are met.
@@ -1279,10 +1283,8 @@ def conditional_update(context, model, values, expected_values, filters=(),
     :param filters: Iterable with additional filters.
     :param include_deleted: Should the update include deleted items, this is
                             equivalent to read_deleted.
-    :param project_only: Should the query be limited to context's project.
     :param order: Specific order of fields in which to update the values
     :returns: Number of db rows that were updated.
     """
     return IMPL.conditional_update(context, model, values, expected_values,
-                                   filters, include_deleted, project_only,
-                                   order)
+                                   filters, include_deleted, order)

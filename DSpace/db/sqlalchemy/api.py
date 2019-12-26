@@ -4673,6 +4673,16 @@ def resource_exists(context, model, resource_id, session=None):
     return query.scalar()
 
 
+def get_model_for_versioned_object(versioned_object):
+    if isinstance(versioned_object, six.string_types):
+        model_name = versioned_object
+    else:
+        model_name = versioned_object.obj_name()
+    if model_name == "License":
+        return getattr(models, "LicenseFile")
+    return getattr(models, model_name)
+
+
 def _get_get_method(model):
     # Exceptions to model to get methods, in general method names are a simple
     # conversion changing ORM name from camel case to snake format and adding
