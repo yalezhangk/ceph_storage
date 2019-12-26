@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-19 12:30-0500\n"
+"POT-Creation-Date: 2019-12-26 10:52+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -717,9 +717,6 @@ msgstr "%s 不支持 filestore"
 msgid "%s not support cache"
 msgstr "%s 不支持 filestore"
 
-msgid "No active monitor"
-msgstr "没有健康的主控节点"
-
 msgid "Max osd num is %s"
 msgstr "最大硬盘数为 %s"
 
@@ -1061,6 +1058,33 @@ msgstr "Ceph cluster_network 与集群存储网络配置不同"
 msgid "Admin ip(%s) alreay in platform"
 msgstr "管理网Ip(%s) 在平台中已经存在"
 
+msgid "Admin IP, Gateway IP, Public IP and Cluster IP is required"
+msgstr "Admin IP、Gateway IP、Public IP和Cluster IP是必须的"
+
+msgid "Admin IP already exists!"
+msgstr "Admin IP已存在"
+
+msgid "Admin IP not in admin cidr ({})"
+msgstr "Admin IP不在管理网络网段内"
+
+msgid "Cluster IP already exists!"
+msgstr "Cluster IP已存在"
+
+msgid "Cluster IP not in cluster cidr ({})"
+msgstr "Cluster IP不在存储网络网段内"
+
+msgid "Public IP already exists!"
+msgstr "Public IP已存在"
+
+msgid "public ip not in public cidr ({})"
+msgstr "Public IP不在业务网络网段内"
+
+msgid "Gateway IP already exists!"
+msgstr "Gateway IP已存在"
+
+msgid "Gateway IP not in gateway cidr ({})"
+msgstr "Gateway IP不在网关网络网段内"
+
 msgid "SSH Error: %s"
 msgstr "SSH错误：%s"
 
@@ -1090,42 +1114,3 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-msgid "accelerate disk %s is replacing, please wait"
-msgstr "加速盘%s正在换盘中, 请稍等"
-
-msgid "osd.%s is replacing, please wait"
-msgstr "osd.%s正在换盘中, 请稍等"
-
-msgid "Please remove the Object storage gateway first"
-msgstr "请先移除对象存储网关"
-
-msgid "Object gateway role has been set, please remove all object gateway role"
-msgstr "对象存储网关角色已设置，请先移除所有的网关角色"
-
-msgid "Admin IP, Gateway IP, Public IP and Cluster IP is required"
-msgstr "Admin IP、Gateway IP、Public IP和Cluster IP是必须的"
-
-msgid "Admin IP already exists!"
-msgstr "Admin IP已存在"
-
-msgid "Admin IP not in admin cidr ({})"
-msgstr "Admin IP不在管理网络网段内"
-
-msgid "Cluster IP already exists!"
-msgstr "Cluster IP已存在"
-
-msgid "Cluster IP not in cluster cidr ({})"
-msgstr "Cluster IP不在存储网络网段内"
-
-msgid "Public IP already exists!"
-msgstr "Public IP已存在"
-
-msgid "Public IP not in public cidr ({})"
-msgstr "Public IP不在业务网络网段内"
-
-msgid "Gateway IP already exists!"
-msgstr "Gateway IP已存在"
-
-msgid "Gateway IP not in gateway cidr ({})"
-msgstr "Gateway IP不在网关网络网段内"
