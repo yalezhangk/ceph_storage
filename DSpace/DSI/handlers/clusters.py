@@ -53,7 +53,10 @@ class ClusterListHandler(BaseAPIHandler):
 
         """
         ctxt = self.get_context()
-        clusters = objects.ClusterList.get_all(ctxt)
+        exact_filters = ['status']
+        fuzzy_filters = ['display_name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
+        clusters = objects.ClusterList.get_all(ctxt, filters=filters)
         self.write(objects.json_encode({
             "clusters": clusters
         }))
