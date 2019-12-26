@@ -826,6 +826,7 @@ class NodeHandler(AdminBaseHandler):
             password=data.get('password'),
             cluster_ip=data.get('cluster_ip'),
             public_ip=data.get('public_ip'),
+            object_gateway_ip_address=data.get('gateway_ip'),
             status=s_fields.NodeStatus.CREATING)
         node.create()
         self.task_submit(self._node_create, ctxt, node, data)

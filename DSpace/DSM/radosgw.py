@@ -155,7 +155,6 @@ class RadosgwHandler(AdminBaseHandler):
             radosgw = task.ceph_rgw_install(radosgw, zone_params)
             radosgw.status = s_fields.RadosgwStatus.ACTIVE
             radosgw.save()
-            node.object_gateway_ip_address = radosgw.ip_address
             node.save()
             self.notify_node_update(ctxt, node)
             logger.info("client.rgw.%s create success", radosgw.name)
