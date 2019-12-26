@@ -2,6 +2,7 @@ import base64
 import os
 import struct
 import time
+import uuid
 
 import six
 from netaddr import IPAddress
@@ -367,8 +368,9 @@ class NodeHandler(AdminBaseHandler):
         cluster_network = objects.sysconfig.sys_config_get(
             ctxt, key="cluster_cidr"
         )
+        fsid = str(uuid.uuid4())
         init_configs = {
-            'fsid': {'type': 'string', 'value': ctxt.cluster_id},
+            'fsid': {'type': 'string', 'value': fsid},
             'osd_objectstore': {'type': 'string', 'value': 'bluestore',
                                 'group': 'mon'},
             'public_network': {'type': 'string', 'value': public_network},
