@@ -212,7 +212,7 @@ class StorPersistentObject(object):
         # If we want to save any additional changes the object has besides the
         # ones referred in values
         if save_all:
-            changes = self.cinder_obj_get_changes()
+            changes = self.stor_obj_get_changes()
             changes.update(values)
             values = changes
 
