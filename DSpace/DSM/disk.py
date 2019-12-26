@@ -577,7 +577,6 @@ class DiskHandler(AdminBaseHandler):
                     disk.status = s_fields.DiskStatus.AVAILABLE
                 disk.name = data.get('name')
                 disk.size = data.get('size')
-                disk.type = data.get('type', s_fields.DiskType.HDD)
                 disk.save()
                 logger.info("Update node_id %s disk %s: %s",
                             node_id, slot, data)
