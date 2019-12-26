@@ -310,8 +310,8 @@ def _get_pkg_version_by_yum(pkg):
     available = None
 
     try:
-        data = yb.doPackageLists(pkgnarrow='available', patterns=PKGS)
-        for item in data.available:
+        data = yb.pkgSack.returnPackages(patterns=PKGS)
+        for item in data:
             available = {
                 "version": item.version,
                 "release": item.release.split('.')[0]
