@@ -967,6 +967,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin):
             ctxt, ConfigKey.ADMIN_PORT)
         agent_port = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.AGENT_PORT)
+        dsa_run_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSA_RUN_DIR)
         socket_file = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSA_SOCKET_FILE)
 
@@ -978,6 +980,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin):
             agent_port=agent_port,
             node_id=node.id,
             cluster_id=node.cluster_id,
+            dsa_run_dir=dsa_run_dir,
             socket_file=socket_file
         )
         return dsa_conf
