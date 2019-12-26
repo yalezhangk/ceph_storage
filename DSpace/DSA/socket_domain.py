@@ -23,9 +23,11 @@ class SocketDomainHandler(AgentBaseHandler):
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         if not self.sock:
             raise exception.StorException("socket get error: %s", self.sock)
-        socket_file = CONF.socket_file
         file_tool = FileTool(self.ssh)
-        socket_file = file_tool.map(socket_file)
+        socket_file = file_tool.map(CONF.socket_file)
+        dsa_run_dir = file_tool.map(CONF.dsa_run_dir)
+        if not os.path.exists(dsa_run_dir):
+            os.mkdir(dsa_run_dir)
         if os.path.exists(socket_file):
             os.unlink(socket_file)
         if self.sock.bind(socket_file):
