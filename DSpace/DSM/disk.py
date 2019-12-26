@@ -220,7 +220,7 @@ class DiskHandler(AdminBaseHandler):
         disk.conditional_update({
             "status": s_fields.DiskStatus.PROCESSING
         }, expected_values={
-            "status": s_fields.DiskStatus.can_operation_status
+            "status": disk.can_operation_status
         })
         self.task_submit(self._disk_partitions_remove, ctxt, node, disk,
                          values, begin_action)
