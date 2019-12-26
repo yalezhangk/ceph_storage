@@ -309,6 +309,8 @@ class OsdHandler(AdminBaseHandler):
         # db create
         node_id = disk.node_id
         node = objects.Node.get_by_id(ctxt, node_id)
+        # check agent
+        self.check_agent_available(ctxt, node)
         begin_action = self.begin_action(ctxt, Resource.OSD, Action.CREATE)
         osd = objects.Osd(
             ctxt, node_id=node_id,
@@ -405,6 +407,8 @@ class OsdHandler(AdminBaseHandler):
         # check mon is ready
         self.check_mon_host(ctxt)
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        # check agent
+        self.check_agent_available(ctxt, osd.node)
         if osd.status not in [s_fields.OsdStatus.ACTIVE,
                               s_fields.OsdStatus.OFFLINE,
                               s_fields.OsdStatus.REPLACE_PREPARED,
