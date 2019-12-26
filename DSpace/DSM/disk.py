@@ -115,19 +115,25 @@ class DiskHandler(AdminBaseHandler):
                     disk_id=disk.id, cluster_id=disk.cluster_id,
                 )
                 partition.create()
-            disk.save()
             msg = _("create disk partitions success")
             op_status = "CREATE_PART_SUCCESS"
-            status = 'success'
+            action_status = 'success'
+            status = s_fields.DiskStatus.AVAILABLE
         else:
             msg = _("create disk partitions failed")
-            status = 'fail'
+            action_status = 'fail'
+            status = s_fields.DiskStatus.ERROR
             op_status = "CREATE_PART_ERROR"
+        disk.conditional_update({
+            "status": status
+        }, expected_values={
+            "status": s_fields.DiskStatus.PROCESSING
+        }, save_all=True)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, op_status, msg)
         self.finish_action(begin_action, disk.id, disk.name,
-                           disk, status)
+                           disk, action_status)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
         ceph_version = objects.sysconfig.sys_config_get(
@@ -149,6 +155,13 @@ class DiskHandler(AdminBaseHandler):
             if values['partition_role'] not in luminous_support_type:
                 raise exception.InvalidInput(_("Partition type not support"))
         disk = objects.Disk.get_by_id(ctxt, disk_id)
+        if not disk.can_operation():
+            raise exception.InvalidInput(_("Disk status not available"))
+        disk.conditional_update({
+            "status": s_fields.DiskStatus.PROCESSING
+        }, expected_values={
+            "status": disk.can_operation_status
+        })
         begin_action = self.begin_action(
             ctxt, Resource.DISK, Action.CREATE, disk)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
@@ -173,8 +186,6 @@ class DiskHandler(AdminBaseHandler):
             disk.partition_num = 0
             disk.role = values['role']
             status = 'available'
-            disk.status = status
-            disk.save()
             msg = _("remove disk partitions success")
             op_status = "REMOVE_PART_SUCCESS"
         else:
@@ -182,6 +193,11 @@ class DiskHandler(AdminBaseHandler):
             msg = _("remove disk partitions failed")
             status = 'fail'
             op_status = "REMOVE_PART_ERROR"
+        disk.conditional_update({
+            "status": s_fields.DiskStatus.AVAILABLE
+        }, expected_values={
+            "status": s_fields.DiskStatus.PROCESSING
+        }, save_all=True)
         self.finish_action(begin_action, disk.id, disk.name,
                            disk, status)
         # send ws message
@@ -196,9 +212,16 @@ class DiskHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 reason=_('current disk:{} partition has used, '
                          'can not del').format(disk.name))
+        if not disk.can_operation():
+            raise exception.InvalidInput(_("Disk status not available"))
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         begin_action = self.begin_action(
             ctxt, Resource.DISK, Action.DELETE, disk)
+        disk.conditional_update({
+            "status": s_fields.DiskStatus.PROCESSING
+        }, expected_values={
+            "status": s_fields.DiskStatus.can_operation_status
+        })
         self.task_submit(self._disk_partitions_remove, ctxt, node, disk,
                          values, begin_action)
         return disk
