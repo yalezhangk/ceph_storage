@@ -1,3 +1,5 @@
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -55,6 +57,25 @@ class SysConfigHandler(AdminBaseHandler):
                   "please remove all object gateway role")
             )
 
+    def _update_gateway_ip(self, ctxt, gateway_cidr):
+        logger.info("Update object_gateway_ip_address for nodes")
+        nodes = objects.NodeList.get_all(ctxt)
+        for node in nodes:
+            if node.object_gateway_ip_address:
+                if (IPAddress(node.object_gateway_ip_address) not in
+                        IPNetwork(gateway_cidr)):
+                    node.object_gateway_ip_address = None
+                    node.save()
+            nets = objects.NetworkList.get_all(
+                ctxt, filters={"node_id": node.id})
+            for net in nets:
+                if not net.ip_address:
+                    continue
+                if IPAddress(net.ip_address) in IPNetwork(gateway_cidr):
+                    node.object_gateway_ip_address = net.ip_address
+                    node.save()
+                    break
+
     def update_sysinfo(self, ctxt, sysinfos):
         gateway_cidr = sysinfos.get('gateway_cidr')
         if gateway_cidr:
@@ -89,11 +110,16 @@ class SysConfigHandler(AdminBaseHandler):
             objects.sysconfig.sys_config_set(ctxt, 'cluster_cidr',
                                              cluster_cidr)
         if gateway_cidr:
-            begin_action = self.begin_action(ctxt, Resource.SYSCONFIG,
-                                             Action.UPDATE_CLOCK_SERVER)
-            objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
-                                             gateway_cidr)
-            self.finish_action(begin_action, None, 'sysconfig', gateway_cidr)
+            old_gateway_cidr = objects.sysconfig.sys_config_get(
+                ctxt, "gateway_cidr")
+            if old_gateway_cidr != gateway_cidr:
+                begin_action = self.begin_action(ctxt, Resource.SYSCONFIG,
+                                                 Action.UPDATE_GATEWAY_CIDR)
+                objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
+                                                 gateway_cidr)
+                self._update_gateway_ip(ctxt, gateway_cidr)
+                self.finish_action(begin_action, None, 'sysconfig',
+                                   gateway_cidr)
 
     def image_namespace_get(self, ctxt):
         image_namespace = objects.sysconfig.sys_config_get(

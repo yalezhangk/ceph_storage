@@ -45,43 +45,55 @@ class NodeMixin(object):
         ip_address = data.get('ip_address')
         cluster_ip = data.get('cluster_ip')
         public_ip = data.get('public_ip')
+        gateway_ip = data.get('gateway_ip')
         admin_cidr = objects.sysconfig.sys_config_get(ctxt, key="admin_cidr")
         public_cidr = objects.sysconfig.sys_config_get(ctxt, key="public_cidr")
         cluster_cidr = objects.sysconfig.sys_config_get(ctxt,
                                                         key="cluster_cidr")
-        if not all([ip_address,
-                    cluster_ip,
-                    public_ip]):
-            raise exc.Invalid('ip_address,cluster_ip,'
-                              'public_ip is required')
+        gateway_cidr = objects.sysconfig.sys_config_get(ctxt,
+                                                        key="gateway_cidr")
+        if not all([ip_address, cluster_ip, public_ip, gateway_ip]):
+            raise exc.Invalid(_("Admin IP, Gateway IP, Public IP and "
+                                "Cluster IP is required"))
         if objects.NodeList.get_all(
                 ctxt, filters={"cluster_id": "*", "ip_address": ip_address}):
-            raise exc.Invalid("ip_address already exists!")
+            raise exc.Invalid(_("Admin IP already exists!"))
         if IPAddress(ip_address) not in IPNetwork(admin_cidr):
-            raise exc.Invalid("admin ip not in admin cidr ({})"
-                              "".format(admin_cidr))
+            raise exc.Invalid(_("Admin IP not in admin cidr ({})"
+                                ).format(admin_cidr))
         if objects.NodeList.get_all(
             ctxt,
             filters={
                 "cluster_ip": cluster_ip
             }
         ):
-            raise exc.Invalid("cluster_ip already exists!")
+            raise exc.Invalid(_("Cluster IP already exists!"))
         if (IPAddress(cluster_ip) not in
                 IPNetwork(cluster_cidr)):
-            raise exc.Invalid("cluster ip not in cluster cidr ({})"
-                              "".format(cluster_cidr))
+            raise exc.Invalid(_("Cluster IP not in cluster cidr ({})"
+                                ).format(cluster_cidr))
         if objects.NodeList.get_all(
             ctxt,
             filters={
                 "public_ip": public_ip
             }
         ):
-            raise exc.Invalid("public_ip already exists!")
+            raise exc.Invalid(_("Public IP already exists!"))
         if (IPAddress(public_ip) not in
                 IPNetwork(public_cidr)):
-            raise exc.Invalid("public ip not in public cidr ({})"
-                              "".format(public_cidr))
+            raise exc.Invalid(_("public ip not in public cidr ({})"
+                                ).format(public_cidr))
+        if objects.NodeList.get_all(
+            ctxt,
+            filters={
+                "object_gateway_ip_address": gateway_ip
+            }
+        ):
+            raise exc.Invalid(_("Gateway IP already exists!"))
+        if (IPAddress(gateway_ip) not in
+                IPNetwork(gateway_cidr)):
+            raise exc.Invalid(_("Gateway IP not in gateway cidr ({})"
+                                ).format(gateway_cidr))
 
     @classmethod
     def _collect_node_ip_address(cls, ctxt, node_info):
