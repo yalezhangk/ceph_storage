@@ -98,7 +98,7 @@ class DiskTool(ToolBase):
 
     def partitions_create(self, disk, partitions):
         logger.info('Create disk partition for %s', disk)
-        disk = self._wapper("/dev/%s" % disk)
+        _disk = self._wapper("/dev/%s" % disk)
         order = 1
         role_map = {
             "db": "block.db",
@@ -120,12 +120,12 @@ class DiskTool(ToolBase):
                 .format(order, PTYPE['regular'][role]['ready'])
             cmd = ["sgdisk", partition_size,
                    "--change-name='{}:ceph {}'".format(order, role),
-                   partition_guid, type_code, "--mbrtogpt", "--", disk]
+                   partition_guid, type_code, "--mbrtogpt", "--", _disk]
             code, out, err = self.run_command(cmd)
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,
                                       stdout=out, stderr=err)
-            self.partprobe()
+            self.partprobe(disk)
             disk_part = self._wapper("/dev/%s" % part['name'])
             cmd = ["blkid", disk_part, "-o", "udev"]
             code, out, err = self.run_command(cmd)
@@ -159,9 +159,12 @@ class DiskTool(ToolBase):
                                   stdout=out, stderr=err)
         return True
 
-    def partprobe(self):
+    def partprobe(self, disk=None):
         logger.info('Running cmd: partprobe')
         cmd = ["partprobe"]
+        if disk:
+            _disk = self._wapper("/dev/%s" % disk)
+            cmd.append(_disk)
         code, out, err = self.run_command(cmd)
         if code:
             raise RunCommandError(cmd=cmd, return_code=code,
