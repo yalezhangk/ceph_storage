@@ -50,6 +50,8 @@ class RadosgwHandler(AdminBaseHandler):
 
     def _radosgw_create_check(self, ctxt, node, data):
         logger.info("Check node %s for radosgw", node.id)
+        # check mon is ready
+        self.check_mon_host(ctxt)
         node_task = NodeTask(ctxt, node)
         node_infos = node_task.node_get_infos()
 
