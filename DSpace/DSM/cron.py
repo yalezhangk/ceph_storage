@@ -148,27 +148,37 @@ class CronHandler(AdminBaseHandler):
             return
         try:
             if status == "in&up":
-                if osd.status in [s_fields.OsdStatus.OFFLINE,
-                                  s_fields.OsdStatus.RESTARTING,
-                                  s_fields.OsdStatus.ERROR]:
+                err_status = [s_fields.OsdStatus.OFFLINE,
+                              s_fields.OsdStatus.RESTARTING,
+                              s_fields.OsdStatus.ERROR]
+                if osd.status in err_status:
                     msg = _("osd.{} is active").format(osd.osd_id)
                     self.send_service_alert(
                         context, osd, "osd_status", "Osd", "INFO", msg,
                         "OSD_ACTIVE")
-                osd.status = s_fields.OsdStatus.ACTIVE
-                osd.save()
+                osd.conditional_update({
+                    "status": s_fields.OsdStatus.ACTIVE
+                }, expected_values={
+                    "status": err_status
+                })
             elif status == "in&down":
                 if osd.status in [s_fields.OsdStatus.ACTIVE]:
                     if self.debug_mode:
-                        osd.status = s_fields.OsdStatus.OFFLINE
-                        osd.save()
+                        osd.conditional_update({
+                            "status": s_fields.OsdStatus.OFFLINE
+                        }, expected_values={
+                            "status": s_fields.OsdStatus.ACTIVE
+                        })
                         msg = _("osd.{} is offline").format(osd.osd_id)
                         self.send_service_alert(
                             context, osd, "osd_status", "Osd", "WARN", msg,
                             "OSD_OFFLINE")
                         return
-                    osd.status = s_fields.OsdStatus.RESTARTING
-                    osd.save()
+                    osd.conditional_update({
+                        "status": s_fields.OsdStatus.RESTARTING
+                    }, expected_values={
+                        "status": s_fields.OsdStatus.ACTIVE
+                    })
                     self.task_submit(self._restart_osd, context, osd)
                     return
             elif status == "out&up" or status == "out&down":
@@ -319,7 +329,11 @@ class CronHandler(AdminBaseHandler):
                 if self.debug_mode:
                     continue
                 dsa.status = s_fields.ServiceStatus.STARTING
-                dsa.save()
+                dsa.conditional_update({
+                    "status": s_fields.ServiceStatus.STARTING
+                }, expected_values={
+                    "status": s_fields.ServiceStatus.ACTIVE
+                })
                 self.task_submit(self._restart_dsa, ctxt, dsa, node)
             if (dsa.status == s_fields.ServiceStatus.ACTIVE and
                     dsa_status == s_fields.ServiceStatus.INACTIVE):
@@ -373,12 +387,18 @@ class CronHandler(AdminBaseHandler):
                     break
             if check_ok:
                 if node.status == s_fields.NodeStatus.WARNING:
-                    node.status = s_fields.NodeStatus.ACTIVE
-                    node.save()
+                    node.conditional_update({
+                        "status": s_fields.NodeStatus.WARNING
+                    }, expected_values={
+                        "status": s_fields.NodeStatus.ACTIVE
+                    })
             else:
                 if node.status == s_fields.NodeStatus.ACTIVE:
-                    node.status = s_fields.NodeStatus.WARNING
-                    node.save()
+                    node.conditional_update({
+                        "status": s_fields.NodeStatus.ACTIVE
+                    }, expected_values={
+                        "status": s_fields.NodeStatus.WARNING
+                    })
 
     def _check_ceph_cluster_status(self):
         logger.debug("Start ceph cluster check crontab")
