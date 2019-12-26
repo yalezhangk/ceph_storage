@@ -101,6 +101,8 @@ class OsdHandler(AdminBaseHandler):
             logger.debug("Get osd metrics: tab=default")
             osds = self._osds_update_size(ctxt, osds)
             for osd in osds:
+                if not osd.need_size():
+                    continue
                 prometheus = PrometheusTool(ctxt)
                 prometheus.osd_get_pg_state(osd)
 
