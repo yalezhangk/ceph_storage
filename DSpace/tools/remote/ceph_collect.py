@@ -299,6 +299,11 @@ def check_planning():
 
 
 def _get_pkg_version_by_yum(pkg):
+    # yum clean all
+    cmd = ['yum', 'clean', 'all']
+    run_command(cmd)
+
+    # get package info
     yb = yum.YumBase()
     yb.doConfigSetup(init_plugins=False)
     installed = None
