@@ -59,6 +59,7 @@ class OsdHandler(AdminBaseHandler):
 
     def _osds_update_size(self, ctxt, osds):
         mapping = self._get_osd_df_map(ctxt)
+        not_found = []
         for osd in osds:
             size = mapping.get(osd.osd_id)
             osd.metrics = {}
@@ -69,7 +70,13 @@ class OsdHandler(AdminBaseHandler):
                 # TODO OSD实时容量数据放到定时任务中
                 osd.size = int(size['kb']) * 1024
                 osd.used = int(size['kb_used']) * 1024
-                osd.save()
+                try:
+                    osd.save()
+                except exception.OsdNotFound:
+                    logger.info("%s is deleted, not update size", osd.osd_name)
+                    not_found.append(osd)
+        osds = [osd for osd in osds if osd not in not_found]
+        return osds
 
     def osd_get_all(self, ctxt, tab=None, marker=None, limit=None,
                     sort_keys=None, sort_dirs=None, filters=None, offset=None,
@@ -89,7 +96,7 @@ class OsdHandler(AdminBaseHandler):
 
         if tab == "default":
             logger.debug("Get osd metrics: tab=default")
-            self._osds_update_size(ctxt, osds)
+            osds = self._osds_update_size(ctxt, osds)
             for osd in osds:
                 prometheus = PrometheusTool(ctxt)
                 prometheus.osd_get_pg_state(osd)
