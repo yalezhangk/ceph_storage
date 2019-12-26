@@ -261,8 +261,7 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_create_check(self, ctxt, data):
         # check mon is ready
-        if not self.has_monitor_host(ctxt):
-            raise exception.InvalidInput(_("No active monitor"))
+        self.check_mon_host(ctxt)
         # osd num check
         max_osd_num = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.MAX_OSD_NUM
@@ -399,6 +398,8 @@ class OsdHandler(AdminBaseHandler):
         logger.debug("send websocket msg: %s", msg)
 
     def osd_delete(self, ctxt, osd_id):
+        # check mon is ready
+        self.check_mon_host(ctxt)
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
         if osd.status not in [s_fields.OsdStatus.ACTIVE,
                               s_fields.OsdStatus.OFFLINE,

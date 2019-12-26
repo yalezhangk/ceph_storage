@@ -92,14 +92,14 @@ class AdminBaseHandler(object):
 
     def has_monitor_host(self, ctxt):
         cluster_id = ctxt.cluster_id
-        if not self.get_ceph_cluster_status(ctxt):
-            logger.warning('Could not connect to ceph cluster {}'.format(
-                cluster_id))
-            return False
         filters = {'role_monitor': True}
         mon_host = objects.NodeList.get_count(ctxt, filters=filters)
         if not mon_host:
             logger.warning('cluster {} has no active mon host'.format(
+                cluster_id))
+            return False
+        if not self.get_ceph_cluster_status(ctxt):
+            logger.warning('Could not connect to ceph cluster {}'.format(
                 cluster_id))
             return False
         filters = {'status': s_fields.ServiceStatus.ACTIVE, 'name': 'MON'}
