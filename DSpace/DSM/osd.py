@@ -62,6 +62,8 @@ class OsdHandler(AdminBaseHandler):
         mapping = self._get_osd_df_map(ctxt)
         not_found = []
         for osd in osds:
+            if not osd.need_size():
+                continue
             size = mapping.get(osd.osd_id)
             osd.metrics = {}
             if size:
@@ -106,6 +108,8 @@ class OsdHandler(AdminBaseHandler):
             logger.debug("Get osd metrics: tab=io")
             prometheus = PrometheusTool(ctxt)
             for osd in osds:
+                if not osd.need_size():
+                    continue
                 osd.metrics = {}
                 prometheus.osd_disk_perf(osd)
 
