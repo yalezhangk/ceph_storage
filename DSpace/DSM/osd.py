@@ -16,6 +16,7 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.prometheus import PrometheusTool
+from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -118,18 +119,45 @@ class OsdHandler(AdminBaseHandler):
         return objects.Osd.get_by_id(ctxt, osd_id,
                                      expected_attrs=expected_attrs)
 
+    @retry(exception.OsdStatusNotUp, retries=6)
+    def wait_osd_up(self, ctxt, osd_name):
+        # retries=6: max wait 63s
+        logger.info("check osd is up: %s", osd_name)
+        ceph_client = CephTask(ctxt)
+        osd_tree = ceph_client.get_osd_tree()
+        _osds = osd_tree.get("stray") or []
+        osds = filter(lambda x: (x.get('name') == osd_name and
+                                 x.get('status') == "up"),
+                      _osds)
+        if len(list(osds)) > 0:
+            logger.info("osd is up: %s", osd_name)
+            return True
+        else:
+            logger.info("osd not up: %s", osd_name)
+            raise exception.OsdStatusNotUp()
+
     def _osd_create(self, ctxt, node, osd, begin_action=None):
         try:
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_install(osd)
+            self.wait_osd_up(ctxt, osd.osd_name)
             osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
             logger.info("osd.%s create success", osd.osd_id)
             op_status = 'CREATE_SUCCESS'
             msg = _("create success: osd.{}").format(osd.osd_id)
             err_msg = None
+        except exception.OsdStatusNotUp as e:
+            logger.error("osd.%s create error, osd not up", osd.osd_id)
+            logger.exception(e)
+            osd.status = s_fields.OsdStatus.OFFLINE
+            osd.save()
+            msg = _("create error: osd.{} is offline").format(osd.osd_id)
+            op_status = 'CREATE_ERROR'
+            err_msg = str(e)
+
         except exception.StorException as e:
-            logger.error(e)
+            logger.exception(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             logger.info("osd.%s create error", osd.osd_id)

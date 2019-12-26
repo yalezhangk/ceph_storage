@@ -270,7 +270,10 @@ class CephTool(ToolBase):
     def osd_mark_out(self, osd_id):
         cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
+        # TODO: config remove by user
+        if rc == 1 and "error calling conf_read_file" in stderr:
+            return
+        elif rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
@@ -280,7 +283,7 @@ class CephTool(ToolBase):
             cmd = ["rm", "-rf", mount + f]
             rc, stdout, stderr = self.run_command(cmd, timeout=5)
         flag = mount + "deactive"
-        cmd = ["su", "-", "ceph", "-s", "/bin/bash"  "-c", "'touch %s'" % flag]
+        cmd = ["su", "-", "ceph", "-s", "/bin/bash", "-c", "'touch %s'" % flag]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc == 1 and "No such file" in stderr:
             return
@@ -436,7 +439,7 @@ class CephTool(ToolBase):
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc == 32 and ("not found" in stderr or "not mounted" in stderr):
             return
-        if rc:
+        elif rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         cmd = ["rm", "-rf", path]
@@ -445,7 +448,10 @@ class CephTool(ToolBase):
     def osd_remove_from_cluster(self, osd_id):
         cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
+        # TODO: config remove by user
+        if rc == 1 and "error calling conf_read_file" in stderr:
+            return
+        elif rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]

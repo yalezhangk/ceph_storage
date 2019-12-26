@@ -285,6 +285,9 @@ msgstr "无法删除访问路径：%(reason)s"
 msgid "download file error: %(reason)s"
 msgstr "下载文件错误：%(reason)s"
 
+msgid "get file size error: %(reason)s"
+msgstr "获取文件错误：%(reason)s"
+
 msgid "Timeout error: %(reason)s"
 msgstr "超时错误：%(reason)s"
 
@@ -296,6 +299,9 @@ msgstr "硬盘暂停错误"
 
 msgid "Connect to %(ip)s error"
 msgstr "连接IP地址 %(ip)s 错误"
+
+msgid "Osd status not up"
+msgstr "硬盘状态不支持此操作"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -447,6 +453,12 @@ msgstr "集群中有正在进行的osd任务"
 msgid "Cluster is importing"
 msgstr "集群正在纳管"
 
+msgid "Invaild action: %s"
+msgstr "不合法的行为: %s"
+
+msgid "Invaild mode: %s"
+msgstr "无效的模式: %s"
+
 msgid "Cluster Pause Success"
 msgstr "集群关闭成功"
 
@@ -458,6 +470,9 @@ msgstr "集群关闭错误"
 
 msgid "Cluster Unpause Error"
 msgstr "集群解除关闭错误"
+
+msgid "Osd is {} status, can not restart"
+msgstr "Osd状态为{}, 不能进行重启操作"
 
 msgid "Start success: {}"
 msgstr "启动成功：{}"
@@ -533,12 +548,6 @@ msgstr "新插入物理盘 {} 与原物理盘分区不匹配"
 
 msgid "disk {} online"
 msgstr "物理盘 {} 上线"
-
-msgid "node_id {} is not monitor role"
-msgstr "节点 {} 不是监控节点"
-
-msgid "node_id {} is not storage role"
-msgstr "节点 {} 不是存储节点"
 
 msgid "service_type must is mon or osd"
 msgstr "服务类型只支持 'mon'或'osd'"
@@ -681,6 +690,9 @@ msgstr "请先导入集群"
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
 
+msgid "create error: osd.{} is offline"
+msgstr "创建硬盘失败：osd.{} 离线"
+
 msgid "create error: osd.{}"
 msgstr "创建硬盘失败：osd.{}"
 
@@ -729,6 +741,9 @@ msgstr "osd.{} 清理成功"
 msgid "osd.{} replace prepare error"
 msgstr "osd.{} 清理失败"
 
+msgid "accelerate disk %s is replacing, please wait"
+msgstr "加速盘%s正在换盘中, 请稍等"
+
 msgid "In the operation osd can not replace disk"
 msgstr "操作中的osd不能进行换盘"
 
@@ -740,6 +755,9 @@ msgstr "加速盘 {} 清理成功"
 
 msgid "disk role should be accelerate"
 msgstr "该物理盘不是加速盘"
+
+msgid "osd.%s is replacing, please wait"
+msgstr "osd.%s正在换盘中, 请稍等"
 
 msgid "Osd status should be REPLACE_PREPARED"
 msgstr "osd 未清理完成"
@@ -759,11 +777,17 @@ msgstr "创建存储池成功：{}"
 msgid "create pool error: {}"
 msgstr "创建存储池失败：{}"
 
+msgid "Object index pool exists"
+msgstr "对象索引池已存在"
+
 msgid "delete pool success: {}"
 msgstr "删除存储池成功：{}"
 
 msgid "delete pool error: {}"
 msgstr "删除存储池失败：{}"
+
+msgid "Please remove the Object storage gateway first"
+msgstr "请先移除对象存储网关"
 
 msgid "pool {} increase disk success"
 msgstr "存储池{}添加硬盘成功"
@@ -921,6 +945,9 @@ msgstr "节点{}: 服务{}已停止"
 msgid "Node {}: service {} status is active"
 msgstr "节点{}: 服务{}已恢复健康"
 
+msgid "Object gateway role has been set, please remove all object gateway role"
+msgstr "对象存储网关角色已设置，请先移除所有的网关角色"
+
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
 
@@ -1064,20 +1091,4 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
 
-msgid "Object index pool exists"
-msgstr "对象索引池已存在"
 
-msgid "Osd is {} status, can not restarting"
-msgstr "Osd状态为{}, 不能进行重启操作"
-
-msgid "accelerate disk %s is replacing, please wait"
-msgstr "加速盘%s正在换盘中, 请稍等"
-
-msgid "osd.%s is replacing, please wait"
-msgstr "osd.%s正在换盘中, 请稍等"
-
-msgid "Please remove the Object storage gateway first"
-msgstr "请先移除对象存储网关"
-
-msgid "Object gateway role has been set, please remove all object gateway role"
-msgstr "对象存储网关角色已设置，请先移除所有的网关角色"

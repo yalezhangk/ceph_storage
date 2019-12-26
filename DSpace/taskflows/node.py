@@ -329,19 +329,26 @@ class NodeTask(object):
 
     def ceph_osd_install(self, osd):
         # write ceph.conf
-        logger.debug("write config")
-        ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
+        logger.debug("get config")
+        configs = {
+            "global": objects.ceph_config.ceph_config_group_get(
+                self.ctxt, "global"),
+            osd.osd_name: objects.ceph_config.ceph_config_group_get(
+                self.ctxt, osd.osd_name),
+        }
         agent = self.get_agent()
-        agent.ceph_conf_write(self.ctxt, ceph_conf_content)
 
         enable_cephx = objects.sysconfig.sys_config_get(
             self.ctxt, key="enable_cephx"
         )
         if enable_cephx:
+            logger.debug("cephx is enable")
             self.init_admin_key()
             self.init_bootstrap_keys("osd")
+        else:
+            logger.debug("cephx is not enable")
         logger.debug("osd create on node")
-        osd = agent.ceph_osd_create(self.ctxt, osd)
+        osd = agent.ceph_osd_create(self.ctxt, osd, configs)
         return osd
 
     def ceph_osd_uninstall(self, osd):

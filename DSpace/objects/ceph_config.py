@@ -93,6 +93,14 @@ def ceph_config_get(ctxt, group, key, default=None):
         raise exception.Invalid(msg=_("Invalid config type"))
 
 
+def ceph_config_group_get(ctxt, group):
+    res = {}
+    objs = CephConfigList.get_all(ctxt, filters={'group': group})
+    for obj in objs:
+        res[obj.key] = obj.value
+    return res
+
+
 def ceph_config_content(ctxt):
     ignore_section = ["keyring"]
     configer = configparser.ConfigParser()
