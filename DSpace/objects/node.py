@@ -74,6 +74,7 @@ class Node(base.StorPersistentObject, base.StorObject,
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
         expected_attrs = expected_attrs or []
         if 'disks' in expected_attrs:
             disks = db_obj.get('disks', [])
