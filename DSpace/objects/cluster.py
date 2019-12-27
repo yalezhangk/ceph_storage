@@ -26,6 +26,7 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         'is_admin': fields.BooleanField(),
         'status': s_fields.ClusterStatusField(),
         'ceph_status': fields.BooleanField(nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
     @property

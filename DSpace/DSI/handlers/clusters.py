@@ -56,7 +56,8 @@ class ClusterListHandler(BaseAPIHandler):
         exact_filters = ['status']
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
-        clusters = objects.ClusterList.get_all(ctxt, filters=filters)
+        client = self.get_admin_client(ctxt)
+        clusters = yield client.cluster_get_all(ctxt, filters=filters)
         self.write(objects.json_encode({
             "clusters": clusters
         }))

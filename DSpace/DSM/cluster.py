@@ -27,6 +27,20 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         return cluster
 
+    def cluster_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        clusters = objects.ClusterList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        prometheus = PrometheusTool(ctxt)
+        # cluster 容量和已配置容量
+        logger.debug('get cluster capacity')
+        for c in clusters:
+            c.metrics = {}
+            c.metrics['capacity'] = prometheus.cluster_get_capacity(
+                filter={'cluster_id': c.id})
+        return clusters
+
     def ceph_cluster_info(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
         if not has_mon_host:
@@ -575,7 +589,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         else:
             # cluster 容量和已配置容量
             logger.debug('get cluster capacity')
-            cluster_capacity = prometheus.cluster_get_provisioned_capacity()
+            cluster_capacity = prometheus.cluster_get_capacity()
             logger.info('get cluster capacity success, data:%s',
                         cluster_capacity)
         return cluster_capacity

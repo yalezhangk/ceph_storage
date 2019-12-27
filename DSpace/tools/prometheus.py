@@ -613,7 +613,7 @@ class PrometheusTool(object):
             logger.error(e)
             pass
 
-    def cluster_get_provisioned_capacity(self):
+    def cluster_get_capacity(self, filter=None):
         # 集群容量
         logger.info('get cluster capacity')
         metrics = {
@@ -625,7 +625,7 @@ class PrometheusTool(object):
         }
         cluster_capacity = {}
         for k, v in six.iteritems(metrics):
-            value = self.prometheus_get_metric(v)
+            value = self.prometheus_get_metric(v, filter=filter)
             cluster_capacity[k] = value
         return cluster_capacity
 
