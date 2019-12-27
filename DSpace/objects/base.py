@@ -271,7 +271,12 @@ class StorComparableObject(base.ComparableVersionedObject):
 
 
 class ObjectListBase(base.ObjectListBase):
-    pass
+
+    def to_dict(self, optional=False):
+        _objs = []
+        for obj in self.objects:
+            _objs.append(obj.to_dict(optional=optional))
+        return _objs
 
 
 class StorObjectSerializer(base.VersionedObjectSerializer):
