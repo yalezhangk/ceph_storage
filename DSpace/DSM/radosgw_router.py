@@ -229,6 +229,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
                 node = objects.Node.get_by_id(ctxt, n['node_id'])
                 task = NodeTask(ctxt, node)
                 task.rgw_router_uninstall(rgw_router)
+                self.notify_node_update(ctxt, node)
             rgw_router.destroy()
             msg = _("delete radosgw router {} success").format(rgw_router.name)
             logger.info("delete %s success", rgw_router.name)

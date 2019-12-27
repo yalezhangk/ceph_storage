@@ -229,6 +229,7 @@ class RadosgwHandler(AdminBaseHandler):
             radosgw = task.ceph_rgw_uninstall(radosgw)
             self._radosgw_config_remove(ctxt, radosgw)
             radosgw.destroy()
+            self.notify_node_update(ctxt, node)
             msg = _("delete radosgw {} success").format(radosgw.display_name)
             logger.info("delete %s success", radosgw.name)
             status = 'success'
