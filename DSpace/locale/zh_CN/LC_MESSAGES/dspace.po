@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-27 14:33+0800\n"
+"POT-Creation-Date: 2019-12-27 15:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1114,6 +1114,9 @@ msgstr "Gateway IP不在网关网络网段内"
 
 msgid "SSH Error: %s"
 msgstr "SSH错误：%s"
+
+msgid "Repository not available"
+msgstr "安装源不可用"
 
 msgid "Repository version not support"
 msgstr "安装源中的Ceph版本还未被支持"
