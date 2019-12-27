@@ -180,12 +180,12 @@ class CephConfigHandler(AdminBaseHandler):
             msg = _('Ceph config update failed')
             op_status = "SET_CONFIG_ERROR"
             status = 'fail'
-        self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
-                           after_obj=cephconf, status=status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cephconf, op_status, msg,
                                resource_type="CephConfig")
+        self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
+                           after_obj=cephconf, status=status)
 
     def ceph_config_set(self, ctxt, values):
         self._ceph_config_set(ctxt, values)

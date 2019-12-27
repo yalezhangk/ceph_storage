@@ -207,3 +207,27 @@ class System(ToolBase):
             return False
         else:
             return True
+
+    def set_sysctl(self, key, value):
+        logger.info("Set sysctl: value %s, key: %s", key, value)
+        path = "/etc/sysctl.conf"
+        cmd = ["grep", "-r", "^" + key, path]
+        rc, stdout, stderr = self.run_command(cmd)
+        if stderr:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        if stdout:
+            change = "s/{}/{}/g".format(stdout.split('\n')[0],
+                                        key + "=" + str(value))
+            cmd = ["sed", "-i", change, path]
+        else:
+            cmd = ["echo", key + "=" + str(value), ">>", path]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        cmd = ["sysctl", "-p"]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
