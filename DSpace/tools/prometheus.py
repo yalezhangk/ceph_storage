@@ -295,7 +295,6 @@ class PrometheusTool(object):
         sys_disk_name = self._get_sys_disk(node.id)
         if not net_name or not sys_disk_name:
             return
-        node.metrics = {}
         for metric in prometheus_attrs:
             metric_method = 'node_{}'.format(metric)
             if metric in network_attrs:
@@ -333,7 +332,6 @@ class PrometheusTool(object):
                         'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
                         'io_rate']
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
-        disk.metrics = {}
         for m in disk_metrics:
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(

@@ -29,6 +29,8 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
+    OPTIONAL_FIELDS = ('metrics',)
+
     @property
     def name(self):
         return self.display_name
@@ -53,6 +55,11 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         updated_values = db.cluster_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
+
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
+        return super(Cluster, cls)._from_db_object(context, obj, db_obj)
 
 
 @base.StorObjectRegistry.register

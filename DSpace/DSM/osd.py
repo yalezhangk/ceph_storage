@@ -65,7 +65,6 @@ class OsdHandler(AdminBaseHandler):
             if not osd.need_size():
                 continue
             size = mapping.get(osd.osd_id)
-            osd.metrics = {}
             if size:
                 osd.metrics.update({'kb': [0, size['kb']]})
                 osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
@@ -112,7 +111,6 @@ class OsdHandler(AdminBaseHandler):
             for osd in osds:
                 if not osd.need_size():
                     continue
-                osd.metrics = {}
                 prometheus.osd_disk_perf(osd)
 
         return osds
@@ -442,11 +440,9 @@ class OsdHandler(AdminBaseHandler):
         logger.info("Osd capacity get: osd_id: %s.", osd_id)
         osd = objects.Osd.get_by_id(ctxt, osd_id)
         prometheus = PrometheusTool(ctxt)
-        osd.metrics = {}
 
         mapping = self._get_osd_df_map(ctxt)
         size = mapping.get(osd.osd_id)
-        osd.metrics = {}
         if size:
             osd.metrics.update({'kb': [0, size['kb']]})
             osd.metrics.update({'kb_avail': [0, size['kb_avail']]})

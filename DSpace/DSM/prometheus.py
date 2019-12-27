@@ -69,7 +69,6 @@ class PrometheusHandler(AdminBaseHandler):
     def osd_metrics_get(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id)
         prometheus = PrometheusTool(ctxt)
-        osd.metrics = {}
         data = prometheus.osd_get_realtime_metrics(osd)
         return data
 
@@ -83,7 +82,6 @@ class PrometheusHandler(AdminBaseHandler):
     def osd_disk_metrics_get(self, ctxt, osd_id):
         osd = objects.Osd.get_by_id(ctxt, osd_id)
         prometheus = PrometheusTool(ctxt)
-        osd.metrics = {}
         prometheus.osd_get_capacity(osd)
         prometheus.osd_disk_perf(osd)
         return osd.metrics
@@ -101,7 +99,6 @@ class PrometheusHandler(AdminBaseHandler):
     def pool_metrics_get(self, ctxt, pool_id):
         pool = objects.Pool.get_by_id(ctxt, pool_id)
         prometheus = PrometheusTool(ctxt)
-        pool.metrics = {}
         prometheus.pool_get_capacity(pool)
         prometheus.pool_get_perf(pool)
         return pool.metrics
@@ -119,7 +116,6 @@ class PrometheusHandler(AdminBaseHandler):
     def pool_capacity_get(self, ctxt, pool_id):
         pool = objects.Pool.get_by_id(ctxt, pool_id)
         prometheus = PrometheusTool(ctxt)
-        pool.metrics = {}
         prometheus.pool_get_capacity(pool)
         prometheus.pool_get_pg_state(pool)
         return pool.metrics

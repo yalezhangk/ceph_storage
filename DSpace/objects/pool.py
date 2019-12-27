@@ -65,6 +65,7 @@ class Pool(base.StorPersistentObject, base.StorObject,
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
         expected_attrs = expected_attrs or []
         crush_rule = db_obj.get('crush_rule', None)
         if 'crush_rule' in expected_attrs and crush_rule:

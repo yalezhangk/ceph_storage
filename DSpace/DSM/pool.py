@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 class PoolHandler(AdminBaseHandler):
     def _pool_update_metrics(self, ctxt, pool):
         prometheus = PrometheusTool(ctxt)
-        pool.metrics = {}
         prometheus.pool_get_capacity(pool)
         prometheus.pool_get_pg_state(pool)
         pg_state = pool.metrics.get("pg_state")
@@ -63,7 +62,6 @@ class PoolHandler(AdminBaseHandler):
         if tab == 'io':
             prometheus = PrometheusTool(ctxt)
             for pool in pools:
-                pool.metrics = {}
                 prometheus.pool_get_perf(pool)
 
         return pools
@@ -80,7 +78,6 @@ class PoolHandler(AdminBaseHandler):
             ctxt, pool_id, expected_attrs=expected_attrs)
         prometheus = PrometheusTool(ctxt)
         for osd in osds:
-            osd.metrics = {}
             prometheus.osd_get_capacity(osd)
         return osds
 

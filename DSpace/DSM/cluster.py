@@ -36,9 +36,9 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         # cluster 容量和已配置容量
         logger.debug('get cluster capacity')
         for c in clusters:
-            c.metrics = {}
-            c.metrics['capacity'] = prometheus.cluster_get_capacity(
+            capacity = prometheus.cluster_get_capacity(
                 filter={'cluster_id': c.id})
+            c.metrics.update({'capacity': capacity})
         return clusters
 
     def ceph_cluster_info(self, ctxt):
@@ -446,7 +446,6 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         }
         len_pool = len(_pools)
         for pool in _pools:
-            pool.metrics = {}
             prometheus.pool_get_pg_state(pool)
             pg_state = pool.metrics.get("pg_state")
             pg_state.update({
