@@ -45,6 +45,9 @@ msgstr "集群 %(cluster_id)s 未找到"
 msgid "RPCService %(rpc_service_id)s could not be found."
 msgstr "服务 %(rpc_service_id)s 未找到"
 
+msgid "RPC service connect error"
+msgstr "RPC 连接失败"
+
 msgid "Node %(node_id)s could not be found."
 msgstr "节点 %(node_id)s 未找到"
 

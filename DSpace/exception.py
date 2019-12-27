@@ -115,6 +115,11 @@ class RPCServiceNotFound(NotFound):
     message = _("RPCService %(rpc_service_id)s could not be found.")
 
 
+class RPCConnectError(StorException):
+    code = 400
+    message = _("RPC service connect error")
+
+
 class NodeNotFound(NotFound):
     message = _("Node %(node_id)s could not be found.")
 
