@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-26 18:00+0800\n"
+"POT-Creation-Date: 2019-12-27 14:15+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -557,6 +557,12 @@ msgstr "新插入物理盘 %s 与原物理盘分区不匹配"
 
 msgid "disk %s online"
 msgstr "物理盘 %s 上线"
+
+msgid "email_group name already exists!"
+msgstr "通知列表名称已存在"
+
+msgid "email %s repeat"
+msgstr "邮箱: %s 重复"
 
 msgid "service_type must is mon or osd"
 msgstr "服务类型只支持 'mon'或'osd'"
