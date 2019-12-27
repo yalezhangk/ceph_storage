@@ -25,6 +25,23 @@ class EmailGroupHandler(AdminBaseHandler):
     def email_group_get_count(self, ctxt, filters=None):
         return objects.EmailGroupList.get_count(ctxt, filters=filters)
 
+    def _check_name_exist(self, ctxt, name):
+        is_exist = objects.EmailGroupList.get_all(
+            ctxt, filters={'name': name})
+        if is_exist:
+            raise exc.InvalidInput(
+                _("email_group name already exists!"))
+
+    def _check_email_repeat(self, emails):
+        # 邮箱重复
+        email_list = emails.split(',')
+        e_set = set()
+        for e in email_list:
+            if e in e_set:
+                raise exc.InvalidInput(_("email %s repeat") % e)
+            else:
+                e_set.add(e)
+
     def email_group_create(self, ctxt, data):
         logger.debug('email_group:%s begin create', data.get('name'))
         email_group_data = {
@@ -32,6 +49,8 @@ class EmailGroupHandler(AdminBaseHandler):
             'emails': data.get('emails'),
             'cluster_id': ctxt.cluster_id
         }
+        self._check_name_exist(ctxt, email_group_data['name'])
+        self._check_email_repeat(email_group_data['emails'])
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
             action=AllActionType.CREATE)
@@ -50,11 +69,16 @@ class EmailGroupHandler(AdminBaseHandler):
     def email_group_update(self, ctxt, email_group_id, data):
         logger.debug('email_group:%s begin update', email_group_id)
         email_group = self.email_group_get(ctxt, email_group_id)
+        name = data.get('name')
+        if email_group.name == name:
+            pass
+        else:
+            self._check_name_exist(ctxt, name)
+        emails = data.get('emails')
+        self._check_email_repeat(emails)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
             action=AllActionType.UPDATE, before_obj=email_group)
-        name = data.get('name')
-        emails = data.get('emails')
         email_group.name = name
         email_group.emails = emails
         email_group.save()
