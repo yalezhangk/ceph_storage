@@ -155,6 +155,16 @@ class AdminBaseHandler(object):
             ctxt, cluster_id=ctxt.cluster_id).get_client(node.id)
         client.node_update_infos(ctxt, node)
 
+    def if_service_alert(self, ctxt, check_cluster=True, node=None):
+        cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
+        if check_cluster and cluster.status == s_fields.ClusterStatus.DELETING:
+            return False
+        if node:
+            if node.status in [s_fields.NodeStatus.CREATING,
+                               s_fields.NodeStatus.DELETING]:
+                return False
+        return True
+
     def send_websocket(self, ctxt, service, wb_op_status, alert_msg):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, service, wb_op_status, alert_msg)
