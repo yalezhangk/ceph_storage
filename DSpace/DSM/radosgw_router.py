@@ -113,8 +113,10 @@ class RadosgwRouterHandler(AdminBaseHandler):
         # check node
         nodes = data.get("nodes")
         for n in nodes:
+            node = objects.Node.get_by_id(ctxt, n.get("node_id"))
+            self.check_agent_available(ctxt, node)
             service = objects.RouterServiceList.get_all(
-                ctxt, filters={"node_id": n.get("node_id")}
+                ctxt, filters={"node_id": node.id}
             )
             if service:
                 node = objects.Node.get_by_id(ctxt, n.get("node_id"))
@@ -249,6 +251,12 @@ class RadosgwRouterHandler(AdminBaseHandler):
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
                            rgw_router, status, err_msg=err_msg)
 
+    def _router_node_check(self, ctxt, rgw_router):
+        nodes = json.loads(rgw_router.nodes)
+        for n in nodes:
+            node = objects.Node.get_by_id(ctxt, n['node_id'])
+            self.check_agent_available(ctxt, node)
+
     def rgw_router_delete(self, ctxt, rgw_router_id):
         rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id,
                                                      joined_load=True)
@@ -257,6 +265,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
                                      s_fields.RadosgwRouterStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " radosgw router can be deleted"))
+        self._router_node_check(ctxt, rgw_router)
         begin_action = self.begin_action(ctxt, Resource.RADOSGW_ROUTER,
                                          Action.DELETE, rgw_router)
         rgw_router.status = s_fields.RadosgwRouterStatus.DELETING
@@ -325,6 +334,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
                                      s_fields.RadosgwRouterStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " radosgw router can be updated"))
+        self._router_node_check(ctxt, rgw_router)
         begin_action = self.begin_action(ctxt, Resource.RADOSGW_ROUTER,
                                          Action.UPDATE, rgw_router)
         rgw_router.status = s_fields.RadosgwRouterStatus.UPDATING

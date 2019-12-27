@@ -328,7 +328,6 @@ class CronHandler(AdminBaseHandler):
                     "SERVICE_INACTIVE")
                 if self.debug_mode:
                     continue
-                dsa.status = s_fields.ServiceStatus.STARTING
                 dsa.conditional_update({
                     "status": s_fields.ServiceStatus.STARTING
                 }, expected_values={

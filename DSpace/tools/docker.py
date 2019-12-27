@@ -132,14 +132,14 @@ class Docker(ToolBase):
                   active: running
         """
         logger.debug("Docker status: {}".format(name))
-        cmd = ["docker", "inspect", "-f", "{{.State.Running}}", name]
+        cmd = ["docker", "inspect", "-f", "{{.State.Status}}", name]
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
             if "No such object" in stderr:
                 return False
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
-        if stdout.strip() == "true":
+        if stdout.strip() == "running":
             return True
         else:
             return False

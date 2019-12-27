@@ -1174,6 +1174,9 @@ class HaproxyInstall(BaseTask):
         )
         router_service.create()
 
+        # set sysctl
+        self._set_sysctl_values(node)
+
         # write config
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
@@ -1217,6 +1220,13 @@ class HaproxyInstall(BaseTask):
             logger.error("Start container %s failed", container_name)
             router_service.status = s_fields.RouterServiceStatus.ERROR
         router_service.save()
+
+    def _set_sysctl_values(self, node):
+        ssh_client = SSHExecutor(hostname=str(node.ip_address),
+                                 password=node.password)
+        sys_tool = SystemTool(ssh_client)
+        sys_tool.set_sysctl("net.ipv4.ip_nonlocal_bind", 1)
+        sys_tool.set_sysctl("net.unix.max_dgram_qlen", 128)
 
 
 def haproxy_update(ctxt, node):
