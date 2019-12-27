@@ -76,8 +76,9 @@ class BaseAPIHandler(RequestHandler):
         sort_dir = self.get_query_argument('sort_dir', default=None)
         limit = self.get_query_argument('limit', default=None) or None
         offset = self.get_query_argument('offset', default=None) or None
+        marker = self.get_query_argument('marker', default=None) or None
         return {
-            "marker": self.get_query_argument('marker', default=None),
+            "marker": marker,
             "limit": limit,
             "sort_keys": [sort_key] if sort_key else None,
             "sort_dirs": [sort_dir] if sort_dir else None,
