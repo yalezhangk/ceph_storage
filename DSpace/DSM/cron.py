@@ -146,6 +146,9 @@ class CronHandler(AdminBaseHandler):
                           s_fields.OsdStatus.REPLACE_PREPARING,
                           s_fields.OsdStatus.PROCESSING]:
             return
+        node = objects.Node.get_by_id(context, osd.node_id)
+        if not self.if_service_alert(context, node=node):
+            return
         try:
             if status == "in&up":
                 err_status = [s_fields.OsdStatus.OFFLINE,
@@ -163,6 +166,7 @@ class CronHandler(AdminBaseHandler):
                 })
             elif status == "in&down":
                 if osd.status in [s_fields.OsdStatus.ACTIVE]:
+                    logger.warning("osd.%s status is %s", osd.osd_id, status)
                     if self.debug_mode:
                         osd.conditional_update({
                             "status": s_fields.OsdStatus.OFFLINE
@@ -185,6 +189,7 @@ class CronHandler(AdminBaseHandler):
                 if osd.status in [s_fields.OsdStatus.OFFLINE,
                                   s_fields.OsdStatus.ERROR]:
                     return
+                logger.warning("osd.%s status is %s", osd.osd_id, status)
                 msg = _("osd.{} is offline").format(osd.osd_id)
                 self.send_service_alert(context, osd, "osd_status", "Osd",
                                         "WARN", msg, "OSD_OFFLINE")
@@ -319,7 +324,7 @@ class CronHandler(AdminBaseHandler):
             if (dsa.status == s_fields.ServiceStatus.INACTIVE and
                     dsa_status == s_fields.ServiceStatus.ACTIVE):
                 logger.error("DSA in node %s is inactive", dsa.node_id)
-                if node.status == s_fields.NodeStatus.DELETING:
+                if not self.if_service_alert(ctxt, node=node):
                     continue
                 msg = _("Node {}: DSA status is inactive"
                         ).format(node.hostname)
@@ -336,7 +341,8 @@ class CronHandler(AdminBaseHandler):
                 self.task_submit(self._restart_dsa, ctxt, dsa, node)
             if (dsa.status == s_fields.ServiceStatus.ACTIVE and
                     dsa_status == s_fields.ServiceStatus.INACTIVE):
-                if node.status == s_fields.NodeStatus.CREATING:
+                logger.error("DSA in node %s is active", dsa.node_id)
+                if not self.if_service_alert(ctxt, node=node):
                     continue
                 msg = _("Node {}: DSA status is active"
                         ).format(node.hostname)
@@ -444,6 +450,8 @@ class CronHandler(AdminBaseHandler):
                         context, cluster, "service_status", "MON", "INFO",
                         msg, "SERVICE_ACTIVE")
             except exception.StorException as e:
+                if not self.if_service_alert(context):
+                    continue
                 logger.warning("Could not connect to ceph cluster %s: %s",
                                cluster.id, e)
                 cluster.ceph_status = False

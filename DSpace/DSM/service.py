@@ -36,7 +36,7 @@ class ServiceHandler(AdminBaseHandler):
         return objects.ServiceList.get_count(ctxt, filters=filters)
 
     def _restart_systemd_service(self, ctxt, name, service, node):
-        if self.debug_mode:
+        if self.debug_mode or not self.if_service_alert(ctxt, node=node):
             return
         logger.info("Try to restart systemd service: %s", name)
         service.status = s_fields.ServiceStatus.STARTING
@@ -72,7 +72,7 @@ class ServiceHandler(AdminBaseHandler):
             )
 
     def _restart_radosgw_service(self, ctxt, radosgw, node):
-        if self.debug_mode:
+        if self.debug_mode or not self.if_service_alert(ctxt, node=node):
             return
         logger.info("Try to restart rgw service: %s", radosgw.name)
         radosgw.status = s_fields.RadosgwStatus.STARTING
@@ -102,7 +102,7 @@ class ServiceHandler(AdminBaseHandler):
             )
 
     def _restart_docker_service(self, ctxt, service, container_name, node):
-        if self.debug_mode:
+        if self.debug_mode and not self.if_service_alert(ctxt, node=node):
             return
         logger.info("Try to restart docker service: %s", container_name)
         service.status = \
@@ -247,9 +247,9 @@ class ServiceHandler(AdminBaseHandler):
             if (status == s_fields.ServiceStatus.INACTIVE and
                     service.status == s_fields.ServiceStatus.ACTIVE):
                 node = objects.Node.get_by_id(ctxt, node.id)
-                if node.status in [s_fields.NodeStatus.CREATING,
-                                   s_fields.NodeStatus.DELETING,
-                                   s_fields.NodeStatus.DEPLOYING_ROLE,
+                if not self.if_service_alert(ctxt, node=node):
+                    return service
+                if node.status in [s_fields.NodeStatus.DEPLOYING_ROLE,
                                    s_fields.NodeStatus.REMOVING_ROLE]:
                     return service
                 msg = _("Node {}: service {} status is inactive"
@@ -273,13 +273,15 @@ class ServiceHandler(AdminBaseHandler):
 
     def service_update(self, ctxt, services, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
-        if node.status in [s_fields.NodeStatus.CREATING,
-                           s_fields.NodeStatus.DELETING]:
+        if node.status in [s_fields.NodeStatus.DELETING]:
             logger.warning("Node status is %s, ignore service update",
                            node.status)
             return True
+        if not self.if_service_alert(ctxt):
+            logger.warning("The cluster is deleting, ignore service update")
+            return True
         services = json.loads(services)
-        logger.debug('Update service status')
+        logger.info('Update service status for node %s', node_id)
         for role, sers in six.iteritems(services):
             for s in sers:
                 name = s.get('name')
