@@ -163,6 +163,10 @@ class CephConfigHandler(AdminBaseHandler):
             "key": values['key']
         }
         before_obj = objects.CephConfigList.get_all(ctxt, filters=filters)
+        if not before_obj:
+            before_obj = {}
+        else:
+            before_obj = before_obj[0]
         begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
                                          Action.UPDATE, before_obj=before_obj)
         if nodes:
