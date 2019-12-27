@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-27 14:15+0800\n"
+"POT-Creation-Date: 2019-12-27 14:33+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -419,6 +419,9 @@ msgstr "参数 'smtp' 未找到"
 
 msgid "New password not allow equal to old password"
 msgstr "新密码不能与旧密码相同"
+
+msgid "alert_group name already exists!"
+msgstr "告警通知名称已存在"
 
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
