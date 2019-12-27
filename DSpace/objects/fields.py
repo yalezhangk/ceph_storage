@@ -282,9 +282,10 @@ class AllResourceType(BaseStorEnum):
     CEPH_CONFIG = 'ceph_config'
     RADOSGW = 'radosgw'
     RADOSGW_ROUTER = 'radosgw_router'
+    SERVICE = 'service'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
-           DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER)
+           DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE)
 
 
 class AllActionType(BaseStorEnum):
