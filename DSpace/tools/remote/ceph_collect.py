@@ -298,16 +298,36 @@ def check_planning():
     return response
 
 
+def _setup_dns_resolve(timeout, retries):
+    content = ("$a options timeout:{} attempts:{} rotate "
+               "single-request-reopen").format(timeout, retries)
+    cmd = ['sed', '-i', content, '/etc/resolv.conf']
+    run_command(cmd)
+
+
+def _reset_dns_resolve():
+    content = "/options timeout.*/d"
+    cmd = ['sed', '-i', content, '/etc/resolv.conf']
+    run_command(cmd)
+
+
 def _get_pkg_version_by_yum(pkg):
     # yum clean all
     cmd = ['yum', 'clean', 'all']
     run_command(cmd)
 
+    resolve_timeout = 1.5
+    retries = 1
+    _setup_dns_resolve(resolve_timeout, retries)
+
     # get package info
     yb = yum.YumBase()
     yb.doConfigSetup(init_plugins=False)
+    yb.conf.timeout = 1.5
+    yb.conf.retries = 1
     installed = None
     available = None
+    unavailable = False
 
     try:
         data = yb.pkgSack.returnPackages(patterns=PKGS)
@@ -318,7 +338,7 @@ def _get_pkg_version_by_yum(pkg):
             }
             break
     except Exception:
-        available = None
+        unavailable = True
 
     data = yb.doPackageLists(pkgnarrow='installed', patterns=PKGS)
     for item in data.installed:
@@ -327,10 +347,12 @@ def _get_pkg_version_by_yum(pkg):
             "release": item.release.split('.')[0]
         }
         break
+    _reset_dns_resolve()
 
     return {
         "installed": installed,
         "available": available,
+        "unavailable": unavailable
     }
 
 
@@ -374,23 +396,25 @@ def selinux_is_enable():
 
 
 def get_listen_ports():
-    content = open("/proc/net/tcp", "r")
-    ports = []
-    for line in content:
-        if "sl" in line:
-            continue
-        line = line.strip()
-        cols = line.split(" ")
-        # check port
-        status = cols[3]
-        if status != "0A":
-            # 0A is listening
-            continue
-        local_address = cols[1]
-        ip, port = local_address.split(":")
-        port = int(port, 16)
-        ports.append(port)
-    return ports
+    net_tcp = ["tcp", "tcp6"]
+    ports = set()
+    for i in net_tcp:
+        content = open("/proc/net/{}".format(i), "r")
+        for line in content:
+            if "sl" in line:
+                continue
+            line = line.strip()
+            cols = line.split(" ")
+            # check port
+            status = cols[3]
+            if status != "0A":
+                # 0A is listening
+                continue
+            local_address = cols[1]
+            ip, port = local_address.split(":")
+            port = int(port, 16)
+            ports.add(port)
+    return list(ports)
 
 
 def interfaces_retrieve():

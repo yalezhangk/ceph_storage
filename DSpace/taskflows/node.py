@@ -1428,7 +1428,15 @@ class NodesCheck(object):
 
     def _check_ceph_version(self, data):
         pkgs = data.get('ceph_version')
+        unavailable = pkgs.get('unavailable')
+        if unavailable:
+            return {
+                "check": False,
+                "msg": _("Repository not available")
+            }
+
         available = pkgs.get('available')
+
         if available and not self._check_compatibility(available):
             return {
                 "check": False,
