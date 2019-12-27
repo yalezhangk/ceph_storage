@@ -2,6 +2,7 @@ import json
 from concurrent import futures
 
 from oslo_log import log as logging
+from oslo_utils import strutils
 from oslo_utils import timeutils
 
 from DSpace import context
@@ -14,6 +15,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.base import StorObject
 from DSpace.objects.fields import ConfigKey
+from DSpace.utils.mail import send_mail
 from DSpace.utils.service_map import ServiceMap
 
 logger = logging.getLogger(__name__)
@@ -155,16 +157,6 @@ class AdminBaseHandler(object):
             ctxt, cluster_id=ctxt.cluster_id).get_client(node.id)
         client.node_update_infos(ctxt, node)
 
-    def if_service_alert(self, ctxt, check_cluster=True, node=None):
-        cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
-        if check_cluster and cluster.status == s_fields.ClusterStatus.DELETING:
-            return False
-        if node:
-            if node.status in [s_fields.NodeStatus.CREATING,
-                               s_fields.NodeStatus.DELETING]:
-                return False
-        return True
-
     def send_websocket(self, ctxt, service, wb_op_status, alert_msg):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, service, wb_op_status, alert_msg)
@@ -193,3 +185,69 @@ class AdminBaseHandler(object):
         alert_log = objects.AlertLog(ctxt, **alert_log_data)
         alert_log.create()
         self.send_websocket(ctxt, service, wb_op_status, alert_msg)
+        self.send_alert_email(ctxt, alert_rule, alert_msg)
+
+    def get_smtp_conf(self, ctxt):
+        cluster_id = ctxt.cluster_id
+        smtp = objects.SysConfigList.get_all(
+            ctxt, filters={"cluster_id": cluster_id,
+                           'key': 'smtp_enabled'})
+        if not smtp:
+            logger.info('not yet deploy SMTP conf,'
+                        'will not send alert emails')
+            return None
+        enabled = strutils.bool_from_string(smtp[0].value)
+        if not enabled:
+            logger.info('SMTP conf has closed, will not send alert emails')
+            return None
+        mail_conf = {}
+        smtp_configs = objects.SysConfigList.get_all(
+            ctxt, filters={"cluster_id": cluster_id})
+        keys = ['smtp_user', 'smtp_password', 'smtp_host', 'smtp_port',
+                'smtp_enable_ssl', 'smtp_enable_tls']
+        for smtp_conf in smtp_configs:
+            if smtp_conf.key in keys:
+                mail_conf[smtp_conf.key] = smtp_conf.value
+        # enable_ssl,enable_tls: str -> bool
+        mail_conf['smtp_enable_ssl'] = strutils.bool_from_string(
+            mail_conf['smtp_enable_ssl'])
+        mail_conf['smtp_enable_tls'] = strutils.bool_from_string(
+            mail_conf['smtp_enable_tls'])
+        return mail_conf
+
+    def send_alert_email(self, ctxt, alert_rule, alert_msg):
+        mail_conf = self.get_smtp_conf(ctxt)
+        if not mail_conf:
+            return
+        logger.info('smtp_conf:%s', mail_conf)
+        alert_rule = objects.AlertRule.get_by_id(
+            ctxt, alert_rule.id, expected_attrs=['alert_groups'])
+        al_groups = alert_rule.alert_groups
+        for al_group in al_groups:
+            al_group = objects.AlertGroup.get_by_id(
+                ctxt, al_group.id, expected_attrs=['email_groups'])
+            email_groups = al_group.email_groups
+            for email_group in email_groups:
+                to_emails = email_group.emails.strip().split(',')
+                logger.info('to_emails is:%s', to_emails)
+                # send per email
+                self._per_send_alert_email(
+                    alert_rule, alert_msg, mail_conf, to_emails)
+
+    def _per_send_alert_email(self, alert_rule, alert_msg,
+                              mail_conf, to_emails):
+        for to_email in to_emails:
+            subject_conf = {
+                'smtp_subject': 't2stor_alert:{}'.format(
+                    alert_rule.type)}
+            content_conf = {'smtp_content': alert_msg}
+            mail_conf.update({'smtp_name': 't2stor',
+                              'smtp_to_email': to_email})
+            logger.info('begin send email, to_email=%s', to_email)
+            try:
+                send_mail(subject_conf, content_conf,
+                          mail_conf)
+                logger.info('send email success,to_email=%s', to_email)
+            except Exception as e:
+                logger.error(
+                    'send email error,to_email=%s,%s', to_email, str(e))
