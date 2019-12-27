@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-27 15:28+0800\n"
+"POT-Creation-Date: 2019-12-27 19:52+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -566,6 +566,12 @@ msgstr "物理盘 %s 上线"
 
 msgid "email_group name already exists!"
 msgstr "通知列表名称已存在"
+
+msgid "the email_group max num is %s"
+msgstr "每组邮箱数量不能超过%s"
+
+msgid "the email max len is %s"
+msgstr "邮箱长度不能超过%s"
 
 msgid "email %s repeat"
 msgstr "邮箱: %s 重复"
