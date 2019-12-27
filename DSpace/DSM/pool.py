@@ -70,8 +70,10 @@ class PoolHandler(AdminBaseHandler):
         return objects.PoolList.get_count(ctxt, filters=filters)
 
     def pool_get(self, ctxt, pool_id, expected_attrs=None):
-        return objects.Pool.get_by_id(
+        pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=expected_attrs)
+        self._osds_update_size(ctxt, pool.osds)
+        return pool
 
     def pool_osds_get(self, ctxt, pool_id, expected_attrs=None):
         osds = objects.OsdList.get_by_pool(
