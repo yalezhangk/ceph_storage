@@ -123,19 +123,38 @@ class CronHandler(AdminBaseHandler):
             self.send_service_alert(context, osd, "osd_status", "Osd",
                                     "ERROR", msg, "OSD_OFFLINE")
 
-    def _set_osd_status(self, context, osd_status, up_down):
-        osd_id = osd_status.get('id')
-        if osd_id < 0:
-            return
+    def get_osd_status(self, context, osd_id, ceph_client):
+        osd_nodes = self._get_osd_tree(ceph_client)
+        osd_status = {}
+        for osd_node in osd_nodes:
+            if osd_node.get("id") == osd_id:
+                osd_status = osd_node
+                break
+            else:
+                continue
+        if not osd_status:
+            return ""
         status = ""
+        # get in or out
         if osd_status.get('reweight'):
             status += "in&"
         else:
             status += "out&"
-        # append up or down
+        # get up or down
+        serice_status = self._check_ceph_osd_status(context, ceph_client)
+        if serice_status:
+            up_down = serice_status.get("osd.{}".format(osd_status.get('id')))
+        else:
+            up_down = osd_status.get('status')
         if not up_down:
-            return
+            return ""
         status += up_down
+        return status
+
+    def _set_osd_status(self, context, osd_status, ceph_client):
+        osd_id = osd_status.get('id')
+        if osd_id < 0:
+            return
         osd = objects.OsdList.get_all(context, filters={"osd_id": osd_id})
         if not osd:
             return
@@ -145,6 +164,9 @@ class CronHandler(AdminBaseHandler):
                           s_fields.OsdStatus.REPLACE_PREPARED,
                           s_fields.OsdStatus.REPLACE_PREPARING,
                           s_fields.OsdStatus.PROCESSING]:
+            return
+        status = self.get_osd_status(context, osd_id, ceph_client)
+        if not status:
             return
         node = objects.Node.get_by_id(context, osd.node_id)
         if not self.if_service_alert(context, node=node):
@@ -167,16 +189,16 @@ class CronHandler(AdminBaseHandler):
             elif status == "in&down":
                 if osd.status in [s_fields.OsdStatus.ACTIVE]:
                     logger.warning("osd.%s status is %s", osd.osd_id, status)
+                    osd.conditional_update({
+                        "status": s_fields.OsdStatus.OFFLINE
+                    }, expected_values={
+                        "status": s_fields.OsdStatus.ACTIVE
+                    })
+                    msg = _("osd.{} is offline").format(osd.osd_id)
+                    self.send_service_alert(
+                        context, osd, "osd_status", "Osd", "WARN", msg,
+                        "OSD_OFFLINE")
                     if self.debug_mode:
-                        osd.conditional_update({
-                            "status": s_fields.OsdStatus.OFFLINE
-                        }, expected_values={
-                            "status": s_fields.OsdStatus.ACTIVE
-                        })
-                        msg = _("osd.{} is offline").format(osd.osd_id)
-                        self.send_service_alert(
-                            context, osd, "osd_status", "Osd", "WARN", msg,
-                            "OSD_OFFLINE")
                         return
                     osd.conditional_update({
                         "status": s_fields.OsdStatus.RESTARTING
@@ -237,7 +259,12 @@ class CronHandler(AdminBaseHandler):
             res.update({osd.osd_id: osd})
         return res
 
-    @synchronized('cron_osd_tree', blocking=False)
+    def _get_osd_tree(self, ceph_client):
+        osd_tree = ceph_client.get_osd_tree()
+        nodes = osd_tree.get("nodes") + osd_tree.get("stray")
+        return nodes
+
+    # @synchronized('cron_osd_tree', blocking=False)
     def osd_check(self):
         for cluster in self.clusters:
             context = context_tool.get_context(cluster_id=cluster.id)
@@ -249,17 +276,11 @@ class CronHandler(AdminBaseHandler):
                 logger.debug("Cluster %s has no osd, ignore", cluster.id)
                 continue
             osds = self._make_osd_list(osds)
-            status = self._check_ceph_osd_status(context, ceph_client)
-            osd_tree = ceph_client.get_osd_tree()
-            nodes = osd_tree.get("nodes") + osd_tree.get("stray")
+            nodes = self._get_osd_tree(ceph_client)
             for osd_status in nodes:
                 if osd_status.get('id') < 0:
                     continue
-                if status:
-                    up_down = status.get("osd.{}".format(osd_status.get('id')))
-                else:
-                    up_down = osd_status.get('status')
-                self._set_osd_status(context, osd_status, up_down)
+                self._set_osd_status(context, osd_status, ceph_client)
                 if osds.get(str(osd_status.get('id'))):
                     osds.pop(str(osd_status.get('id')))
             if osds:
