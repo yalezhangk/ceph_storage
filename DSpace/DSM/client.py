@@ -21,6 +21,14 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def cluster_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "cluster_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
     def cluster_get(self, ctxt, cluster_id):
         response = self.call(ctxt, "cluster_get", cluster_id=cluster_id)
         return response

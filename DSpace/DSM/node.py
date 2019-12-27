@@ -811,6 +811,9 @@ class NodeHandler(AdminBaseHandler):
                 self._bgw_install(ctxt, node)
             if role_object_gateway:
                 self._rgw_install(ctxt, node)
+            node.disks = objects.DiskList.get_all(
+                ctxt, filters={"node_id": node.id})
+            self._node_get_metrics_overall(ctxt, [node])
             status = s_fields.NodeStatus.ACTIVE
             logger.info('create node success, node ip: {}'.format(
                         node.ip_address))

@@ -145,6 +145,7 @@ class OsdHandler(AdminBaseHandler):
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_install(osd)
             self.wait_osd_up(ctxt, osd.osd_name)
+            self._osds_update_size(ctxt, [osd])
             osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
             logger.info("osd.%s create success", osd.osd_id)
