@@ -7,7 +7,6 @@ from pathlib import Path
 import paramiko
 import six
 import taskflow
-from grpc._channel import _Rendezvous
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from taskflow import engines
@@ -954,7 +953,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin):
                     break
                 logger.info("dsa up but not ready, will try connect"
                             "after 1 second")
-            except _Rendezvous:
+            except exc.RPCConnectError:
                 logger.info("dsa not up, will try connect after 1 second")
             retry_times += 1
             time.sleep(1)
