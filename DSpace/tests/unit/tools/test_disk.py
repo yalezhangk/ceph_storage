@@ -39,6 +39,7 @@ class TestDiskTool(test.TestCase):
         diskname = "sdb"
         tool = DiskTool(Executor())
         tool.partitions_clear(diskname)
-        run_command.assert_called_once_with(
-            ['wipefs', '/host/dev/sdb', '-a']
-        )
+        run_command.assert_has_calls([
+            mock.call(['wipefs', '/host/dev/sdb', '-a']),
+            mock.call(['partprobe', '/host/dev/sdb'])
+        ])

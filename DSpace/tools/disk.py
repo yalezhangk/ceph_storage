@@ -148,6 +148,7 @@ class DiskTool(ToolBase):
         if code:
             raise RunCommandError(cmd=cmd, return_code=code,
                                   stdout=out, stderr=err)
+        self.partprobe(disk)
         return True
 
     def data_clear(self, disk):
