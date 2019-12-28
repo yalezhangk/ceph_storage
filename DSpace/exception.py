@@ -510,6 +510,10 @@ class ClusterUnpauseError(StorException):
     message = _('Osd unpause error')
 
 
+class ClusterNotHealth(StorException):
+    message = _('Cluster not health, Please check cluster status')
+
+
 class IPConnectError(StorException):
     message = _('Connect to %(ip)s error')
 

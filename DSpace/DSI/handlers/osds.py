@@ -241,6 +241,14 @@ class OsdListHandler(ClusterAPIHandler):
                 try:
                     osd = yield client.osd_create(ctxt, data)
                     osds.append(osd)
+                except exception.ClusterNotHealth as e:
+                    self.log_exception("create osd", e)
+                    err_ms = str(e)
+                    wb_client = WebSocketClientManager(
+                        context=ctxt).get_client()
+                    wb_client.send_message(
+                        ctxt, data, "CREATE_ERROR", err_ms,
+                        resource_type='Osd')
                 except Exception as e:
                     disk_info = yield client.get_disk_info(ctxt, data)
                     hostname = disk_info['hostname']

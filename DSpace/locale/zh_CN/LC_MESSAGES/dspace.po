@@ -324,6 +324,9 @@ msgstr "硬盘暂停错误"
 msgid "Osd unpause error"
 msgstr "硬盘暂停错误"
 
+msgid "Cluster not health, Please check cluster status"
+msgstr "集群未处于健康状态，请先检查集群"
+
 msgid "Connect to %(ip)s error"
 msgstr "连接IP地址 %(ip)s 错误"
 
@@ -449,9 +452,6 @@ msgstr "告警通知名称已存在"
 
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
-
-msgid "has not active mon host, can not do any ceph actions"
-msgstr "无健康的主控节点，无法继续操作"
 
 msgid "Ceph config update failed"
 msgstr "Ceph配置修改失败"
@@ -1171,3 +1171,4 @@ msgstr "旧样式的配置只能使用字典或缓存后端"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
