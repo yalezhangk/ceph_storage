@@ -570,7 +570,7 @@ class OsdHandler(AdminBaseHandler):
     def osd_disk_replace(self, ctxt, osd_id):
         self.check_mon_host(ctxt)
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
-        self.check_agent_available(ctxt, osd.name)
+        self.check_agent_available(ctxt, osd.node)
         if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
             raise exception.InvalidInput(_("Osd status should be "
                                            "REPLACE_PREPARED"))
