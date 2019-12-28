@@ -36,6 +36,7 @@ from DSpace.utils.cluster_config import get_full_ceph_version
 logger = logging.getLogger(__name__)
 CODE_DIR_CONTAINER = "/root/.local/lib/python3.6/site-packages/DSpace/"
 SKIP_NET_DEVICE = "docker0|lo"
+PROMETHEUS_TARGET_PATH = '/prometheus/targets/targets.json'
 
 
 class NodeMixin(object):
@@ -128,6 +129,67 @@ class ServiceMixin(object):
             ctxt, filters={"name": name, "node_id": node_id})
         for s in services:
             s.destroy()
+
+
+class PrometheusTargetMixin(object):
+
+    def _get_port(self, ctxt, service):
+        if service == 'node_exporter':
+            port = objects.sysconfig.sys_config_get(
+                ctxt, ConfigKey.NODE_EXPORTER_PORT)
+        elif service == "mgr":
+            # default 9283
+            port = objects.sysconfig.sys_config_get(
+                ctxt, ConfigKey.MGR_DSPACE_PORT)
+        return port
+
+    def _get_path(self, ctxt):
+        path = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
+        return path + PROMETHEUS_TARGET_PATH
+
+    def target_add(self, ctxt, node, service):
+        logger.info("Config from prometheus target file: %s, %s, %s",
+                    service, node.ip_address, node.hostname)
+        ip = node.ip_address
+        hostname = node.hostname
+        port = self._get_port(ctxt, service)
+
+        admin_node = objects.NodeList.get_all(
+            ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
+        for node in admin_node:
+            client = AgentClientManager(
+                ctxt, cluster_id=node.cluster_id
+            ).get_client(node_id=node.id)
+
+            logger.info("Add to %s prometheus target file: %s, %s",
+                        node.hostname, ip, port)
+
+            client.prometheus_target_add(
+                ctxt, ip=str(ip), port=port,
+                hostname=hostname,
+                path=self._get_path(ctxt))
+
+    def target_remove(self, ctxt, node, service):
+        logger.info("Config from prometheus target file: %s, %s, %s",
+                    service, node.ip_address, node.hostname)
+        ip = node.ip_address
+        hostname = node.hostname
+        port = self._get_port(ctxt, service)
+
+        admin_node = objects.NodeList.get_all(
+            ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
+        for node in admin_node:
+            client = AgentClientManager(
+                ctxt, cluster_id=node.cluster_id
+            ).get_client(node_id=node.id)
+
+            logger.info("Remove from %s prometheus target file: %s, %s",
+                        node.hostname, ip, port)
+            client.prometheus_target_remove(
+                ctxt, ip=str(ip), port=port,
+                hostname=hostname,
+                path=self._get_path(ctxt))
 
 
 class NodeTask(object):
@@ -643,70 +705,6 @@ class NodeTask(object):
         result = probe_tool.probe_node_services()
         return result
 
-    def prometheus_target_config(self, action, service, port=None, path=None):
-        logger.info("Config from prometheus target file: %s, %s, %s",
-                    service, self.node.ip_address, self.node.hostname)
-        if not path:
-            path = objects.sysconfig.sys_config_get(
-                self.ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
-        if not port:
-            if service == 'node_exporter':
-                port = objects.sysconfig.sys_config_get(
-                    self.ctxt, ConfigKey.NODE_EXPORTER_PORT)
-            if service == "mgr":
-                # default 9283
-                port = objects.sysconfig.sys_config_get(
-                    self.ctxt, ConfigKey.MGR_DSPACE_PORT)
-        ip = self.node.ip_address
-        hostname = self.node.hostname
-
-        admin_node = objects.NodeList.get_all(
-            self.ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
-
-        if service == 'node_exporter':
-            targets = []
-            for node in admin_node:
-                targets.append({
-                    "targets": [str(node.ip_address) + ":" + port],
-                    "labels": {
-                        "hostname": node.hostname,
-                        "cluster_id": node.cluster_id
-                    }
-                })
-
-        for node in admin_node:
-            client = AgentClientManager(
-                self.ctxt, cluster_id=node.cluster_id
-            ).get_client(node_id=node.id)
-
-            if action == "add":
-                logger.info("Add to %s prometheus target file: %s, %s",
-                            node.hostname, ip, port)
-                if service == 'node_exporter':
-                    targets.append({
-                        "targets": [str(ip) + ":" + port],
-                        "labels": {
-                            "hostname": hostname,
-                            "cluster_id": self.node.cluster_id
-                        }
-                    })
-                    client.prometheus_target_add_all(
-                        self.ctxt, new_targets=targets,
-                        path=path + '/prometheus/targets/targets.json')
-                    continue
-
-                client.prometheus_target_add(
-                    self.ctxt, ip=str(ip), port=port,
-                    hostname=hostname,
-                    path=path + '/prometheus/targets/targets.json')
-            if action == "remove":
-                logger.info("Remove from %s prometheus target file: %s, %s",
-                            node.hostname, ip, port)
-                client.prometheus_target_remove(
-                    self.ctxt, ip=str(ip), port=port,
-                    hostname=hostname,
-                    path=path + '/prometheus/targets/targets.json')
-
 
 class ContainerUninstallMixin(object):
     def _node_remove_container(self, ctxt, ssh, container_name, image_name):
@@ -811,10 +809,15 @@ class InstallDocker(BaseTask):
         return repo
 
 
-class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
+class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin,
+                           PrometheusTargetMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceAgentUninstall, self).execute(task_info)
         ssh = node.executer
+        try:
+            self.target_remove(ctxt, node, 'node_exporter')
+        except Exception:
+            logger.warning("node_exporter target remove failed")
         self.service_delete(ctxt, "DSA", node.id)
         self._node_remove_container(ctxt, ssh, "dsa", "dspace")
         config_dir = objects.sysconfig.sys_config_get(
@@ -873,7 +876,7 @@ class UninstallDSpaceTool(BaseTask):
         file_tool.rm("{}/95-dspace-hotplug.rules".format(udev_dir))
 
 
-class DSpaceAgentInstall(BaseTask, ServiceMixin):
+class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceAgentInstall, self).execute(task_info)
 
@@ -936,6 +939,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin):
         rpc_service.create()
         self.wait_agent_ready(ctxt, node)
         self.service_create(ctxt, "DSA", node.id, "base")
+        self.target_add(ctxt, node, 'node_exporter')
 
     def wait_agent_ready(self, ctxt, node):
         logger.debug("wait agent ready to work")

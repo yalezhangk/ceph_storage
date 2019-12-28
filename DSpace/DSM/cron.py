@@ -459,6 +459,14 @@ class CronHandler(AdminBaseHandler):
                 cluster.save()
                 logger.info("no monitor found")
                 continue
+            # check ceph config
+            mon_host = objects.ceph_config.ceph_config_get(
+                self.ctxt, "global", "mon_host")
+            if not mon_host:
+                cluster.ceph_status = False
+                cluster.save()
+                logger.info("no mon host found")
+                continue
 
             ceph_client = CephTask(context)
             status = cluster.ceph_status

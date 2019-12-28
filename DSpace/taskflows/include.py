@@ -36,6 +36,7 @@ from DSpace.taskflows.node import GetNodeInfo
 from DSpace.taskflows.node import InstallDocker
 from DSpace.taskflows.node import InstallDSpaceTool
 from DSpace.taskflows.node import NodesCheck
+from DSpace.taskflows.node import PrometheusTargetMixin
 from DSpace.taskflows.node import ReduceNodesInfo
 from DSpace.taskflows.node import ServiceMixin
 from DSpace.taskflows.node import SyncCephVersion
@@ -100,19 +101,15 @@ class SyncNodeInfo(BaseTask):
         node.save()
 
 
-class MarkNodeActive(BaseTask):
+class MarkNodeActive(BaseTask, ServiceMixin, PrometheusTargetMixin):
     def execute(self, ctxt, node, task_info):
         super(MarkNodeActive, self).execute(task_info)
         node.status = s_fields.NodeStatus.ACTIVE
         node.save()
-
-
-class ServiceCreate(BaseTask, ServiceMixin):
-    def execute(self, ctxt, node, task_info):
-        super(ServiceCreate, self).execute(task_info)
         if node.role_monitor:
             self.service_create(ctxt, "MON", node.id, role="role_monitor")
             self.service_create(ctxt, "MGR", node.id, role="role_monitor")
+            self.target_add(ctxt, node, 'mgr')
 
 
 class InstallService(BaseTask):
@@ -145,9 +142,6 @@ class InstallService(BaseTask):
                 rebind={'node': arg}))
             node_install_flow.add(MarkNodeActive(
                 "Mark node active %s" % node.id,
-                rebind={'node': arg}))
-            node_install_flow.add(ServiceCreate(
-                "service create %s" % node.id,
                 rebind={'node': arg}))
             if sync_version:
                 node_install_flow.add(SyncCephVersion(

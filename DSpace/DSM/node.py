@@ -24,6 +24,7 @@ from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodeMixin
 from DSpace.taskflows.node import NodesCheck
 from DSpace.taskflows.node import NodeTask
+from DSpace.taskflows.node import PrometheusTargetMixin
 from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config
 
@@ -66,11 +67,6 @@ class NodeHandler(AdminBaseHandler):
 
     def _node_delete(self, ctxt, node, begin_action):
         node_task = NodeTask(ctxt, node)
-        try:
-            node_task.prometheus_target_config(action='remove',
-                                               service='node_exporter')
-        except Exception as e:
-            logger.error(e)
 
         try:
             if node.role_monitor:
@@ -478,7 +474,7 @@ class NodeHandler(AdminBaseHandler):
                 self._save_admin_keyring(ctxt, node_task)
             node.role_monitor = True
             node.save()
-            node_task.prometheus_target_config(action='add', service='mgr')
+            PrometheusTargetMixin().target_add(ctxt, node, service='mgr')
             self._sync_ceph_configs(ctxt)
             self._create_mon_service(ctxt, node)
             msg = _("node %s: set mon role success") % node.hostname
@@ -532,7 +528,7 @@ class NodeHandler(AdminBaseHandler):
             self._sync_ceph_configs(ctxt)
             msg = _("node %s: unset mon role success") % node.hostname
             op_status = "UNSET_ROLE_MON_SUCCESS"
-            task.prometheus_target_config(action='remove', service='mgr')
+            PrometheusTargetMixin().target_remove(ctxt, node, service='mgr')
             status = 'success'
             err_msg = None
         except Exception as e:
@@ -836,8 +832,6 @@ class NodeHandler(AdminBaseHandler):
         except Exception as e:
             logger.error("Update dsa node info failed: %s", e)
 
-        node_task.prometheus_target_config(action='add',
-                                           service='node_exporter')
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
