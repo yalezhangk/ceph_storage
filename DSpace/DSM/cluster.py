@@ -14,6 +14,7 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.cluster import cluster_delete_flow
 from DSpace.taskflows.node import NodeTask
+from DSpace.taskflows.node import PrometheusTargetMixin
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
 from DSpace.tools.prometheus import PrometheusTool
@@ -85,8 +86,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def _admin_node_delete(self, ctxt, node):
         node_task = NodeTask(ctxt, node)
         try:
-            node_task.prometheus_target_config(action='remove',
-                                               service='node_exporter')
+            PrometheusTargetMixin().target_remove(
+                ctxt, node, service='node_exporter')
         except Exception as e:
             logger.error(e)
 
