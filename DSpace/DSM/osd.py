@@ -630,7 +630,7 @@ class OsdHandler(AdminBaseHandler):
         disk = objects.Disk.get_by_id(
             ctxt, disk_id, expected_attrs=['partition_used', 'node',
                                            'partitions'])
-        self.check_agent_available(disk.node)
+        self.check_agent_available(ctxt, disk.node)
         if not disk.partitions:
             raise exception.InvalidInput(_("accelerate disk has no "
                                            "partitions"))
