@@ -397,7 +397,7 @@ msgid "FileStore not support DB, WAL or Cache"
 msgstr "'FileStore' 不支持 'DB', 'WAL' 或 'Cache'类型"
 
 msgid "osd:hostname={},disk_name={} create error: {}"
-msgstr "主机{}上的硬盘{}创建错误: {}"
+msgstr "{}:{}创建硬盘错误: {}"
 
 msgid "osd_top not number"
 msgstr "osd_top应为数字"
@@ -430,7 +430,7 @@ msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
 
 msgid "has not active mon host, can not do any ceph actions"
-msgstr "健康状态监控节点不存在，无法进行任何Ceph操作"
+msgstr "无健康的主控节点，无法继续操作"
 
 msgid "Ceph config update failed"
 msgstr "Ceph配置修改失败"
