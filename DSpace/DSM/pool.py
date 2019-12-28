@@ -593,7 +593,7 @@ class PoolHandler(AdminBaseHandler):
                 expected_attrs=['crush_rule', 'osds'])
             begin_action = self.begin_action(
                 ctxt, resource_type=AllResourceType.POOL,
-                action=AllActionType.POOL_UPDATE_POLICY, before_obj=pool)
+                action=AllActionType.POOL_UNDO, before_obj=pool)
             osd_db_ids = [osd['id'] for osd in undo['osds']]
             objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
             try_out = False
@@ -611,7 +611,7 @@ class PoolHandler(AdminBaseHandler):
                     pool.status = s_fields.PoolStatus.ERROR
                     pool.save()
                     raise exception.StorException(str(e))
-            logger.exception("pool undo finish")
+            logger.info("pool undo finish")
             self.finish_action(begin_action, resource_id=pool.id,
                                resource_name=pool.display_name,
                                after_obj=pool, status=pool.status)

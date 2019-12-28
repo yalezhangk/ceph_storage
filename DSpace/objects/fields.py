@@ -302,6 +302,7 @@ class AllActionType(BaseStorEnum):
     VOLUME_UNLINK = 'volume_unlink'
     POOL_ADD_DISK = 'pool_add_disk'
     POOL_DEL_DISK = 'pool_del_disk'
+    POOL_UNDO = 'pool_undo'
     POOL_UPDATE_POLICY = 'pool_update_policy'
     CLONE = 'clone'
     SET_ALL_READED = 'set_all_readed'
