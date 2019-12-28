@@ -224,17 +224,12 @@ class CephHandler(AgentBaseHandler):
         # clear config
         self.ceph_config_clear_group(context, osd.osd_name)
         client = self._get_ssh_executor()
-        ceph_tool = CephTool(client)
-        # mark out
-        ceph_tool.osd_mark_out(osd.osd_id)
-        logger.info("osd %s(osd.%s), mark out", osd.id, osd.osd_id)
         # clean osd
         self._clean_osd(context, osd)
         service_tool = ServiceTool(client)
         osd_service = "ceph-osd@{}".format(osd.osd_id)
         service_tool.disable(osd_service)
         logger.info("osd %s(osd.%s), service disable", osd.id, osd.osd_id)
-        ceph_tool.osd_remove_from_cluster(osd.osd_id)
         logger.info("osd %s(osd.%s), remove success", osd.id, osd.osd_id)
         return osd
 

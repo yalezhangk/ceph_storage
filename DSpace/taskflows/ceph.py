@@ -600,6 +600,14 @@ class CephTask(object):
         with RADOSClient(self.rados_args()) as rados_client:
             return rados_client.osd_new(osd_fsid)
 
+    def osd_remove_from_cluster(self, osd_name):
+        with RADOSClient(self.rados_args()) as rados_client:
+            rados_client.osd_down(osd_name)
+            rados_client.osd_out(osd_name)
+            rados_client.osd_crush_rm(osd_name)
+            rados_client.osd_rm(osd_name)
+            rados_client.auth_del(osd_name)
+
     def get_pools(self):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.get_pools()
