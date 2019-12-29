@@ -470,6 +470,8 @@ class OsdHandler(AdminBaseHandler):
         sr = self.slow_requests.get(ctxt.cluster_id)
         if sr:
             sr["slow_request_sum"] = sr["slow_request_sum"][:osd_top]
+            sr["slow_request_sum"] = list(filter(lambda x: x['total'] != 0,
+                                                 sr["slow_request_sum"]))
             sr["slow_request_ops"] = sr["slow_request_ops"][:op_top]
         return sr
 
