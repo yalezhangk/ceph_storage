@@ -84,9 +84,7 @@ class ServiceHandler(AdminBaseHandler):
         type = "rgw"
         msg = _("Node {}: radosgw {} status is inactive, trying to restart"
                 ).format(node.hostname, radosgw.display_name)
-        self.send_service_alert(
-            ctxt, radosgw, "service_status", radosgw.display_name, "INFO", msg,
-            "SERVICE_RESTART")
+        self.send_websocket(ctxt, radosgw, "SERVICE_RESTART", msg)
 
         ssh = SSHExecutor(hostname=str(node.ip_address),
                           password=node.password)
@@ -147,16 +145,16 @@ class ServiceHandler(AdminBaseHandler):
                               s_fields.RadosgwStatus.STARTING,
                               s_fields.RadosgwStatus.INACTIVE]:
             return rgw
-        if (rgw.status == s_fields.RadosgwStatus.STARTING) \
-                and (status != s_fields.RadosgwStatus.ACTIVE):
+        if (rgw.status == s_fields.RadosgwStatus.STARTING and
+                status != s_fields.RadosgwStatus.ACTIVE):
             return rgw
-        if (rgw.status == s_fields.RadosgwStatus.ERROR) \
-                and (status != s_fields.RadosgwStatus.ACTIVE):
+        if (rgw.status == s_fields.RadosgwStatus.ERROR and
+                status != s_fields.RadosgwStatus.ACTIVE):
             return rgw
-        if status == s_fields.RadosgwStatus.INACTIVE and \
-                rgw.status == s_fields.RadosgwStatus.ACTIVE:
-            msg = _("Node {}: radosgw {} status is inactive") \
-                .format(node.hostname, rgw.display_name)
+        if (status == s_fields.RadosgwStatus.INACTIVE and
+                rgw.status == s_fields.RadosgwStatus.ACTIVE):
+            msg = _("Node {}: radosgw {} status is inactive"
+                    ).format(node.hostname, rgw.display_name)
             self.send_service_alert(
                 ctxt, rgw, "service_status", rgw.display_name, "WARN",
                 msg, "SERVICE_INACTIVE")
@@ -170,6 +168,7 @@ class ServiceHandler(AdminBaseHandler):
                 self.send_service_alert(
                     ctxt, rgw, "service_status", rgw.name, "INFO",
                     msg, "SERVICE_ACTIVE")
+        logger.debug("RGW status from %s to %s", rgw.status, status)
         rgw.status = status
         rgw.save()
         return rgw

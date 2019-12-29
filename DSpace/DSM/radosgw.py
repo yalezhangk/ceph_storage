@@ -31,8 +31,9 @@ class RadosgwHandler(AdminBaseHandler):
             else:
                 update_time = rgw.created_at
             time_diff = time_now - update_time
-            if (rgw.status == s_fields.RadosgwStatus.ACTIVE) and \
-                    (time_diff.total_seconds() > CONF.service_max_interval):
+            rgw = objects.Radosgw.get_by_id(ctxt, rgw.id)
+            if (rgw.status == s_fields.RadosgwStatus.ACTIVE and
+                    time_diff.total_seconds() > CONF.service_max_interval):
                 rgw.status = s_fields.RadosgwStatus.INACTIVE
                 rgw.save()
 

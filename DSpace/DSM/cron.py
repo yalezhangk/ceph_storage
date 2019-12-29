@@ -474,7 +474,7 @@ class CronHandler(AdminBaseHandler):
                 self._ceph_check_retry(ceph_client, cluster)
                 if not status:
                     msg = _("reconnect to ceph cluster {}"
-                            ).format(cluster.id)
+                            ).format(cluster.display_name)
                     self.send_service_alert(
                         context, cluster, "service_status", "MON", "INFO",
                         msg, "SERVICE_ACTIVE")
@@ -482,12 +482,12 @@ class CronHandler(AdminBaseHandler):
                 if not self.if_service_alert(context):
                     continue
                 logger.warning("Could not connect to ceph cluster %s: %s",
-                               cluster.id, e)
+                               cluster.display_name, e)
                 cluster.ceph_status = False
                 cluster.save()
                 if status:
                     msg = _("Could not connect to ceph cluster {}"
-                            ).format(cluster.id)
+                            ).format(cluster.display_name)
                     self.send_service_alert(
                         context, cluster, "service_status", "MON", "ERROR",
                         msg, "SERVICE_ACTIVE")
