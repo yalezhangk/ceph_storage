@@ -180,7 +180,9 @@ class NodeHandler(AdminBaseHandler):
         # TODO get all data at once
         prometheus = PrometheusTool(ctxt)
         for node in nodes:
-            prometheus.node_get_metrics_overall(node)
+            if (node.status not in [s_fields.NodeStatus.CREATING,
+                                    s_fields.NodeStatus.DELETING]):
+                prometheus.node_get_metrics_overall(node)
 
     def _filter_gateway_network(self, ctxt, nodes):
         gateway_cidr = objects.sysconfig.sys_config_get(
@@ -809,21 +811,20 @@ class NodeHandler(AdminBaseHandler):
                 self._rgw_install(ctxt, node)
             node.disks = objects.DiskList.get_all(
                 ctxt, filters={"node_id": node.id})
+            node.status = s_fields.NodeStatus.ACTIVE
             self._node_get_metrics_overall(ctxt, [node])
-            status = s_fields.NodeStatus.ACTIVE
             logger.info('create node success, node ip: {}'.format(
                         node.ip_address))
             msg = _("node {} create success").format(node.hostname)
             op_status = "CREATE_SUCCESS"
             err_msg = None
         except Exception as e:
-            status = s_fields.NodeStatus.ERROR
+            node.status = s_fields.NodeStatus.ERROR
             logger.exception('create node error, node ip: %s, reason: %s',
                              node.ip_address, e)
             msg = _("node {} create error").format(node.hostname)
             err_msg = str(e)
             op_status = "CREATE_ERROR"
-        node.status = status
         node.save()
 
         # notify dsa to update node info
@@ -836,7 +837,7 @@ class NodeHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, node, op_status, msg)
         self.finish_action(begin_action, node.id, node.hostname,
-                           node, status, err_msg=err_msg)
+                           node, node.status, err_msg=err_msg)
         return node
 
     def node_create(self, ctxt, data):
