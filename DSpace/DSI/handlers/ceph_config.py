@@ -145,11 +145,11 @@ class CephConfigActionHandler(ClusterAPIHandler):
                 reason=_("{} do not support to modify").format(values['key'])
             )
         if action == 'update':
-            if values['value_type'] != detail.get('type'):
+            config_type = detail.get('type')
+            if values['value_type'] != config_type:
                 raise exception.InvalidInput(
-                    reason=_(
-                        "Type of config is error, it needs to be {}").format(
-                            detail.get('type'))
+                    _("Type of config is error, it needs to be {}").format(
+                        cluster_config.type_translation.get(config_type))
                 )
         if action == 'reset':
             values.update({'value': detail.get('default')})

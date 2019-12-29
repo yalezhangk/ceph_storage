@@ -1,5 +1,7 @@
 from os import path
 
+from DSpace.i18n import _
+
 CEPH_CONFIG_DIR = "/etc/ceph/"
 CEPH_CONFIG_PATH = path.join(CEPH_CONFIG_DIR, "ceph.conf")
 
@@ -58,6 +60,12 @@ auth_cephx_config = {
     'auth_cluster_required': {'type': 'string', 'value': 'cephx'},
     'auth_service_required': {'type': 'string', 'value': 'cephx'},
     'auth_client_required': {'type': 'string', 'value': 'cephx'},
+}
+
+type_translation = {
+    "int": _("int"),
+    "bool": _("bool"),
+    "string": _("string"),
 }
 
 
