@@ -1370,6 +1370,9 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
+    crush_rule_filter = {}
+    if 'failure_domain_type' in filters.keys():
+        crush_rule_filter['type'] = filters.pop('failure_domain_type')
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(
@@ -1379,6 +1382,9 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
+        if crush_rule_filter:
+            query = query.outerjoin(models.CrushRule).filter_by(
+                type=crush_rule_filter['type'])
         pools = query.all()
         if not expected_attrs:
             return pools
@@ -1393,10 +1399,16 @@ def pool_get_count(context, filters=None):
     filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
+    crush_rule_filter = {}
+    if 'failure_domain_type' in filters.keys():
+        crush_rule_filter['type'] = filters.pop('failure_domain_type')
     with session.begin():
         # Generate the query
         query = _pool_get_query(context, session)
         query = process_filters(models.Pool)(query, filters)
+        if crush_rule_filter:
+            query = query.outerjoin(models.CrushRule).filter_by(
+                type=crush_rule_filter['type'])
         return query.count()
 
 

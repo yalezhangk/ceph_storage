@@ -455,6 +455,7 @@ class PoolHandler(AdminBaseHandler):
                 ctxt, filters={"crush_rule_id": crush.id})
             rule = ceph_client.update_crush_policy(pools, crush.content)
             crush.rule_id = rule.get('rule_id')
+            crush.type = pool.failure_domain_type
             crush.save()
             msg = _("{} update policy success").format(pool.display_name)
             status = s_fields.PoolStatus.ACTIVE
