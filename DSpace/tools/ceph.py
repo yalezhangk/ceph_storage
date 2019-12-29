@@ -419,37 +419,6 @@ class CephTool(ToolBase):
         cmd = ["rm", "-rf", path]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
 
-    def osd_remove_from_cluster(self, osd_id):
-        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        # TODO: config remove by user
-        if rc == 1 and "error calling conf_read_file" in stderr:
-            return
-        elif rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "osd", "crush", "remove", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "osd", "rm", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "auth", "del", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        return True
-
     def ceph_config_update(self, values):
         path = self._wapper('/etc/ceph/ceph.conf')
         configer = configparser.ConfigParser()
@@ -1320,9 +1289,59 @@ class RADOSClient(object):
 
     def osd_out(self, osd_names):
         logger.info("osd out %s", osd_names)
+        if not isinstance(osd_names, list):
+            osd_names = [osd_names]
         cmd = {
             "prefix": "osd out",
             "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_down(self, osd_names):
+        logger.info("osd down %s", osd_names)
+        if not isinstance(osd_names, list):
+            osd_names = [osd_names]
+        cmd = {
+            "prefix": "osd down",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_crush_rm(self, osd_name):
+        logger.info("osd crush rm %s", osd_name)
+        cmd = {
+            "prefix": "osd crush rm",
+            "name": osd_name,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_rm(self, osd_names):
+        logger.info("osd rm %s", osd_names)
+        if not isinstance(osd_names, list):
+            osd_names = [osd_names]
+        cmd = {
+            "prefix": "osd rm",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def auth_del(self, osd_name):
+        logger.info("auth del %s", osd_name)
+        cmd = {
+            "prefix": "auth del",
+            "entity": osd_name,
             "format": "json"
         }
         command_str = json.dumps(cmd)

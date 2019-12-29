@@ -378,8 +378,17 @@ class OsdHandler(AdminBaseHandler):
     def _osd_delete(self, ctxt, node, osd, begin_action=None):
         logger.info("trying to delete osd.%s", osd.osd_id)
         try:
+            ceph_client = CephTask(ctxt)
+            logger.info("out osd %s from cluster", osd.osd_name)
+            ceph_client.mark_osds_out(osd.osd_name)
+
+            logger.info("destroy osd %s from node", osd.osd_name)
             task = NodeTask(ctxt, node)
             osd = task.ceph_osd_uninstall(osd)
+
+            logger.info("remove osd %s from cluster", osd.osd_name)
+            ceph_client.osd_remove_from_cluster(osd.osd_name)
+
             self._osd_config_remove(ctxt, osd)
             self._osd_clear_partition_role(ctxt, osd)
             osd.destroy()
