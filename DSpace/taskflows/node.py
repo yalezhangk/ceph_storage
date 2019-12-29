@@ -605,10 +605,7 @@ class NodeTask(object):
                                             '{}'.format(str(e)))
 
     def node_get_infos(self):
-        try:
-            ssh = self.get_ssh_executor()
-        except Exception as e:
-            raise exc.InvalidInput(_('SSH Error: %s' % e))
+        ssh = self.get_ssh_executor()
         sys_tool = SystemTool(ssh)
         node_infos = sys_tool.get_node_baseinfo()
         return node_infos

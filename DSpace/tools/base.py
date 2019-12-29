@@ -84,6 +84,37 @@ class SSHExecutor(Executor):
         except paramiko.ssh_exception.AuthenticationException as e:
             logger.warning(e)
             raise exception.SSHAuthInvalid(ip=hostname, password=password)
+        except paramiko.ssh_exception.PasswordRequiredException as e:
+            logger.warning(e)
+            # 需要提供密码
+            raise exception.SSHPasswordRequiredException(ip=hostname)
+        except paramiko.ssh_exception.BadAuthenticationType as e:
+            logger.warning(e)
+            # 不支持的认证类型
+            raise exception.SSHBadAuthenticationType(ip=hostname)
+        except paramiko.ssh_exception.BadAuthenticationType as e:
+            logger.warning(e)
+            raise exception.SSHBadAuthenticationType(ip=hostname)
+        except paramiko.ssh_exception.PartialAuthentication as e:
+            logger.warning(e)
+            # 内部认证异常
+            raise exception.SSHPartialAuthentication(ip=hostname)
+        except paramiko.ssh_exception.ChannelException as e:
+            logger.warning(e)
+            # 打开新通道异常
+            raise exception.SSHChannelException(ip=hostname)
+        except paramiko.ssh_exception.BadHostKeyException as e:
+            logger.warning(e)
+            # 主机密钥不匹配
+            raise exception.SSHBadHostKeyException(ip=hostname)
+        except paramiko.ssh_exception.ProxyCommandFailure as e:
+            logger.warning(e)
+            # 请检查ssh配置文件
+            raise exception.SSHProxyCommandFailure(ip=hostname)
+        except Exception as e:
+            logger.warning(e)
+            # 无法连接
+            raise exception.SSHConnectException(ip=hostname)
 
     def close(self):
         if self.ssh:
