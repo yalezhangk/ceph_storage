@@ -202,6 +202,10 @@ class DbCommands(object):
                 sys_config = sys_configs[0]
                 sys_config.value = value
                 sys_config.save()
+        objects.SysConfig(
+            ctxt, key=ConfigKey.ENABLE_CEPHX, value=True,
+            value_type=s_fields.ConfigType.BOOL,
+        ).create()
 
     @args('data', type=str, help='Init data')
     def rpc_service(self, data):

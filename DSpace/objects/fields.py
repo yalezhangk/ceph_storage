@@ -535,3 +535,4 @@ class ConfigKey(BaseStorEnum):
     DSA_SOCKET_FILE = 'dsa_socket_file'
     DSA_RUN_DIR = 'dsa_run_dir'
     UDEV_DIR = 'udev_dir'
+    ENABLE_CEPHX = 'enable_cephx'

@@ -151,6 +151,8 @@ class CephTool(ToolBase):
         cmd = ["ceph", "auth", "get", entity, "--format", "json"]
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
+            logger.error("can't get keyring for %s, stderr: %s",
+                         entity, stderr)
             return None
         res = json.loads(stdout)
         return res[0]['key']
