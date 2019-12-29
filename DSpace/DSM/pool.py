@@ -73,6 +73,8 @@ class PoolHandler(AdminBaseHandler):
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=expected_attrs)
         self._osds_update_size(ctxt, pool.osds)
+        for osd in pool.osds:
+            osd.node = objects.Node.get_by_id(ctxt, osd.node_id)
         return pool
 
     def pool_osds_get(self, ctxt, pool_id, expected_attrs=None):
