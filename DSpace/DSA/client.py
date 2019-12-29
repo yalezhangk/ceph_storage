@@ -25,6 +25,10 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_conf_write", content=content)
         return response
 
+    def ceph_config_set(self, ctxt, configs):
+        response = self.call(ctxt, "ceph_config_set", configs=configs)
+        return response
+
     def ceph_key_write(self, ctxt, entity, keyring_path, content):
         response = self.call(ctxt, "ceph_key_write", entity=entity,
                              keyring_path=keyring_path, content=content)

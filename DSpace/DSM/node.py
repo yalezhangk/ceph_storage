@@ -452,7 +452,7 @@ class NodeHandler(AdminBaseHandler):
         mon_nodes.append(node)
         node_task = NodeTask(ctxt, node)
         enable_cephx = objects.sysconfig.sys_config_get(
-            ctxt, key="enable_cephx"
+            ctxt, key=ConfigKey.ENABLE_CEPHX
         )
         try:
             if len(mon_nodes) == 1:

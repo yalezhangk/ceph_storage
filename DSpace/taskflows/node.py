@@ -412,10 +412,11 @@ class NodeTask(object):
         agent = self.get_agent()
 
         enable_cephx = objects.sysconfig.sys_config_get(
-            self.ctxt, key="enable_cephx"
+            self.ctxt, key=ConfigKey.ENABLE_CEPHX
         )
         if enable_cephx:
             logger.debug("cephx is enable")
+            agent.ceph_config_set(self.ctxt, configs)
             self.init_admin_key()
             self.init_bootstrap_keys("osd")
         else:
@@ -442,7 +443,7 @@ class NodeTask(object):
 
     def ceph_rgw_install(self, radosgw, zone_params):
         enable_cephx = objects.sysconfig.sys_config_get(
-            self.ctxt, key="enable_cephx"
+            self.ctxt, key=ConfigKey.ENABLE_CEPHX
         )
         # write ceph.conf
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
