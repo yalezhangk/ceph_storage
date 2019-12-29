@@ -234,12 +234,16 @@ class OsdListHandler(ClusterAPIHandler):
         elif 'osds' in data:
             datas = data.get('osds')
             client = self.get_admin_client(ctxt)
+            tasks = []
             osds = []
             for data in datas:
                 self._osd_create_check(data)
             for data in datas:
+                task = client.osd_create(ctxt, data)
+                tasks.append(task)
+            for task in tasks:
                 try:
-                    osd = yield client.osd_create(ctxt, data)
+                    osd = yield task
                     osds.append(osd)
                 except exception.ClusterNotHealth as e:
                     self.log_exception("create osd", e)
