@@ -136,9 +136,7 @@ class AdminBaseHandler(object):
     def check_mon_host(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
         if not has_mon_host:
-            raise exc.InvalidInput(
-                _('has not active mon host, can not do any '
-                  'ceph actions'))
+            raise exc.ClusterNotHealth()
 
     def check_service_status(self, ctxt, service):
         time_now = timeutils.utcnow(with_timezone=True)
