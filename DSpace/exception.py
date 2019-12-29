@@ -239,8 +239,48 @@ class Invalid(StorException):
     code = 400
 
 
-class SSHAuthInvalid(Invalid):
-    message = _("SSH Authentication failed: ip(%(ip)s)")
+class SSHException(StorException):
+    message = _("%(msg)s")
+    code = 400
+
+
+class SSHAuthInvalid(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Authentication failed")
+    code = 400
+
+
+class SSHPasswordRequiredException(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Need provide password")
+    code = 400
+
+
+class SSHBadAuthenticationType(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Unsupported authentication types")
+    code = 400
+
+
+class SSHPartialAuthentication(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Internal authentication exception")
+    code = 400
+
+
+class SSHChannelException(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Open a new channel exception")
+    code = 400
+
+
+class SSHBadHostKeyException(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Host keys do not match")
+    code = 400
+
+
+class SSHProxyCommandFailure(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Check the SSH configuration file")
+    code = 400
+
+
+class SSHConnectException(SSHException):
+    message = _("SSH Error: ip(%(ip)s) Can not connect")
     code = 400
 
 

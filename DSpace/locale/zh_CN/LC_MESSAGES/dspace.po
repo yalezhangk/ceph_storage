@@ -133,8 +133,29 @@ msgstr "数据平衡 %(action)s 错误， 启用的模式：%(mode)s"
 msgid "%(msg)s"
 msgstr "%(msg)s"
 
-msgid "SSH Authentication failed: ip(%(ip)s)"
-msgstr "远程连接认证异常: 地址(%(ip)s)"
+msgid "SSH Error: ip(%(ip)s) Authentication failed"
+msgstr "SSH 错误: 地址(%(ip)s) 认证异常"
+
+msgid "SSH Error: ip(%(ip)s) Need provide password"
+msgstr "SSH 错误: 地址(%(ip)s) 需要提供密码"
+
+msgid "SSH Error: ip(%(ip)s) Unsupported authentication types"
+msgstr "SSH 错误: 地址(%(ip)s) 不支持的认证类型"
+
+msgid "SSH Error: ip(%(ip)s) Internal authentication exception"
+msgstr "SSH 错误: 地址(%(ip)s) 内部认证异常"
+
+msgid "SSH Error: ip(%(ip)s) Open a new channel exception"
+msgstr "SSH 错误: 地址(%(ip)s) 打开新通道异常"
+
+msgid "SSH Error: ip(%(ip)s) Host keys do not match"
+msgstr "SSH 错误: 地址(%(ip)s) 主机密钥不匹配"
+
+msgid "SSH Error: ip(%(ip)s) Check the SSH configuration file"
+msgstr "SSH 错误: 地址(%(ip)s) 请检查SSH配置文件"
+
+msgid "SSH Error: ip(%(ip)s) Can not connect"
+msgstr "SSH 错误: 地址(%(ip)s) 无法连接"
 
 msgid "VolumeAccessPath %(access_path_id)s could not be found."
 msgstr "访问路径 %(access_path_id)s 未找到"
@@ -1120,9 +1141,6 @@ msgstr "Gateway IP已存在"
 
 msgid "Gateway IP not in gateway cidr ({})"
 msgstr "Gateway IP不在网关网络网段内"
-
-msgid "SSH Error: %s"
-msgstr "SSH错误：%s"
 
 msgid "Repository not available"
 msgstr "安装源不可用"
