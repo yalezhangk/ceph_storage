@@ -137,8 +137,8 @@ class AdminBaseHandler(object):
         has_mon_host = self.has_monitor_host(ctxt)
         if not has_mon_host:
             raise exc.InvalidInput(
-                reason=_('has not active mon host, can not do any '
-                         'ceph actions'))
+                _('has not active mon host, can not do any '
+                  'ceph actions'))
 
     def check_service_status(self, ctxt, service):
         time_now = timeutils.utcnow(with_timezone=True)
