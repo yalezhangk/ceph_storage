@@ -1363,6 +1363,7 @@ def pool_get(context, pool_id, expected_attrs=None):
 
 
 def pool_filters(query, filters):
+    filters = filters.copy()
     crush_rule_type = None
     if 'failure_domain_type' in filters.keys():
         crush_rule_type = filters.pop('failure_domain_type')
@@ -1378,7 +1379,7 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):
     session = get_session()
-    filters = filters.copy() or {}
+    filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
     with session.begin():
@@ -1401,7 +1402,7 @@ def pool_get_all(context, marker=None, limit=None, sort_keys=None,
 @require_context
 def pool_get_count(context, filters=None):
     session = get_session()
-    filters = filters.copy() or {}
+    filters = filters or {}
     if "cluster_id" not in filters.keys():
         filters['cluster_id'] = context.cluster_id
     with session.begin():

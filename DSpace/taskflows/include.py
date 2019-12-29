@@ -35,6 +35,7 @@ from DSpace.taskflows.node import DSpaceExpoterUninstall
 from DSpace.taskflows.node import GetNodeInfo
 from DSpace.taskflows.node import InstallDocker
 from DSpace.taskflows.node import InstallDSpaceTool
+from DSpace.taskflows.node import NodeBaseTask
 from DSpace.taskflows.node import NodesCheck
 from DSpace.taskflows.node import PrometheusTargetMixin
 from DSpace.taskflows.node import ReduceNodesInfo
@@ -112,6 +113,14 @@ class MarkNodeActive(BaseTask, ServiceMixin, PrometheusTargetMixin):
             self.target_add(ctxt, node, 'mgr')
 
 
+class SetCephConfig(NodeBaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(SetCephConfig, self).execute(task_info)
+        agent = self._get_agent(ctxt, node)
+        agent.ceph_config_set(ctxt, {"global": {
+            "osd_crush_update_on_start": "False"}})
+
+
 class InstallService(BaseTask):
     def execute(self, ctxt, nodes, task_info):
         super(InstallService, self).execute(task_info)
@@ -142,6 +151,9 @@ class InstallService(BaseTask):
                 rebind={'node': arg}))
             node_install_flow.add(MarkNodeActive(
                 "Mark node active %s" % node.id,
+                rebind={'node': arg}))
+            node_install_flow.add(SetCephConfig(
+                "Set ceph config %s" % node.id,
                 rebind={'node': arg}))
             if sync_version:
                 node_install_flow.add(SyncCephVersion(
