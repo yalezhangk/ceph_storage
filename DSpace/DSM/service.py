@@ -120,6 +120,7 @@ class ServiceHandler(AdminBaseHandler):
             try:
                 docker_tool.restart(container_name)
                 if docker_tool.status(container_name):
+                    logger.info("%s has been restarted", container_name)
                     break
             except exception.StorException as e:
                 logger.error(e)
