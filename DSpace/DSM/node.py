@@ -431,7 +431,7 @@ class NodeHandler(AdminBaseHandler):
 
     def _create_mon_service(self, ctxt, node):
         logger.debug("Create service for mon and mgr in database")
-        for name in ["MON", "MGR"]:
+        for name in ["MON", "MGR", "MDS"]:
             service = objects.Service(
                 ctxt, name=name, status=s_fields.ServiceStatus.ACTIVE,
                 node_id=node.id, cluster_id=ctxt.cluster_id, counter=0,

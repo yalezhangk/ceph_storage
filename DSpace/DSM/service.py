@@ -47,6 +47,9 @@ class ServiceHandler(AdminBaseHandler):
         elif name == "MGR":
             target = node.hostname
             type = "mgr"
+        elif name == "MDS":
+            target = node.hostname
+            type = "mds"
         else:
             logger.error("Service not support")
             return
