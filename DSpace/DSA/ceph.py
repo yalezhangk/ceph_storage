@@ -333,7 +333,6 @@ class CephHandler(AgentBaseHandler):
         file_tool.rm("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
         file_tool.rm("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
         file_tool.rm("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
-        file_tool.rm("/etc/ceph/*.keyring")
         return True
 
     def ceph_config_update(self, ctxt, values):
