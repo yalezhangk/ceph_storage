@@ -9,7 +9,6 @@ from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
-from DSpace.utils.mail import send_mail
 
 logger = logging.getLogger(__name__)
 
@@ -26,24 +25,6 @@ class AlertLogHandler(AdminBaseHandler):
     def alert_log_get_count(self, ctxt, filters=None):
         return objects.AlertLogList.get_count(
             ctxt, filters=filters)
-
-    def _per_send_email(self, alert_rule, alert_value, mail_conf, to_emails):
-        for to_email in to_emails:
-            # todo sysconfig get email template
-            subject_conf = {
-                'smtp_subject': 't2stor_alert:{}'.format(
-                    alert_rule.type)}
-            content_conf = {'smtp_content': alert_value}
-            mail_conf.update({'smtp_name': 't2stor',
-                              'smtp_to_email': to_email})
-            logger.info('begin send email, to_email=%s', to_email)
-            try:
-                send_mail(subject_conf, content_conf,
-                          mail_conf)
-                logger.info('send email success,to_email=%s', to_email)
-            except Exception as e:
-                logger.error(
-                    'send email error,to_email=%s,%s', to_email, str(e))
 
     def _send_alert_email(self, ctxt, to_datas):
         for to_data in to_datas:
@@ -88,7 +69,7 @@ class AlertLogHandler(AdminBaseHandler):
                     to_emails = email_group.emails.strip().split(',')
                     logger.info('to_emails is:%s', to_emails)
                     # send per email
-                    self._per_send_email(
+                    self._per_send_alert_email(
                         alert_rule, alert_value, mail_conf, to_emails)
         return True
 

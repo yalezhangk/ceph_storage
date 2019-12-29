@@ -3,6 +3,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
+from DSpace.i18n import _
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,3 +46,9 @@ def send_mail(subject, content, config):
     except Exception as e:
         logger.error("send mail error: %s", e)
         raise e
+
+
+def mail_template(alert_msg=None):
+    msg = _("The cluster receives an alert message:\n"
+            "    {}\nPlease deal with it timely").format(alert_msg)
+    return msg
