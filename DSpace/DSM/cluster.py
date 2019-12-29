@@ -284,7 +284,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         logger.debug("delete cluster %s finish: %s", cluster.id, msg)
         wb_client.send_message(ctxt, cluster, action, msg)
 
-    def _cluster_delete_check(self, ctxt, cluster):
+    def _cluster_delete_check(self, ctxt, cluster, clean_ceph):
         if cluster.is_admin:
             raise exc.InvalidInput(_('Admin cluster cannot be delete'))
         if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
@@ -307,7 +307,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             ctxt, filters={
                 "status": [
                     s_fields.OsdStatus.CREATING,
-                    s_fields.OsdStatus.DELETING
+                    s_fields.OsdStatus.DELETING,
+                    s_fields.OsdStatus.REPLACE_PREPARING,
+                    s_fields.OsdStatus.REPLACE_PREPARED,
+                    s_fields.OsdStatus.REPLACING
                 ]
             }
         )
@@ -317,12 +320,19 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if import_task is not None and import_task >= 0:
             raise exc.InvalidInput(_('Cluster is importing'))
 
+        if clean_ceph:
+            rgws = objects.RadosgwList.get_count(ctxt)
+            rgw_routers = objects.RadosgwRouterList.get_count(ctxt)
+            if rgws or rgw_routers:
+                raise exc.InvalidInput(_('Please remove radosgw and '
+                                         'radosgw routers first'))
+
     def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
         logger.debug("delete cluster %s start", cluster_id)
         src_cluster_id = ctxt.cluster_id
         ctxt.cluster_id = cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
-        self._cluster_delete_check(ctxt, cluster)
+        self._cluster_delete_check(ctxt, cluster, clean_ceph)
         begin_action = self.begin_action(
             ctxt, Resource.CLUSTER, Action.DELETE, before_obj=cluster)
         cluster.status = s_fields.ClusterStatus.DELETING
