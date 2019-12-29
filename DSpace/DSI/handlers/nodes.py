@@ -837,16 +837,17 @@ class NodeInfoHandler(ClusterAPIHandler):
         logger.debug("node get info, param: %s", nodes_data)
         client = self.get_admin_client(ctxt)
         ips = nodes_data.get("ips")
+        tasks = []
         res = []
         for data in ips:
-            info = yield client.node_get_infos(ctxt, data)
-            res.append(info)
+            task = client.node_get_infos(ctxt, data)
+            tasks.append(task)
 
         ip_ranges = nodes_data.get("ipr")
         for ipr in ip_ranges:
             if '-' not in ipr:
                 raise exception.InvalidInput(
-                    reason=_("IP Range %s format error", ipr))
+                    _("IP Range %s format error", ipr))
             start, end = ipr.split('-', 1)
             r = None
             try:
@@ -854,11 +855,14 @@ class NodeInfoHandler(ClusterAPIHandler):
             except Exception as e:
                 logger.error(e)
                 raise exception.InvalidInput(
-                    reason=_("IP Range %s format error", ipr))
+                    _("IP Range %s format error", ipr))
             for _ip in r:
                 ip = str(_ip)
-                info = yield client.node_get_infos(ctxt, {"ip_address": ip})
-                res.append(info)
+                task = client.node_get_infos(ctxt, {"ip_address": ip})
+                tasks.append(task)
+        for task in tasks:
+            info = yield task
+            res.append(info)
 
         self.write(objects.json_encode({
             "data": res
