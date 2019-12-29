@@ -894,8 +894,8 @@ msgstr "端口 %s 已被占用"
 msgid "Need to create index pool before radosgw"
 msgstr "需要在创建对象存储网关之前创建索引池"
 
-msgid "Index pool must be active、degraded or recovering"
-msgstr "对象索引池状态必须为健康、降级中或者恢复中"
+msgid "Index pool must be active, degraded, warning or recovering"
+msgstr "对象索引池状态必须为健康、警告、降级中或者恢复中"
 
 msgid "create radosgw success: {}"
 msgstr "创建对象存储网关成功：{}"
