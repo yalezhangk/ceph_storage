@@ -176,7 +176,7 @@ class RadosgwHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, radosgw, op_status, msg)
         self.finish_action(begin_action, radosgw.id,
-                           'client.rgw.{}'.format(radosgw.name),
+                           radosgw.display_name,
                            radosgw, radosgw.status, err_msg=err_msg)
 
     def radosgw_create(self, ctxt, data):
@@ -248,7 +248,7 @@ class RadosgwHandler(AdminBaseHandler):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, radosgw, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
-        self.finish_action(begin_action, radosgw.id, radosgw.name,
+        self.finish_action(begin_action, radosgw.id, radosgw.display_name,
                            radosgw, status, err_msg=err_msg)
 
     def _radosgw_delete_check(self, ctxt, radosgw):
