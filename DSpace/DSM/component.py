@@ -125,6 +125,8 @@ class ComponentHandler(AdminBaseHandler):
         ).get_client(node_id=radosgw.node_id)
         try:
             client.ceph_services_start(ctxt, "rgw", radosgw.name)
+            node = objects.Node.get_by_id(ctxt, radosgw.node_id)
+            self.notify_node_update(ctxt, node)
             status = s_fields.RadosgwStatus.ACTIVE
             radosgw.status = status
             radosgw.save()
@@ -183,6 +185,8 @@ class ComponentHandler(AdminBaseHandler):
             client.ceph_services_stop(ctxt, "rgw", radosgw.name)
             radosgw.status = s_fields.RadosgwStatus.STOPPED
             radosgw.save()
+            node = objects.Node.get_by_id(ctxt, radosgw.node_id)
+            self.notify_node_update(ctxt, node)
             logger.info("client.rgw.%s stop success", radosgw.name)
             op_status = 'STOP_SUCCESS'
             msg = _("Stop success: {}").format(radosgw.display_name)

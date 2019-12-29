@@ -77,6 +77,8 @@ class CronHandler(AgentBaseHandler):
         for k, v in six.iteritems(uncertain_services):
             if k == "radosgws":
                 for rgw in v:
+                    if rgw.status == s_fields.RadosgwStatus.STOPPED:
+                        continue
                     self.service_map['role_object_gateway'].update({
                         rgw.name: "ceph-radosgw@rgw.{}".format(rgw.name)
                     })
@@ -87,7 +89,7 @@ class CronHandler(AgentBaseHandler):
                             self.container_namespace + "_radosgw_" +
                             service.name
                     })
-        logger.debug("Init service map sucess: %s", self.service_map)
+        logger.info("Init service map sucess: %s", self.service_map)
 
     def _status_map(self, status, role):
         if role in ["base", "role_admin", "role_monitor",
