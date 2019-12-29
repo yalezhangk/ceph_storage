@@ -27,7 +27,7 @@ class EmailGroupHandler(AdminBaseHandler):
     def email_group_get_count(self, ctxt, filters=None):
         return objects.EmailGroupList.get_count(ctxt, filters=filters)
 
-    def _check_name_exist(self, ctxt, name):
+    def _check_email_group_name(self, ctxt, name):
         is_exist = objects.EmailGroupList.get_all(
             ctxt, filters={'name': name})
         if is_exist:
@@ -59,7 +59,7 @@ class EmailGroupHandler(AdminBaseHandler):
             'emails': data.get('emails'),
             'cluster_id': ctxt.cluster_id
         }
-        self._check_name_exist(ctxt, email_group_data['name'])
+        self._check_email_group_name(ctxt, email_group_data['name'])
         self._check_email_repeat(email_group_data['emails'])
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.EMAIL_GROUP,
@@ -83,7 +83,7 @@ class EmailGroupHandler(AdminBaseHandler):
         if email_group.name == name:
             pass
         else:
-            self._check_name_exist(ctxt, name)
+            self._check_email_group_name(ctxt, name)
         emails = data.get('emails')
         self._check_email_repeat(emails)
         begin_action = self.begin_action(
