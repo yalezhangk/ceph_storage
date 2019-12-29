@@ -102,7 +102,7 @@ class CephTask(object):
     Get all osds in a pool
     """
     def get_pool_osds(self, pool_name):
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             osds = rados_client.get_osds_by_pool(pool_name)
             return osds
 
@@ -166,7 +166,7 @@ class CephTask(object):
 
     def pool_create(self, pool, can_specified_rep, crush_content):
         logger.debug("pool_data: %s", json.dumps(crush_content))
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             # 1. Create bucket: host, rack, [datacenter], root
             # 2. Move osd to host, move host to rack...
             # 3. Get current crushmap
@@ -219,7 +219,7 @@ class CephTask(object):
             return rados_client.get_pool_stats(pool_name).get('pool_id')
 
     def config_set(self, cluster_temp_configs):
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             for config in cluster_temp_configs:
                 service = config['service']
                 osd_list = None
@@ -233,7 +233,7 @@ class CephTask(object):
                                         osd_list)
 
     def rule_get(self, rule_name):
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             rule_detail = rados_client.rule_get(rule_name)
             return rule_detail
 
@@ -286,7 +286,7 @@ class CephTask(object):
         logger.debug("pool_delete, pool_data: %s", pool)
         pool_name = pool.pool_name
         pool_role = pool.role
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             rados_client.pool_delete(pool_name)
             if pool_role == 'gateway':
                 rgw_pools = ['.rgw.root',
@@ -298,7 +298,7 @@ class CephTask(object):
 
     def crush_delete(self, crush_content):
         logger.debug("crush_delete, data: %s", crush_content)
-        with RADOSClient(self.rados_args()) as rados_client:
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             self._crush_rule_delete(rados_client, crush_content)
 
     def _crush_rule_update(self, client, crush_content):
@@ -541,7 +541,7 @@ class CephTask(object):
         logger.info("crush_content: %s", crush_content)
         root_name = crush_content.get('root_name')
         pool_name = pool.pool_name
-        with RADOSClient(self.rados_args()) as client:
+        with RADOSClient(self.rados_args(), timeout='5') as client:
             if not client.pool_exists(pool_name):
                 logger.warning("pool %s not exists", pool_name)
                 return
@@ -563,7 +563,7 @@ class CephTask(object):
 
     def pool_del_disk(self, pool, crush_content):
         logger.info("crush_content: %s", crush_content)
-        with RADOSClient(self.rados_args()) as client:
+        with RADOSClient(self.rados_args(), timeout='5') as client:
             self._crush_rule_update(client, crush_content)
 
     def cluster_info(self):
@@ -573,7 +573,7 @@ class CephTask(object):
     def update_pool(self, pool):
         rep_size = pool.replicate_size
         pool_name = pool.pool_name
-        with RADOSClient(self.rados_args()) as client:
+        with RADOSClient(self.rados_args(), timeout='5') as client:
             if not client.pool_exists(pool_name):
                 raise exc.PoolNameNotFound(pool=pool_name)
             client.pool_set_replica_size(pool_name=pool_name,
@@ -583,7 +583,7 @@ class CephTask(object):
         rule_name = crush_content.get('crush_rule_name')
         fault_domain = crush_content.get('fault_domain')
         root_name = crush_content.get('root_name')
-        with RADOSClient(self.rados_args()) as client:
+        with RADOSClient(self.rados_args(), timeout='5') as client:
             self._crush_rule_update(client, crush_content)
             tmp_rule_name = "{}-new".format(rule_name)
             client.rule_rename(rule_name, tmp_rule_name)
