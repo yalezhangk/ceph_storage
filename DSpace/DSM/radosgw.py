@@ -102,6 +102,19 @@ class RadosgwHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("The port %s is used") % data['port'])
 
+        # check pool
+        pools = objects.PoolList.get_all(ctxt, filters={"role": "gateway"})
+        if not pools:
+            raise exception.InvalidInput(
+                _("Need to create index pool before radosgw"))
+        pool = pools[0]
+        if pool.status not in [s_fields.PoolStatus.ACTIVE,
+                               s_fields.PoolStatus.DEGRADED,
+                               s_fields.PoolStatus.WARNING,
+                               s_fields.PoolStatus.RECOVERING]:
+            raise exception.InvalidInput(_(
+                "Index pool must be active, degraded, warning or recovering"))
+
     def _radosgw_config_set(self, ctxt, node, radosgw, zone):
         radosgw_configs = {
             "host": node.hostname,
@@ -139,15 +152,7 @@ class RadosgwHandler(AdminBaseHandler):
         logger.debug("Zone object info: %s", zone)
 
         pools = objects.PoolList.get_all(ctxt, filters={"role": "gateway"})
-        if not pools:
-            raise exception.InvalidInput(
-                _("Need to create index pool before radosgw"))
         pool = pools[0]
-        if pool.status not in [s_fields.PoolStatus.ACTIVE,
-                               s_fields.PoolStatus.DEGRADED,
-                               s_fields.PoolStatus.RECOVERING]:
-            raise exception.InvalidInput(
-                _("Index pool must be active、degraded or recovering"))
         tpl = template.get('radosgw_zone.json.j2')
         zone_params = tpl.render(zone_id=zone.zone_id,
                                  zone_name=zone.name,
