@@ -1181,3 +1181,5 @@ msgstr "字符串"
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
 
+msgid "Please remove radosgw and radosgw routers first"
+msgstr "请先移除对象存储网关与对象路由"
