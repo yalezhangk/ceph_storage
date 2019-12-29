@@ -233,6 +233,7 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    @retry(RunCommandError)
     def osd_zap(self, diskname):
         cmd = ["dspace-disk", "zap", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
