@@ -209,6 +209,7 @@ class CronHandler(AdminBaseHandler):
                     return
             elif status == "out&up" or status == "out&down":
                 if osd.status in [s_fields.OsdStatus.OFFLINE,
+                                  s_fields.OsdStatus.RESTARTING,
                                   s_fields.OsdStatus.ERROR]:
                     return
                 logger.warning("osd.%s status is %s", osd.osd_id, status)
@@ -310,6 +311,8 @@ class CronHandler(AdminBaseHandler):
         docker_tool = DockerTool(ssh)
         retry_times = 0
         container_name = self.map_util.base['DSA']
+        dsa.status = s_fields.ServiceStatus.STARTING
+        dsa.save()
         msg = _("Node {}: DSA service status is inactive, trying to restart.")\
             .format(node.hostname)
         self.send_websocket(ctxt, dsa, "SERVICE_RESTART", msg)
@@ -317,6 +320,7 @@ class CronHandler(AdminBaseHandler):
             try:
                 docker_tool.restart(container_name)
                 if docker_tool.status(container_name):
+                    logger.info("DSA service has been restarted")
                     break
             except exception.StorException as e:
                 logger.error(e)
@@ -361,7 +365,8 @@ class CronHandler(AdminBaseHandler):
                 })
                 self.task_submit(self._restart_dsa, ctxt, dsa, node)
             if (dsa.status == s_fields.ServiceStatus.ACTIVE and
-                    dsa_status == s_fields.ServiceStatus.INACTIVE):
+                    (dsa_status in [s_fields.ServiceStatus.INACTIVE,
+                                    s_fields.ServiceStatus.STARTING])):
                 logger.error("DSA in node %s is active", dsa.node_id)
                 if not self.if_service_alert(ctxt, node=node):
                     continue
