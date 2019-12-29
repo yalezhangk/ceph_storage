@@ -333,7 +333,7 @@ class AllActionType(BaseStorEnum):
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
            CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE,
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
-           OSD_RESTART, RGW_START, RGW_STOP)
+           OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -390,7 +390,8 @@ class ResourceAction(object):
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.POOL_ADD_DISK,
                  AllActionType.POOL_DEL_DISK,
-                 AllActionType.POOL_UPDATE_POLICY],
+                 AllActionType.POOL_UPDATE_POLICY,
+                 AllActionType.POOL_UNDO],
 
             AllResourceType.NODE:
                 [AllActionType.CREATE, AllActionType.DELETE,

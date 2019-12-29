@@ -84,7 +84,7 @@ class AdminBaseHandler(object):
         if action:
             finish_data.update({'action': action})
         if status:
-            if status in ['active', 'success', 'available']:
+            if status in ['active', 'success', 'available', 'deleted']:
                 finish_data.update({'status': 'success'})
             else:
                 finish_data.update({'status': 'fail'})

@@ -19,7 +19,7 @@ class AlertGroupHandler(AdminBaseHandler):
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
 
-    def _check_name_exist(self, ctxt, name):
+    def _check_alert_group_name(self, ctxt, name):
         is_exist = objects.AlertGroupList.get_all(
             ctxt, filters={'name': name})
         if is_exist:
@@ -32,7 +32,7 @@ class AlertGroupHandler(AdminBaseHandler):
             'alert_rule_ids': data.get('alert_rule_ids'),
             'email_group_ids': data.get('email_group_ids')
         }
-        self._check_name_exist(ctxt, ale_group_data['name'])
+        self._check_alert_group_name(ctxt, ale_group_data['name'])
         begin_action = self.begin_action(
             ctxt, AllResourceType.ALERT_GROUP, AllActionType.CREATE)
         alert_group = objects.AlertGroup(ctxt, **ale_group_data)
@@ -53,7 +53,7 @@ class AlertGroupHandler(AdminBaseHandler):
             if alert_group.name == name:
                 pass
             else:
-                self._check_name_exist(ctxt, name)
+                self._check_alert_group_name(ctxt, name)
         alert_rule_ids = data.get('alert_rule_ids')
         email_group_ids = data.get('email_group_ids')
         begin_action = self.begin_action(
