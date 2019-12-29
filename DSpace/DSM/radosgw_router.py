@@ -41,12 +41,13 @@ class RadosgwRouterHandler(AdminBaseHandler):
                     router_health = False
             if router.status in [s_fields.RadosgwRouterStatus.CREATING,
                                  s_fields.RadosgwRouterStatus.DELETING,
-                                 s_fields.RadosgwRouterStatus.UPDATING]:
+                                 s_fields.RadosgwRouterStatus.UPDATING,
+                                 s_fields.RadosgwRouterStatus.ERROR]:
                 continue
             if router_health:
                 router.status = s_fields.RadosgwRouterStatus.ACTIVE
             else:
-                router.status = s_fields.RadosgwRouterStatus.ERROR
+                router.status = s_fields.RadosgwRouterStatus.INACTIVE
             router.save()
 
     def rgw_router_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
