@@ -36,16 +36,16 @@ class PoolHandler(AdminBaseHandler):
                     pg_degraded = pg_state.get("degraded")
                     pg_recovering = pg_state.get("recovering")
                     pg_healthy = pg_state.get("healthy")
-                if pg_unactive and pg_unactive > 0:
-                    pool.status = s_fields.PoolStatus.ERROR
-                elif pg_degraded and pg_degraded > 0:
-                    pool.status = s_fields.PoolStatus.DEGRADED
-                elif pg_recovering and pg_recovering > 0:
-                    pool.status = s_fields.PoolStatus.RECOVERING
-                elif pg_healthy and pg_healthy == 1:
-                    pool.status = s_fields.PoolStatus.ACTIVE
-                else:
-                    pool.status = s_fields.PoolStatus.WARNING
+                    if pg_unactive and pg_unactive > 0:
+                        pool.status = s_fields.PoolStatus.WARNING
+                    elif pg_degraded and pg_degraded > 0:
+                        pool.status = s_fields.PoolStatus.DEGRADED
+                    elif pg_recovering and pg_recovering > 0:
+                        pool.status = s_fields.PoolStatus.RECOVERING
+                    elif pg_healthy and pg_healthy == 1:
+                        pool.status = s_fields.PoolStatus.ACTIVE
+                    else:
+                        pool.status = s_fields.PoolStatus.WARNING
                 pool.save()
 
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
