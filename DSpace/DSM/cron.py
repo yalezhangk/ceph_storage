@@ -292,6 +292,8 @@ class CronHandler(AdminBaseHandler):
 
     def _dsa_check_cron(self):
         logger.debug("Start dsa check crontab")
+        if not CONF.dsa_heartbeat_check:
+            return
         while True:
             try:
                 self.dsa_check()
