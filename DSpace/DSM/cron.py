@@ -92,6 +92,9 @@ class CronHandler(AdminBaseHandler):
 
     def _osd_tree_cron(self):
         logger.debug("Start osd check crontab")
+        if not CONF.osd_heartbeat_check or not CONF.heartbeat_check:
+            logger.info("osd check not enable")
+            return
         while True:
             try:
                 self.osd_check()
@@ -291,8 +294,9 @@ class CronHandler(AdminBaseHandler):
                     osd.save()
 
     def _dsa_check_cron(self):
-        logger.debug("Start dsa check crontab")
-        if not CONF.dsa_heartbeat_check:
+        logger.info("Start dsa check crontab")
+        if not CONF.dsa_heartbeat_check or not CONF.heartbeat_check:
+            logger.info("dsa check not enable")
             return
         while True:
             try:

@@ -5,6 +5,7 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -36,6 +37,9 @@ class ServiceHandler(AdminBaseHandler):
         return objects.ServiceList.get_count(ctxt, filters=filters)
 
     def _restart_systemd_service(self, ctxt, name, service, node):
+        if not CONF.service_heartbeat_check or not CONF.heartbeat_check:
+            logger.info("service check not enable")
+            return
         if self.debug_mode or not self.if_service_alert(ctxt, node=node):
             return
         logger.info("Try to restart systemd service: %s", name)
@@ -75,6 +79,9 @@ class ServiceHandler(AdminBaseHandler):
             )
 
     def _restart_radosgw_service(self, ctxt, radosgw, node):
+        if not CONF.service_heartbeat_check or not CONF.heartbeat_check:
+            logger.info("service check not enable")
+            return
         if self.debug_mode or not self.if_service_alert(ctxt, node=node):
             return
         logger.info("Try to restart rgw service: %s", radosgw.name)
@@ -103,6 +110,9 @@ class ServiceHandler(AdminBaseHandler):
             )
 
     def _restart_docker_service(self, ctxt, service, container_name, node):
+        if not CONF.service_heartbeat_check or not CONF.heartbeat_check:
+            logger.info("service check not enable")
+            return
         if self.debug_mode and not self.if_service_alert(ctxt, node=node):
             return
         logger.info("Try to restart docker service: %s", container_name)
@@ -275,6 +285,7 @@ class ServiceHandler(AdminBaseHandler):
             return service
 
     def service_update(self, ctxt, services, node_id):
+        logger.info("service update from node(%s): %s", node_id, services)
         node = objects.Node.get_by_id(ctxt, node_id)
         if node.status in [s_fields.NodeStatus.DELETING]:
             logger.warning("Node status is %s, ignore service update",
