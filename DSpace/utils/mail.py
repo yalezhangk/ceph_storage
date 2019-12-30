@@ -52,3 +52,15 @@ def mail_template(alert_msg=None):
     msg = _("The cluster receives an alert message:\n"
             "    {}\nPlease deal with it timely").format(alert_msg)
     return msg
+
+
+alert_rule_translation = {
+    "cluster_usage": _("cluster_usage"),
+    "cpu_usage": _("cpu_usage"),
+    "memory_usage": _("memory_usage"),
+    "sys_disk_usage": _("sys_disk_usage"),
+    "osd_usage": _("osd_usage"),
+    "pool_usage": _("pool_usage"),
+    "service_status": _("service_status"),
+    "osd_status": _("osd_status"),
+}

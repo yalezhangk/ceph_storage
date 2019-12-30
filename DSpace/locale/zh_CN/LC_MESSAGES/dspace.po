@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-29 16:53+0800\n"
+"POT-Creation-Date: 2019-12-29 23:15-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -455,6 +455,12 @@ msgstr "告警通知名称已存在"
 
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
+
+msgid "alert notify: {}"
+msgstr "告警通知: {}"
+
+msgid "alert center"
+msgstr "告警中心"
 
 msgid "Ceph config update failed"
 msgstr "Ceph配置修改失败"
@@ -1187,42 +1193,40 @@ msgstr "布尔"
 msgid "string"
 msgstr "字符串"
 
+msgid ""
+"The cluster receives an alert message:\n"
+"    {}\n"
+"Please deal with it timely"
+msgstr ""
+"集群收到告警信息:\n"
+"    {}\n"
+"请及时处理"
+
+msgid "cluster_usage"
+msgstr "集群容量使用率超过阈值"
+
+msgid "cpu_usage"
+msgstr "cpu使用率超过阈值"
+
+msgid "memory_usage"
+msgstr "内存使用率超过阈值"
+
+msgid "sys_disk_usage"
+msgstr "系统盘使用率超过阈值"
+
+msgid "osd_usage"
+msgstr "硬盘容量使用率超过阈值"
+
+msgid "pool_usage"
+msgstr "存储池容量使用率超过阈值"
+
+msgid "service_status"
+msgstr "服务状态异常"
+
+msgid "osd_status"
+msgstr "硬盘状态异常"
+
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
 
-msgid "alert center"
-msgstr "告警中心"
-
-msgid "alert notify:cluster_usage"
-msgstr "告警通知: 集群容量使用率超过阈值"
-
-msgid "alert notify:osd_usage"
-msgstr "告警通知: 硬盘容量使用率超过阈值"
-
-msgid "alert notify:pool_usage"
-msgstr "告警通知: 存储池容量使用率超过阈值"
-
-msgid "alert notify:cpu_usage"
-msgstr "告警通知: cpu使用率超过阈值"
-
-msgid "alert notify:memory_usage"
-msgstr "告警通知: 内存使用率超过阈值"
-
-msgid "alert notify:sys_disk_usage"
-msgstr "告警通知: 系统盘使用率超过阈值"
-
-msgid "alert notify:disk_online"
-msgstr "告警通知: 物理盘上线"
-
-msgid "alert notify:disk_offline"
-msgstr "告警通知: 物理盘离线"
-
-msgid "alert notify:service_status"
-msgstr "告警通知: 服务状态异常"
-
-msgid "alert notify:osd_status"
-msgstr "告警通知: 硬盘状态异常"
-
-msgid "The cluster receives an alert message:\n    {}\nPlease deal with it timely"
-msgstr "集群收到告警信息:\n    {}\n请及时处理"
 

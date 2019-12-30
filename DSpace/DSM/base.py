@@ -15,6 +15,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.base import StorObject
 from DSpace.objects.fields import ConfigKey
+from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
 from DSpace.utils.mail import send_mail
 from DSpace.utils.service_map import ServiceMap
@@ -267,8 +268,8 @@ class AdminBaseHandler(object):
                               mail_conf, to_emails):
         for to_email in to_emails:
             subject_conf = {
-                'smtp_subject': _('alert notify:{}'.format(
-                    alert_rule.type))}
+                'smtp_subject': _('alert notify: {}').format(
+                    alert_rule_translation.get(alert_rule.type))}
             content_conf = {'smtp_content': mail_template(alert_msg=alert_msg)}
             mail_conf.update({'smtp_name': _('alert center'),
                               'smtp_to_email': to_email})
