@@ -341,10 +341,20 @@ class NodeTask(object):
         except Exception as e:
             logger.warning("uninstall ceph package failed: %s", e)
 
+    def _osd_configs(self, osd):
+        configs = {
+            "global": objects.ceph_config.ceph_config_group_get(
+                self.ctxt, "global"),
+            osd.osd_name: objects.ceph_config.ceph_config_group_get(
+                self.ctxt, osd.osd_name),
+        }
+        return configs
+
     def ceph_osd_replace(self, osd):
         logger.debug("recreate %s(osd.%s)", osd.id, osd.osd_id)
         agent = self.get_agent()
-        osd = agent.ceph_osd_create(self.ctxt, osd)
+        configs = self._osd_configs(osd)
+        osd = agent.ceph_osd_create(self.ctxt, osd, configs)
         return osd
 
     def ceph_osd_clean(self, osd):
@@ -403,12 +413,7 @@ class NodeTask(object):
     def ceph_osd_install(self, osd):
         # write ceph.conf
         logger.debug("get config")
-        configs = {
-            "global": objects.ceph_config.ceph_config_group_get(
-                self.ctxt, "global"),
-            osd.osd_name: objects.ceph_config.ceph_config_group_get(
-                self.ctxt, osd.osd_name),
-        }
+        configs = self._osd_configs(osd)
         agent = self.get_agent()
 
         enable_cephx = objects.sysconfig.sys_config_get(
