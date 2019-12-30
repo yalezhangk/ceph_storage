@@ -42,6 +42,12 @@ class Pool(base.StorPersistentObject, base.StorObject,
     OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics',
                        'failure_domain_type')
 
+    def need_metrics(self):
+        return self.status not in [s_fields.PoolStatus.CREATING,
+                                   s_fields.PoolStatus.DELETING,
+                                   s_fields.PoolStatus.ERROR,
+                                   s_fields.PoolStatus.DELETED]
+
     def create(self):
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',

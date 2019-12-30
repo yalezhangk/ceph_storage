@@ -541,6 +541,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         self.finish_action(begin_action, cluster_id, cluster.display_name,
                            after_obj=data_balance)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        if action == 'on':
+            msg = _("Cluster balance enabled")
+            ws_action = "CLUSTER_BALANCE_ENABLE"
+        else:
+            msg = _("Cluster balance disable")
+            ws_action = "CLUSTER_BALANCE_DISABLE"
+        wb_client.send_message(ctxt, cluster, ws_action, msg)
         return data_balance
 
     def cluster_pause(self, ctxt, enable=True):
