@@ -22,7 +22,9 @@ cluster_osd_restart_configs = ['bluestore_cache_size',
                                'osd_pool_default_type',
                                'backend_type']
 
-cluster_mon_restart_configs = ['debug_mds', 'debug_mgr', 'debug_ms']
+cluster_mon_restart_configs = ['osd_pool_default_type',
+                               'osd_pool_default_size',
+                               'osd_pool_default_min_size']
 
 cluster_rgw_restart_configs = ['rgw_thread_pool_size']
 
@@ -42,11 +44,16 @@ cluster_configs = {
     'debug_mds': {'type': 'int', 'default': 5},
     'debug_mgr': {'type': 'int', 'default': 5},
     'debug_ms': {'type': 'int', 'default': 5},
+    'osd_pool_default_type': {'type': 'string', 'default': 'replicated'},
+    'osd_pool_default_size': {'type': 'int', 'default': 1},
+    'osd_pool_default_min_size': {'type': 'int', 'default': 1},
 }
 
 default_cluster_configs = {
     'mon_allow_pool_delete': {'type': 'bool', 'value': True},
     'osd_crush_update_on_start': {'type': 'bool', 'value': False},
+    'osd_pool_default_type': {'type': 'string', 'value': 'replicated'},
+    'osd_pool_default_size': {'type': 'int', 'value': 1},
     'osd_pool_default_min_size': {'type': 'int', 'value': 1},
 }
 
