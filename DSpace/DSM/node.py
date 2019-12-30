@@ -925,6 +925,11 @@ class NodeHandler(AdminBaseHandler):
                                    "".format(public_cidr))
 
     def _nodes_inclusion_check(self, ctxt, datas):
+        mon_num = objects.NodeList.get_count(
+            ctxt, filters={"role_monitor": True}
+        )
+        if mon_num:
+            raise exc.InvalidInput(_("Please create new cluster to import"))
         include_tag = objects.sysconfig.sys_config_get(ctxt, 'is_import')
         if include_tag:
             raise exc.InvalidInput(_("Please Clean First"))

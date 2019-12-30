@@ -486,6 +486,9 @@ msgstr "集群中有正在进行的osd任务"
 msgid "Cluster is importing"
 msgstr "集群正在纳管"
 
+msgid "Please remove radosgw and radosgw routers first"
+msgstr "请先移除对象网管和对象路由"
+
 msgid "Invaild action: %s"
 msgstr "不合法的行为: %s"
 
@@ -731,6 +734,9 @@ msgstr "集群IP已存在"
 
 msgid "Public ip exists"
 msgstr "公共IP已存在"
+
+msgid "Please create new cluster to import"
+msgstr "请新建集群来执行纳管操作"
 
 msgid "Please Clean First"
 msgstr "请先清理集群"
