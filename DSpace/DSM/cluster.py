@@ -581,7 +581,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 "pause": False,
                 "balancer": False
             }
-        elif not self.has_mon_host(ctxt):
+        elif not self.has_monitor_host(ctxt):
             res = {
                 "created": True,
                 "status": False,
