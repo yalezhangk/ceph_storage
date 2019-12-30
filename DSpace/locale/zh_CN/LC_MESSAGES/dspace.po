@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-29 23:15-0500\n"
+"POT-Creation-Date: 2019-12-30 18:46+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -503,6 +503,12 @@ msgstr "不合法的行为: %s"
 
 msgid "Invaild mode: %s"
 msgstr "无效的模式: %s"
+
+msgid "Cluster balance enabled"
+msgstr "集群数据均衡开启"
+
+msgid "Cluster balance disable"
+msgstr "集群数据均衡关闭"
 
 msgid "Cluster Pause Success"
 msgstr "集群关闭成功"
@@ -1228,5 +1234,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-
