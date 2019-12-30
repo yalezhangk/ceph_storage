@@ -70,9 +70,9 @@ class CronHandler(AdminBaseHandler):
                         data[i]['total'] = len(data[i]["ops"])
                         total += len(data[i]["ops"])
                         data[i].pop("ops")
+                    res['slow_request_sum'].extend(data)
                 except exception.StorException as e:
                     logger.exception("osd slow requests get error: %s", e)
-                res['slow_request_sum'].extend(data)
             # 集群慢请求汇总
             res['slow_request_total'] = total
             # 排序
