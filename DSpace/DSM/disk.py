@@ -644,7 +644,8 @@ class DiskHandler(AdminBaseHandler):
         metrics.sort(key=lambda x: x['value'], reverse=True)
         disks = []
         for metric in metrics:
-            if float(metric['value']) == 0:
+            value = round(float(metric['value']), 2)
+            if value == 0:
                 continue
             hostname = metric['hostname']
             disk_name = metric['name']
@@ -654,7 +655,7 @@ class DiskHandler(AdminBaseHandler):
                     "hostname": hostname,
                     "osd_name": osd_maps[map_name].osd_name,
                     "disk": disk_name,
-                    "value": round(float(metric['value']), 2)
+                    "value": value
                 })
                 if len(disks) >= k:
                     break
