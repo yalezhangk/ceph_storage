@@ -58,10 +58,14 @@ class PoolHandler(AdminBaseHandler):
 
         if tab == 'default':
             for pool in pools:
+                if not pool.need_metrics():
+                    continue
                 self._pool_update_metrics(ctxt, pool)
         if tab == 'io':
             prometheus = PrometheusTool(ctxt)
             for pool in pools:
+                if not pool.need_metrics():
+                    continue
                 prometheus.pool_get_perf(pool)
 
         return pools
