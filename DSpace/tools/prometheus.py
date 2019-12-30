@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 
 import six
 from prometheus_http_client import NodeExporter
@@ -190,10 +189,7 @@ class PrometheusTool(object):
         try:
             value = json.loads(function(**kwargs))
         except BaseException:
-            if graph:
-                return None
-            else:
-                return [time.time(), 0]
+            return None
 
         if len(value['data']['result']):
             if graph:
@@ -201,10 +197,7 @@ class PrometheusTool(object):
             else:
                 return value['data']['result'][0]['value']
         else:
-            if graph:
-                return None
-            else:
-                return [time.time(), 0]
+            return None
 
     def node_get_metrics_network(self, node, net_name):
         metrics = {}
