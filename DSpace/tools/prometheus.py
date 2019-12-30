@@ -123,10 +123,10 @@ class PrometheusTool(object):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
-        except BaseException as e:
+        except Exception as e:
             logger.error('get metric:%s data error from prometheus:%s',
                          metric, e)
-            raise e
+            return None
 
         if len(value['data']['result']):
             data = value['data']['result'][0]['value']
@@ -144,10 +144,10 @@ class PrometheusTool(object):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
-        except BaseException as e:
+        except Exception as e:
             logger.error('get metric:%s data error from prometheus:%s',
                          metric, e)
-            raise e
+            return None
 
         if len(value['data']['result']):
             data = value['data']['result']
@@ -169,7 +169,7 @@ class PrometheusTool(object):
         try:
             value = json.loads(prometheus.query_rang(
                 metric=metric, filter=filter, start=start, end=end))
-        except BaseException:
+        except Exception:
             return None
 
         if len(value['data']['result']):
@@ -188,7 +188,7 @@ class PrometheusTool(object):
         graph = kwargs.get('graph')
         try:
             value = json.loads(function(**kwargs))
-        except BaseException:
+        except Exception:
             return None
 
         if len(value['data']['result']):
@@ -382,7 +382,7 @@ class PrometheusTool(object):
                 else 0,
                 'degraded': round(degraded / pg_total, 3) if pg_total else 0,
                 'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
-        except BaseException:
+        except Exception:
             cluster_metrics.update({'cluster_pg_state': None})
 
     def pool_get_perf(self, pool):
@@ -462,6 +462,9 @@ class PrometheusTool(object):
                 'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
         except exception.StorException as e:
             logger.error(e)
+        except Exception as e:
+            logger.error(e)
+            pool.metrics.update({'pg_state': None})
 
     def osd_get_capacity(self, osd):
         logger.info("osd_get_capacity: osd_id: %s.", osd.id)
@@ -603,6 +606,9 @@ class PrometheusTool(object):
         except exception.StorException as e:
             logger.error(e)
             pass
+        except Exception as e:
+            logger.error(e)
+            osd.metrics.update({'pg_state': None})
 
     def cluster_get_capacity(self, filter=None):
         # 集群容量
@@ -627,10 +633,10 @@ class PrometheusTool(object):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
-        except BaseException as e:
+        except Exception as e:
             logger.error('get metric:%s data error from prometheus:%s',
                          metric, e)
-            raise e
+            return None
         data = value['data']['result']
         if data:
             logger.info('get metric:%s data success from prometheus, data:%s',
