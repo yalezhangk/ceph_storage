@@ -22,30 +22,7 @@ class DiskHandler(AgentBaseHandler):
         device_tool = DeviceTool(name=disk_name, ssh=ssh_client)
         smart = device_tool.all_attributes()
         if not smart:
-            return [
-                {
-                    "raw": "0",
-                    "updated": "Always",
-                    "num": "5",
-                    "worst": "100",
-                    "name": "Reallocated_Sector_Ct",
-                    "when_failed": "-",
-                    "thresh": "000",
-                    "type": "Old_age",
-                    "value": "100"
-                },
-                {
-                    "raw": "9828",
-                    "updated": "Always",
-                    "num": "9",
-                    "worst": "100",
-                    "name": "Power_On_Hours",
-                    "when_failed": "-",
-                    "thresh": "000",
-                    "type": "Old_age",
-                    "value": "100"
-                }
-            ]
+            return []
         return smart
 
     def disk_light(self, ctxt, led, node, name):
