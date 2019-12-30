@@ -100,8 +100,7 @@ class AdminBaseHandler(object):
 
     def has_monitor_host(self, ctxt):
         cluster_id = ctxt.cluster_id
-        filters = {'role_monitor': True}
-        mon_host = objects.NodeList.get_count(ctxt, filters=filters)
+        mon_host = self.monitor_count(ctxt)
         if not mon_host:
             logger.warning('cluster {} has no active mon host'.format(
                 cluster_id))
@@ -134,9 +133,30 @@ class AdminBaseHandler(object):
             raise exc.InvalidInput(_("DSA service in node(%s) not available"
                                      ) % node.hostname)
 
+    def monitor_count(self, ctxt):
+        filters = {'role_monitor': True}
+        mon_host = objects.NodeList.get_count(ctxt, filters=filters)
+        if not mon_host:
+            return 0
+        return mon_host
+
     def check_mon_host(self, ctxt):
-        has_mon_host = self.has_monitor_host(ctxt)
-        if not has_mon_host:
+        mon_host = self.monitor_count(ctxt)
+        if not mon_host:
+            logger.warning('cluster {} no monitor role'.format(
+                ctxt.cluster_id))
+            raise exc.ClusterNoMonitorRole()
+
+        if not self.get_ceph_cluster_status(ctxt):
+            logger.warning('Could not connect to ceph cluster {}'.format(
+                ctxt.cluster_id))
+            raise exc.ClusterNotHealth()
+
+        filters = {'status': s_fields.ServiceStatus.ACTIVE, 'name': 'MON'}
+        services = objects.ServiceList.get_count(ctxt, filters=filters)
+        if services / mon_host <= 0.5:
+            logger.warning('cluster {} has no enough active mon host'.format(
+                self.cluster_id))
             raise exc.ClusterNotHealth()
 
     def check_service_status(self, ctxt, service):
