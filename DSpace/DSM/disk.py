@@ -228,6 +228,8 @@ class DiskHandler(AdminBaseHandler):
 
     def disk_smart_get(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
+        if not disk.name:
+            return []
         client = AgentClientManager(
             ctxt, cluster_id=disk.cluster_id).get_client(node_id=disk.node_id)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
