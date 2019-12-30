@@ -327,6 +327,9 @@ msgstr "硬盘暂停错误"
 msgid "Cluster not health, Please check cluster status"
 msgstr "集群未处于健康状态，请先检查集群"
 
+msgid "Please set monitor role first"
+msgstr "请先设置主控角色"
+
 msgid "Connect to %(ip)s error"
 msgstr "连接IP地址 %(ip)s 错误"
 

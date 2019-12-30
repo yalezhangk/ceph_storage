@@ -511,7 +511,13 @@ class ClusterUnpauseError(StorException):
 
 
 class ClusterNotHealth(StorException):
+    code = 400
     message = _('Cluster not health, Please check cluster status')
+
+
+class ClusterNoMonitorRole(StorException):
+    code = 400
+    message = _('Please set monitor role first')
 
 
 class IPConnectError(StorException):

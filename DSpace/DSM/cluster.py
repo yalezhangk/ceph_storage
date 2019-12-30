@@ -504,6 +504,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return data_balance
 
     def cluster_data_balance_set(self, ctxt, data_balance):
+        self.check_mon_host(ctxt)
         action = data_balance.get("action")
         mode = data_balance.get("mode")
 
@@ -543,6 +544,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return data_balance
 
     def cluster_pause(self, ctxt, enable=True):
+        self.check_mon_host(ctxt)
         begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.PAUSE)
         try:
             cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
@@ -571,16 +573,26 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_status(self, ctxt):
         logger.info("get cluster status")
-        has_mon_host = self.has_monitor_host(ctxt)
+        has_mon_host = self.monitor_count(ctxt)
         if not has_mon_host:
             res = {
                 "created": False,
+                "status": False,
+                "pause": False,
+                "balancer": False
+            }
+        elif not self.has_mon_host(ctxt):
+            res = {
+                "created": True,
+                "status": False,
                 "pause": False,
                 "balancer": False
             }
         else:
             ceph_client = CephTask(ctxt)
             res = ceph_client.cluster_status()
+            res['status'] = True
+            res["created"] = True
         logger.info("cluster status: %s", res)
         return res
 
