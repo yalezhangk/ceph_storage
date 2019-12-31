@@ -720,7 +720,13 @@ class ContainerUninstallMixin(object):
         sys_tool = SystemTool(ssh)
         if not sys_tool.check_package('docker'):
             return
-        status = docker_tool.status(container_name)
+        try:
+            status = docker_tool.status(container_name)
+        except exc.RunCommandError:
+            logger.warning("container(%s) status unknown, skip",
+                           container_name)
+            # docker command error, skip clean container and image
+            return
         if status:
             docker_tool.stop(container_name)
             docker_tool.rm(container_name)

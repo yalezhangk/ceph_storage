@@ -189,6 +189,9 @@ class UninstallService(BaseTask):
         kwargs = {}
         nodes = objects.NodeList.get_all(ctxt)
         for node in nodes:
+            node.role_monitor = False
+            node.role_storage = False
+            node.save()
             node.executer = self.get_ssh_executor(node)
             arg = "node-%s" % node.id
             wf.add(DSpaceChronyUninstall(
