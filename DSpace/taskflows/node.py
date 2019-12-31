@@ -775,7 +775,8 @@ class InstallDocker(BaseTask):
         package_tool.clean()
 
         # install docker
-        package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"])
+        package_tool.install(["docker-ce", "docker-ce-cli", "containerd.io"],
+                             enable_repos="dspace-base")
         # start docker
         service_tool = ServiceTool(ssh)
         service_tool.enable('docker')
@@ -847,7 +848,7 @@ class InstallDSpaceTool(BaseTask):
         ssh = node.executer
         package_tool = PackageTool(ssh)
         # install dspace-disk
-        package_tool.install(["dspace-disk"])
+        package_tool.install(["dspace-disk"], enable_repos="dspace-base")
         udev_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.UDEV_DIR)
         file_tool = FileTool(ssh)
