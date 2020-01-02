@@ -36,6 +36,13 @@ def register_all():
     __import__('DSpace.objects.sysconfig')
     __import__('DSpace.objects.task')
     __import__('DSpace.objects.user')
+    __import__('DSpace.objects.volume')
+    __import__('DSpace.objects.volume_access_path')
+    __import__('DSpace.objects.volume_client')
+    __import__('DSpace.objects.volume_client_group')
+    __import__('DSpace.objects.volume_gateway')
+    __import__('DSpace.objects.volume_mapping')
+    __import__('DSpace.objects.volume_snapshot')
 
 
 class _Json(object):
