@@ -199,8 +199,7 @@ class CephTool(ToolBase):
         # --osd-uuid {{ osd_fsid }} --osd-id {{ osd_id}}
         # --cluster {{ cluster }} --{{ store_backend }}
         # --block.db {{ item.0 }} --block.t2ce {{ item.1 }} {{ item.2 }}"
-        cmd = ["dspace-disk", "-v", "--log-stdout", "--setuser", "ceph",
-               "--setgroup", "ceph",
+        cmd = ["dspace-disk", "--setuser", "ceph", "--setgroup", "ceph",
                "prepare", ]
         if fsid and osd_id:
             cmd.extend(['--osd-uuid', fsid, "--osd-id", osd_id])
@@ -215,7 +214,6 @@ class CephTool(ToolBase):
         if journal_partition:
             cmd.extend(["/dev/%s" % journal_partition])
         rc, stdout, stderr = self.run_command(cmd, timeout=60)
-        logger.debug("stdout(%s), stderr(%s)", stdout, stderr)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
