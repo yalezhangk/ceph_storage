@@ -34,6 +34,7 @@ class WebSocketHandler(object):
                 resource_type if resource_type else obj.obj_name(),
             'operation_type': op_type
         }
+        logger.info("websocket send message: %s", objects.Json.dumps(message))
         self.ioloop.add_callback(lambda: self.sio.emit("ASYNC_RESPONSE",
                                                        message))
 

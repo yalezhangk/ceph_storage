@@ -28,15 +28,17 @@ class LogFileHandler(AdminBaseHandler):
             raise exception.NodeNotFound(node_id=node_id)
         if service_type == s_fields.LogfileType.MON:
             if not node.role_monitor:
-                raise exception.InvalidInput(
-                    reason=_('node_id {} is not monitor role').format(node_id))
+                logger.info('current node is not mon storage, '
+                            'has not mon log files')
+                return []
         elif service_type == s_fields.LogfileType.OSD:
             if not node.role_storage:
-                raise exception.InvalidInput(
-                    reason=_('node_id {} is not storage role').format(node_id))
+                logger.info('current node is not storage rule, '
+                            'has not osd log files')
+                return []
         else:
-            raise exception.InvalidInput(reason=_('service_type must is mon or'
-                                                  'osd'))
+            raise exception.InvalidInput(reason=_('service_type must is mon '
+                                                  'or osd'))
         # 2 agent获取日志文件元数据
         client = AgentClientManager(
             ctxt, cluster_id=ctxt.cluster_id
@@ -114,7 +116,26 @@ class LogFileHandler(AdminBaseHandler):
         log_file.destroy()
         return log_file
 
-    def download_log_file(self, ctxt, log_file_id):
+    # get log file size
+    def log_file_size(self, ctxt, log_file_id):
+        logger.debug('get log file, id:%s', log_file_id)
+        log_file = objects.LogFile.get_by_id(ctxt, log_file_id)
+        if not log_file:
+            raise exception.LogFileNotFound(log_file_id=log_file_id)
+        node_id = log_file.node_id
+        node = objects.Node.get_by_id(ctxt, node_id)
+        directory = log_file.directory
+        filename = log_file.filename
+        # 2 agent获取日志文件的大小
+        client = AgentClientManager(
+            ctxt, cluster_id=ctxt.cluster_id
+        ).get_client(node_id=int(node_id))
+        file_size = client.log_file_size(
+            ctxt, node, directory, filename)
+        logger.info('get log file size success, id:%s', log_file_id)
+        return file_size
+
+    def download_log_file(self, ctxt, log_file_id, offset, length):
         logger.debug('begin download_log_file, id:%s', log_file_id)
         # 1 参数校验
         log_file = objects.LogFile.get_by_id(ctxt, log_file_id)
@@ -129,6 +150,6 @@ class LogFileHandler(AdminBaseHandler):
             ctxt, cluster_id=ctxt.cluster_id
         ).get_client(node_id=int(node_id))
         content = client.read_log_file_content(
-            ctxt, node, directory, filename)
+            ctxt, node, directory, filename, offset, length)
         logger.info('download_log_file success, id:%s', log_file_id)
         return {'file_name': filename, 'content': content}

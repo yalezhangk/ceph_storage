@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 
 from oslo_utils import strutils
 from oslo_versionedobjects import fields
@@ -83,6 +84,8 @@ def sys_config_get(ctxt, key, default=None):
         return int(obj.value)
     elif obj.value_type == s_fields.ConfigType.BOOL:
         return strutils.bool_from_string(obj.value)
+    elif obj.value_type == s_fields.ConfigType.DICT:
+        return json.loads(obj.value)
     else:
         raise exception.Invalid(msg=_("Invalid config type"))
 
@@ -93,6 +96,9 @@ def sys_config_set(ctxt, key, value, value_type=None):
             value_type = s_fields.ConfigType.BOOL
         elif isinstance(value, int):
             value_type = s_fields.ConfigType.INT
+        elif isinstance(value, dict):
+            value_type = s_fields.ConfigType.DICT
+            value = json.dumps(value)
         else:
             value_type = s_fields.ConfigType.STRING
     objs = SysConfigList.get_all(ctxt, filters={"key": key})

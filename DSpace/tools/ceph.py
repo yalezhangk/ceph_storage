@@ -8,8 +8,10 @@ import time
 from oslo_utils import encodeutils
 
 from DSpace.exception import ActionTimeoutError
+from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
 from DSpace.exception import RunCommandError
+from DSpace.exception import SystemctlRestartError
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
 
@@ -23,6 +25,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 DEFAULT_POOL = 'rbd'
+REQUIRED_VERSION = 'luminous'
 
 
 class CephTool(ToolBase):
@@ -30,6 +33,7 @@ class CephTool(ToolBase):
 
     All function need move to rados client
     """
+
     def get_networks(self):
         logger.debug("detect cluster networks")
 
@@ -67,38 +71,121 @@ class CephTool(ToolBase):
             stdout = stdout.strip()
             if public_ip in stdout:
                 return True
-        raise RunCommandError(cmd=cmd, return_code=rc,
-                              stdout=stdout, stderr=stderr)
+        return False
 
-    def module_enable(self, module):
+    def module_enable(self, module, public_ip=None, mgr_dspace_port=None):
+        # TODO: set mgr/dspace/server_addr
+        # config-key set ip时，是全局的，如已设置，待下一台mgr节点，启用dspace插件时，
+        # 会从集群全局配置中获取server_addr，该ip为第一台节点的ip, 导致设置失败
+        # 会报地址已被占用，待后期解决完善，暂时只设置port
+
+        # set port
+        cmd_port = ['ceph', 'config-key', 'set', 'mgr/dspace/server_port',
+                    mgr_dspace_port]
+        rc, stdout, stderr = self.run_command(cmd_port, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd_port, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        # module enable dspace
         cmd = ["ceph", "mgr", "module", "enable", module]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
-    def mon_install(self, hostname, fsid, ceph_auth='none'):
-
-        if ceph_auth == 'cephx':
-            # do cephx initial
-            pass
-        else:
-            cmd = ["ceph-mon", "--cluster", "ceph", "--setuser",
-                   "ceph", "--setgroup", "ceph", "--mkfs", "-i",
-                   hostname, "--fsid", fsid]
-            rc, stdout, stderr = self.run_command(cmd, timeout=60)
-            if rc:
-                raise RunCommandError(cmd=cmd, return_code=rc,
-                                      stdout=stdout, stderr=stderr)
-
-    def mon_uninstall(self, monitor_name):
-        cmd = ['ceph', 'mon', 'remove', monitor_name]
+    # all monitor use mon. keyring
+    def _init_mon_key(self, mon_secret, keyring_path):
+        mon_cap = "mon 'allow *'"
+        cmd = ["ceph-authtool", "--create-keyring", keyring_path,
+               "--name mon.", "--cap", mon_cap, "--mode 0644",
+               "--add-key", mon_secret]
         rc, stdout, stderr = self.run_command(cmd, timeout=60)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def create_mgr_keyring(self, mgr_id):
+        entity = "mgr.{}".format(mgr_id)
+        keyring_path = "/var/lib/ceph/mgr/ceph-{}/keyring".format(mgr_id)
+        cmd = ["ceph", "auth", "get-or-create", entity,
+               "mon", "'allow *'", "osd", "'allow *'", "mds", "'allow *'",
+               "-o", keyring_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def create_mds_keyring(self, mds_id):
+        entity = "mds.{}".format(mds_id)
+        keyring_path = "/var/lib/ceph/mds/ceph-{}/keyring".format(mds_id)
+        cmd = ["ceph", "auth", "get-or-create", entity,
+               "mon", "'allow rwx'", "osd", "'allow *'", "mds", "'allow *'",
+               "-o", keyring_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def create_rgw_keyring(self, rgw_id, rgw_data_dir):
+        keyring_path = "{}/keyring".format(rgw_data_dir)
+        entity = "client.rgw.{}".format(rgw_id)
+        cmd = ["ceph", "auth", "get-or-create", entity,
+               "mon", "'allow *'", "osd", "'allow *'", "mgr", "'allow *'",
+               "-o", keyring_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    # Get or generate client.admin keyring and bootstrap keyrings
+    def create_keys(self, hostname, cluster="ceph"):
+        cmd = ["ceph-create-keys", "--cluster", cluster, "-i", hostname]
+        logger.info("create admin and bootstrap keyrings")
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            logger.error("create admin and bootstrap keyrings error")
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def collect_keyring(self, entity):
+        cmd = ["ceph", "auth", "get", entity, "--format", "json"]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            logger.error("can't get keyring for %s, stderr: %s",
+                         entity, stderr)
+            return None
+        res = json.loads(stdout)
+        return res[0]['key']
+
+    def mon_install(self, hostname, fsid, mon_secret=None):
+        cmd = ["ceph-mon", "--cluster", "ceph", "--setuser",
+               "ceph", "--setgroup", "ceph", "--mkfs", "-i",
+               hostname, "--fsid", fsid]
+        if mon_secret:
+            mon_keyring = "/tmp/ceph.mon.keyring"
+            self._init_mon_key(mon_secret, mon_keyring)
+            cmd.extend(["--keyring", mon_keyring])
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def mon_remove(self, monitor_name):
+        cmd = ['ceph', 'mon', 'remove', monitor_name]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if not rc:
+            return True
+        if "refusing removal of last monitor" in stderr:
+            return False
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
+
     def disk_clear_partition_table(self, diskname):
+        cmd = ['wipefs', '-a', "/dev/%s" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=60)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
         cmd = ['sgdisk', '-o', "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=60)
         if rc:
@@ -146,6 +233,7 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    @retry(RunCommandError)
     def osd_zap(self, diskname):
         cmd = ["dspace-disk", "zap", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
@@ -155,16 +243,12 @@ class CephTool(ToolBase):
         return True
 
     def osd_mark_out(self, osd_id):
-        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
+        cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-
-    def osd_remove_active(self, osd_id):
-        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
+        # TODO: config remove by user
+        if rc == 1 and "error calling conf_read_file" in stderr:
+            return
+        elif rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
@@ -174,7 +258,7 @@ class CephTool(ToolBase):
             cmd = ["rm", "-rf", mount + f]
             rc, stdout, stderr = self.run_command(cmd, timeout=5)
         flag = mount + "deactive"
-        cmd = ["su", "-", "ceph", "-s", "/bin/bash"  "-c", "'touch %s'" % flag]
+        cmd = ["su", "-", "ceph", "-s", "/bin/bash", "-c", "'touch %s'" % flag]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc == 1 and "No such file" in stderr:
             return
@@ -182,14 +266,122 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def systemctl_restart(self, types, service, retrys=10):
+        logger.info("Try to restart service type %s, service %s",
+                    types, service)
+        if types == "rgw":
+            check_cmd = ["ps", "-ef", "|", "grep", types, "|", "grep",
+                         "client.rgw.%s" % service, "|grep", "-v", "grep", "|",
+                         "awk", "'{print $2}'"]
+            status_cmd = ["systemctl", "status",
+                          "ceph-radosgw@rgw.%s" % (service), "|", "grep",
+                          "Active", "|", "awk", "'{print $2}'"]
+            reset_cmd = ["systemctl", "reset-failed",
+                         "ceph-radosgw@rgw.%s" % (service)]
+            cmd = ["systemctl", "restart",
+                   "ceph-radosgw@rgw.%s" % (service)]
+        else:
+            check_cmd = ["ps", "-ef", "|", "grep", types, "|", "grep",
+                         "id\\ %s" % service, "|grep", "-v", "grep", "|",
+                         "awk", "'{print $2}'"]
+            status_cmd = ["systemctl", "status",
+                          "ceph-%s@%s" % (types, service), "|", "grep",
+                          "Active", "|", "awk", "'{print $2}'"]
+            reset_cmd = ["systemctl", "reset-failed",
+                         "ceph-%s@%s" % (types, service)]
+            cmd = ["systemctl", "restart", "ceph-%s@%s" % (types, service)]
+        # 检查进程存在
+        rc, pid, c_err = self.run_command(check_cmd, timeout=5)
+        if not pid:
+            # 服务未启动 检查状态
+            rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
+            # 错误状态需要重置为 inactive 状态，才能启动
+            if s_out.strip('\n') == "failed":
+                self.run_command(reset_cmd, timeout=5)
+        # 重启
+        rc, stdout, stderr = self.run_command(cmd, timeout=35)
+        while True:
+            s_rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
+            if rc or s_out.strip('\n') != "active":
+                if retrys == 0 or s_out.strip('\n') == "failed":
+                    logger.error("Service ceph - {}@{} Status: % {}."
+                                 "Restart Failed!".format(
+                                     types, service, s_out, s_err))
+                    raise SystemctlRestartError(service="ceph-{}@{}".format(
+                        types, service), state=s_out)
+                retrys = retrys - 1
+            else:
+                break
+        rc, stdout, stderr = self.run_command(check_cmd, timeout=5)
+        if stdout == pid:
+            logger.error("Service ceph - {}@{} restart Failed!"
+                         "The PID is the same as before".format(
+                             types, service, s_out, s_err))
+            raise SystemctlRestartError(
+                service="ceph-{}@{}".format(types, service), state=s_out)
+        return stdout
+
+    def service_stop(self, types, service, retrys=12):
+        logger.info("Try to stop service type %s, service %s", types, service)
+        if types == "rgw":
+            check_cmd = ["ps", "-ef", "|", "grep", "rgw", "|", "grep",
+                         "client.rgw.%s" % service, "|grep", "-v", "grep"]
+            stop_cmd = ["systemctl", "stop", "ceph-radosgw@rgw.%s" % (service)]
+        else:
+            # TODO add other service
+            check_cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
+                         "'id %s '" % service]
+            stop_cmd = ["systemctl", "stop", "ceph-%s@%s" % (types, service)]
+        while True:
+            # stop
+            rc, stdout, stderr = self.run_command(stop_cmd, timeout=35)
+            if rc == 1 and "canceled" in stderr:
+                logger.warning("wait stop: code(%s), out(%s), err(%s)",
+                               rc, stdout, stderr)
+            elif rc:
+                raise RunCommandError(cmd=stop_cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+            # check
+            rc, stdout, stderr = self.run_command(check_cmd, timeout=5)
+            logger.debug("wait stop: code(%s), out(%s), err(%s)",
+                         rc, stdout, stderr)
+            if types in stdout:
+                time.sleep(10)
+                retrys = retrys - 1
+                if retrys < 0:
+                    raise ActionTimeoutError(reason="Stop %s %s" % (types,
+                                                                    service))
+            else:
+                return True
+
+    def slow_request_get(self, osds):
+        res = []
+        for osd in osds:
+            logger.debug("Osd.{} slow request get start.".format(osd.osd_id))
+            cmd = ["ceph", "daemon", "osd.%s" % osd.osd_id,
+                   "dump_historic_slow_ops", '-f', 'json']
+            rc, stdout, stderr = self.run_command(cmd, timeout=5)
+            if rc == 22:
+                logger.warning("osd.%s not found." % osd.osd_id)
+                continue
+            elif rc:
+                logger.error("Command: %(cmd)s ReturnCode: %(return_code)s "
+                             "Stderr: %(stderr)s Stdout: %(stdout)s.".format(
+                                 cmd=cmd, return_code=rc,
+                                 stdout=stdout, stderr=stderr
+                             ))
+                continue
+            res.append({
+                "id": osd.id,
+                "osd_id": osd.osd_id,
+                "osd_name": osd.osd_name,
+                "node_id": osd.node_id,
+                "hostname": osd.node.hostname,
+                "ops": json.loads(encodeutils.safe_decode(stdout)).get("Ops")
+            })
+        return res
+
     def osd_stop(self, osd_id):
-        cmd = ["systemctl", "disable", "ceph-osd@%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc == 1 and "No such file" in stderr:
-            return
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
         # check command
         check_cmd = ["ps", "-ef", "|", "grep", "osd", "|", "grep", "--",
                      "'id %s '" % osd_id]
@@ -220,41 +412,13 @@ class CephTool(ToolBase):
         path = "/var/lib/ceph/osd/ceph-%s" % osd_id
         cmd = ["umount", path]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc == 32 and "not found" in stderr:
+        if rc == 32 and ("not found" in stderr or "not mounted" in stderr):
             return
-        if rc:
+        elif rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         cmd = ["rm", "-rf", path]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
-
-    def osd_remove_from_cluster(self, osd_id):
-        cmd = ["ceph", "osd", "down", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "osd", "out", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "osd", "crush", "remove", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "osd", "rm", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        cmd = ["ceph", "auth", "del", "osd.%s" % osd_id]
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc:
-            raise RunCommandError(cmd=cmd, return_code=rc,
-                                  stdout=stdout, stderr=stderr)
-        return True
 
     def ceph_config_update(self, values):
         path = self._wapper('/etc/ceph/ceph.conf')
@@ -264,6 +428,23 @@ class CephTool(ToolBase):
             configer.add_section(values['group'])
         configer.set(values['group'], values['key'], str(values['value']))
         configer.write(open(path, 'w'))
+
+    def radosgw_admin_zone_set(self, values, file_path):
+        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone",
+               json.loads(values)["name"], "<", file_path]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    def radosgw_admin_zone_get(self, zone):
+        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone", zone]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        else:
+            return json.loads(stdout)
 
 
 def get_json_output(json_databuf):
@@ -406,13 +587,17 @@ class RBDProxy(object):
 
 class RADOSClient(object):
     """Context manager to simplify error handling for connecting to ceph."""
+
     def __init__(self, ceph_conf, timeout=None):
         self.client = rados.Rados(conf=ceph_conf)
         if timeout:
             self.client.conf_set('rados_osd_op_timeout', timeout)
             self.client.conf_set('rados_mon_op_timeout', timeout)
             self.client.conf_set('client_mount_timeout', timeout)
-        self.client.connect()
+        try:
+            self.client.connect()
+        except rados.TimedOut:
+            raise CephConnectTimeout()
 
     def __enter__(self):
         return self
@@ -594,7 +779,13 @@ class RADOSClient(object):
     def conf_set(self, key, val):
         return self.client.conf_set(key, val)
 
+    def _pool_delete(self, pool_name):
+        return self.client.delete_pool(pool_name)
+
     def pool_delete(self, pool_name):
+        if not self.pool_exists(pool_name):
+            logger.warning("pool %s not exists, ignore it", pool_name)
+            return
         return self.client.delete_pool(pool_name)
 
     def osd_df_list(self, pool_name=DEFAULT_POOL):
@@ -698,15 +889,19 @@ class RADOSClient(object):
          "id": 1, "weight": 0.0976}
         """
         weight = float(osd_size) / (2**40)
-        command_str = '{"prefix": "osd crush add", "args" : \
-            ["host=%(host_name)s"], "id": %(osd_id)s, \
-             "weight": %(weight)s}' \
-                % {'osd_id': osd_id, 'host_name': host_name, 'weight': weight}
+        cmd = {
+            "format": "json",
+            "prefix": "osd crush add",
+            "args": ["host=%s" % host_name],
+            "id": int(osd_id.replace("osd.", "")),
+            "weight": weight
+        }
+        command_str = json.dumps(cmd)
         logger.debug('command_str: {}'.format(command_str))
-        ret, mon_dump_outbuf, __ = self.client.mon_command(command_str, '')
+        ret, mon_dump_outbuf, err = self.client.mon_command(command_str, '')
         if ret:
-            logger.error("add osd.{} to {} error: {}".format(
-                osd_id, host_name, mon_dump_outbuf))
+            logger.error("add osd.{} to {} error: {} {}".format(
+                osd_id, host_name, mon_dump_outbuf, err))
             raise CephException(
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
@@ -747,10 +942,11 @@ class RADOSClient(object):
         self._bucket_add("root", root_name)
 
     def _send_mon_command(self, command_str):
-        ret, outbuf, _ign = self.client.mon_command(command_str, '')
+        ret, outbuf, err = self.client.mon_command(command_str, '')
         if ret:
             raise CephException(
-                message="execute command failed: {}".format(command_str))
+                message="execute command failed: {}, ret: {}, outbuf: {}, "
+                "err: {}".format(command_str, ret, outbuf, err))
         return get_json_output(outbuf)
 
     def _send_osd_command(self, osd_id, command_str):
@@ -929,6 +1125,82 @@ class RADOSClient(object):
 
         return mon_hosts
 
+    def set_balance_mode(self, balance_mode):
+        logger.debug("set balance mode to: %s", balance_mode)
+        cmd = {
+            "prefix": "balancer mode",
+            "mode": balance_mode,
+            "target": [
+                "mgr", ""
+            ]
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("set balancer status success %s", res)
+        return res
+
+    def set_balance_status(self, action):
+        logger.info("set balancer: %s", action)
+        cmd = {
+            "prefix": "balancer {}".format(action),
+            "target": [
+                "mgr", ""
+            ]
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("set balancer status success %s", res)
+        return res
+
+    def set_min_compat_version(self, version):
+        logger.debug("set require min compat client version to: %s", version)
+        cmd = {
+            "prefix": "osd set-require-min-compat-client",
+            "version": version
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("get all pools: %s", res)
+        return res
+
+    @retry(RunCommandError)
+    def data_balancer_available(self):
+        cmd = {
+            "prefix": "balancer status",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        ret, outbuf, err = self.client.mon_command(command_str, '')
+        # can't get balancer status if we enable module just now
+        if ret == -110:
+            logger.error("can't connect to cluster")
+            return False
+        elif ret == -22:
+            logger.error("can't get balancer status now")
+            raise RunCommandError(cmd=command_str, return_code=ret,
+                                  stdout=outbuf, stderr=err)
+        elif ret == 0:
+            return True
+
+    def set_data_balance(self, action, mode):
+        # always enable balancer when setting balance on/off
+        res = self.mgr_module_ls()
+        if "balancer" not in res["enabled_modules"]:
+            self.mgr_module_enable("balancer")
+        if not self.data_balancer_available():
+            st_data = {
+                "active": False,
+                "mode": "none"
+            }
+            return st_data
+
+        if mode == 'upmap':
+            self.set_min_compat_version(REQUIRED_VERSION)
+        self.set_balance_mode(mode)
+        self.set_balance_status(action)
+        st_data = self.balancer_status()
+        return st_data
+
     def osd_new(self, osd_fsid):
         logger.debug("detect mons from cluster")
 
@@ -979,3 +1251,182 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         res = self._send_mon_command(command_str)
         return res
+
+    def crush_tree(self):
+        logger.info("osd crush tree")
+        cmd = {
+            "prefix": "osd crush tree",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_pause(self):
+        logger.info("osd pause")
+        cmd = {
+            "prefix": "osd pause",
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
+    def osd_unpause(self):
+        logger.info("osd unpause")
+        cmd = {
+            "prefix": "osd unpause",
+        }
+        command_str = json.dumps(cmd)
+        self._send_mon_command(command_str)
+
+    def status(self):
+        logger.info("status")
+        cmd = {
+            "prefix": "status",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_out(self, osd_names):
+        logger.info("osd out %s", osd_names)
+        if not isinstance(osd_names, list):
+            osd_names = [osd_names]
+        cmd = {
+            "prefix": "osd out",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_down(self, osd_names):
+        logger.info("osd down %s", osd_names)
+        if not isinstance(osd_names, list):
+            osd_names = [osd_names]
+        cmd = {
+            "prefix": "osd down",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_crush_rm(self, osd_name):
+        logger.info("osd crush rm %s", osd_name)
+        cmd = {
+            "prefix": "osd crush rm",
+            "name": osd_name,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osd_rm(self, osd_names):
+        logger.info("osd rm %s", osd_names)
+        if not isinstance(osd_names, list):
+            osd_names = [osd_names]
+        cmd = {
+            "prefix": "osd rm",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def auth_del(self, osd_name):
+        logger.info("auth del %s", osd_name)
+        cmd = {
+            "prefix": "auth del",
+            "entity": osd_name,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osds_add_noout(self, osd_names):
+        logger.info("osds add noout %s", osd_names)
+        cmd = {
+            "prefix": "osd add-noout",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def osds_rm_noout(self, osd_names):
+        logger.info("osds rm noout %s", osd_names)
+        cmd = {
+            "prefix": "osd rm-noout",
+            "ids": osd_names,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        return res
+
+    def mgr_module_ls(self):
+        logger.info("mgr module ls")
+        cmd = {
+            "prefix": "mgr module ls",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("mgr model ls res: %s", res)
+        return res
+
+    def mgr_module_enable(self, module_name):
+        logger.info("mgr module enable: %s", module_name)
+        cmd = {
+            "prefix": "mgr module enable",
+            "module": module_name
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("mgr model enable res: %s", res)
+        return res
+
+    def balancer_status(self):
+        logger.info("balancer status")
+        cmd = {
+            "prefix": "balancer status",
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        try:
+            # Get balancer status failed when we enable balancer module_enable
+            # just now, and failed when timedout or other reason.
+            res = self._send_mon_command(command_str)
+        except CephException as e:
+            logger.error(e)
+            res = {
+                "active": False,
+                "mode": "none"
+            }
+        logger.info("balancer status res: %s", res)
+        return res
+
+    def get_osd_tree(self):
+        ret, outbuf, __ = self.client.mon_command(
+            '{"prefix":"osd tree", "format":"json"}', '')
+        if ret:
+            return None
+        outbuf = encodeutils.safe_decode(outbuf)
+        df_data = json.loads(outbuf)
+        return df_data
+
+    def get_osd_stat(self):
+        ret, outbuf, __ = self.client.mon_command(
+            '{"prefix":"osd stat", "format":"json"}', '')
+        if ret:
+            return None
+        outbuf = encodeutils.safe_decode(outbuf)
+        df_data = json.loads(outbuf)
+        return df_data

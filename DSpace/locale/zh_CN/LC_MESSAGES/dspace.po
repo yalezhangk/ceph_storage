@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-11-20 15:53-0500\n"
+"POT-Creation-Date: 2019-12-30 18:46+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,8 +45,17 @@ msgstr "集群 %(cluster_id)s 未找到"
 msgid "RPCService %(rpc_service_id)s could not be found."
 msgstr "服务 %(rpc_service_id)s 未找到"
 
+msgid "RPC service connect error"
+msgstr "RPC 连接失败"
+
 msgid "Node %(node_id)s could not be found."
 msgstr "节点 %(node_id)s 未找到"
+
+msgid "Node %(node)s roles update error."
+msgstr "节点 %(node)s 更新角色失败"
+
+msgid "Service %(service)s restart failed. State: %(state)s"
+msgstr "服务 %(service)s 重启失败， 状态： %(state)s"
 
 msgid "node: %(node)s osd already in pool %(pool)s, can't move"
 msgstr "节点  %(node)s 上的硬盘已经加入存储池 %(pool)s，不能移动"
@@ -71,6 +80,15 @@ msgstr "网路 %(net_id)s 未找到"
 
 msgid "Disk %(disk_id)s could not be found."
 msgstr "磁盘 %(disk_id)s 未找到"
+
+msgid "Radosgw %(radosgw_id)s could not be found."
+msgstr "对象存储网关 %(radosgw_id)s 未找到"
+
+msgid "Radosgw Zone %(rgw_zone_id)s could not be found."
+msgstr "对象存储网关区域 %(rgw_zone_id)s 未找到"
+
+msgid "Radosgw router %(rgw_router_id)s could not be found."
+msgstr "对象路由 %(rgw_zone_id)s 无法找到"
 
 msgid "Disk partition %(disk_part_id)s could not be found."
 msgstr "分区 %(disk_part_id)s 未找到"
@@ -106,11 +124,38 @@ msgstr "参数必须是字符串"
 msgid "Ceph exception"
 msgstr "Ceph 异常"
 
+msgid "error connecting to the cluster"
+msgstr "集群连接异常"
+
+msgid "Data balance %(action)s error, mode %(mode)s"
+msgstr "数据平衡 %(action)s 错误， 启用的模式：%(mode)s"
+
 msgid "%(msg)s"
 msgstr "%(msg)s"
 
-msgid "SSH Authentication failed: ip(%(ip)s) password(%(password)s)"
-msgstr "远程连接认证异常: 地址(%(ip)s) 密码(%(password)s)"
+msgid "SSH Error: ip(%(ip)s) Authentication failed"
+msgstr "SSH 错误: 地址(%(ip)s) 认证异常"
+
+msgid "SSH Error: ip(%(ip)s) Need provide password"
+msgstr "SSH 错误: 地址(%(ip)s) 需要提供密码"
+
+msgid "SSH Error: ip(%(ip)s) Unsupported authentication types"
+msgstr "SSH 错误: 地址(%(ip)s) 不支持的认证类型"
+
+msgid "SSH Error: ip(%(ip)s) Internal authentication exception"
+msgstr "SSH 错误: 地址(%(ip)s) 内部认证异常"
+
+msgid "SSH Error: ip(%(ip)s) Open a new channel exception"
+msgstr "SSH 错误: 地址(%(ip)s) 打开新通道异常"
+
+msgid "SSH Error: ip(%(ip)s) Host keys do not match"
+msgstr "SSH 错误: 地址(%(ip)s) 主机密钥不匹配"
+
+msgid "SSH Error: ip(%(ip)s) Check the SSH configuration file"
+msgstr "SSH 错误: 地址(%(ip)s) 请检查SSH配置文件"
+
+msgid "SSH Error: ip(%(ip)s) Can not connect"
+msgstr "SSH 错误: 地址(%(ip)s) 无法连接"
 
 msgid "VolumeAccessPath %(access_path_id)s could not be found."
 msgstr "访问路径 %(access_path_id)s 未找到"
@@ -267,8 +312,29 @@ msgstr "无法删除访问路径：%(reason)s"
 msgid "download file error: %(reason)s"
 msgstr "下载文件错误：%(reason)s"
 
+msgid "get file size error: %(reason)s"
+msgstr "获取文件错误：%(reason)s"
+
 msgid "Timeout error: %(reason)s"
-msgstr "下载文件错误：%(reason)s"
+msgstr "超时错误：%(reason)s"
+
+msgid "Osd pause error"
+msgstr "硬盘暂停错误"
+
+msgid "Osd unpause error"
+msgstr "硬盘暂停错误"
+
+msgid "Cluster not health, Please check cluster status"
+msgstr "集群未处于健康状态，请先检查集群"
+
+msgid "Please set monitor role first"
+msgstr "请先设置主控角色"
+
+msgid "Connect to %(ip)s error"
+msgstr "连接IP地址 %(ip)s 错误"
+
+msgid "Osd status not up"
+msgstr "硬盘状态不支持此操作"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -315,6 +381,9 @@ msgstr "磁盘 'partition_num' 必须大于 0"
 msgid "disk: action is none"
 msgstr "磁盘需要参数 'action'"
 
+msgid "k must be number"
+msgstr "k 必须是数字"
+
 msgid "can not get file_metas"
 msgstr "无法获取文件"
 
@@ -329,6 +398,9 @@ msgstr "文件名不存在"
 
 msgid "file not yet generate or file path is error"
 msgstr "文件没有生成或文件路径错误"
+
+msgid "Only one node can set roles at the same time"
+msgstr "同时只有一个节点可以添加或者移除角色"
 
 msgid "node:{} create error"
 msgstr "节点 {} 创建错误"
@@ -351,8 +423,14 @@ msgstr "'BlueStore' 不支持 'journal' 类型"
 msgid "FileStore not support DB, WAL or Cache"
 msgstr "'FileStore' 不支持 'DB', 'WAL' 或 'Cache'类型"
 
-msgid "osd:hostname={},disk_name={} create error"
-msgstr "主机{}上的硬盘{}创建错误"
+msgid "osd:hostname={},disk_name={} create error: {}"
+msgstr "{}:{}创建硬盘错误: {}"
+
+msgid "osd_top not number"
+msgstr "osd_top应为数字"
+
+msgid "op_top not number"
+msgstr "op_top应为数字"
 
 msgid "this tab is not supported"
 msgstr "不支持此标签页"
@@ -369,59 +447,20 @@ msgstr "邮件服务未传入数据"
 msgid "smtp could not be found."
 msgstr "参数 'smtp' 未找到"
 
-msgid "smtp_context could not be found."
-msgstr "参数 'smtp_context' 未找到"
+msgid "New password not allow equal to old password"
+msgstr "新密码不能与旧密码相同"
 
-msgid "volume_access_path: {} is already exists!"
-msgstr "访问路径 {} 已存在"
+msgid "alert_group name already exists!"
+msgstr "告警通知名称已存在"
 
-msgid "no username or password input"
-msgstr "用户名或密码未输入"
+msgid "DSA service in node(%s) not available"
+msgstr "节点（%s）上 DSA 服务不可用"
 
-msgid "username or password too short"
-msgstr "用户名或密码长度不够"
+msgid "alert notify: {}"
+msgstr "告警通知: {}"
 
-msgid "username or password too long"
-msgstr "用户名或密码过长"
-
-msgid "no access_path input"
-msgstr "缺少参数 'access_path'"
-
-msgid "name or type not found"
-msgstr "参数 'name' 或 'type' 未找到"
-
-msgid "no node_id input"
-msgstr "缺少参数 'node_id'"
-
-msgid "no chap_enable input"
-msgstr "缺少参数 'chap_enable'"
-
-msgid "no client_group_id input"
-msgstr "缺少参数 'client_group_id'"
-
-msgid "no volume_ids input"
-msgstr "缺少参数 'volume_ids'"
-
-msgid "iqn: {} is not allowed!"
-msgstr "IQN {} 格式错误"
-
-msgid "no mutual_username or  mutual_password input"
-msgstr "缺少参数 'mutual_username'或'mutual_password'"
-
-msgid "mutual_username or mutual_passwordtoo short"
-msgstr "参数 'mutual_username'或'mutual_password' 长度不够"
-
-msgid "mutual_username or mutual_passwordtoo long"
-msgstr "参数 'mutual_username'或'mutual_password' 过长"
-
-msgid "no name input"
-msgstr "缺少参数 'name'"
-
-msgid "no mutual_chap_enable input"
-msgstr "缺少参数 'mutual_chap_enable'"
-
-msgid "has not active mon host, can not do any ceph actions"
-msgstr "健康状态监控节点不存在，无法进行任何Ceph操作"
+msgid "alert center"
+msgstr "告警中心"
 
 msgid "Ceph config update failed"
 msgstr "Ceph配置修改失败"
@@ -456,6 +495,78 @@ msgstr "集群中有正在进行的osd任务"
 msgid "Cluster is importing"
 msgstr "集群正在纳管"
 
+msgid "Please remove radosgw and radosgw routers first"
+msgstr "请先移除对象网管和对象路由"
+
+msgid "Invaild action: %s"
+msgstr "不合法的行为: %s"
+
+msgid "Invaild mode: %s"
+msgstr "无效的模式: %s"
+
+msgid "Cluster balance enabled"
+msgstr "集群数据均衡开启"
+
+msgid "Cluster balance disable"
+msgstr "集群数据均衡关闭"
+
+msgid "Cluster Pause Success"
+msgstr "集群关闭成功"
+
+msgid "Cluster Unpause Success"
+msgstr "集群解除关闭"
+
+msgid "Cluster Pause Error"
+msgstr "集群关闭错误"
+
+msgid "Cluster Unpause Error"
+msgstr "集群解除关闭错误"
+
+msgid "Osd is {} status, can not restart"
+msgstr "Osd状态为{}, 不能进行重启操作"
+
+msgid "Start success: {}"
+msgstr "启动成功：{}"
+
+msgid "Start failed: {}"
+msgstr "启动失败: {}"
+
+msgid "Stop success: {}"
+msgstr "关闭成功: {}"
+
+msgid "Stop failed: {}"
+msgstr "关闭失败: {}"
+
+msgid "osd.{} service status is inactive, trying to restart"
+msgstr "osd.{}服务已停止，尝试进行重启"
+
+msgid "osd.{} cannot be restarted, mark to offline"
+msgstr "osd.{}重启失败，标记为离线状态"
+
+msgid "osd.{} is active"
+msgstr "osd.{}已恢复健康"
+
+msgid "osd.{} is offline"
+msgstr "osd.{}已离线"
+
+msgid "Node {}: DSA service status is inactive, trying to restart."
+msgstr "节点{}：DSA服务已停止，尝试进行重启"
+
+msgid "Node {}: DSA restart failed, mark it to error"
+msgstr "节点{}: DSA服务重启失败，标记为错误状态"
+
+msgid "Node {}: DSA status is inactive"
+msgstr "节点{}: DSA服务已停止"
+
+msgid "Node {}: DSA status is active"
+msgstr "节点{}: DSA服务已恢复健康"
+
+msgid "reconnect to ceph cluster {}"
+msgstr "已连接到ceph集群{}"
+
+msgid "Could not connect to ceph cluster {}"
+msgstr "无法连接到ceph集群{}"
+
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"
 
@@ -469,7 +580,10 @@ msgid "create disk partitions failed"
 msgstr "创建磁盘分区失败"
 
 msgid "Partition type not support"
-msgstr "不支持此标签页"
+msgstr "分区类型不支持"
+
+msgid "Disk status not available"
+msgstr "磁盘状态不可用"
 
 msgid "remove disk partitions success"
 msgstr "移除磁盘分区成功"
@@ -480,13 +594,28 @@ msgstr "移除磁盘分区失败"
 msgid "current disk:{} partition has used, can not del"
 msgstr "当前磁盘 {} 分区使用中，无法删除"
 
-msgid "node_id {} is not monitor role"
-msgstr "节点 {} 不是监控节点"
+msgid "disk %s offline"
+msgstr "物理盘 %s 下线"
 
-msgid "node_id {} is not storage role"
-msgstr "节点 {} 不是存储节点"
+msgid "disk %s plug partition different"
+msgstr "新插入物理盘 %s 与原物理盘分区不匹配"
 
-msgid "service_type must is mon orosd"
+msgid "disk %s online"
+msgstr "物理盘 %s 上线"
+
+msgid "email_group name already exists!"
+msgstr "通知列表名称已存在"
+
+msgid "the email_group max num is %s"
+msgstr "每组邮箱数量不能超过%s"
+
+msgid "the email max len is %s"
+msgstr "邮箱长度不能超过%s"
+
+msgid "email %s repeat"
+msgstr "邮箱: %s 重复"
+
+msgid "service_type must is mon or osd"
 msgstr "服务类型只支持 'mon'或'osd'"
 
 msgid "node remove success: {}"
@@ -526,7 +655,10 @@ msgid "The storage role has not yet been installed"
 msgstr "存储角色还未安装"
 
 msgid "Node %s has osd!"
-msgstr "节点%s还有硬盘存在"
+msgstr "节点%s还有硬盘未删除"
+
+msgid "Node %s has accelerate disk!"
+msgstr "节点%s还有加速盘未删除"
 
 msgid "The admin role has been installed."
 msgstr "管理角色已被安装"
@@ -540,19 +672,61 @@ msgstr "对象网关角色已被安装"
 msgid "The object gateway role has not yet been installed"
 msgstr "对象网关角色还未安装"
 
+msgid "Node %s has radosgw!"
+msgstr "节点 %s 还存在对象存储网关"
+
+msgid "Node %s has radosgw router!"
+msgstr "节点 %s 还存在对象路由"
+
 msgid "The block gateway role has been installed."
 msgstr "块存储网关角色已被安装"
 
 msgid "The block gateway role has not yet been installed"
 msgstr "块存储角色还未安装"
 
-msgid "set roles success: {}"
-msgstr "{} 设置角色成功"
+msgid "node %s: set mon role success"
+msgstr "节点%s: 添加主控角色成功"
 
-msgid "set roles error {}"
-msgstr "设置角色错误: {}"
+msgid "node %s: set mon role error"
+msgstr "节点%s: 添加主控角色失败"
 
-msgid "Only host's status is active can setrole(host_name: %s)"
+msgid "node %s: unset mon role success"
+msgstr "节点%s: 移除主控角色成功"
+
+msgid "node %s: unset mon role error"
+msgstr "节点%s: 移除主控角色失败"
+
+msgid "node %s: set storage role success"
+msgstr "节点%s: 添加存储角色成功"
+
+msgid "node %s: set storage role error"
+msgstr "节点%s: 添加存储角色失败"
+
+msgid "node %s: unset storage role success"
+msgstr "节点%s: 移除存储角色成功"
+
+msgid "node %s: unset storage role error"
+msgstr "节点%s: 移除存储角色失败"
+
+msgid "node %s: set rgw role success"
+msgstr "节点%s: 添加对象存储网关角色成功"
+
+msgid "node %s: set rgw role error"
+msgstr "节点%s: 添加对象存储网关角色失败"
+
+msgid "node %s: unset rgw role success"
+msgstr "节点%s: 移除对象存储网关角色成功"
+
+msgid "node %s: unset rgw role error"
+msgstr "节点%s: 移除对象存储网关角色失败"
+
+msgid "node %s: set roles success"
+msgstr "节点%s: 设置角色成功"
+
+msgid "node %s: set roles error"
+msgstr "节点%s: 设置角色失败"
+
+msgid "Only host's status is active can set role(host_name: %s)"
 msgstr "%s：仅当服务器状态健康才能设置角色"
 
 msgid "Please provide roles"
@@ -561,14 +735,11 @@ msgstr "请先移除硬盘"
 msgid "Can't not set and unset the same role"
 msgstr "无法设置并移除相同角色"
 
-msgid "Only one node can set roles at the same time"
-msgstr "同时只有一个节点可以设置或者取消角色"
+msgid "node {} create success"
+msgstr "节点{}创建成功"
 
-msgid "node create success"
-msgstr "节点创建成功"
-
-msgid "node create error, reason: {}"
-msgstr "节点创建失败，原因：{}"
+msgid "node {} create error"
+msgstr "节点{}创建失败"
 
 msgid "Admin ip exists"
 msgstr "管理IP已存在"
@@ -579,17 +750,20 @@ msgstr "集群IP已存在"
 msgid "Public ip exists"
 msgstr "公共IP已存在"
 
+msgid "Please create new cluster to import"
+msgstr "请新建集群来执行纳管操作"
+
 msgid "Please Clean First"
 msgstr "请先清理集群"
 
 msgid "Please Import First"
 msgstr "请先导入集群"
 
-msgid "admin_ip,cluster_ip,public_ip is required"
-msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
-
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
+
+msgid "create error: osd.{} is offline"
+msgstr "创建硬盘失败：osd.{} 离线"
 
 msgid "create error: osd.{}"
 msgstr "创建硬盘失败：osd.{}"
@@ -615,9 +789,6 @@ msgstr "%s 不支持 filestore"
 msgid "%s not support cache"
 msgstr "%s 不支持 filestore"
 
-msgid "No active monitor"
-msgstr "没有健康的主控节点"
-
 msgid "Max osd num is %s"
 msgstr "最大硬盘数为 %s"
 
@@ -630,17 +801,62 @@ msgstr "删除硬盘失败：osd.{}"
 msgid "Only available and error osd can be delete"
 msgstr "只能删除可用与错误的硬盘"
 
+msgid "Invalid osd_top or op_top."
+msgstr "osd_top或op_top参数无效"
+
+msgid "osd.{} replace prepare success"
+msgstr "osd.{} 清理成功"
+
+msgid "osd.{} replace prepare error"
+msgstr "osd.{} 清理失败"
+
+msgid "accelerate disk %s is replacing, please wait"
+msgstr "加速盘%s正在换盘中, 请稍等"
+
+msgid "In the operation osd can not replace disk"
+msgstr "操作中的osd不能进行换盘"
+
+msgid "accelerate disk {} osd clean error"
+msgstr "加速盘 {} 清理错误"
+
+msgid "accelerate disk {} osd clean success"
+msgstr "加速盘 {} 清理成功"
+
+msgid "disk role should be accelerate"
+msgstr "该物理盘不是加速盘"
+
+msgid "osd.%s is replacing, please wait"
+msgstr "osd.%s正在换盘中, 请稍等"
+
+msgid "Osd status should be REPLACE_PREPARED"
+msgstr "osd 未清理完成"
+
+msgid "create disk {} partitions failed"
+msgstr "物理盘 {} 创建分区失败"
+
+msgid "accelerate disk {} replace success"
+msgstr "加速盘 {} 换盘成功"
+
+msgid "accelerate disk has no partitions"
+msgstr "加速盘上没有分区"
+
 msgid "create pool success: {}"
 msgstr "创建存储池成功：{}"
 
 msgid "create pool error: {}"
 msgstr "创建存储池失败：{}"
 
+msgid "Object index pool exists"
+msgstr "对象索引池已存在"
+
 msgid "delete pool success: {}"
 msgstr "删除存储池成功：{}"
 
 msgid "delete pool error: {}"
 msgstr "删除存储池失败：{}"
+
+msgid "Please remove the Object storage gateway first"
+msgstr "请先移除对象存储网关"
 
 msgid "pool {} increase disk success"
 msgstr "存储池{}添加硬盘成功"
@@ -649,10 +865,16 @@ msgid "pool {} increase disk error"
 msgstr "存储池{}添加硬盘失败"
 
 msgid "{} decrease disk success"
-msgstr "{} 添加硬盘成功"
+msgstr "{} 移除硬盘成功"
 
 msgid "{} decrease disk error"
-msgstr "{} 添加硬盘失败"
+msgstr "{} 移除硬盘失败"
+
+msgid "can't remove osds more than pool's rep size"
+msgstr "移除的osd数量不能超过副本数"
+
+msgid "can't remove osds more than pool's available domain"
+msgstr "移除的osd数量不能超过副本数"
 
 msgid "{} update policy success"
 msgstr "{} 修改数据安全策略成功"
@@ -660,71 +882,146 @@ msgstr "{} 修改数据安全策略成功"
 msgid "{} update policy error"
 msgstr "{} 修改数据安全策略错误"
 
+msgid "can't set fault_domain from rack to host"
+msgstr "无法将故障域从机架变更到服务器"
+
+msgid "More than one pool use this crush, not allow change fault domain"
+msgstr "超过一个存储池使用这个故障域规划，不允许修改故障域"
+
+msgid "No available undo"
+msgstr "无可用撤销"
+
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
 
-msgid "Volume name {} already exists!"
-msgstr "块存储卷 {} 已存在"
+msgid "The role of node %s is not role_object_gateway"
+msgstr "节点 %s 的角色不是对象存储网关"
 
-msgid "create volume success"
-msgstr "创建块存储卷成功"
+msgid "The name %s is used by another radosgw"
+msgstr "名称 %s 已被其他对象存储网关使用"
 
-msgid "create volume error"
-msgstr "创建块存储卷失败"
+msgid "The port %s is used by another radosgw"
+msgstr "端口 %s 已被其他对象存储网关使用"
 
-msgid "The volume {} has snapshot"
-msgstr "块存储卷 {} 存在快照"
+msgid "The ip address %s is invalid"
+msgstr "此IP地址 %s 不合法"
 
-msgid "The volume {} has related access_path"
-msgstr "块存储卷 {} 已关联到访问路径"
+msgid "The ip address %s is not in gateway_cidr"
+msgstr "此IP地址 %s 不在对象存储网关地址范围内"
 
-msgid "delete volume success"
-msgstr "删除块存储卷成功"
+msgid "The port %s is used"
+msgstr "端口 %s 已被占用"
 
-msgid "delete volume error"
-msgstr "删除块存储卷失败"
+msgid "Need to create index pool before radosgw"
+msgstr "需要在创建对象存储网关之前创建索引池"
 
-msgid "volume resize success"
-msgstr "块存储卷容量调整成功"
+msgid "Index pool must be active, degraded, warning or recovering"
+msgstr "对象索引池状态必须为健康、警告、降级中或者恢复中"
 
-msgid "volume resize error"
-msgstr "块存储卷容量调整失败"
+msgid "create radosgw success: {}"
+msgstr "创建对象存储网关成功：{}"
 
-msgid "The volume_id {} has not the snap_id {}"
-msgstr "块存储卷 {} 没有快照 {}"
+msgid "create error: {}"
+msgstr "创建失败：{}"
 
-msgid "The volume {} has access_path, can not rollback"
-msgstr "块存储卷已关联访问路径，无法回滚"
+msgid "delete radosgw {} success"
+msgstr "删除对象存储网关成功：{}"
 
-msgid "volume rollback success"
-msgstr "块存储卷回滚成功"
+msgid "delete radosgw {} error"
+msgstr "删除对象存储网关失败：{}"
 
-msgid "volume rollback error"
-msgstr "块存储卷回滚失败"
+msgid "Must remove radosgw router before radosgw"
+msgstr "必须在删除对象存储网关前删除对象路由"
 
-msgid "the volume_name {} has not relate_snap"
-msgstr "块存储卷 {} 没有快照"
+msgid "Only available 、inactive 、stopped or error radosgw can be deleted"
+msgstr "只能删除健康、已停止与错误状态的对象存储网关"
 
-msgid "volume unlink success"
-msgstr "块存储卷断开关系链成功"
+msgid "The radosgw %s has router"
+msgstr "对象存储网关 %s 已经绑定路由"
 
-msgid "volume unlink error"
-msgstr "块存储卷断开关系链失败"
+msgid "The Router name %s has been used"
+msgstr "对象路由名称 %s 重复"
 
-msgid "snap name {} already exists!"
-msgstr "快照 {} 已存在"
+msgid "The virtual ip %s has been used"
+msgstr "虚拟IP %s 已被占用"
 
-msgid "delete snapshot success"
-msgstr "删除快照成功"
+msgid "The virtual router id %s has been used"
+msgstr "虚拟路由ID %s 已被使用"
 
-msgid "delete snapshot error"
-msgstr "删除快照失败"
+msgid "The virtual ip address %s is not in gateway_cidr"
+msgstr "此虚拟IP地址 %s 不在对象存储网关地址范围内"
 
-msgid "snapshot {} has clone volume, can not del"
-msgstr "快照 {}  存在克隆块存储卷，无法删除"
+msgid "HTTP port and HTTPS port can not be same"
+msgstr "HTTP端口和HTTPS端口不能相同"
+
+msgid "The node %s has radosgw router"
+msgstr "节点%s上已存在对象路由"
+
+msgid "The virtual ip %s is used by another node"
+msgstr "虚拟IP地址 %s 已被其他对象存储网关使用"
+
+msgid "delete radosgw router {} success"
+msgstr "删除对象路由成功：{}"
+
+msgid "delete rgw_router {} error"
+msgstr "删除对象路由失败：{}"
+
+msgid "Only available and error radosgw router can be deleted"
+msgstr "只能删除可用与错误的对象路由"
+
+msgid "Update radosgw router {} success"
+msgstr "更新对象路由成功：{}"
+
+msgid "Update rgw_router {} error"
+msgstr "更新对象路由失败：{}"
+
+msgid "Only available and error radosgw router can be updated"
+msgstr "只能更新可用与错误的对象路由"
+
+msgid "Node {}: service {} in status is inactive, trying to restart"
+msgstr "节点{}: 服务{}已停止，尝试进行重启"
+
+msgid "Node {}: service {} restart failed, mark it to ERROR"
+msgstr "节点{}: 服务{}无法重新启动，标记为错误状态"
+
+msgid "Node {}: radosgw {} status is inactive, trying to restart"
+msgstr "节点{}: 对象存储网关{}已停止，尝试进行重启"
+
+msgid "Node {}: radosgw {} restart failed, mark it to ERROR"
+msgstr "节点{}：对象存储网关{}重启失败，标记为错误状态"
+
+msgid "Node {}：service {} status is down, trying to restart"
+msgstr "节点{}: 服务{}已停止，尝试进行重启"
+
+msgid "Node {}：service {} restart failed, mark it to error"
+msgstr "节点{}: 服务{}重启失败，标记为错误状态"
+
+msgid "Node {}: radosgw {} status is inactive"
+msgstr "节点{}: 对象网关服务{}已停止"
+
+msgid "Node {}: radosgw {} status is active"
+msgstr "节点{}: 对象网关服务{}已恢复健康"
+
+msgid "Node {}: radosgw router service {} status is inactive"
+msgstr "节点{}: 对象路由服务{}已停止"
+
+msgid "Node {}: radosgw router service {} status is active"
+msgstr "节点{}: 对象路由服务{}已恢复健康"
+
+msgid "Node {}: service {} status is inactive"
+msgstr "节点{}: 服务{}已停止"
+
+msgid "Node {}: service {} status is active"
+msgstr "节点{}: 服务{}已恢复健康"
+
+msgid "Object gateway role has been set, please remove all object gateway role"
+msgstr "对象存储网关角色已设置，请先移除所有的网关角色"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
+
+msgid "User(%s) not found"
+msgstr "用户(%s) 未找到"
 
 msgid "Must supply a positive value for age"
 msgstr "必须给寿命提供一个正值"
@@ -797,21 +1094,143 @@ msgstr "未知的排序方向，仅支持 'desc'或'asc'"
 msgid "Sort direction array size exceeds sort key array size."
 msgstr "排序方向数组大小超过排序键数组大小"
 
+msgid "Couldn't find ORM model for Persistent Versioned Object %s."
+msgstr "找不到持久版本对象的ORM模型%s"
+
 msgid "attribute %s not lazy-loadable"
 msgstr "%s 属性不是懒加载"
+
+msgid "VersionedObject %s does not support conditional update."
+msgstr "模型 %s 不支持有条件的更新。"
 
 msgid "Invalid config type"
 msgstr "不合法的配置类型"
 
-msgid "SSH Error: %s"
-msgstr "SSH错误：%s"
+msgid "Crush hostname Invalid"
+msgstr "主机名无效"
+
+msgid "Rack Invalid"
+msgstr "机架无效"
+
+msgid "Datacenter Invalid"
+msgstr "数据中心需要参数 'name'"
+
+msgid "Ceph package not found"
+msgstr "Ceph软件包未找到"
+
+msgid "Installed version not support"
+msgstr "已安装的Ceph版本还未被支持"
+
+msgid "Ceph public_network not found"
+msgstr "Ceph public_network 未找到"
+
+msgid "Ceph public_network not equal to cluster public_network"
+msgstr "Ceph public_network 与集群业务网络配置不同"
+
+msgid "Ceph cluster_network not found"
+msgstr "Ceph cluster_network 未找到"
+
+msgid "Ceph cluster_network not equal to cluster cluster_network"
+msgstr "Ceph cluster_network 与集群存储网络配置不同"
+
+msgid "Admin ip(%s) alreay in platform"
+msgstr "管理网Ip(%s) 在平台中已经存在"
+
+msgid "Admin IP, Gateway IP, Public IP and Cluster IP is required"
+msgstr "Admin IP、Gateway IP、Public IP和Cluster IP是必须的"
+
+msgid "Admin IP already exists!"
+msgstr "Admin IP已存在"
+
+msgid "Admin IP not in admin cidr ({})"
+msgstr "Admin IP不在管理网络网段内"
+
+msgid "Cluster IP already exists!"
+msgstr "Cluster IP已存在"
+
+msgid "Cluster IP not in cluster cidr ({})"
+msgstr "Cluster IP不在存储网络网段内"
+
+msgid "Public IP already exists!"
+msgstr "Public IP已存在"
+
+msgid "public ip not in public cidr ({})"
+msgstr "Public IP不在业务网络网段内"
+
+msgid "Gateway IP already exists!"
+msgstr "Gateway IP已存在"
+
+msgid "Gateway IP not in gateway cidr ({})"
+msgstr "Gateway IP不在网关网络网段内"
+
+msgid "Repository not available"
+msgstr "安装源不可用"
+
+msgid "Repository version not support"
+msgstr "安装源中的Ceph版本还未被支持"
+
+msgid "Repository not found Ceph"
+msgstr "安装源中未找到Ceph"
+
+msgid "cluster ip not found"
+msgstr "集群网络ip未找到"
+
+msgid "cluster ip not in cluster_cidr"
+msgstr "集群网络ip未找到"
+
+msgid "public ip not found"
+msgstr "业务网络ip未找到"
+
+msgid "public ip not in public_cidr"
+msgstr "业务网络ip未找到"
+
+msgid "admin_ip,cluster_ip,public_ip is required"
+msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
 
 msgid "old style configuration can use only dictionary or memcached backends"
 msgstr "旧样式的配置只能使用字典或缓存后端"
 
-msgid "Coordinator uninitialized."
-msgstr "协调器未初始化"
+msgid "int"
+msgstr "整型"
+
+msgid "bool"
+msgstr "布尔"
+
+msgid "string"
+msgstr "字符串"
+
+msgid ""
+"The cluster receives an alert message:\n"
+"    {}\n"
+"Please deal with it timely"
+msgstr ""
+"集群收到告警信息:\n"
+"    {}\n"
+"请及时处理"
+
+msgid "cluster_usage"
+msgstr "集群容量使用率超过阈值"
+
+msgid "cpu_usage"
+msgstr "cpu使用率超过阈值"
+
+msgid "memory_usage"
+msgstr "内存使用率超过阈值"
+
+msgid "sys_disk_usage"
+msgstr "系统盘使用率超过阈值"
+
+msgid "osd_usage"
+msgstr "硬盘容量使用率超过阈值"
+
+msgid "pool_usage"
+msgstr "存储池容量使用率超过阈值"
+
+msgid "service_status"
+msgstr "服务状态异常"
+
+msgid "osd_status"
+msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-

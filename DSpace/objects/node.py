@@ -46,9 +46,10 @@ class Node(base.StorPersistentObject, base.StorObject,
         'networks': fields.ListOfObjectsField("Network", nullable=True),
         'osds': fields.ListOfObjectsField("Osd", nullable=True),
         'metrics': s_fields.DictOfNullableField(nullable=True),
+        'radosgws': fields.ListOfObjectsField("Radosgw", nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('disks', 'networks', 'osds', 'metrics')
+    OPTIONAL_FIELDS = ('disks', 'networks', 'osds', 'metrics', 'radosgws')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -73,6 +74,7 @@ class Node(base.StorPersistentObject, base.StorObject,
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
         expected_attrs = expected_attrs or []
         if 'disks' in expected_attrs:
             disks = db_obj.get('disks', [])
@@ -91,6 +93,12 @@ class Node(base.StorPersistentObject, base.StorObject,
             obj.osds = [objects.Osd._from_db_object(
                 context, objects.Osd(context), osd
             ) for osd in osds]
+
+        if 'radosgws' in expected_attrs:
+            radosgws = db_obj.get('radosgws', [])
+            obj.radosgws = [objects.Radosgw._from_db_object(
+                context, objects.Radosgw(context), rgw
+            ) for rgw in radosgws]
 
         return super(Node, cls)._from_db_object(context, obj, db_obj)
 

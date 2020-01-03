@@ -1,0 +1,14 @@
+
+frontend {{ backend_name }}_front
+  mode http
+  bind {{ router_vip_address }}:{{ router_port }}
+  default_backend {{ backend_name }}
+
+frontend {{ backend_name }}_front_https
+  bind {{ router_vip_address }}:{{ router_https_port }} ssl crt /etc/haproxy/haproxy_{{ backend_name }}.pem
+  default_backend {{ backend_name }}
+
+backend {{ backend_name }}
+  mode http
+  {% for rgw in radosgws %}server {{ rgw.name }} {{ rgw.ip_address }}:{{ rgw.port }} check
+  {% endfor %}

@@ -1,5 +1,3 @@
-import json
-
 from oslo_log import log as logging
 
 from DSpace import exception
@@ -11,7 +9,7 @@ from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
-from DSpace.utils import cluster_config as ClusterConfg
+from DSpace.utils import cluster_config
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +18,8 @@ class CephConfigHandler(AdminBaseHandler):
     def ceph_config_get_all(
             self, ctxt, marker=None, limit=None, sort_keys=None,
             sort_dirs=None, filters=None, offset=None):
+        filters = filters or {}
+        filters['group'] = objects.CephConfig.Not("keyring")
         ceph_conf = objects.CephConfigList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
@@ -60,44 +60,44 @@ class CephConfigHandler(AdminBaseHandler):
         ceph_client = CephTask(ctxt)
 
         if group == 'global':
-            if key in ClusterConfg.cluster_mon_restart_configs:
+            if key in cluster_config.cluster_mon_restart_configs:
                 nodes = self._get_mon_node(ctxt)
-            if key in ClusterConfg.cluster_osd_restart_configs:
+            if key in cluster_config.cluster_osd_restart_configs:
                 nodes = self._get_osd_node(ctxt, osd_name='*')
-            if key in ClusterConfg.cluster_rgw_restart_configs:
+            if key in cluster_config.cluster_rgw_restart_configs:
                 # TODO handle rgw
                 pass
-            if key in ClusterConfg.cluster_mon_temp_configs:
+            if key in cluster_config.cluster_mon_temp_configs:
                 temp_configs = [{'service': 'mon.*',
                                  'key': key,
                                  'value': value}]
                 nodes = self._get_mon_node(ctxt)
-            if key in ClusterConfg.cluster_osd_temp_configs:
+            if key in cluster_config.cluster_osd_temp_configs:
                 temp_configs = [{'service': 'osd.*',
                                  'key': key,
                                  'value': value}]
                 nodes = self._get_osd_node(ctxt, osd_name='*')
-            if key in ClusterConfg.cluster_rgw_temp_configs:
+            if key in cluster_config.cluster_rgw_temp_configs:
                 # TODO handle rgw
                 pass
 
         if group.startswith('osd'):
             osd_id = group.split('.')
             if len(osd_id) == 1:
-                if key in ClusterConfg.cluster_osd_temp_configs:
+                if key in cluster_config.cluster_osd_temp_configs:
                     temp_configs = [{'service': 'osd.*',
                                      'key': key,
                                      'value': value}]
                 nodes = self._get_osd_node(ctxt, osd_name='*')
             if len(osd_id) == 2:
-                if key in ClusterConfg.cluster_osd_temp_configs:
+                if key in cluster_config.cluster_osd_temp_configs:
                     temp_configs = [{'service': 'osd.' + osd_id[1],
                                      'key': key,
                                      'value': value}]
                 nodes = self._get_osd_node(ctxt, osd_name=osd_id[1])
 
         if group == 'mon':
-            if key in ClusterConfg.cluster_mon_temp_configs:
+            if key in cluster_config.cluster_mon_temp_configs:
                 temp_configs = [{'service': 'mon.*',
                                  'key': key,
                                  'value': value}]
@@ -158,8 +158,19 @@ class CephConfigHandler(AdminBaseHandler):
             cephconf.save()
         return cephconf
 
-    def _ceph_config_set(self, ctxt, values, begin_action=None):
+    def _ceph_config_set(self, ctxt, values):
         nodes = self._get_config_nodes(ctxt, values)
+        filters = {
+            "group": values['group'],
+            "key": values['key']
+        }
+        before_obj = objects.CephConfigList.get_all(ctxt, filters=filters)
+        if not before_obj:
+            before_obj = {}
+        else:
+            before_obj = before_obj[0]
+        begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
+                                         Action.UPDATE, before_obj=before_obj)
         if nodes:
             _success = self._ceph_confg_update(ctxt, nodes, values)
             msg = _('Ceph config update failed')
@@ -167,21 +178,21 @@ class CephConfigHandler(AdminBaseHandler):
                 cephconf = self._ceph_config_db(ctxt, values)
                 msg = _('Ceph config update successful')
                 op_status = "SET_CONFIG_SUCCESS"
+            else:
+                cephconf = {}
             status = 'success'
         else:
             cephconf = {}
             msg = _('Ceph config update failed')
             op_status = "SET_CONFIG_ERROR"
             status = 'fail'
-        self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
-                           json.dumps(values), status)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, cephconf, op_status, msg,
                                resource_type="CephConfig")
+        self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
+                           after_obj=cephconf, status=status)
 
     def ceph_config_set(self, ctxt, values):
-        begin_action = self.begin_action(ctxt, Resource.CEPH_CONFIG,
-                                         Action.UPDATE)
-        self._ceph_config_set(ctxt, values, begin_action)
+        self._ceph_config_set(ctxt, values)
         return values

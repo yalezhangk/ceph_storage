@@ -10,7 +10,7 @@ class CrushRuleHandler(AdminBaseHandler):
     def crush_rule_create(self, ctxt, rule_name, failure_domain_type,
                           rule_content):
         crush_rule = objects.CrushRule(
-            ctxt, cluster_id=ctxt.cluster_id, rule_name=rule_name,
+            ctxt, rule_name=rule_name,
             type=failure_domain_type,
             content=rule_content)
         crush_rule.create()

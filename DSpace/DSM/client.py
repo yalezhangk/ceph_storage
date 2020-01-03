@@ -78,6 +78,14 @@ class AdminClient(BaseClient):
 
     ###################
 
+    def cluster_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "cluster_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
     def cluster_get(self, ctxt, cluster_id):
         response = self.call(ctxt, "cluster_get", cluster_id=cluster_id)
         return response
@@ -147,6 +155,18 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "cluster_switch", cluster_id=cluster_id)
         return response
 
+    def cluster_capacity_get(self, ctxt, pool_id=None):
+        response = self.call(ctxt, "cluster_capacity_get", pool_id=pool_id)
+        return response
+
+    def cluster_pause(self, ctxt, enable=True):
+        response = self.call(ctxt, "cluster_pause", enable=enable)
+        return response
+
+    def cluster_status(self, ctxt):
+        response = self.call(ctxt, "cluster_status")
+        return response
+
     ###################
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
@@ -180,8 +200,8 @@ class AdminClient(BaseClient):
         response = self.call(ctxt, "node_get_infos", data=data)
         return response
 
-    def node_check(self, ctxt, data):
-        response = self.call(ctxt, "node_check", data=data)
+    def nodes_check(self, ctxt, data):
+        response = self.call(ctxt, "nodes_check", data=data)
         return response
 
     def node_roles_set(self, ctxt, node_id, data):
@@ -292,6 +312,10 @@ class AdminClient(BaseClient):
                              node_summary=node_summary, node_id=node_id)
         return response
 
+    def disk_io_top(self, ctxt, k=None):
+        response = self.call(ctxt, "disk_io_top", k=k)
+        return response
+
     ###################
     def osd_get(self, ctxt, osd_id, **kwargs):
         response = self.call(ctxt, "osd_get", osd_id=osd_id, **kwargs)
@@ -331,6 +355,24 @@ class AdminClient(BaseClient):
         response = self.call(
             ctxt, "osd_metrics_history_get", osd_id=osd_id,
             start=start, end=end)
+        return response
+
+    def osd_accelerate_disk_replace_prepare(self, ctxt, disk_id):
+        response = self.call(
+            ctxt, "osd_accelerate_disk_replace_prepare", disk_id=disk_id)
+        return response
+
+    def osd_accelerate_disk_replace(self, ctxt, disk_id):
+        response = self.call(
+            ctxt, "osd_accelerate_disk_replace", disk_id=disk_id)
+        return response
+
+    def osd_disk_replace_prepare(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_disk_replace_prepare", osd_id=osd_id)
+        return response
+
+    def osd_disk_replace(self, ctxt, osd_id):
+        response = self.call(ctxt, "osd_disk_replace", osd_id=osd_id)
         return response
 
     def osd_disk_metrics_get(self, ctxt, osd_id):
@@ -498,6 +540,16 @@ class AdminClient(BaseClient):
                              node_id=node_id)
         return response
 
+    def disk_offline(self, ctxt, slot, node_id):
+        response = self.call(ctxt, "disk_offline", slot=slot,
+                             node_id=node_id)
+        return response
+
+    def disk_online(self, ctxt, disk_info, node_id):
+        response = self.call(ctxt, "disk_online", disk_info=disk_info,
+                             node_id=node_id)
+        return response
+
     ###################
 
     def email_group_get_all(self, ctxt, marker=None, limit=None,
@@ -584,12 +636,17 @@ class AdminClient(BaseClient):
             ctxt, "service_get_count", filters=filters)
         return response
 
-    def service_update(self, ctxt, services):
-        response = self.call(ctxt, "service_update", services=services)
+    def service_update(self, ctxt, services, node_id):
+        response = self.call(ctxt, "service_update", services=services,
+                             node_id=node_id)
         return response
 
     def service_status_get(self, ctxt, names):
         response = self.call(ctxt, "service_status_get", names=names)
+        return response
+
+    def service_infos_get(self, ctxt, node):
+        response = self.call(ctxt, "service_infos_get", node=node)
         return response
 
     ##################
@@ -665,6 +722,14 @@ class AdminClient(BaseClient):
     def pool_osd_tree(self, ctxt, pool_id):
         response = self.call(
             ctxt, "pool_osd_tree", pool_id=pool_id)
+        return response
+
+    def pool_undo(self, ctxt):
+        response = self.call(ctxt, "pool_undo")
+        return response
+
+    def pool_get_undo(self, ctxt):
+        response = self.call(ctxt, "pool_get_undo")
         return response
 
     ##################
@@ -902,8 +967,15 @@ class AdminClient(BaseClient):
                              log_file_id=log_file_id)
         return response
 
-    def download_log_file(self, ctxt, log_file_id=None):
+    def download_log_file(self, ctxt, log_file_id=None, offset=None,
+                          length=None):
         response = self.call(ctxt, "download_log_file",
+                             log_file_id=log_file_id, offset=offset,
+                             length=length)
+        return response
+
+    def log_file_size(self, ctxt, log_file_id=None):
+        response = self.call(ctxt, "log_file_size",
                              log_file_id=log_file_id)
         return response
 
@@ -992,16 +1064,17 @@ class AdminClient(BaseClient):
 
     def action_log_get_all(self, ctxt, marker=None, limit=None,
                            sort_keys=None, sort_dirs=None, filters=None,
-                           offset=None):
+                           offset=None, expected_attrs=None):
         response = self.call(
             ctxt, "action_log_get_all", marker=marker, limit=limit,
             sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
-            offset=offset)
+            offset=offset, expected_attrs=expected_attrs)
         return response
 
-    def action_log_get(self, ctxt, action_log_id):
+    def action_log_get(self, ctxt, action_log_id, expected_attrs=None):
         response = self.call(ctxt, "action_log_get",
-                             action_log_id=action_log_id)
+                             action_log_id=action_log_id,
+                             expected_attrs=expected_attrs)
         return response
 
     #####################
@@ -1038,6 +1111,94 @@ class AdminClient(BaseClient):
     def send_mail(self, ctxt, subject, content, config):
         response = self.call(ctxt, "send_mail", subject=subject,
                              content=content, config=config)
+        return response
+
+    ####################
+
+    def components_get_list(self, ctxt, services):
+        response = self.call(ctxt, "components_get_list", services=services)
+        return response
+
+    def component_restart(self, ctxt, component):
+        response = self.call(ctxt, "component_restart", component=component)
+        return response
+
+    def component_start(self, ctxt, component):
+        response = self.call(ctxt, "component_start", component=component)
+        return response
+
+    def component_stop(self, ctxt, component):
+        response = self.call(ctxt, "component_stop", component=component)
+        return response
+
+    ####################
+
+    def radosgw_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "radosgw_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def radosgw_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "radosgw_get_count", filters=filters)
+        return response
+
+    def radosgw_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "radosgw_create", data=data)
+        return response
+
+    def radosgw_delete(self, ctxt, rgw_id):
+        response = self.call(ctxt, "radosgw_delete", rgw_id=rgw_id)
+        return response
+
+    ####################
+
+    def cluster_data_balance_get(self, ctxt):
+        response = self.call(ctxt, "cluster_data_balance_get")
+        return response
+
+    def cluster_data_balance_set(self, ctxt, data_balance):
+        response = self.call(ctxt, "cluster_data_balance_set",
+                             data_balance=data_balance)
+        return response
+
+    def rgw_router_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                           sort_dirs=None, filters=None, offset=None):
+        response = self.call(
+            ctxt, "rgw_router_get_all", marker=marker, limit=limit,
+            sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
+            offset=offset)
+        return response
+
+    def rgw_router_get_count(self, ctxt, filters=None):
+        response = self.call(
+            ctxt, "rgw_router_get_count", filters=filters)
+        return response
+
+    def rgw_router_create(self, ctxt, data):
+        response = self.call(
+            ctxt, "rgw_router_create", data=data)
+        return response
+
+    def rgw_router_delete(self, ctxt, rgw_router_id):
+        response = self.call(ctxt, "rgw_router_delete",
+                             rgw_router_id=rgw_router_id)
+        return response
+
+    def rgw_router_update(self, ctxt, rgw_router_id, data):
+        response = self.call(ctxt, "rgw_router_update",
+                             rgw_router_id=rgw_router_id, data=data)
+        return response
+
+    ####################
+
+    def osd_slow_requests_get(self, ctxt, osd_top, op_top):
+        response = self.call(ctxt, "osd_slow_requests_get",
+                             osd_top=osd_top, op_top=op_top)
         return response
 
 

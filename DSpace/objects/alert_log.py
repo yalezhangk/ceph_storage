@@ -18,7 +18,7 @@ class AlertLog(base.StorPersistentObject, base.StorObject,
         'alert_value': fields.StringField(),
         'resource_id': fields.StringField(),
         'resource_name': fields.StringField(),
-        'alert_role_id': fields.IntegerField(),
+        'alert_rule_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
         'alert_rule': fields.ObjectField("AlertRule", nullable=True),
     }

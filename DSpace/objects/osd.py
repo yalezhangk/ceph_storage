@@ -50,6 +50,10 @@ class Osd(base.StorPersistentObject, base.StorObject,
                        'db_partition', 'wal_partition', 'journal_partition',
                        'metrics')
 
+    @property
+    def osd_name(self):
+        return "osd.%s" % self.osd_id
+
     def create(self):
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',
@@ -71,13 +75,29 @@ class Osd(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    def need_size(self):
+        if self.status in [s_fields.OsdStatus.ACTIVE,
+                           s_fields.OsdStatus.WARNING]:
+            return True
+        return False
+
     @classmethod
-    def get_by_osd_id(cls, context, osd_id):
-        db_osd = db.osd_get_by_osd_id(context, osd_id)
-        return cls._from_db_object(context, cls(context), db_osd)
+    def get_by_osd_id(cls, context, osd_id, expected_attrs=None):
+        kwargs = {}
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
+        db_osd = db.osd_get_by_osd_id(context, osd_id, **kwargs)
+        return cls._from_db_object(context, cls(context), db_osd, **kwargs)
+
+    @classmethod
+    def get_by_osd_name(cls, context, osd_name, expected_attrs=None):
+        osd_id = osd_name.replace("osd.", "")
+        return cls.get_by_osd_id(context, osd_id,
+                                 expected_attrs=expected_attrs)
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
         expected_attrs = expected_attrs or []
         if 'node' in expected_attrs:
             node = db_obj.get('node', None)

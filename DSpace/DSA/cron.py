@@ -12,34 +12,31 @@ from DSpace.DSA.base import AgentBaseHandler
 from DSpace.objects import fields as s_fields
 from DSpace.tools.docker import Docker as DockerTool
 from DSpace.tools.service import Service as ServiceTool
+from DSpace.utils.service_map import ServiceMap
 
 logger = logging.getLogger(__name__)
-
-container_roles = ["base", "role_admin"]
 
 
 class CronHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
         self.container_namespace = "athena"
+        self.map_util = ServiceMap(self.container_namespace)
         self.service_map = {}
+        self.container_roles = self.map_util.container_roles
         self._service_map_init()
         self._setup()
         self.state = 'ready'
         self.task_submit(self._cron)
 
     def _cron(self):
-        logger.debug("Start crontab")
-        crons = [
-            self.service_check
-        ]
+        logger.debug("Start service check crontab")
         while True:
-            for fun in crons:
-                try:
-                    fun()
-                except Exception as e:
-                    logger.exception("Cron Exception: %s", e)
-            time.sleep(60)
+            try:
+                self.service_check()
+            except Exception as e:
+                logger.exception("Cron Exception: %s", e)
+            time.sleep(CONF.service_heartbeat_interval)
 
     def _setup(self):
         logger.debug("Start setup")
@@ -56,67 +53,91 @@ class CronHandler(AgentBaseHandler):
         if namespace:
             self.container_namespace = namespace
         self.service_map = {
-            "base": {
-                "NODE_EXPORTER": self.container_namespace + "_node_exporter",
-                "CHRONY": self.container_namespace + "_chrony",
-                "DSA": self.container_namespace + "_dsa",
-            },
-            "role_monitor": {
-                "MON": "ceph-mon@$HOSTNAME",
-                "MGR": "ceph-mgr@$HOSTNAME",
-            },
-            "role_admin": {
-                "PROMETHEUS": self.container_namespace + "_prometheus",
-                "ETCD": self.container_namespace + "_etcd",
-                "NGINX": self.container_namespace + "_nginx",
-                "DSM": self.container_namespace + "_dsm",
-                "DSI": self.container_namespace + "_dsi",
-                "MARIADB": self.container_namespace + "_mariadb",
-            },
-            "role_storage": {},
-            "role_block_gateway": {
-                "TCMU": "tcmu",
-            },
-            "role_object_gateway": {
-                "RGW": "ceph-radosgw@rgw.$HOSTNAME",
-            },
+            "base": self.map_util.base,
+            "role_block_gateway": {},
+            "role_radosgw_router": {},
+            "role_object_gateway": {},
             "role_file_gateway": {},
         }
+        if self.node.role_admin:
+            self.service_map.update({
+                "role_admin": self.map_util.role_admin
+            })
+        if self.node.role_monitor:
+            self.service_map.update({
+                "role_monitor": self.map_util.role_monitor
+            })
+        if self.node.role_block_gateway:
+            self.service_map.update({
+                "role_block_gateway": self.map_util.role_block_gateway
+            })
+        # map other service from dsm
+        uncertain_services = self.admin.service_infos_get(
+            self.ctxt, self.node)
+        for k, v in six.iteritems(uncertain_services):
+            if k == "radosgws":
+                for rgw in v:
+                    if rgw.status == s_fields.RadosgwStatus.STOPPED:
+                        continue
+                    self.service_map['role_object_gateway'].update({
+                        rgw.name: "ceph-radosgw@rgw.{}".format(rgw.name)
+                    })
+            if k == "radosgw_routers":
+                for service in v:
+                    self.service_map['role_radosgw_router'].update({
+                        "radosgw_" + service.name:
+                            self.container_namespace + "_radosgw_" +
+                            service.name
+                    })
+        logger.info("Init service map sucess: %s", self.service_map)
+
+    def _status_map(self, status, role):
+        if role in ["base", "role_admin", "role_monitor",
+                    "role_block_gateway"]:
+            return s_fields.ServiceStatus.ACTIVE if status \
+                else s_fields.ServiceStatus.INACTIVE
+        if role == "role_object_gateway":
+            return s_fields.RadosgwStatus.ACTIVE if status \
+                else s_fields.RadosgwStatus.INACTIVE
+        if role == "role_radosgw_router":
+            return s_fields.RouterServiceStatus.ACTIVE if status \
+                else s_fields.RouterServiceStatus.INACTIVE
 
     def service_check(self):
-        logger.debug("Get services status")
-
-        node = self.node
+        logger.debug("Get node services status")
         ssh_client = self._get_ssh_executor()
         if not ssh_client:
             return False
         docker_tool = DockerTool(ssh_client)
         service_tool = ServiceTool(ssh_client)
-        services = []
-
+        services = {}
+        logger.debug("Check service according to map: %s", self.service_map)
         for role, sers in six.iteritems(self.service_map):
-            if (role != "base") and (not node[role]):
-                continue
+            services.update({role: []})
             for k, v in six.iteritems(sers):
                 if v.find('$HOSTNAME'):
-                    if not node.hostname:
+                    if not self.node.hostname:
                         continue
-                v = v.replace('$HOSTNAME', node.hostname)
+                v = v.replace('$HOSTNAME', self.node.hostname)
                 try:
-                    if role in container_roles:
+                    if role in self.container_roles:
                         status = docker_tool.status(name=v)
                     else:
                         status = service_tool.status(name=v)
                 except exception.StorException as e:
                     logger.error("Get service status error: {}".format(e))
                     status = s_fields.ServiceStatus.INACTIVE
-                services.append({
+                logger.debug("status: %s, name: %s", status, k)
+                status = self._status_map(status, role)
+                services[role].append({
                     "name": k,
                     "status": status,
-                    "node_id": CONF.node_id
+                    "node_id": CONF.node_id,
+                    "service_name": v
                 })
         logger.debug(services)
-        response = self.admin.service_update(self.ctxt, json.dumps(services))
+        response = self.admin.service_update(
+            self.ctxt, json.dumps(services), self.node.id)
         if not response:
             logger.debug('Update service status failed!')
             return False
@@ -137,3 +158,8 @@ class CronHandler(AgentBaseHandler):
         node_summary = self.node_get_summary(self.ctxt, self.node)
         logger.info("Reporter node summary: %s", node_summary)
         self.admin.node_reporter(self.ctxt, node_summary, self.node.id)
+
+    def node_update_infos(self, ctxt, node):
+        logger.info("Node information update: %s", self.node)
+        self.node = node
+        self._service_map_init()

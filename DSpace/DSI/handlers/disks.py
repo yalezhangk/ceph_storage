@@ -37,7 +37,8 @@ update_disk_schema = {
     "properties": {
         "action": {
             "type": "string",
-            "enum": ["light", "partition_create", "partition_remove"]
+            "enum": ["light", "partition_create", "partition_remove",
+                     "disk_replace_prepare", "disk_replace"]
         },
     },
     "allOf": [
@@ -294,6 +295,13 @@ class DiskActionHandler(ClusterAPIHandler):
         return client.disk_partitions_remove(ctxt, disk_id=disk_id,
                                              values=values)
 
+    def _disk_replace_prepare(self, ctxt, client, disk_id, values):
+        return client.osd_accelerate_disk_replace_prepare(ctxt,
+                                                          disk_id=disk_id)
+
+    def _disk_replace(self, ctxt, client, disk_id, values):
+        return client.osd_accelerate_disk_replace(ctxt, disk_id=disk_id)
+
     @gen.coroutine
     def post(self, disk_id):
         """
@@ -395,6 +403,8 @@ class DiskActionHandler(ClusterAPIHandler):
             "light": self._disk_light,
             "partition_create": self._disk_partitions_create,
             "partition_remove": self._disk_partitions_remove,
+            "disk_replace_prepare": self._disk_replace_prepare,
+            "disk_replace": self._disk_replace,
         }
         fun_action = action_map.get(action)
         if fun_action is None:
@@ -587,6 +597,50 @@ class DiskAvailableListHandler(ClusterAPIHandler):
         expected_attrs = ['node']
         disks = yield client.disk_get_all_available(
             ctxt, filters=filters, expected_attrs=expected_attrs)
+        self.write(objects.json_encode({
+            "disks": disks,
+        }))
+
+
+@URLRegistry.register(r"/disks/top/")
+class DiskTopHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - disk
+        summary: disk io top
+        description: Return a list of io top disks
+        operationId: disks.api.listIoTopDisk
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: k
+          description: number of disk
+          type: integer
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        k = self.get_query_argument('k', None)
+        if not k:
+            k = 10
+        elif k.isdigit():
+            k = int(k)
+        else:
+            raise exception.InvalidInput(_("k must be number"))
+        client = self.get_admin_client(ctxt)
+        disks = yield client.disk_io_top(ctxt, k)
         self.write(objects.json_encode({
             "disks": disks,
         }))

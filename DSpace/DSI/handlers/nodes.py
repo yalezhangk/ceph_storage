@@ -14,6 +14,7 @@ from tornado.escape import json_decode
 from DSpace import ROOT
 from DSpace import exception
 from DSpace import objects
+from DSpace.context import get_context
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.DSI.wsclient import WebSocketClientManager
@@ -180,13 +181,15 @@ class NodeListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         page_args = self.get_paginated_args()
-        exact_filters = ['status']
+        exact_filters = ['status', 'role_object_gateway', 'no_router']
         fuzzy_filters = ['hostname', 'ip_address']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(ctxt)
         nodes = yield client.node_get_all(
             ctxt, expected_attrs=['disks', 'networks', 'osds'],
             filters=filters, **page_args)
+        if 'no_router' in filters:
+            del(filters['no_router'])
         node_count = yield client.node_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "nodes": nodes,
@@ -302,6 +305,10 @@ class NodeListHandler(ClusterAPIHandler):
             datas = data.get('nodes')
             client = self.get_admin_client(ctxt)
             nodes = []
+            for data in datas:
+                if 'monitor' in data.get('roles', ''):
+                    raise exception.InvalidInput(_("Only one node can set "
+                                                   "roles at the same time"))
             for data in datas:
                 try:
                     node = yield client.node_create(ctxt, data)
@@ -830,16 +837,17 @@ class NodeInfoHandler(ClusterAPIHandler):
         logger.debug("node get info, param: %s", nodes_data)
         client = self.get_admin_client(ctxt)
         ips = nodes_data.get("ips")
+        tasks = []
         res = []
         for data in ips:
-            info = yield client.node_get_infos(ctxt, data)
-            res.append(info)
+            task = client.node_get_infos(ctxt, data)
+            tasks.append(task)
 
         ip_ranges = nodes_data.get("ipr")
         for ipr in ip_ranges:
             if '-' not in ipr:
                 raise exception.InvalidInput(
-                    reason=_("IP Range %s format error", ipr))
+                    _("IP Range %s format error", ipr))
             start, end = ipr.split('-', 1)
             r = None
             try:
@@ -847,11 +855,14 @@ class NodeInfoHandler(ClusterAPIHandler):
             except Exception as e:
                 logger.error(e)
                 raise exception.InvalidInput(
-                    reason=_("IP Range %s format error", ipr))
+                    _("IP Range %s format error", ipr))
             for _ip in r:
                 ip = str(_ip)
-                info = yield client.node_get_infos(ctxt, {"ip_address": ip})
-                res.append(info)
+                task = client.node_get_infos(ctxt, {"ip_address": ip})
+                tasks.append(task)
+        for task in tasks:
+            info = yield task
+            res.append(info)
 
         self.write(objects.json_encode({
             "data": res
@@ -913,10 +924,7 @@ class NodeCheckHandler(ClusterAPIHandler):
         validate(nodes_data, schema=check_node_schema,
                  format_checker=draft7_format_checker)
         client = self.get_admin_client(ctxt)
-        res = []
-        for data in nodes_data:
-            check_result = yield client.node_check(ctxt, data)
-            res.append(check_result)
+        res = yield client.nodes_check(ctxt, nodes_data)
 
         self.write(objects.json_encode({
             "data": res
@@ -1102,3 +1110,6 @@ class TplDownload(ClusterAPIHandler):
             file_content = f.read()
             self.write(file_content)
         self.finish()
+
+    def get_context(self):
+        return get_context()

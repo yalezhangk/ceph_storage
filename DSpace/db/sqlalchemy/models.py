@@ -56,6 +56,7 @@ class Cluster(BASE, StorBase):
     display_description = Column(String(255))
     is_admin = Column(Boolean, default=False)
     status = Column(String(64))
+    ceph_status = Column(Boolean, default=False)
 
 
 class RPCService(BASE, StorBase):
@@ -121,6 +122,7 @@ class Node(BASE, StorBase):
     _disks = relationship("Disk", backref="_node")
     _networks = relationship("Network", backref="_node")
     _osds = relationship("Osd", backref="_node")
+    _radosgws = relationship("Radosgw", backref="_node")
 
 
 class Disk(BASE, StorBase):
@@ -153,12 +155,14 @@ class DiskPartition(BASE, StorBase):
     name = Column(String(32))
     size = Column(BigInteger)  # bytes
     status = Column(String(32))
+    uuid = Column(String(36))  # partition uuid
     type = Column(String(32))
     role = Column(String(32), index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     disk_id = Column(Integer, ForeignKey('disks.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     _disk = relationship("Disk", backref="_partitions")
+    _node = relationship("Node", backref="_partitions")
 
 
 class Network(BASE, StorBase):
@@ -183,6 +187,7 @@ class Service(BASE, StorBase):
     name = Column(String(32), index=True)
     node_id = Column(Integer, ForeignKey('nodes.id'))
     status = Column(String(32))
+    role = Column(String(32))
     counter = Column(BigInteger, default=0)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
@@ -241,9 +246,9 @@ class Pool(BASE, StorBase):
     used = Column(BigInteger)  # bytes
     osd_num = Column(Integer)
     speed_type = Column(String(32))
-    failure_domain_type = Column(String(32), default='host', index=True)
     crush_rule_id = Column(Integer, ForeignKey('crush_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    rgw_zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))
 
 
 class Volume(BASE, StorBase):
@@ -483,7 +488,7 @@ class AlertLog(BASE, StorBase):
     resource_type = Column(String(32))
     level = Column(String(32))
     alert_value = Column(String(1024))
-    resource_id = Column(String(32))
+    resource_id = Column(String(64))
     resource_name = Column(String(64))
     alert_rule_id = Column(Integer, ForeignKey('alert_rules.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
@@ -502,7 +507,9 @@ class ActionLog(BASE, StorBase):
     resource_id = Column(String(36))
     resource_name = Column(String(64))
     resource_type = Column(String(32))
-    resource_data = Column(Text())
+    before_data = Column(Text())  # before_obj
+    after_data = Column(Text())  # after_obj
+    diff_data = Column(Text())  # diff description
     status = Column(String(32), default='under way')  # success/under way/fail
     err_msg = Column(Text())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
@@ -541,3 +548,63 @@ class Task(BASE, StorBase):
     step_num = Column(Integer)
     finished_at = Column(DateTime)
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class Radosgw(BASE, StorBase):
+    __tablename__ = 'radosgws'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255))
+    name = Column(String(64))
+    display_name = Column(String(255))
+    status = Column(String(32))
+    ip_address = Column(String(32))
+    port = Column(Integer)
+    zone_id = Column(Integer, ForeignKey('radosgw_zones.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    counter = Column(BigInteger, default=0)
+    router_id = Column(Integer, ForeignKey('radosgw_routers.id'))
+    _radosgw_routers = relationship("RadosgwRouter", backref="_radosgws")
+
+
+class RadosgwZone(BASE, StorBase):
+    __tablename__ = 'radosgw_zones'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255))
+    name = Column(String(64))
+    zone_id = Column(String(36))
+    zonegroup = Column(String(64))
+    realm = Column(String(64))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class RadosgwRouter(BASE, StorBase):
+    __tablename__ = 'radosgw_routers'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(255))
+    name = Column(String(64))
+    status = Column(String(32))
+    virtual_ip = Column(String(32))
+    port = Column(Integer)
+    https_port = Column(Integer)
+    virtual_router_id = Column(Integer)
+    nodes = Column(String(1024))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class RouterService(BASE, StorBase):
+    __tablename__ = "router_services"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), index=True)
+    status = Column(String(32))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    net_id = Column(String(36), ForeignKey('networks.id'))
+    router_id = Column(Integer, ForeignKey('radosgw_routers.id'))
+    counter = Column(BigInteger, default=0)
+    _radosgw_routers = relationship("RadosgwRouter",
+                                    backref="_router_services")

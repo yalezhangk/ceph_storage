@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import re
 import uuid
 
 from DSpace.exception import RunCommandError
+from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
 from DSpace.utils.ptype import PTYPE
 
@@ -48,10 +50,27 @@ class DiskTool(ToolBase):
             dirs = os.listdir(os.path.join(path, block))
             if 'stat' not in dirs:
                 continue
+
+            cmd = ["lsscsi"]
+            code, out, err = self.run_command(cmd)
+            if code:
+                raise RunCommandError(cmd=cmd, return_code=code,
+                                      stdout=out, stderr=err)
+            slot = None
+            out = out.split('\n')
+            for scsi in out:
+                if block in scsi:
+                    slot = re.search(r"(?<=\[).*?(?=\])", scsi).group()
+                    break
+
+            if not slot:
+                continue
             size = open(os.path.join(path, block, 'size')).read().strip()
-            res[block] = {
+            res[slot] = {
                 "partitions": {},
                 "size": int(size) * 512,
+                "slot": slot,
+                "name": block,
                 "rotational": open(
                     os.path.join(path, block, 'queue', 'rotational')
                 ).read().strip()
@@ -59,27 +78,27 @@ class DiskTool(ToolBase):
             block_mount = disk_mounts.get(block)
             if block_mount:
                 if block_mount['MOUNTPOINT']:
-                    res[block]['mounted'] = True
+                    res[slot]['mounted'] = True
 
             for partition in dirs:
                 mount_info = disk_mounts.get(partition)
                 if mount_info:
                     if mount_info['MOUNTPOINT'] in sys_partitions \
                             and mount_info['TYPE'] == 'part':
-                        res[block]['is_sys_dev'] = True
+                        res[slot]['is_sys_dev'] = True
                 if not partition.startswith(block):
                     continue
                 part_size = open(
                     os.path.join(path, block, partition, 'size')
                 ).read().strip()
-                res[block]["partitions"][partition] = {
+                res[slot]["partitions"][partition] = {
                     "size": int(part_size) * 512,
                 }
         return res
 
     def partitions_create(self, disk, partitions):
         logger.info('Create disk partition for %s', disk)
-        disk = self._wapper("/dev/%s" % disk)
+        _disk = self._wapper("/dev/%s" % disk)
         order = 1
         role_map = {
             "db": "block.db",
@@ -101,11 +120,24 @@ class DiskTool(ToolBase):
                 .format(order, PTYPE['regular'][role]['ready'])
             cmd = ["sgdisk", partition_size,
                    "--change-name='{}:ceph {}'".format(order, role),
-                   partition_guid, type_code, "--mbrtogpt", "--", disk]
+                   partition_guid, type_code, "--mbrtogpt", "--", _disk]
             code, out, err = self.run_command(cmd)
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,
                                       stdout=out, stderr=err)
+            self.partprobe(disk)
+            disk_part = self._wapper("/dev/%s" % part['name'])
+            cmd = ["blkid", disk_part, "-o", "udev"]
+            code, out, err = self.run_command(cmd)
+            if code:
+                raise RunCommandError(cmd=cmd, return_code=code,
+                                      stdout=out, stderr=err)
+            blk_udev = out.split('\n')
+            part_uuid = None
+            for udev in blk_udev:
+                if "PARTUUID" in udev:
+                    part_uuid = udev.split('=')[-1]
+            part['uuid'] = part_uuid
             order += 1
         return True
 
@@ -116,6 +148,7 @@ class DiskTool(ToolBase):
         if code:
             raise RunCommandError(cmd=cmd, return_code=code,
                                   stdout=out, stderr=err)
+        self.partprobe(disk)
         return True
 
     def data_clear(self, disk):
@@ -127,14 +160,61 @@ class DiskTool(ToolBase):
                                   stdout=out, stderr=err)
         return True
 
-    def partprobe(self):
+    def partprobe(self, disk=None):
         logger.info('Running cmd: partprobe')
         cmd = ["partprobe"]
+        if disk:
+            _disk = self._wapper("/dev/%s" % disk)
+            cmd.append(_disk)
         code, out, err = self.run_command(cmd)
         if code:
             raise RunCommandError(cmd=cmd, return_code=code,
                                   stdout=out, stderr=err)
         return True
+
+    def get_disk_info_by_slot(self, slot):
+        path = self._wapper("/sys/class/scsi_disk/%s/device/block/" % slot)
+        block = os.listdir(path)[0]
+        dirs = os.listdir(os.path.join(path, block))
+        size = open(os.path.join(path, block, 'size')).read().strip()
+        rotational = open(
+            os.path.join(path, block, 'queue', 'rotational')).read().strip()
+        if rotational == '0':
+            disk_type = s_fields.DiskType.SSD
+        else:
+            disk_type = s_fields.DiskType.HDD
+        disk_info = {
+            "size": int(size) * 512,
+            "slot": slot,
+            "name": block,
+            "type": disk_type
+        }
+        partitions = []
+        for partition in dirs:
+            if not partition.startswith(block):
+                continue
+            part_size = open(
+                os.path.join(path, block, partition, 'size')
+            ).read().strip()
+            disk_part = self._wapper("/dev/%s" % partition)
+            cmd = ["blkid", disk_part, "-o", "udev"]
+            code, out, err = self.run_command(cmd)
+            if code:
+                raise RunCommandError(cmd=cmd, return_code=code,
+                                      stdout=out, stderr=err)
+            blk_udev = out.split('\n')
+            uuid = None
+            for udev in blk_udev:
+                if "PARTUUID" in udev:
+                    uuid = udev.split('=')[-1]
+            partition = {
+                'size': int(part_size) * 512,
+                'name': partition,
+                'uuid': uuid
+            }
+            partitions.append(partition)
+        disk_info['partitions'] = partitions
+        return disk_info
 
 
 if __name__ == '__main__':

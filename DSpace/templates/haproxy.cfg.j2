@@ -1,0 +1,31 @@
+global
+  chroot /var/lib/haproxy
+  user haproxy
+  group haproxy
+  daemon
+  log         127.0.0.1 local2
+  maxconn 4000
+  nbproc 1
+  stats socket /var/lib/dspace/haproxy/haproxy.sock
+  ssl-default-bind-ciphers DEFAULT:!MEDIUM:!3DES
+  ssl-default-bind-options no-sslv3 no-tlsv10 no-tlsv11
+  tune.ssl.default-dh-param 4096
+
+defaults
+  mode                    http
+  log global
+  option redispatch
+  retries 3
+  timeout http-request 10m
+  timeout queue 10m
+  timeout connect 10m
+  timeout client 10m
+  timeout server 10m
+  timeout check 10m
+  balance roundrobin
+  option                  httplog
+  option                  dontlognull
+  option http-server-close
+  option forwardfor       except 127.0.0.0/8
+  timeout http-keep-alive 10s
+

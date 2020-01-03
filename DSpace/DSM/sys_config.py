@@ -1,10 +1,14 @@
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
@@ -44,8 +48,38 @@ class SysConfigHandler(AdminBaseHandler):
                                    chrony_server, status, err_msg=str(e))
                 raise e
 
+    def _gateway_check(self, ctxt):
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={"role_object_gateway": True})
+        if nodes:
+            raise exception.InvalidInput(
+                _("Object gateway role has been set, "
+                  "please remove all object gateway role")
+            )
+
+    def _update_gateway_ip(self, ctxt, gateway_cidr):
+        logger.info("Update object_gateway_ip_address for nodes")
+        nodes = objects.NodeList.get_all(ctxt)
+        for node in nodes:
+            if node.object_gateway_ip_address:
+                if (IPAddress(node.object_gateway_ip_address) not in
+                        IPNetwork(gateway_cidr)):
+                    node.object_gateway_ip_address = None
+                    node.save()
+            nets = objects.NetworkList.get_all(
+                ctxt, filters={"node_id": node.id})
+            for net in nets:
+                if not net.ip_address:
+                    continue
+                if IPAddress(net.ip_address) in IPNetwork(gateway_cidr):
+                    node.object_gateway_ip_address = net.ip_address
+                    node.save()
+                    break
+
     def update_sysinfo(self, ctxt, sysinfos):
         gateway_cidr = sysinfos.get('gateway_cidr')
+        if gateway_cidr:
+            self._gateway_check(ctxt)
         cluster_cidr = sysinfos.get('cluster_cidr')
         public_cidr = sysinfos.get('public_cidr')
         admin_cidr = sysinfos.get('admin_cidr')
@@ -76,13 +110,18 @@ class SysConfigHandler(AdminBaseHandler):
             objects.sysconfig.sys_config_set(ctxt, 'cluster_cidr',
                                              cluster_cidr)
         if gateway_cidr:
-            begin_action = self.begin_action(ctxt, Resource.SYSCONFIG,
-                                             Action.UPDATE_CLOCK_SERVER)
-            objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
-                                             cluster_cidr)
-            self.finish_action(begin_action, None, 'sysconfig', gateway_cidr)
+            old_gateway_cidr = objects.sysconfig.sys_config_get(
+                ctxt, "gateway_cidr")
+            if old_gateway_cidr != gateway_cidr:
+                begin_action = self.begin_action(ctxt, Resource.SYSCONFIG,
+                                                 Action.UPDATE_GATEWAY_CIDR)
+                objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
+                                                 gateway_cidr)
+                self._update_gateway_ip(ctxt, gateway_cidr)
+                self.finish_action(begin_action, None, 'sysconfig',
+                                   gateway_cidr)
 
     def image_namespace_get(self, ctxt):
-        image_namespace = objects.sysconfig.sys_config_get(ctxt,
-                                                           "image_namespace")
+        image_namespace = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.IMAGE_NAMESPACE)
         return image_namespace

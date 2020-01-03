@@ -40,30 +40,6 @@ class CleanDataMixin(object):
     def _clean_ceph_config(self, ctxt):
         self._clean_data(ctxt, objects.CephConfigList)
 
-    def _clean_volume_mapping(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeMappingList)
-
-    def _clean_volume_access_path_gateway(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeAccessPathList)
-
-    def _clean_volume_client(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeClientList)
-
-    def _clean_volume_client_group(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeClientGroupList)
-
-    def _clean_volume_gateway(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeGatewayList)
-
-    def _clean_volume_access_path(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeAccessPathList)
-
-    def _clean_volume_snapshot(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeSnapshotList)
-
-    def _clean_volume(self, ctxt):
-        self._clean_data(ctxt, objects.VolumeList)
-
     def _clean_rpc_service(self, ctxt):
         filters = {"cluster_id": ctxt.cluster_id}
         self._clean_data(ctxt, objects.RPCServiceList, filters=filters)
@@ -91,3 +67,6 @@ class CleanDataMixin(object):
 
     def _clean_action_log(self, ctxt):
         self._clean_data(ctxt, objects.ActionLogList)
+
+    def _clean_service(self, ctxt):
+        self._clean_data(ctxt, objects.ServiceList)

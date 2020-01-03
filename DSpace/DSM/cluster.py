@@ -10,9 +10,11 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.cluster import cluster_delete_flow
 from DSpace.taskflows.node import NodeTask
+from DSpace.taskflows.node import PrometheusTargetMixin
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
 from DSpace.tools.prometheus import PrometheusTool
@@ -25,6 +27,20 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def cluster_get(self, ctxt, cluster_id):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         return cluster
+
+    def cluster_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None):
+        clusters = objects.ClusterList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset)
+        prometheus = PrometheusTool(ctxt)
+        # cluster 容量和已配置容量
+        logger.debug('get cluster capacity')
+        for c in clusters:
+            capacity = prometheus.cluster_get_capacity(
+                filter={'cluster_id': c.id})
+            c.metrics.update({'capacity': capacity})
+        return clusters
 
     def ceph_cluster_info(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
@@ -68,13 +84,17 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return True
 
     def _admin_node_delete(self, ctxt, node):
+        node_task = NodeTask(ctxt, node)
         try:
-            node_task = NodeTask(ctxt, node)
+            PrometheusTargetMixin().target_remove(
+                ctxt, node, service='node_exporter')
+        except Exception as e:
+            logger.error(e)
+
+        try:
             node_task.chrony_uninstall()
             node_task.node_exporter_uninstall()
             node_task.dspace_agent_uninstall()
-            node_task.prometheus_target_config(action='remove',
-                                               service='node_exporter')
 
             rpc_services = objects.RPCServiceList.get_all(
                 ctxt,
@@ -100,7 +120,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if not len(clusters):
             return False
 
-        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, ConfigKey.ADMIN_IPS)
         admin_ips = admin_ips.split(',')
 
         success = True
@@ -168,7 +188,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def cluster_admin_nodes_get(self, ctxt):
         logger.debug("get admin nodes info")
         nodes = []
-        admin_ips = objects.sysconfig.sys_config_get(ctxt, "admin_ips")
+        admin_ips = objects.sysconfig.sys_config_get(ctxt, ConfigKey.ADMIN_IPS)
         admin_ips = admin_ips.split(',')
         has_ceph = False
         for ip_address in admin_ips:
@@ -211,7 +231,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster.create()
 
         ctxt.cluster_id = cluster.id
-        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.CREATE)
+        begin_action = self.begin_action(
+            ctxt, Resource.CLUSTER, Action.CREATE)
         # TODO check key value
         for key, value in six.iteritems(data):
             sysconf = objects.SysConfig(
@@ -221,7 +242,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
         self.task_submit(self.init_alert_rule, ctxt, cluster.id)
         self.finish_action(begin_action, cluster.id, cluster.display_name,
-                           objects.json_encode(cluster))
+                           after_obj=cluster)
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
         return cluster
 
@@ -257,13 +278,13 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             err_msg = str(e)
 
         self.finish_action(begin_action, cluster.id, cluster.display_name,
-                           objects.json_encode(cluster), status,
+                           cluster, status,
                            err_msg=err_msg)
         ctxt.cluster_id = src_cluster_id
         logger.debug("delete cluster %s finish: %s", cluster.id, msg)
         wb_client.send_message(ctxt, cluster, action, msg)
 
-    def _cluster_delete_check(self, ctxt, cluster):
+    def _cluster_delete_check(self, ctxt, cluster, clean_ceph):
         if cluster.is_admin:
             raise exc.InvalidInput(_('Admin cluster cannot be delete'))
         if cluster.status not in [s_fields.ClusterStatus.ACTIVE,
@@ -286,7 +307,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             ctxt, filters={
                 "status": [
                     s_fields.OsdStatus.CREATING,
-                    s_fields.OsdStatus.DELETING
+                    s_fields.OsdStatus.DELETING,
+                    s_fields.OsdStatus.REPLACE_PREPARING,
+                    s_fields.OsdStatus.REPLACE_PREPARED,
+                    s_fields.OsdStatus.REPLACING
                 ]
             }
         )
@@ -296,13 +320,21 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if import_task is not None and import_task >= 0:
             raise exc.InvalidInput(_('Cluster is importing'))
 
+        if clean_ceph:
+            rgws = objects.RadosgwList.get_count(ctxt)
+            rgw_routers = objects.RadosgwRouterList.get_count(ctxt)
+            if rgws or rgw_routers:
+                raise exc.InvalidInput(_('Please remove radosgw and '
+                                         'radosgw routers first'))
+
     def cluster_delete(self, ctxt, cluster_id, clean_ceph=False):
         logger.debug("delete cluster %s start", cluster_id)
         src_cluster_id = ctxt.cluster_id
         ctxt.cluster_id = cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
-        self._cluster_delete_check(ctxt, cluster)
-        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.DELETE)
+        self._cluster_delete_check(ctxt, cluster, clean_ceph)
+        begin_action = self.begin_action(
+            ctxt, Resource.CLUSTER, Action.DELETE, before_obj=cluster)
         cluster.status = s_fields.ClusterStatus.DELETING
         cluster.save()
         self.task_submit(self._cluster_delete,
@@ -337,59 +369,68 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         return cluster_info
 
     def service_status_get(self, ctxt, names):
+        if not objects.NodeList.get_count(ctxt):
+            return {}
         return objects.ServiceList.service_status_get(ctxt, names=names)
 
     def cluster_host_status_get(self, ctxt):
         query_all = objects.NodeList.get_status(ctxt)
-        num = 0
         status = {s_fields.NodeStatus.ACTIVE: 0,
                   s_fields.NodeStatus.ERROR: 0,
-                  s_fields.NodeStatus.INACTIVE: 0}
+                  s_fields.NodeStatus.WARNING: 0,
+                  "progress": 0}
         for [k, v] in query_all:
             if k in [s_fields.NodeStatus.ACTIVE,
                      s_fields.NodeStatus.ERROR,
-                     s_fields.NodeStatus.INACTIVE]:
+                     s_fields.NodeStatus.WARNING]:
                 status[k] = v
             else:
-                num += v
-        status["progress"] = num
+                status["progress"] += v
         return status
 
     def cluster_pool_status_get(self, ctxt):
+        logger.info("try get pool status")
         query_all = objects.PoolList.get_status(ctxt)
         num = 0
         status = {s_fields.PoolStatus.ACTIVE: 0,
-                  s_fields.PoolStatus.INACTIVE: 0,
+                  s_fields.PoolStatus.DEGRADED: 0,
+                  s_fields.PoolStatus.RECOVERING: 0,
+                  s_fields.PoolStatus.PROCESSING: 0,
+                  s_fields.PoolStatus.WARNING: 0,
                   s_fields.PoolStatus.ERROR: 0}
         for [k, v] in query_all:
             if k in [s_fields.PoolStatus.ACTIVE,
-                     s_fields.PoolStatus.ERROR,
-                     s_fields.PoolStatus.INACTIVE]:
+                     s_fields.PoolStatus.DEGRADED,
+                     s_fields.PoolStatus.RECOVERING,
+                     s_fields.PoolStatus.WARNING,
+                     s_fields.PoolStatus.ERROR]:
                 status[k] = v
-            elif k != s_fields.PoolStatus.DELETED:
+            elif k in [s_fields.PoolStatus.PROCESSING,
+                       s_fields.PoolStatus.CREATING,
+                       s_fields.PoolStatus.DELETING]:
                 num += v
-        status["progress"] = num
+        status[s_fields.PoolStatus.PROCESSING] = num
+        logger.info("pool status: %s", status)
         return status
 
     def cluster_osd_status_get(self, ctxt):
         query_all = objects.OsdList.get_status(ctxt)
-        num = 0
         status = {s_fields.OsdStatus.ACTIVE: 0,
-                  s_fields.OsdStatus.ERROR: 0,
-                  s_fields.OsdStatus.INACTIVE: 0,
-                  s_fields.OsdStatus.AVAILABLE: 0}
+                  s_fields.OsdStatus.PROCESSING: 0,
+                  s_fields.OsdStatus.WARNING: 0,
+                  s_fields.OsdStatus.OFFLINE: 0,
+                  s_fields.OsdStatus.ERROR: 0}
         for [k, v] in query_all:
-            if k == s_fields.OsdStatus.AVAILABLE:
-                status[s_fields.OsdStatus.AVAILABLE] = v
-            elif k == s_fields.OsdStatus.INACTIVE:
-                status[s_fields.OsdStatus.INACTIVE] = v
+            if k == s_fields.OsdStatus.ACTIVE:
+                status[s_fields.OsdStatus.ACTIVE] = v
+            elif k == s_fields.OsdStatus.WARNING:
+                status[s_fields.OsdStatus.WARNING] = v
+            elif k == s_fields.OsdStatus.OFFLINE:
+                status[s_fields.OsdStatus.OFFLINE] = v
             elif k == s_fields.OsdStatus.ERROR:
                 status[s_fields.OsdStatus.ERROR] = v
-            elif k == s_fields.OsdStatus.ACTIVE:
-                status[s_fields.OsdStatus.ACTIVE] = v
             else:
-                num += v
-        status["progress"] = num
+                status[s_fields.OsdStatus.PROCESSING] = v
         return status
 
     def cluster_capacity_status_get(self, ctxt):
@@ -416,7 +457,6 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         }
         len_pool = len(_pools)
         for pool in _pools:
-            pool.metrics = {}
             prometheus.pool_get_pg_state(pool)
             pg_state = pool.metrics.get("pg_state")
             pg_state.update({
@@ -437,3 +477,149 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         user.current_cluster_id = cluster_id
         user.save()
         return cluster_id
+
+    def cluster_data_balance_get(self, ctxt):
+        has_mon_host = self.has_monitor_host(ctxt)
+        data_balance = {
+            "active": False,
+            "mode": "none"
+        }
+        if has_mon_host:
+            ceph_client = CephTask(ctxt)
+            if not ceph_client.is_module_enable("balancer"):
+                balance_enable = False
+                balance_mode = "none"
+            else:
+                res = ceph_client.balancer_status()
+                balance_enable = res.get('active')
+                balance_mode = res.get('mode')
+            objects.sysconfig.sys_config_set(
+                ctxt, "data_balance", balance_enable, "bool")
+            objects.sysconfig.sys_config_set(
+                ctxt, "data_balance_mode", balance_mode, "string")
+            data_balance["active"] = balance_enable
+            data_balance["mode"] = balance_mode
+        else:
+            logger.error("cluster has no mon role or can't connect to mon.")
+        return data_balance
+
+    def cluster_data_balance_set(self, ctxt, data_balance):
+        self.check_mon_host(ctxt)
+        action = data_balance.get("action")
+        mode = data_balance.get("mode")
+
+        data_balance = {
+            "active": False,
+            "mode": "none"
+        }
+
+        if action not in ['on', 'off']:
+            logger.error("Invaild action: %s" % action)
+            raise exc.InvalidInput(_('Invaild action: %s') % action)
+        if mode not in ['crush-compat', 'upmap', None]:
+            logger.error("Invaild mode: %s" % mode)
+            raise exc.InvalidInput(_('Invaild mode: %s') % action)
+        has_mon_host = self.has_monitor_host(ctxt)
+        if has_mon_host:
+            ceph_client = CephTask(ctxt)
+            res = ceph_client.ceph_data_balance(action, mode)
+            data_balance["active"] = res.get("active")
+            data_balance["mode"] = res.get("mode")
+        else:
+            logger.error("cluster has no mon role or can't connect to mon.")
+        action_map = {
+            'on': Action.DATA_BALANCE_ON,
+            'off': Action.DATA_BALANCE_OFF
+        }
+        begin_action = self.begin_action(
+            ctxt, Resource.CLUSTER, action_map[action])
+        objects.sysconfig.sys_config_set(
+            ctxt, "data_balance", data_balance.get("active"), "bool")
+        objects.sysconfig.sys_config_set(
+            ctxt, "data_balance_mode", data_balance.get("mode"), "string")
+        cluster_id = ctxt.cluster_id
+        cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+        self.finish_action(begin_action, cluster_id, cluster.display_name,
+                           after_obj=data_balance)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        if action == 'on':
+            msg = _("Cluster balance enabled")
+            ws_action = "CLUSTER_BALANCE_ENABLE"
+        else:
+            msg = _("Cluster balance disable")
+            ws_action = "CLUSTER_BALANCE_DISABLE"
+        wb_client.send_message(ctxt, cluster, ws_action, msg)
+        return data_balance
+
+    def cluster_pause(self, ctxt, enable=True):
+        self.check_mon_host(ctxt)
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.PAUSE)
+        try:
+            cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
+            ceph_client = CephTask(ctxt)
+            ceph_client.cluster_pause(enable)
+            if enable:
+                msg = _("Cluster Pause Success")
+            else:
+                msg = _("Cluster Unpause Success")
+            action = "CLUSTER_PAUSE"
+            status = 'success'
+            err_msg = None
+        except Exception as e:
+            logger.exception('get cluster info error: %s', e)
+            if enable:
+                msg = _("Cluster Pause Error")
+            else:
+                msg = _("Cluster Unpause Error")
+            action = "CLUSTER_PAUSE_ERROR"
+            status = 'fail'
+            err_msg = str(e)
+        self.finish_action(begin_action, ctxt.cluster_id, cluster.display_name,
+                           after_obj=cluster, status=status, err_msg=err_msg)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, cluster, action, msg)
+
+    def cluster_status(self, ctxt):
+        logger.info("get cluster status")
+        has_mon_host = self.monitor_count(ctxt)
+        if not has_mon_host:
+            res = {
+                "created": False,
+                "status": False,
+                "pause": False,
+                "balancer": False
+            }
+        elif not self.has_monitor_host(ctxt):
+            res = {
+                "created": True,
+                "status": False,
+                "pause": False,
+                "balancer": False
+            }
+        else:
+            ceph_client = CephTask(ctxt)
+            res = ceph_client.cluster_status()
+            res['status'] = True
+            res["created"] = True
+        logger.info("cluster status: %s", res)
+        return res
+
+    def cluster_capacity_get(self, ctxt, pool_id):
+        # pool_id -> Pool object id
+        prometheus = PrometheusTool(ctxt)
+        if pool_id:
+            # pool 容量和已配置容量
+            logger.debug('begin get pool_id:%s capacity', pool_id)
+            pool = objects.Pool.get_by_id(ctxt, int(pool_id))
+            result = prometheus.pool_get_provisioned_capacity(
+                ctxt, pool.pool_id)
+            logger.info('get pool_id:%s capacity success, data:%s',
+                        pool_id, result)
+            return result
+        else:
+            # cluster 容量和已配置容量
+            logger.debug('get cluster capacity')
+            cluster_capacity = prometheus.cluster_get_capacity()
+            logger.info('get cluster capacity success, data:%s',
+                        cluster_capacity)
+        return cluster_capacity

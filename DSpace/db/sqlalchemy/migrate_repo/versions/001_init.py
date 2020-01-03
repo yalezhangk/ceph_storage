@@ -23,9 +23,12 @@ CLASS_NAME = 'default'
 CREATED_AT = datetime.datetime.now()  # noqa
 
 
-def InetSmall():
+def inet_small():
     return String(length=39).with_variant(
         dialects.postgresql.INET(), 'postgresql')
+
+
+InetSmall = inet_small
 
 
 def define_tables(meta):
@@ -38,6 +41,7 @@ def define_tables(meta):
         Column('deleted', Boolean),
         Column('is_admin', Boolean),
         Column('status', String(64)),
+        Column('ceph_status', Boolean),
         Column('id', String(36), primary_key=True, nullable=False),
         Column('display_name', String(255)),
         Column('display_description', String(255)),
@@ -286,9 +290,9 @@ def define_tables(meta):
         Column('osd_num', Integer, nullable=True),
         Column('speed_type', String(32), nullable=True),
         Column('replicate_size', Integer, nullable=True),
-        Column('failure_domain_type', String(32), nullable=False),
         Column('crush_rule_id', Integer, ForeignKey('crush_rules.id')),
         Column('cluster_id', ForeignKey('clusters.id')),
+        Column('rgw_zone_id', Integer, ForeignKey('radosgw_zones.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -360,6 +364,7 @@ def define_tables(meta):
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(32)),
+        Column('uuid', String(36)),
         Column('size', BigInteger),
         Column('status', String(32)),
         Column('type', String(32)),
@@ -518,7 +523,7 @@ def define_tables(meta):
         Column('resource_type', String(32)),
         Column('level', String(32)),
         Column('alert_value', String(1024)),
-        Column('resource_id', String(32)),
+        Column('resource_id', String(64)),
         Column('resource_name', String(64)),
         Column('alert_rule_id', Integer, ForeignKey('alert_rules.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
@@ -541,7 +546,9 @@ def define_tables(meta):
         Column('resource_id', String(36)),
         Column('resource_name', String(64)),
         Column('resource_type', String(32)),
-        Column('resource_data', Text()),
+        Column('before_data', Text()),
+        Column('after_data', Text()),
+        Column('diff_data', Text()),
         Column('status', String(32), default='under way'),
         Column('err_msg', Text()),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
@@ -578,6 +585,7 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True),
         Column('name', String(32)),
         Column('status', String(32)),
+        Column('role', String(32)),
         Column('counter', BigInteger),
         Column('node_id', Integer, ForeignKey('nodes.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
@@ -635,14 +643,91 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    return [clusters, crush_rules, pools, volume_access_path,
+    radosgws = Table(
+        'radosgws', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(64)),
+        Column('display_name', String(255)),
+        Column('description', String(255)),
+        Column('ip_address', String(32)),
+        Column('port', Integer),
+        Column('status', String(32)),
+        Column('zone_id', Integer),
+        Column('router_id', Integer, ForeignKey('radosgw_routers.id')),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        Column('counter', BigInteger),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    radosgw_zones = Table(
+        'radosgw_zones', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(64)),
+        Column('description', String(255)),
+        Column('zone_id', String(36)),
+        Column('zonegroup', String(64)),
+        Column('realm', String(64)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    radosgw_routers = Table(
+        'radosgw_routers', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('description', String(255)),
+        Column('name', String(64)),
+        Column('status', String(32)),
+        Column('virtual_ip', String(32)),
+        Column('port', Integer),
+        Column('https_port', Integer),
+        Column('virtual_router_id', Integer),
+        Column('nodes', String(1024)),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    router_services = Table(
+        'router_services', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(32)),
+        Column('status', String(32)),
+        Column('node_id', Integer, ForeignKey('nodes.id')),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        Column('net_id', Integer, ForeignKey('networks.id')),
+        Column('router_id', Integer, ForeignKey('radosgw_routers.id')),
+        Column('counter', BigInteger),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    return [clusters, crush_rules, radosgw_zones, pools, volume_access_path,
             volume_client_group, volume, volume_snapshot, datacenter,
             rack, node, rpc_services, disks, disk_partitions, volume_gateway,
             volume_access_path_gateway, volume_client, osds, volume_mapping,
             sysconf, ceph_config, license_files, log_files, alert_rules,
             email_groups, alert_groups, alert_group_relate_rule,
-            alert_group_relate_email, alert_logs, action_logs,
-            networks, services, users, tasks]
+            alert_group_relate_email, alert_logs, action_logs, networks,
+            services, users, tasks, radosgw_routers, radosgws, router_services]
 
 
 def upgrade(migrate_engine):

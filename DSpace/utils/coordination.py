@@ -10,7 +10,6 @@ from oslo_utils import timeutils
 from tooz import coordination
 
 from DSpace import exception
-from DSpace.i18n import _
 
 LOG = log.getLogger(__name__)
 
@@ -70,7 +69,8 @@ class Coordinator(object):
         if self.coordinator is not None:
             return self.coordinator.get_lock(lock_name)
         else:
-            raise exception.LockCreationFailed(_('Coordinator uninitialized.'))
+            raise exception.LockCreationFailed(
+                msg='Coordinator uninitialized.')
 
 
 COORDINATOR = Coordinator(prefix='dspace-')

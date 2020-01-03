@@ -3,7 +3,6 @@
 import copy
 import logging
 
-import six
 from jsonschema import draft7_format_checker
 from jsonschema import validate
 from tornado import gen
@@ -15,6 +14,7 @@ from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.utils.license_verify import LicenseVerify
 from DSpace.utils.security import check_encrypted_password
@@ -34,6 +34,21 @@ user_login_schema = {
         },
     },
     "required": ["username", "password"],
+}
+
+user_password_schema = {
+    "type": "object",
+    "properties": {
+        "password": {
+            "type": "string",
+        },
+        "new_password": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 32
+        },
+    },
+    "required": ["password", "new_password"],
 }
 
 default_permission = {
@@ -222,15 +237,24 @@ class UserListHandler(BaseAPIHandler):
         }))
 
 
-@URLRegistry.register(r"/users/([0-9]*)/")
+@URLRegistry.register(r"/users/password/")
 class UserHandler(BaseAPIHandler):
     @gen.coroutine
-    def put(self, user_id):
+    def put(self):
         ctxt = self.get_context()
         data = json_decode(self.request.body).get('user')
-        user = objects.User.get_by_id(ctxt, user_id)
-        for k, v in six.iteritems(data):
-            setattr(user, k, v)
+        validate(data, schema=user_password_schema,
+                 format_checker=draft7_format_checker)
+        user = objects.User.get_by_id(ctxt, ctxt.user_id)
+        password = data.get('password')
+        new_password = data.get('new_password')
+        if password == new_password:
+            raise exception.InvalidInput(
+                _("New password not allow equal to old password"))
+        r = check_encrypted_password(password, user.password)
+        if not r:
+            raise exception.PasswordError()
+        user.password = new_password
         user.save()
 
         self.write(objects.json_encode({

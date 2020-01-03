@@ -94,8 +94,8 @@ class ActionLogListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         filters = self.filters_query()
         page_args = self.get_paginated_args()
-        action_logs = yield client.action_log_get_all(ctxt, filters=filters,
-                                                      **page_args)
+        action_logs = yield client.action_log_get_all(
+            ctxt, filters=filters, expected_attrs=['user'], **page_args)
         action_log_count = yield client.action_log_get_count(ctxt,
                                                              filters=filters)
         self.write(objects.json_encode({
@@ -110,7 +110,8 @@ class ActionLogHandler(ClusterAPIHandler):
     def get(self, action_log_id):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        action_log = yield client.action_log_get(ctxt, action_log_id)
+        action_log = yield client.action_log_get(
+            ctxt, action_log_id, expected_attrs=['user'])
         self.write(objects.json_encode({"action_log": action_log}))
 
 

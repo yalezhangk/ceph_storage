@@ -73,12 +73,10 @@ class NodeStatus(BaseStorEnum):
     ERROR = 'error'
     DEPLOYING_ROLE = 'deploying_role'
     REMOVING_ROLE = 'removing_role'
-
-    # TODO
-    INACTIVE = 'inactive'
+    WARNING = 'warning'
 
     ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING_ROLE,
-           REMOVING_ROLE, INACTIVE)
+           REMOVING_ROLE, WARNING)
 
 
 class NodeStatusField(BaseEnumField):
@@ -102,16 +100,32 @@ class VolumeAccessPathStatusField(BaseEnumField):
 class PoolStatus(BaseStorEnum):
     CREATING = 'creating'
     ACTIVE = 'active'
+    DEGRADED = 'degraded'
+    RECOVERING = 'recovering'
+    PROCESSING = 'processing'
     DELETING = 'deleting'
     ERROR = 'error'
-    INACTIVE = 'inactive'
     DELETED = 'deleted'
+    WARNING = 'warning'
 
-    ALL = (CREATING, ACTIVE, DELETING, ERROR, INACTIVE, DELETED)
+    ALL = (CREATING, ACTIVE, DEGRADED, RECOVERING, PROCESSING, DELETING,
+           ERROR, DELETED, WARNING)
 
 
 class PoolStatusField(BaseEnumField):
     AUTO_TYPE = PoolStatus()
+
+
+class FaultDomain(BaseStorEnum):
+    HOST = 'host'
+    RACK = 'rack'
+    DATACENTER = 'datacenter'
+
+    ALL = (HOST, RACK, DATACENTER)
+
+
+class FaultDomainField(BaseEnumField):
+    AUTO_TYPE = FaultDomain()
 
 
 class NetworkStatus(BaseStorEnum):
@@ -140,7 +154,8 @@ class ConfigType(BaseStorEnum):
     STRING = 'string'
     INT = 'int'
     BOOL = 'bool'
-    ALL = (STRING, INT, BOOL)
+    DICT = 'dict'
+    ALL = (STRING, INT, BOOL, DICT)
 
 
 class ConfigTypeField(BaseEnumField):
@@ -157,9 +172,16 @@ class DiskStatus(BaseStorEnum):
     """
     AVAILABLE = 'available'
     UNAVAILABLE = 'unavailable'
+    ERROR = 'error'
     INUSE = 'inuse'
+    REPLACE_PREPARING = 'replace_preparing'
+    REPLACE_PREPARED = 'replace_prepared'
+    REPLACING = 'replacing'
+    PROCESSING = 'processing'
 
-    ALL = (AVAILABLE, UNAVAILABLE, INUSE)
+    REPLACE_STATUS = (REPLACE_PREPARING, REPLACE_PREPARED, REPLACING)
+    ALL = (AVAILABLE, UNAVAILABLE, INUSE, ERROR, PROCESSING,
+           REPLACE_PREPARING, REPLACE_PREPARED, REPLACING)
 
 
 class DiskStatusField(BaseEnumField):
@@ -227,11 +249,12 @@ class DiskLedStatusField(BaseEnumField):
 class ServiceStatus(BaseStorEnum):
     ACTIVE = 'active'
     INACTIVE = 'inactive'
+    STARTING = 'starting'
 
     ERROR = 'error'
     FAILED = 'failed'
 
-    ALL = (ACTIVE, INACTIVE, ERROR, FAILED)
+    ALL = (ACTIVE, INACTIVE, STARTING, ERROR, FAILED)
 
 
 class ServiceStatusField(BaseEnumField):
@@ -263,16 +286,25 @@ class OsdTypeField(BaseEnumField):
 
 
 class OsdStatus(BaseStorEnum):
+    ACTIVE = 'active'
+    WARNING = 'warning'
+    OFFLINE = 'offline'
     CREATING = 'creating'
     DELETING = 'deleting'
+    MAINTAIN = 'maintain'
     ERROR = 'error'
-    AVAILABLE = 'available'
+    RESTARTING = 'restarting'
+    PROCESSING = 'processing'
+    REPLACE_PREPARING = 'replace_preparing'
+    REPLACE_PREPARED = 'replace_prepared'
+    REPLACING = 'replacing'
 
-    INUSE = 'inuse'
-    ACTIVE = 'active'
-    INACTIVE = 'inactive'
-
-    ALL = (CREATING, DELETING, ERROR, AVAILABLE, INUSE, ACTIVE, INACTIVE)
+    OPERATION_STATUS = (CREATING, DELETING, MAINTAIN, RESTARTING, PROCESSING,
+                        REPLACE_PREPARING, REPLACE_PREPARED, REPLACING)
+    REPLACE_STATUS = (REPLACE_PREPARING, REPLACE_PREPARED, REPLACING)
+    ALL = (CREATING, DELETING, ERROR, ACTIVE,
+           OFFLINE, RESTARTING, PROCESSING, MAINTAIN, WARNING,
+           REPLACE_PREPARING, REPLACE_PREPARED, REPLACING)
 
 
 class OsdStatusField(BaseEnumField):
@@ -308,15 +340,18 @@ class AllResourceType(BaseStorEnum):
     VOLUME = 'volume'
     SNAPSHOT = 'snapshot'
     ALERT_LOG = 'alert_log'
-    SMTP_SYSCONFS = 'smtp_sysconfs'
+    SMTP_SYSCONF = 'smtp_sysconf'
     DISK = 'disk'
     SYSCONFIG = 'sysconfig'
     DATACENTER = 'datacenter'
     RACK = 'rack'
     CEPH_CONFIG = 'ceph_config'
+    RADOSGW = 'radosgw'
+    RADOSGW_ROUTER = 'radosgw_router'
+    SERVICE = 'service'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
-           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONFS, DISK, SYSCONFIG,
-           DATACENTER, RACK, CEPH_CONFIG)
+           VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
+           DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE)
 
 
 class AllActionType(BaseStorEnum):
@@ -333,6 +368,7 @@ class AllActionType(BaseStorEnum):
     VOLUME_UNLINK = 'volume_unlink'
     POOL_ADD_DISK = 'pool_add_disk'
     POOL_DEL_DISK = 'pool_del_disk'
+    POOL_UNDO = 'pool_undo'
     POOL_UPDATE_POLICY = 'pool_update_policy'
     CLONE = 'clone'
     SET_ALL_READED = 'set_all_readed'
@@ -345,13 +381,25 @@ class AllActionType(BaseStorEnum):
     UPDATE_GATEWAY_CIDR = 'update_gateway_cidr'
     RACK_UPDATE_TOPLOGY = 'rack_update_toplogy'
     NODE_UPDATE_RACK = 'node_update_rack'
+    PAUSE = 'pause'
+    OSD_REPLACE_PREPARE = 'osd_replace_prepare'
+    OSD_REPLACE = 'osd_replace'
+    DATA_BALANCE_ON = 'data_balance_on'
+    DATA_BALANCE_OFF = 'data_balance_off'
+    MON_RESTART = 'mon_restart'
+    MGR_RESTART = 'mgr_restart'
+    OSD_RESTART = 'osd_restart'
+    RGW_START = 'rgw_start'
+    RGW_STOP = 'rgw_stop'
 
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
-           CLUSTER_INCLUDE_CLEAN)
+           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE,
+           DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
+           OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -401,21 +449,24 @@ class ResourceAction(object):
                  AllActionType.VOLUME_SHRINK, AllActionType.VOLUME_ROLLBACK,
                  AllActionType.VOLUME_UNLINK],
 
-            AllResourceType.SMTP_SYSCONFS:
+            AllResourceType.SMTP_SYSCONF:
                 [AllActionType.UPDATE],
 
             AllResourceType.POOL:
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.POOL_ADD_DISK,
                  AllActionType.POOL_DEL_DISK,
-                 AllActionType.POOL_UPDATE_POLICY],
+                 AllActionType.POOL_UPDATE_POLICY,
+                 AllActionType.POOL_UNDO],
 
             AllResourceType.NODE:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.SET_ROLES, AllActionType.NODE_UPDATE_RACK],
+                 AllActionType.SET_ROLES, AllActionType.NODE_UPDATE_RACK,
+                 AllActionType.MON_RESTART, AllActionType.MGR_RESTART],
 
             AllResourceType.OSD:
-                [AllActionType.CREATE, AllActionType.DELETE],
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.OSD_RESTART],
 
             AllResourceType.DISK:
                 [AllActionType.CREATE, AllActionType.DELETE,
@@ -436,10 +487,18 @@ class ResourceAction(object):
             AllResourceType.CLUSTER:
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.CLUSTER_INCLUDE,
-                 AllActionType.CLUSTER_INCLUDE_CLEAN],
+                 AllActionType.CLUSTER_INCLUDE_CLEAN,
+                 AllActionType.DATA_BALANCE_ON,
+                 AllActionType.DATA_BALANCE_OFF],
 
             AllResourceType.CEPH_CONFIG:
                 [AllActionType.UPDATE],
+
+            AllResourceType.RADOSGW:
+                [AllActionType.RGW_START, AllActionType.RGW_STOP],
+
+            AllResourceType.RADOSGW_ROUTER:
+                [AllActionType.CREATE, AllActionType.DELETE],
 
         }
         return relation
@@ -463,3 +522,83 @@ class TaskStatus(BaseStorEnum):
 
 class TaskStatusField(BaseEnumField):
     AUTO_TYPE = TaskStatus()
+
+
+class RadosgwStatus(BaseStorEnum):
+    CREATING = 'creating'
+    DELETING = 'deleting'
+    STOPPING = "stopping"
+    STOPPED = "stopped"
+    STARTING = "starting"
+    ERROR = 'error'
+
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, DELETING, STOPPING, STOPPED, STARTING, STARTING, ERROR,
+           ACTIVE, INACTIVE)
+
+
+class RadosgwStatusField(BaseEnumField):
+    AUTO_TYPE = RadosgwStatus()
+
+
+class RadosgwRouterStatus(BaseStorEnum):
+    CREATING = 'creating'
+    DELETING = 'deleting'
+    UPDATING = 'updating'
+    ERROR = 'error'
+
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, DELETING, UPDATING, ERROR, ACTIVE, INACTIVE)
+
+
+class RadosgwRouterStatusField(BaseEnumField):
+    AUTO_TYPE = RadosgwRouterStatus()
+
+
+class RouterServiceStatus(BaseStorEnum):
+    CREATING = 'creating'
+    DELETING = 'deleting'
+    STARTING = 'starting'
+    ERROR = 'error'
+
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+    ALL = (CREATING, DELETING, STARTING, ERROR, ACTIVE, INACTIVE)
+
+
+class RouterServiceStatusField(BaseEnumField):
+    AUTO_TYPE = RouterServiceStatus()
+
+
+class ConfigKey(BaseStorEnum):
+    ENABLE_CEPH_REPO = 'enable_ceph_repo'
+    REMOVE_ANOTHER_REPO = 'remove_another_repo'
+    CEPH_VERSION = 'ceph_version'
+    IMAGE_NAME = 'image_name'
+    IMAGE_NAMESPACE = 'image_namespace'
+    DSPACE_VERSION = 'dspace_version'
+    ADMIN_IP_ADDRESS = 'admin_ip_address'
+    AGENT_PORT = 'agent_port'
+    ADMIN_PORT = 'admin_port'
+    DSPACE_REPO = 'dspace_repo'
+    CONFIG_DIR = 'config_dir'
+    CONFIG_DIR_CONTAINER = 'config_dir_container'
+    LOG_DIR = 'log_dir'
+    LOG_DIR_CONTAINER = 'log_dir_container'
+    ADMIN_IPS = 'admin_ips'
+    MAX_OSD_NUM = 'max_osd_num'
+    MAX_MONITOR_NUM = 'max_monitor_num'
+    DSPACE_DIR = 'dspace_dir'
+    NODE_EXPORTER_PORT = 'node_exporter_port'
+    DEBUG_MODE = 'debug_mode'
+    CEPH_MONITOR_PORT = 'ceph_monitor_port'
+    MGR_DSPACE_PORT = 'mgr_dspace_port'
+    DSA_SOCKET_FILE = 'dsa_socket_file'
+    DSA_RUN_DIR = 'dsa_run_dir'
+    UDEV_DIR = 'udev_dir'
+    ENABLE_CEPHX = 'enable_cephx'

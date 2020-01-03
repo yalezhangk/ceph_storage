@@ -32,13 +32,21 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'failure_domain_type': fields.StringField(nullable=True),
         'crush_rule_id': fields.IntegerField(nullable=True),
         'cluster_id': fields.UUIDField(nullable=True),
+        'rgw_zone_id': fields.UUIDField(nullable=True),
         'osds': fields.ListOfObjectsField('Osd', nullable=True),
         'crush_rule': fields.ObjectField("CrushRule", nullable=True),
         'volumes': fields.ListOfObjectsField('Volume', nullable=True),
         'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics')
+    OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics',
+                       'failure_domain_type')
+
+    def need_metrics(self):
+        return self.status not in [s_fields.PoolStatus.CREATING,
+                                   s_fields.PoolStatus.DELETING,
+                                   s_fields.PoolStatus.ERROR,
+                                   s_fields.PoolStatus.DELETED]
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -63,12 +71,14 @@ class Pool(base.StorPersistentObject, base.StorObject,
 
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
         expected_attrs = expected_attrs or []
-        if 'crush_rule' in expected_attrs:
-            crush_rule = db_obj.get('crush_rule', None)
+        crush_rule = db_obj.get('crush_rule', None)
+        if 'crush_rule' in expected_attrs and crush_rule:
             obj.crush_rule = objects.CrushRule._from_db_object(
                 context, objects.CrushRule(context), crush_rule
             )
+            obj.failure_domain_type = crush_rule.content.get('fault_domain')
         if 'osds' in expected_attrs:
             osds = db_obj.get('osds', [])
             obj.osds = [objects.Osd._from_db_object(

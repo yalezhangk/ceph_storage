@@ -1,12 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import argparse
 import ConfigParser
 import errno
 import json
 import os
 import re
+import socket
+import struct
 import subprocess
-import sys
+
+try:
+    import yum
+except ImportError:
+    yum = None
+
+try:
+    import dbus
+except ImportError:
+    dbus = None
+
+ALLOWED_FAULT_DOMAIN = ['root', 'rack', 'datacenter', 'host', 'osd']
+PKGS = ['ceph-common', 'ceph-base', 'ceph-mgr', 'ceph-osd', 'python-cephfs',
+        'ceph-selinux', 'ceph-mds', 'libcephfs2', 'ceph-mon', 'librbd1',
+        'librados2']
 
 
 def _bytes2str(string):
@@ -68,7 +85,7 @@ def get_process_list(match):
     return matched
 
 
-def _get_networks():
+def get_networks():
     """Collect info from ceph.conf
 
     1. public_network
@@ -165,11 +182,7 @@ def collect_nodes():
         if node not in nodes:
             nodes[node] = {}
         nodes[node]['mon'] = True
-    res = {
-        'config': _get_networks(),
-        'nodes': nodes
-    }
-    return res
+    return nodes
 
 
 def collect_ceph_services():
@@ -265,8 +278,301 @@ def collect_ceph_keyring():
     }
 
 
+def check_planning():
+    response = {
+        "check": True,
+        "change": []
+    }
+    cmd = ['ceph', 'osd', 'crush', 'tree', "--format", "json"]
+    rc, out, err = run_command(cmd)
+    if rc:
+        return {
+            "check": False
+        }
+    res = json.loads(out)
+    nodes = res['nodes']
+    for node in nodes:
+        if 'type' in node:
+            if node['type'] not in ALLOWED_FAULT_DOMAIN:
+                response["change"].append(node['name'])
+    return response
+
+
+def _setup_dns_resolve(timeout, retries):
+    content = ("$a options timeout:{} attempts:{} rotate "
+               "single-request-reopen").format(timeout, retries)
+    cmd = ['sed', '-i', content, '/etc/resolv.conf']
+    run_command(cmd)
+
+
+def _reset_dns_resolve():
+    content = "/options timeout.*/d"
+    cmd = ['sed', '-i', content, '/etc/resolv.conf']
+    run_command(cmd)
+
+
+def _get_pkg_version_by_yum(pkg):
+    # yum clean all
+    cmd = ['yum', 'clean', 'all']
+    run_command(cmd)
+
+    resolve_timeout = 1.5
+    retries = 1
+    _setup_dns_resolve(resolve_timeout, retries)
+
+    # get package info
+    yb = yum.YumBase()
+    yb.doConfigSetup(init_plugins=False)
+    yb.conf.timeout = 1.5
+    yb.conf.retries = 1
+    installed = None
+    available = None
+    unavailable = False
+
+    try:
+        data = yb.pkgSack.returnPackages(patterns=PKGS)
+        for item in data:
+            available = {
+                "version": item.version,
+                "release": item.release.split('.')[0]
+            }
+            break
+    except Exception:
+        unavailable = True
+
+    data = yb.doPackageLists(pkgnarrow='installed', patterns=PKGS)
+    for item in data.installed:
+        installed = {
+            "version": item.version,
+            "release": item.release.split('.')[0]
+        }
+        break
+    _reset_dns_resolve()
+
+    return {
+        "installed": installed,
+        "available": available,
+        "unavailable": unavailable
+    }
+
+
+def get_pkg_version(pkg):
+    return _get_pkg_version_by_yum(pkg)
+
+
+def get_ceph_version():
+    for pkg in PKGS:
+        v = get_pkg_version(pkg)
+        if v:
+            return v
+    return None
+
+
+def ceph_is_installed():
+    cmd = ["ceph", "-v"]
+    rc, stdout, stderr = run_command(cmd)
+    if rc == 0:
+        return True
+    v = get_ceph_version()
+    if v["installed"]:
+        return True
+    if os.path.isdir("/var/lib/ceph/"):
+        return True
+    if os.path.isdir("/etc/ceph/"):
+        return True
+    return False
+
+
+def selinux_is_enable():
+    cmd = ['getenforce']
+    rc, stdout, stderr = run_command(cmd)
+    result = stdout.strip()
+    if rc == 1:
+        return False
+    if result == 'Disabled':
+        return False
+    else:
+        return True
+
+
+def get_listen_ports():
+    net_tcp = ["tcp", "tcp6"]
+    ports = set()
+    for i in net_tcp:
+        content = open("/proc/net/{}".format(i), "r")
+        for line in content:
+            if "sl" in line:
+                continue
+            line = line.strip()
+            cols = line.split(" ")
+            # check port
+            status = cols[3]
+            if status != "0A":
+                # 0A is listening
+                continue
+            local_address = cols[1]
+            ip, port = local_address.split(":")
+            port = int(port, 16)
+            ports.add(port)
+    return list(ports)
+
+
+def interfaces_retrieve():
+    cmd = ['ls', '/sys/class/net']
+    rc, stdout, stderr = run_command(cmd)
+    if not rc:
+        stdout = stdout.strip()
+        nics = stdout.split('\n')
+        return nics
+    return None
+
+
+def _parse_ip(output):
+    ips = []
+    for line in output.splitlines():
+        if not line:
+            continue
+        words = line.split()
+        broadcast = ''
+        if words[0] == 'inet':
+            if '/' in words[1]:
+                address, netmask_length = words[1].split('/')
+                if len(words) > 3:
+                    broadcast = words[3]
+            else:
+                # pointopoint interfaces do not have a prefix
+                address = words[1]
+                netmask_length = "32"
+            address_bin = struct.unpack('!L', socket.inet_aton(address))[0]
+            netmask_bin = (1 << 32) - (1 << 32 >> int(netmask_length))
+            netmask = socket.inet_ntoa(struct.pack('!L', netmask_bin))
+            network = socket.inet_ntoa(
+                struct.pack('!L', address_bin & netmask_bin)
+            )
+            ips.append({'address': address,
+                        'broadcast': broadcast,
+                        'netmask': netmask,
+                        'network': network})
+    return ips
+
+
+def network_retrieve(device):
+    cmd = ['ip', 'addr', 'show', device]
+    rc, out, stderr = run_command(cmd)
+    return _parse_ip(out)
+
+
+def all_ips():
+    nic_info = {}
+    devices = interfaces_retrieve()
+    for device in devices:
+        nic_info[device] = network_retrieve(device)
+    return nic_info
+
+
+def service_status_by_dbus(service):
+    bus = dbus.SystemBus()
+    systemd = bus.get_object('org.freedesktop.systemd1',
+                             '/org/freedesktop/systemd1')
+    manager = dbus.Interface(
+        systemd, dbus_interface='org.freedesktop.systemd1.Manager')
+    try:
+        unit = manager.GetUnit(service)
+    except dbus.exceptions.DBusException as e:
+        if "not loaded" in str(e):
+            return "inactive"
+        raise e
+
+    unit_proxy = bus.get_object('org.freedesktop.systemd1', str(unit))
+    unit_properties = dbus.Interface(
+        unit_proxy, dbus_interface='org.freedesktop.DBus.Properties')
+    res = unit_properties.Get('org.freedesktop.systemd1.Unit', 'ActiveState')
+    return str(res)
+
+
+def service_status_by_cli(service):
+    cmd = ["systemctl", "status", service]
+    rc, out, stderr = run_command(cmd)
+    if "Active: active" in out:
+        return 'active'
+    return "inactive"
+
+
+def service_status(service):
+    if dbus:
+        return service_status_by_dbus(service)
+    else:
+        return service_status_by_cli(service)
+
+
+def all_container():
+    cmd = ['docker', 'ps', '-a']
+    rc, out, stderr = run_command(cmd)
+    containers = []
+    for line in out.splitlines():
+        if "CONTAINER" in line:
+            continue
+        items = line.split(" ")
+        containers.append(items[-1])
+    return containers
+
+
+def check(args):
+    response = {}
+    if args.ceph_version:
+        response["ceph_version"] = get_ceph_version()
+    if args.hostname:
+        response["hostname"] = socket.gethostname()
+    if args.ceph_package:
+        response["ceph_package"] = ceph_is_installed()
+    if args.selinux:
+        response["selinux"] = selinux_is_enable()
+    if args.ports:
+        response["ports"] = get_listen_ports()
+    if args.network:
+        response["network"] = all_ips()
+    if args.firewall:
+        response["firewall"] = service_status("firewalld.service")
+    if args.containers:
+        response["containers"] = all_container()
+    if args.ceph_service:
+        response["ceph_service"] = collect_ceph_services()
+    return response
+
+
+def cluster_check(args):
+    response = {}
+    response["check_crush"] = check_planning()
+    response["nodes"] = collect_nodes()
+    response["configs"] = get_networks()
+    response["services"] = collect_ceph_services()
+    return response
+
+
 def main():
-    action = sys.argv[1]
+    # TODO: Merge check
+    parser = argparse.ArgumentParser(description='Node info collect.')
+    parser.add_argument("action")
+    parser.add_argument('--ceph_version', action='store_true',
+                        help='get ceph version')
+    parser.add_argument('--hostname', action='store_true',
+                        help='get hostname')
+    parser.add_argument('--ceph_package', action='store_true',
+                        help='get ceph package')
+    parser.add_argument('--selinux', action='store_true',
+                        help='get selinux')
+    parser.add_argument('--ports', action='store_true',
+                        help='get ports')
+    parser.add_argument('--network', action='store_true',
+                        help='get network')
+    parser.add_argument('--firewall', action='store_true',
+                        help='get firewall')
+    parser.add_argument('--containers', action='store_true',
+                        help='get containers')
+    parser.add_argument('--ceph_service', action='store_true',
+                        help='get ceph service')
+    args = parser.parse_args()
+    action = args.action
     if action == "collect_nodes":
         data = collect_nodes()
         print(json.dumps(data))
@@ -282,6 +588,17 @@ def main():
         print(json.dumps(data))
     elif action == "ceph_keyring":
         data = collect_ceph_keyring()
+        print(json.dumps(data))
+    elif action == "check_planning":
+        data = check_planning()
+        print(json.dumps(data))
+    elif action == "check":
+        # TODO: move all check to check function
+        data = check(args)
+        print(json.dumps(data))
+    elif action == "cluster_check":
+        # TODO: move all cluster check to check function
+        data = cluster_check(args)
         print(json.dumps(data))
 
 

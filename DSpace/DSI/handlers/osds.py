@@ -234,22 +234,32 @@ class OsdListHandler(ClusterAPIHandler):
         elif 'osds' in data:
             datas = data.get('osds')
             client = self.get_admin_client(ctxt)
+            tasks = []
             osds = []
             for data in datas:
                 self._osd_create_check(data)
             for data in datas:
+                task = client.osd_create(ctxt, data)
+                tasks.append(task)
+            for task in tasks:
                 try:
-                    osd = yield client.osd_create(ctxt, data)
+                    osd = yield task
                     osds.append(osd)
+                except exception.ClusterNotHealth as e:
+                    self.log_exception("create osd", e)
+                    err_ms = str(e)
+                    wb_client = WebSocketClientManager(
+                        context=ctxt).get_client()
+                    wb_client.send_message(
+                        ctxt, data, "CREATE_ERROR", err_ms,
+                        resource_type='Osd')
                 except Exception as e:
                     disk_info = yield client.get_disk_info(ctxt, data)
                     hostname = disk_info['hostname']
                     disk_name = disk_info['disk_name']
-                    logger.exception(
-                        'osd:hostname=%s,disk_name=%s create error:%s',
-                        hostname, disk_name, e)
+                    self.log_exception("create osd", e)
                     err_ms = _('osd:hostname={},disk_name={} create '
-                               'error'.format(hostname, disk_name))
+                               'error: {}').format(hostname, disk_name, str(e))
                     wb_client = WebSocketClientManager(
                         context=ctxt).get_client()
                     wb_client.send_message(
@@ -336,6 +346,84 @@ class OsdHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         osd = yield client.osd_delete(ctxt, osd_id)
+        self.write(objects.json_encode({
+            "osd": osd
+        }))
+
+
+@URLRegistry.register(r"/osds/([0-9]*)/disk_replace_prepare/")
+class OsdDiskReplacePrepareHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: disk replace prepare
+        description: clean osd for osd replace
+        operationId: osds.api.putDiskReplacePrepare
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd = yield client.osd_disk_replace_prepare(ctxt, osd_id)
+        self.write(objects.json_encode({
+            "osd": osd
+        }))
+
+
+@URLRegistry.register(r"/osds/([0-9]*)/disk_replace/")
+class OsdDiskReplaceHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, osd_id):
+        """
+        ---
+        tags:
+        - osd
+        summary: disk replace
+        description: recreate osd on new disk
+        operationId: osds.api.putDiskReplace
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: Osd ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd = yield client.osd_disk_replace(ctxt, osd_id)
         self.write(objects.json_encode({
             "osd": osd
         }))
@@ -570,3 +658,66 @@ class OsdCapacityHandler(ClusterAPIHandler):
         self.write(json.dumps({
             "osd_capacity": data
         }))
+
+
+@URLRegistry.register(r"/osds/available/")
+class OsdAvailableHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """List osds fro pool
+
+        ---
+        tags:
+        - osd
+        summary: List osds for pool
+        description: Return a list of osds.
+        operationId: osds.api.listOsdForPool
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        expected_attrs = ['node', 'disk']
+
+        exact_filters = ['type', 'disk_type']
+        filters = self.get_support_filters(exact_filters)
+        filters['status'] = s_fields.OsdStatus.ACTIVE
+        filters['crush_rule_id'] = None
+
+        osds = yield client.osd_get_all(
+            ctxt, tab="default", filters=filters,
+            expected_attrs=expected_attrs)
+
+        self.write(objects.json_encode({
+            "osds": osds,
+        }))
+
+
+@URLRegistry.register(r"/osds/slow_requests/")
+class OsdSlowRequests(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        osd_top = self.get_query_argument('osd_top', default=10)
+        if osd_top and not osd_top.isdecimal():
+            raise exception.InvalidInput(_("osd_top not number"))
+        if osd_top:
+            osd_top = int(osd_top)
+        op_top = self.get_query_argument('op_top', default=10)
+        if op_top and not op_top.isdecimal():
+            raise exception.InvalidInput(_("op_top not number"))
+        if op_top:
+            op_top = int(op_top)
+        res = yield client.osd_slow_requests_get(ctxt, osd_top, op_top)
+        self.write(objects.json_encode({"slow_requests": res}))

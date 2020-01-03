@@ -4,7 +4,6 @@ import logging
 
 from DSpace.exception import ProgrammingError
 from DSpace.exception import RunCommandError
-from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
@@ -78,6 +77,8 @@ class Docker(ToolBase):
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
             return True
+        if "No such container" in stderr:
+            return False
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
@@ -131,14 +132,28 @@ class Docker(ToolBase):
                   active: running
         """
         logger.debug("Docker status: {}".format(name))
-        cmd = ["docker", "inspect", "-f", "{{.State.Running}}", name]
+        cmd = ["docker", "inspect", "-f", "{{.State.Status}}", name]
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
             if "No such object" in stderr:
-                return "error"
+                return False
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
-        if stdout.strip() == "true":
-            return s_fields.ServiceStatus.ACTIVE
+        if stdout.strip() == "running":
+            return True
         else:
-            return s_fields.ServiceStatus.INACTIVE
+            return False
+
+    def exist(self, name):
+        logger.info("Check if container is existed: %s", name)
+        cmd = ['docker', 'ps', '-a', '|', 'grep', name]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            if not stderr:
+                return False
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        if stdout:
+            return True
+        else:
+            return False

@@ -24,7 +24,7 @@ class DatacenterHandler(AdminBaseHandler):
         )
         datacenter.create()
         self.finish_action(begin_action, datacenter.id, datacenter_name,
-                           objects.json_encode(datacenter))
+                           datacenter)
         return datacenter
 
     def datacenter_get(self, ctxt, datacenter_id):
@@ -33,10 +33,10 @@ class DatacenterHandler(AdminBaseHandler):
     def datacenter_delete(self, ctxt, datacenter_id):
         datacenter = self.datacenter_get(ctxt, datacenter_id)
         begin_action = self.begin_action(ctxt, Resource.DATACENTER,
-                                         Action.DELETE)
+                                         Action.DELETE, datacenter)
         datacenter.destroy()
         self.finish_action(begin_action, datacenter_id, datacenter.name,
-                           objects.json_encode(datacenter))
+                           after_obj=datacenter)
         return datacenter
 
     def datacenter_get_all(self, ctxt, marker=None, limit=None,
@@ -59,11 +59,11 @@ class DatacenterHandler(AdminBaseHandler):
         datacenter = objects.Datacenter.get_by_id(ctxt, id)
         self._check_datacenter_by_name(ctxt, name)
         begin_action = self.begin_action(ctxt, Resource.DATACENTER,
-                                         Action.UPDATE)
+                                         Action.UPDATE, datacenter)
         datacenter.name = name
         datacenter.save()
         self.finish_action(begin_action, datacenter.id, name,
-                           objects.json_encode(datacenter))
+                           after_obj=datacenter)
         return datacenter
 
     def datacenter_tree(self, ctxt):

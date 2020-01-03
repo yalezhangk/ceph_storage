@@ -16,10 +16,10 @@ class Disk(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'name': fields.StringField(),
+        'name': fields.StringField(nullable=True),
         'status': s_field.DiskStatusField(),
-        'type': s_field.DiskTypeField(),
-        'size': fields.IntegerField(),
+        'type': s_field.DiskTypeField(nullable=True),
+        'size': fields.IntegerField(nullable=True),
         'rotate_speed': fields.IntegerField(nullable=True),
         'slot': fields.StringField(nullable=True),
         'model': fields.StringField(nullable=True),
@@ -44,6 +44,13 @@ class Disk(base.StorPersistentObject, base.StorObject,
     OPTIONAL_FIELDS = ('node', 'partition_used', 'metrics', 'partitions',
                        'accelerate_type')
 
+    def can_operation(self):
+        return self.status == s_field.DiskStatus.AVAILABLE
+
+    @property
+    def can_operation_status(self):
+        return [s_field.DiskStatus.AVAILABLE]
+
     def create(self):
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',
@@ -66,7 +73,19 @@ class Disk(base.StorPersistentObject, base.StorObject,
         self.obj_reset_changes(updated_values.keys())
 
     @classmethod
+    def get_by_slot(cls, context, slot, node_id, expected_attrs=None):
+        db_disk = db.disk_get_by_slot(
+            context, slot, node_id, expected_attrs=expected_attrs)
+        if not db_disk:
+            return None
+        kwargs = {}
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
+        return cls._from_db_object(context, cls(context), db_disk, **kwargs)
+
+    @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
         expected_attrs = expected_attrs or []
         if 'node' in expected_attrs:
             node = db_obj.get('node', None)

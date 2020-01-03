@@ -15,6 +15,8 @@ class MailHandler(AdminBaseHandler):
     def send_mail(self, ctxt, subject, content, config):
         try:
             send_mail(subject, content, config)
+            to_email = config.get('smtp_to_email')
+            logger.info('send test email success, to_mail:%s', to_email)
         except Exception as e:
             logger.exception('send test email error: %s', e)
             return False
@@ -56,10 +58,9 @@ class MailHandler(AdminBaseHandler):
 
     def update_smtp(self, ctxt, data):
         # TODO check a object exists
-        begin_action = self.begin_action(ctxt,
-                                         resource_type=
-                                         AllResourceType.SMTP_SYSCONFS,
-                                         action=AllActionType.UPDATE)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.SMTP_SYSCONF,
+            action=AllActionType.UPDATE)
         sysconf = None
         for k, v in data.items():
             sysconf = objects.SysConfigList.get_all(ctxt,
@@ -72,7 +73,6 @@ class MailHandler(AdminBaseHandler):
                     ctxt, key=k, value=v,
                     value_type=s_fields.ConfigType.STRING)
                 sysconf.create()
-        self.finish_action(begin_action, resource_id=None,
-                           resource_name='smtp',
-                           resource_data=objects.json_encode(sysconf))
+        self.finish_action(begin_action, None, 'smtp_sysconf',
+                           sysconf)
         return sysconf

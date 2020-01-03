@@ -1,12 +1,28 @@
 import json
 import logging
-import time
 
+import six
 from prometheus_http_client import NodeExporter
 from prometheus_http_client import Prometheus as PrometheusClient
+from prometheus_http_client.prometheus import relabel
 
 from DSpace import exception
 from DSpace import objects
+
+
+class DSpaceNodeExporter(NodeExporter):
+    @relabel('node_filesystem_size_bytes{}')
+    def node_sys_disk_size(self, **kwargs):
+        pass
+
+    @relabel('(node_filesystem_size_bytes{} - node_filesystem_free_bytes{}) '
+             ' / (node_filesystem_size_bytes{} - node_filesystem_free_bytes{} '
+             '+ node_filesystem_avail_bytes{})')
+    def node_sys_disk_used_rate(self, **kwargs):
+        pass
+
+
+DISK_SKIP = "dm.*"
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +30,8 @@ cpu_attrs = ['cpu_rate', 'intr_rate', 'context_switches_rate',
              'vmstat_pgfault_rate', 'load5']
 sys_attrs = ['memory_rate']
 
-fs_attrs = ['disk_rate']
+sys_disk_used_rate_attrs = ['sys_disk_used_rate']
+sys_disk_size_attrs = ['sys_disk_size']
 
 disk_attrs = ['disk_io_rate']
 
@@ -24,7 +41,7 @@ network_attrs = ['network_transmit_packets_rate',
                  'network_errs_rate', 'network_drop_rate']
 
 prometheus_attrs = cpu_attrs + sys_attrs + disk_attrs + network_attrs +\
-    fs_attrs
+    sys_disk_used_rate_attrs + sys_disk_size_attrs
 
 osd_rate = ['op_in_bytes', 'op_out_bytes', 'op_w',
             'op_r', 'op_w_latency', 'op_r_latency']
@@ -100,26 +117,59 @@ class PrometheusTool(object):
         """Get metrics from prometheus
         Returns: metrics value
         """
+        filter = filter or {}
+        if "cluster_id" not in filter.keys():
+            filter['cluster_id'] = self.ctxt.cluster_id
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
-        except BaseException:
+        except Exception as e:
+            logger.error('get metric:%s data error from prometheus:%s',
+                         metric, e)
             return None
 
         if len(value['data']['result']):
-            return value['data']['result'][0]['value']
+            data = value['data']['result'][0]['value']
+            logger.info('get metric:%s data success from prometheus, data:%s',
+                        metric, data)
+            return data
         else:
+            logger.info('get metric:%s data is None from prometheus', metric)
+            return None
+
+    def prometheus_get_metrics(self, metric, filter=None):
+        """Get metrics from prometheus
+        Returns: metrics value
+        """
+        prometheus = PrometheusClient(url=self.prometheus_url)
+        try:
+            value = json.loads(prometheus.query(metric=metric, filter=filter))
+        except Exception as e:
+            logger.error('get metric:%s data error from prometheus:%s',
+                         metric, e)
+            return None
+
+        if len(value['data']['result']):
+            data = value['data']['result']
+            logger.info('get metric:%s data success from prometheus, data:%s',
+                        metric, data)
+            return data
+        else:
+            logger.info('get metric:%s data is None from prometheus', metric)
             return None
 
     def prometheus_get_histroy_metric(self, metric, start, end, filter=None):
         """Get metrics from prometheus
         Returns: metrics value
         """
+        filter = filter or {}
+        if "cluster_id" not in filter.keys():
+            filter['cluster_id'] = self.ctxt.cluster_id
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query_rang(
                 metric=metric, filter=filter, start=start, end=end))
-        except BaseException:
+        except Exception:
             return None
 
         if len(value['data']['result']):
@@ -131,18 +181,15 @@ class PrometheusTool(object):
         """Get metrics from prometheus
         Returns: metrics value
         """
-        node_exporter = NodeExporter(url=self.prometheus_url)
+        node_exporter = DSpaceNodeExporter(url=self.prometheus_url)
 
         function = getattr(node_exporter, metric)
 
         graph = kwargs.get('graph')
         try:
             value = json.loads(function(**kwargs))
-        except BaseException:
-            if graph:
-                return None
-            else:
-                return [time.time(), 0]
+        except Exception:
+            return None
 
         if len(value['data']['result']):
             if graph:
@@ -150,10 +197,7 @@ class PrometheusTool(object):
             else:
                 return value['data']['result'][0]['value']
         else:
-            if graph:
-                return None
-            else:
-                return [time.time(), 0]
+            return None
 
     def node_get_metrics_network(self, node, net_name):
         metrics = {}
@@ -244,7 +288,6 @@ class PrometheusTool(object):
         sys_disk_name = self._get_sys_disk(node.id)
         if not net_name or not sys_disk_name:
             return
-        node.metrics = {}
         for metric in prometheus_attrs:
             metric_method = 'node_{}'.format(metric)
             if metric in network_attrs:
@@ -259,7 +302,13 @@ class PrometheusTool(object):
                         'hostname': node.hostname,
                         'device': sys_disk_name,
                         'cluster_id': node.cluster_id})
-            elif metric in fs_attrs:
+            elif metric in sys_disk_used_rate_attrs:
+                data = self.get_node_exporter_metric(
+                    metric_method, filter={
+                        'hostname': node.hostname,
+                        'mountpoint': '/',
+                        'cluster_id': node.cluster_id})
+            elif metric in sys_disk_size_attrs:
                 data = self.get_node_exporter_metric(
                     metric_method, filter={
                         'hostname': node.hostname,
@@ -276,7 +325,6 @@ class PrometheusTool(object):
                         'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
                         'io_rate']
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
-        disk.metrics = {}
         for m in disk_metrics:
             metric_method = "node_disk_" + m
             data = self.get_node_exporter_metric(
@@ -319,14 +367,14 @@ class PrometheusTool(object):
                 pg_total += 1
                 if 'active+clean' == state:
                     healthy += 1
+                elif ('unactive' in state) or ('stale' in state) or (
+                        'down' in state) or ('unknown' in state):
+                    unactive += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
                     recovering += 1
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
-                elif ('unactive' in state) or ('stale' in state) or (
-                        'down' in state) or ('unknown' in state):
-                    unactive += 1
 
             cluster_metrics.update({'cluster_pg_state': {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
@@ -334,7 +382,7 @@ class PrometheusTool(object):
                 else 0,
                 'degraded': round(degraded / pg_total, 3) if pg_total else 0,
                 'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
-        except BaseException:
+        except Exception:
             cluster_metrics.update({'cluster_pg_state': None})
 
     def pool_get_perf(self, pool):
@@ -397,14 +445,14 @@ class PrometheusTool(object):
                 pg_total += 1
                 if 'active+clean' == state:
                     healthy += 1
+                elif ('unactive' in state) or ('stale' in state) or (
+                        'down' in state) or ('unknown' in state):
+                    unactive += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
                     recovering += 1
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
-                elif ('unactive' in state) or ('stale' in state) or (
-                        'down' in state) or ('unknown' in state):
-                    unactive += 1
 
             pool.metrics.update({'pg_state': {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
@@ -414,6 +462,9 @@ class PrometheusTool(object):
                 'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
         except exception.StorException as e:
             logger.error(e)
+        except Exception as e:
+            logger.error(e)
+            pool.metrics.update({'pg_state': None})
 
     def osd_get_capacity(self, osd):
         logger.info("osd_get_capacity: osd_id: %s.", osd.id)
@@ -537,14 +588,14 @@ class PrometheusTool(object):
                 pg_total += 1
                 if 'active+clean' == state:
                     healthy += 1
+                elif ('unactive' in state) or ('stale' in state) or (
+                        'down' in state) or ('unknown' in state):
+                    unactive += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
                     recovering += 1
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
-                elif ('unactive' in state) or ('stale' in state) or (
-                        'down' in state) or ('unknown' in state):
-                    unactive += 1
 
             osd.metrics.update({'pg_state': {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
@@ -555,3 +606,93 @@ class PrometheusTool(object):
         except exception.StorException as e:
             logger.error(e)
             pass
+        except Exception as e:
+            logger.error(e)
+            osd.metrics.update({'pg_state': None})
+
+    def cluster_get_capacity(self, filter=None):
+        # 集群容量
+        logger.info('get cluster capacity')
+        metrics = {
+            'total_bytes': 'ceph_cluster_total_bytes',
+            'total_used_bytes': 'ceph_cluster_total_used_bytes',
+            'total_avail_bytes':
+                'ceph_cluster_total_bytes - ceph_cluster_total_used_bytes',
+            'total_provisioned': 'ceph_cluster_provisioned_capacity'
+        }
+        cluster_capacity = {}
+        for k, v in six.iteritems(metrics):
+            value = self.prometheus_get_metric(v, filter=filter)
+            cluster_capacity[k] = value
+        return cluster_capacity
+
+    def prometheus_get_list_metrics(self, metric, filter=None):
+        """Get metrics from prometheus
+        Returns: list datas
+        """
+        prometheus = PrometheusClient(url=self.prometheus_url)
+        try:
+            value = json.loads(prometheus.query(metric=metric, filter=filter))
+        except Exception as e:
+            logger.error('get metric:%s data error from prometheus:%s',
+                         metric, e)
+            return None
+        data = value['data']['result']
+        if data:
+            logger.info('get metric:%s data success from prometheus, data:%s',
+                        metric, data)
+            return data
+        else:
+            logger.info('get metric:%s data is None from prometheus', metric)
+            return None
+
+    def pool_get_provisioned_capacity(self, ctxt, pool_id):
+        # pool容量和已配置的容量
+        logger.info('get pool_id:%s capacity', pool_id)
+        metrics = {
+            'total_avail_bytes': 'ceph_pool_max_avail',
+            'total_used_bytes': 'ceph_pool_bytes_used',
+            'total_bytes': 'ceph_pool_max_avail + ceph_pool_bytes_used',
+            'total_provisioned': 'ceph_pool_provisioned_capacity'
+        }
+        result = {}
+        for k, v in six.iteritems(metrics):
+            value = self.prometheus_get_metric(
+                v, filter={'pool_id': pool_id, 'cluster_id': ctxt.cluster_id})
+            result[k] = value
+        return result
+
+    def disk_io_top(self, ctxt, k):
+        m = ('topk({}, rate(node_disk_io_now{{cluster_id="{}",'
+             ' device!~"{}"}}[5m]))'.format(k, ctxt.cluster_id, DISK_SKIP))
+        logger.info('disk io top query: %s', m)
+        datas = self.prometheus_get_metrics(m)
+        if not datas:
+            return None
+        if len(datas) > k:
+            datas = datas[:k]
+        disks = []
+        for data in datas:
+            disks.append({
+                "hostname": data['metric']['hostname'],
+                "name": data['metric']['device'],
+                "value": data['value'][1]
+            })
+        return disks
+
+    def disks_io_util(self, ctxt):
+        logger.info('disk io utils')
+        m = ('irate(node_disk_io_time_seconds_total{{cluster_id="{}",'
+             ' device!~"{}"}}[5m])').format(ctxt.cluster_id, DISK_SKIP)
+        logger.info('disk io top query: %s', m)
+        datas = self.prometheus_get_metrics(m)
+        if not datas:
+            return None
+        disks = []
+        for data in datas:
+            disks.append({
+                "hostname": data['metric']['hostname'],
+                "name": data['metric']['device'],
+                "value": data['value'][1]
+            })
+        return disks

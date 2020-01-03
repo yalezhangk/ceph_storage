@@ -30,7 +30,7 @@ import warnings
 
 # pySMART module imports
 from .attribute import Attribute
-from .test_entry import Test_Entry
+from .test_entry import TestEntry
 from .utils import OS
 from .utils import pd_to_sd
 from .utils import smartctl_type
@@ -226,14 +226,14 @@ class Device(object):
         ###Args:
         * **output (str, optional):** If set to 'str', the string
         representation of the most recent test result will be returned, instead
-        of a `Test_Entry` object.
+        of a `TestEntry` object.
 
         ##Returns:
         * **(int):** Return status code. One of the following:
             * 0 - Success. Object (or optionally, string rep) is attached.
             * 1 - Self-test in progress. Must wait for it to finish.
             * 2 - No new test results.
-        * **(`Test_Entry` or str):** Most recent `Test_Entry` object (or
+        * **(`TestEntry` or str):** Most recent `TestEntry` object (or
         optionally it's string representation) if new data exists.  Status
         message string on failure.
         * **(str):** Estimated completion time of a test in-progess, if known.
@@ -274,11 +274,12 @@ class Device(object):
                 self._test_running = True
         elif _len == maxlog:
             # If not, because it's max size already, check for new entries
+            tests_hours = self.tests[len(self.tests) - 1].hours
             if ((_first_entry.type != self.tests[0].type or
                     _first_entry.hours != self.tests[0].hours or
                     _last_entry.type != self.tests[len(self.tests) - 1].type or
-                    _last_entry.hours != self.tests[len(self.tests) - 1].hours)
-                    and 'NOW' not in self.tests[0].hours):
+                    _last_entry.hours != tests_hours) and
+                    'NOW' not in self.tests[0].hours):
                 self._test_running = False
                 self._test_ECD = None
                 if output == 'str':
@@ -323,14 +324,14 @@ class Device(object):
             else:
                 return (2, 'No new self-test results found.', None)
 
-    def _guess_SMART_type(self, line):
+    def _guess_smart_type(self, line):
         """
         This function is not used in the generic wrapper, however the header
         is defined so that it can be monkey-patched by another application.
         """
         pass
 
-    def _make_SMART_warnings(self):
+    def _make_smart_warnings(self):
         """
         Parses an ATA/SATA SMART table for attributes with the 'when_failed'
         value set. Generates an warning message for any such attributes and
@@ -454,34 +455,34 @@ class Device(object):
                     status = line[23:46].rstrip()
                     segment = line[46:55].lstrip().rstrip()
                     hours = line[55:65].lstrip().rstrip()
-                    LBA = line[65:78].lstrip().rstrip()
+                    lba = line[65:78].lstrip().rstrip()
                     line_ = ' '.join(line.split('[')[1].split()).split(' ')
                     sense = line_[0]
-                    ASC = line_[1]
-                    ASCQ = line_[2][:-1]
-                    self.tests.append(Test_Entry(
-                        format, num, test_type, status, hours, LBA,
-                        segment=segment, sense=sense, ASC=ASC, ASCQ=ASCQ))
+                    asc = line_[1]
+                    ascq = line_[2][:-1]
+                    self.tests.append(TestEntry(
+                        format, num, test_type, status, hours, lba,
+                        segment=segment, sense=sense, asc=asc, ascq=ascq))
                 else:
                     format = 'ata'
                     test_type = line[5:25].rstrip()
                     status = line[25:54].rstrip()
                     remain = line[54:58].lstrip().rstrip()
                     hours = line[60:68].lstrip().rstrip()
-                    LBA = line[77:].rstrip()
-                    self.tests.append(Test_Entry(
-                        format, num, test_type, status, hours, LBA,
+                    lba = line[77:].rstrip()
+                    self.tests.append(TestEntry(
+                        format, num, test_type, status, hours, lba,
                         remain=remain))
             # Basic device information parsing
             if 'Model Family' in line:
-                self._guess_SMART_type(line.lower())
+                self._guess_smart_type(line.lower())
             if 'Device Model' in line or 'Product' in line:
                 self.model = line.split(':')[1].lstrip().rstrip()
-                self._guess_SMART_type(line.lower())
+                self._guess_smart_type(line.lower())
             if 'Serial Number' in line or 'Serial number' in line:
                 self.serial = line.split(':')[1].split()[0].rstrip()
             if 'LU WWN' in line:
-                self._guess_SMART_type(line.lower())
+                self._guess_smart_type(line.lower())
             if 'Firmware Version' in line or 'Revision' in line:
                 self.firmware = line.split(':')[1].lstrip().rstrip()
             if 'User Capacity' in line:
@@ -592,7 +593,7 @@ class Device(object):
         if not smartctl_type[self.interface] == 'scsi':
             # Parse the SMART table for below-threshold attributes and create
             # corresponding warnings for non-SCSI disks
-            self._make_SMART_warnings()
+            self._make_smart_warnings()
         else:
             # For SCSI disks, any diagnostic attribute which was not captured
             # above gets set to '-' to indicate unsupported/unavailable.

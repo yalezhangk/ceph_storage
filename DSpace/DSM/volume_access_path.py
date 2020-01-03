@@ -32,8 +32,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             ctxt, volume_access_path_id, expected_attrs=expected_attrs)
 
     def _gen_iqn(self):
-        IQN_PREFIX = "iqn.%(date)s.dspace.net:%(uuid)s"
-        iqn = IQN_PREFIX % {'date': time.strftime("%Y-%m", time.gmtime()),
+        iqn_prefix = "iqn.%(date)s.dspace.net:%(uuid)s"
+        iqn = iqn_prefix % {'date': time.strftime("%Y-%m", time.gmtime()),
                             'uuid': str(uuid.uuid4()).split('-')[-1]}
         return iqn
 

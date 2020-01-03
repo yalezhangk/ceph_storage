@@ -25,6 +25,15 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "ceph_conf_write", content=content)
         return response
 
+    def ceph_config_set(self, ctxt, configs):
+        response = self.call(ctxt, "ceph_config_set", configs=configs)
+        return response
+
+    def ceph_key_write(self, ctxt, entity, keyring_path, content):
+        response = self.call(ctxt, "ceph_key_write", entity=entity,
+                             keyring_path=keyring_path, content=content)
+        return response
+
     def ceph_osd_package_install(self, ctxt):
         response = self.call(ctxt, "ceph_osd_package_install")
         return response
@@ -41,21 +50,83 @@ class AgentClient(BaseClient):
         response = self.call(ctxt, "check_dsa_status")
         return response
 
-    def ceph_osd_create(self, ctxt, osd):
-        response = self.call(ctxt, "ceph_osd_create", osd=osd)
+    def ceph_osd_create(self, ctxt, osd, configs):
+        response = self.call(ctxt, "ceph_osd_create", osd=osd, configs=configs)
         return response
 
-    def ceph_mon_create(self, ctxt, fsid, ceph_auth='none'):
+    def get_osds_status(self, ctxt, osds):
+        response = self.call(ctxt, "get_osds_status", osds=osds)
+        return response
+
+    def ceph_services_restart(self, ctxt, types, service):
+        response = self.call(ctxt, "ceph_services_restart",
+                             types=types, service=service)
+        return response
+
+    def ceph_services_start(self, ctxt, types, service):
+        response = self.call(ctxt, "ceph_services_start",
+                             types=types, service=service)
+        return response
+
+    def ceph_services_stop(self, ctxt, types, service):
+        response = self.call(ctxt, "ceph_services_stop",
+                             types=types, service=service)
+        return response
+
+    def collect_keyring(self, ctxt, entity):
+        response = self.call(ctxt, "collect_keyring", entity=entity)
+        return response
+
+    def ceph_mon_create(self, ctxt, fsid, mon_secret=None,
+                        mgr_dspace_port=None):
         response = self.call(
-            ctxt, "ceph_mon_create", fsid=fsid, ceph_auth=ceph_auth)
+            ctxt, "ceph_mon_create", fsid=fsid, mon_secret=mon_secret,
+            mgr_dspace_port=mgr_dspace_port)
         return response
 
-    def ceph_mon_remove(self, ctxt, last_mon=False):
-        response = self.call(ctxt, "ceph_mon_remove", last_mon=last_mon)
+    def ceph_mon_remove(self, ctxt):
+        response = self.call(ctxt, "ceph_mon_remove")
         return response
 
     def ceph_osd_destroy(self, ctxt, osd):
         response = self.call(ctxt, "ceph_osd_destroy", osd=osd)
+        return response
+
+    def ceph_rgw_package_install(self, ctxt):
+        response = self.call(ctxt, "ceph_rgw_package_install")
+        return response
+
+    def ceph_rgw_package_uninstall(self, ctxt):
+        response = self.call(ctxt, "ceph_rgw_package_uninstall")
+        return response
+
+    def create_rgw_keyring(self, ctxt, radosgw):
+        response = self.call(ctxt, "create_rgw_keyring", radosgw=radosgw)
+        return response
+
+    def ceph_rgw_create(self, ctxt, radosgw, zone_params):
+        response = self.call(ctxt, "ceph_rgw_create", radosgw=radosgw,
+                             zone_params=zone_params)
+        return response
+
+    def ceph_rgw_destroy(self, ctxt, radosgw):
+        response = self.call(ctxt, "ceph_rgw_destroy", radosgw=radosgw)
+        return response
+
+    def ceph_slow_request(self, ctxt, osds):
+        response = self.call(ctxt, "ceph_slow_request", osds=osds)
+        return response
+
+    def ceph_osd_clean(self, ctxt, osd):
+        response = self.call(ctxt, "ceph_osd_clean", osd=osd)
+        return response
+
+    def ceph_osd_offline(self, ctxt, osd, umount):
+        response = self.call(ctxt, "ceph_osd_offline", osd=osd, umount=umount)
+        return response
+
+    def ceph_osd_restart(self, ctxt, osd):
+        response = self.call(ctxt, "ceph_osd_restart", osd=osd)
         return response
 
     def package_install(self, ctxt, packages):
@@ -99,8 +170,15 @@ class AgentClient(BaseClient):
                              directory=directory, filename=filename)
         return response
 
-    def read_log_file_content(self, ctxt, node, directory, filename):
+    def read_log_file_content(self, ctxt, node, directory, filename, offset,
+                              length):
         response = self.call(ctxt, 'read_log_file_content', node=node,
+                             directory=directory, filename=filename,
+                             offset=offset, length=length)
+        return response
+
+    def log_file_size(self, ctxt, node, directory, filename):
+        response = self.call(ctxt, 'log_file_size', node=node,
                              directory=directory, filename=filename)
         return response
 
@@ -180,6 +258,10 @@ class AgentClient(BaseClient):
     def prometheus_target_remove(self, ctxt, ip, port, hostname, path):
         response = self.call(ctxt, 'prometheus_target_remove',
                              ip=ip, port=port, hostname=hostname, path=path)
+        return response
+
+    def node_update_infos(self, ctxt, node):
+        response = self.call(ctxt, 'node_update_infos', node=node)
         return response
 
 

@@ -3,7 +3,6 @@
 import logging
 
 from DSpace.exception import RunCommandError
-from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
@@ -34,6 +33,8 @@ class Service(ToolBase):
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
             return True
+        if "not loaded" in stderr:
+            return False
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
@@ -43,6 +44,8 @@ class Service(ToolBase):
         rc, stdout, stderr = self.run_command(cmd)
         if not rc:
             return True
+        if "No such file" in stderr:
+            return False
         raise RunCommandError(cmd=cmd, return_code=rc,
                               stdout=stdout, stderr=stderr)
 
@@ -60,7 +63,10 @@ class Service(ToolBase):
         cmd = ["systemctl", "status", name, "|", "grep", "Active", "|",
                "awk", "'{{print $2}}'"]
         rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
         status = stdout.strip()
-        if status != s_fields.ServiceStatus.ACTIVE:
-            status = s_fields.ServiceStatus.INACTIVE
-        return status
+        if status != "active":
+            return False
+        return True

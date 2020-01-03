@@ -34,6 +34,8 @@ email_group_schema = {
     },
     "required": ["email_group"],
 }
+
+
 @URLRegistry.register(r"/email_groups/")
 class EmailGroupListHandler(ClusterAPIHandler):
     @gen.coroutine

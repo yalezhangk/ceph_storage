@@ -58,11 +58,16 @@ class RPCHandler(stor_pb2_grpc.RPCServerServicer):
                 value=json.dumps(self.serializer.serialize_entity(ctxt, ret))
             )
         except Exception as e:
-            logger.exception("%s raise exception: %s" % (
-                func.__name__, e
-            ))
-            if self.debug_mode:
-                sys.exit(1)
+            code = getattr(e, 'code', 500)
+            if isinstance(e, exception.StorException) and code < 500:
+                # exception content will auto add to log
+                logger.warning("%s", func.__name__)
+            else:
+                logger.exception("%s raise exception: %s" % (
+                    func.__name__, e
+                ))
+                if self.debug_mode:
+                    sys.exit(1)
             res = stor_pb2.Response(
                 value=json.dumps(self.serializer.serialize_exception(ctxt, e))
             )
@@ -90,8 +95,9 @@ class ServiceBase(object):
         logger.debug(self.rpc_endpoint)
 
     def start_rpc(self):
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        stor_pb2_grpc.add_RPCServerServicer_to_server(
+        server = grpc.server(futures.ThreadPoolExecutor(
+            max_workers=CONF.task_workers))
+        stor_pb2_grpc.add_rpc_server_servicer_to_server(
             RPCHandler(self.handler), server)
         port = '{}:{}'.format(self.rpc_ip, self.rpc_port)
         server.add_insecure_port(port)

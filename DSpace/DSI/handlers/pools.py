@@ -54,7 +54,8 @@ create_pool_schema = {
                         "properties": {
                             "replicate_size": {
                                 "type": "integer",
-                                "minimum": 1
+                                "minimum": 1,
+                                "maximum": 6
                             },
                         },
                         "required": ["replicate_size"]
@@ -191,7 +192,8 @@ class PoolListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
 
-        exact_filters = ['role', 'type', 'status', 'speed_type']
+        exact_filters = ['role', 'type', 'status', 'speed_type',
+                         'failure_domain_type']
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
 
@@ -844,3 +846,68 @@ class PoolOsdTreeHandler(ClusterAPIHandler):
             "pool_osd_tree": data
         }))
         logger.info("get osd tree success")
+
+
+@URLRegistry.register(r"/pools/undo/")
+class PoolUndoHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool undo info
+        description: pool undo info
+        operationId: pools.api.undoInfo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        logger.info("trying pool undo")
+        data = yield client.pool_get_undo(ctxt)
+        self.write(objects.json_encode({
+            "pool_undo": data
+        }))
+        logger.info("get undo op accept")
+
+    @gen.coroutine
+    def post(self):
+        """
+        ---
+        tags:
+        - pool
+        summary: Pool undo
+        description: pool undo
+        operationId: pools.api.undo
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        logger.info("trying pool undo")
+        pool = yield client.pool_undo(ctxt)
+        self.write(objects.json_encode({
+            "pool": pool
+        }))
+        logger.info("get undo op accept")

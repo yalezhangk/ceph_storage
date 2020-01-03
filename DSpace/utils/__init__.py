@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 import logging
 import random
+import socket
+import struct
 
 import netaddr
 import retrying
 import six
+from dateutil import tz
 
 logger = logging.getLogger(__name__)
 
@@ -67,3 +70,35 @@ def retry(exceptions, interval=1, retries=3, backoff_rate=2,
         return _wrapper
 
     return _decorator
+
+
+def versiontuple(v):
+    filled = []
+    for point in v.split("."):
+        filled.append(point.zfill(8))
+    return tuple(filled)
+
+
+def utc_to_local(source, zone):
+    from_zone = tz.tzutc()
+    to_zone = tz.gettz(zone)
+
+    # Tell the datetime object that it's in UTC time zone since
+    # datetime objects are 'naive' by default
+    source = source.replace(tzinfo=from_zone)
+
+    # Convert time zone
+    return source.astimezone(to_zone)
+
+
+def cidr2network(cidr):
+    items = cidr.split('/')
+    if len(items) != 2:
+        return None
+    address, netmask_length = items
+    address_bin = struct.unpack('!L', socket.inet_aton(address))[0]
+    netmask_bin = (1 << 32) - (1 << 32 >> int(netmask_length))
+    network = socket.inet_ntoa(
+        struct.pack('!L', address_bin & netmask_bin)
+    )
+    return network

@@ -6,6 +6,7 @@ import logging
 
 from jsonschema import draft7_format_checker
 from jsonschema import validate
+from oslo_utils import strutils
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -52,7 +53,11 @@ class ClusterListHandler(BaseAPIHandler):
 
         """
         ctxt = self.get_context()
-        clusters = objects.ClusterList.get_all(ctxt)
+        exact_filters = ['status']
+        fuzzy_filters = ['display_name']
+        filters = self.get_support_filters(exact_filters, fuzzy_filters)
+        client = self.get_admin_client(ctxt)
+        clusters = yield client.cluster_get_all(ctxt, filters=filters)
         self.write(objects.json_encode({
             "clusters": clusters
         }))
@@ -387,7 +392,8 @@ class ClusterServiceStatus(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        names = ["NODE_EXPORTER", "PROMETHEUS", "MON"]
+        names = ["NODE_EXPORTER", "PROMETHEUS", "MON", "DSM", "DSI", "DSA",
+                 "NGINX", "MARIADB", "ETCD", ]
         service_status = yield client.service_status_get(ctxt, names=names)
         self.write(json.dumps(service_status))
 
@@ -552,3 +558,138 @@ class ClusterSwitch(ClusterAPIHandler):
         cluster_id = data.get('cluster_id')
         result = yield client.cluster_switch(ctxt, cluster_id)
         self.write(json.dumps({"cluster_id": result}))
+
+
+@URLRegistry.register(r"/clusters/capacity/")
+class ClusterCapacity(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: Cluster/Pools capacity overview
+        description: Lists the capacity of the cluster or any pools by
+                     prometheus
+        operationId: cluster.api.clusterCapacity
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: request
+          name: pool_id
+          description: pool object ID
+          schema:
+            type: integer
+            format: int32
+          required: false
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        pool_id = self.get_argument('pool_id', default=None)
+        capacity = yield client.cluster_capacity_get(ctxt, pool_id)
+        self.write(json.dumps({"capacity": capacity}))
+
+
+@URLRegistry.register(r"/clusters/data_balance/")
+class ClusterDataBalance(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data_balance = yield client.cluster_data_balance_get(ctxt)
+        self.write(json.dumps({"data_balance": data_balance}))
+
+    @gen.coroutine
+    def post(self):
+        """
+        {"data_balance": {
+            "action": "on|off",
+            "mode": "crush-compat|upmap"
+        }}"""
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        data_balance = data.get("data_balance")
+        res = yield client.cluster_data_balance_set(ctxt, data_balance)
+        self.write(json.dumps({"data_balance": res}))
+
+
+@URLRegistry.register(r"/clusters/pause/")
+class ClusterPause(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: cluster pause
+        description: cluster pause.
+        operationId: clusters.api.pause
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: cluster
+          description: Created cluster object
+          required: true
+          schema:
+            type: object
+            properties:
+              pause:
+                type: boolen
+                description: cluster object
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        pause = strutils.bool_from_string(data.get("pause"))
+        res = yield client.cluster_pause(ctxt, pause)
+        self.write(json.dumps({"res": res}))
+
+
+@URLRegistry.register(r"/clusters/status/")
+class ClusterStatus(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - cluster
+        summary: cluster status
+        description: cluster status.
+        operationId: clusters.api.status
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        res = yield client.cluster_status(ctxt)
+        self.write(json.dumps({"cluster": res}))

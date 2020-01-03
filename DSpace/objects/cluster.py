@@ -25,8 +25,11 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         'display_description': fields.StringField(nullable=True),
         'is_admin': fields.BooleanField(),
         'status': s_fields.ClusterStatusField(),
-
+        'ceph_status': fields.BooleanField(nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
     }
+
+    OPTIONAL_FIELDS = ('metrics',)
 
     @property
     def name(self):
@@ -52,6 +55,11 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         updated_values = db.cluster_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
+
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
+        return super(Cluster, cls)._from_db_object(context, obj, db_obj)
 
 
 @base.StorObjectRegistry.register

@@ -73,7 +73,9 @@ class NodeTool(ToolBase):
                                   stdout=data, stderr=stderr)
         memsize = self.parse_meminfo(data)
 
-        args = ['cat', '/etc/os-release']
+        os_release_file = self._wapper('/etc/os-release')
+        logger.info("get os release: %s", os_release_file)
+        args = ['cat', os_release_file]
         rc, data, stderr = self.executor.run_command(args)
         if rc:
             raise RunCommandError(cmd=args, return_code=rc,

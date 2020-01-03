@@ -13,15 +13,23 @@ from DSpace.context import RequestContext
 from DSpace.DSI.session import get_session
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
+from DSpace.utils.user_token import UserToken
 
 logger = logging.getLogger(__name__)
 
 
 class BaseAPIHandler(RequestHandler):
+    ctxt = None
 
     def initialize(self):
-        Session = get_session()
-        self.session = Session(self)
+        session_cls = get_session()
+        self.session = session_cls(self)
+
+    def prepare(self):
+        if self.request.method != "OPTIONS":
+            self.ctxt = self.get_context()
+        logger.info("uri(%s), method(%s), body(%s)",
+                    self.request.uri, self.request.method, self.request.body)
 
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
@@ -45,6 +53,8 @@ class BaseAPIHandler(RequestHandler):
         self.write({"error": msg})
 
     def get_context(self):
+        if self.ctxt:
+            return self.ctxt
         fake_user = self.request.headers.get("X-Fake-User", None)
         if not self.current_user and not fake_user:
             raise exception.NotAuthorized()
@@ -66,8 +76,9 @@ class BaseAPIHandler(RequestHandler):
         sort_dir = self.get_query_argument('sort_dir', default=None)
         limit = self.get_query_argument('limit', default=None) or None
         offset = self.get_query_argument('offset', default=None) or None
+        marker = self.get_query_argument('marker', default=None) or None
         return {
-            "marker": self.get_query_argument('marker', default=None),
+            "marker": marker,
             "limit": limit,
             "sort_keys": [sort_key] if sort_key else None,
             "sort_dirs": [sort_dir] if sort_dir else None,
@@ -87,6 +98,13 @@ class BaseAPIHandler(RequestHandler):
                 reason=_("get_metrics_history_args: start and end required"))
 
     def get_current_user(self):
+        access_token = self.get_query_argument('access_token', default=None)
+        if access_token:
+            logger.info('get access_token from URL, is:%s', access_token)
+            user_token = UserToken()
+            resu, user_id = user_token.certify_token(access_token)
+            if resu:
+                return user_id
         logger.debug("User: %s", self.session['user_id'])
         return self.session['user_id']
 
@@ -117,15 +135,28 @@ class BaseAPIHandler(RequestHandler):
 
     def _handle_request_exception(self, e):
         """Overide to handle StorException"""
-        logger.exception(e)
         if isinstance(e, exception.StorException):
             self.send_error(e.code, reason=str(e))
+            # log exception
+            if e.code >= 500:
+                logger.exception("%s raise exception: %s", self.request.uri, e)
         elif isinstance(e, ValidationError):
+            # tornado will log exception
             message = '.'.join([str(i) for i in e.path])
             message += ": " + e.message
             self.send_error(400, reason=message)
         else:
+            # log exception
+            logger.exception("%s raise exception: %s", self.request.uri, e)
             super(BaseAPIHandler, self)._handle_request_exception(e)
+
+    def log_exception(self, op, e):
+        if isinstance(e, exception.StorException):
+            if e.code < 500:
+                # exception content will auto add in end
+                logger.warning("url(%s), op(%s)", self.request.uri, op)
+                return
+        logger.exception("%s raise exception: %s", self.request.uri, e)
 
     def get_admin_client(self, ctxt):
         client = AdminClientManager(
@@ -141,6 +172,7 @@ class BaseAPIHandler(RequestHandler):
         return cluster_id
 
     def get_support_filters(self, exact_filters=None, fuzzy_filters=None):
+        fuzzy_filters = fuzzy_filters or []
         filters = {}
         for e in exact_filters:
             # 精确字段

@@ -117,12 +117,16 @@ class BaseClient(object):
     def _sync_call(self, context, method, version, **kwargs):
         _context = self.serializer.serialize_context(context)
         kwargs = self.serializer.serialize_entity(context, kwargs)
-        response = self._stub.call(stor_pb2.Request(
-            context=json.dumps(_context),
-            method=method,
-            kwargs=json.dumps(kwargs),
-            version=version
-        ))
+        try:
+            response = self._stub.call(stor_pb2.Request(
+                context=json.dumps(_context),
+                method=method,
+                kwargs=json.dumps(kwargs),
+                version=version
+            ))
+        except grpc.RpcError as e:
+            logger.exception("rpc connect error: %s", e)
+            raise exception.RPCConnectError()
         res = json.loads(response.value)
         self.serializer.deserialize_exception(context, res)
         ret = self.serializer.deserialize_entity(
@@ -143,12 +147,16 @@ class BaseClient(object):
     def _async_call(self, context, method, version, **kwargs):
         context = self.serializer.serialize_context(context)
         kwargs = self.serializer.serialize_entity(context, kwargs)
-        gf = self._stub.call.future(stor_pb2.Request(
-            context=json.dumps(context),
-            method=method,
-            kwargs=json.dumps(kwargs),
-            version=version
-        ))
+        try:
+            gf = self._stub.call.future(stor_pb2.Request(
+                context=json.dumps(context),
+                method=method,
+                kwargs=json.dumps(kwargs),
+                version=version
+            ))
+        except grpc.RpcError as e:
+            logger.exception("rpc connect error: %s", e)
+            raise exception.RPCConnectError()
 
         f = Future()
         ioloop = IOLoop.current()

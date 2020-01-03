@@ -9,6 +9,8 @@ from DSpace.DSM.alert_log import AlertLogHandler
 from DSpace.DSM.alert_rule import AlertRuleHandler
 from DSpace.DSM.ceph_config import CephConfigHandler
 from DSpace.DSM.cluster import ClusterHandler
+from DSpace.DSM.component import ComponentHandler
+from DSpace.DSM.cron import CronHandler
 from DSpace.DSM.crush_rule import CrushRuleHandler
 from DSpace.DSM.datacenter import DatacenterHandler
 from DSpace.DSM.disk import DiskHandler
@@ -22,6 +24,8 @@ from DSpace.DSM.pool import PoolHandler
 from DSpace.DSM.probe import ProbeHandler
 from DSpace.DSM.prometheus import PrometheusHandler
 from DSpace.DSM.rack import RackHandler
+from DSpace.DSM.radosgw import RadosgwHandler
+from DSpace.DSM.radosgw_router import RadosgwRouterHandler
 from DSpace.DSM.service import ServiceHandler
 from DSpace.DSM.sys_config import SysConfigHandler
 from DSpace.DSM.task import TaskHandler
@@ -43,6 +47,8 @@ class AdminHandler(ActionLogHandler,
                    AlertRuleHandler,
                    CephConfigHandler,
                    ClusterHandler,
+                   ComponentHandler,
+                   CronHandler,
                    CrushRuleHandler,
                    DatacenterHandler,
                    DiskHandler,
@@ -55,6 +61,8 @@ class AdminHandler(ActionLogHandler,
                    PoolHandler,
                    ProbeHandler,
                    PrometheusHandler,
+                   RadosgwHandler,
+                   RadosgwRouterHandler,
                    RackHandler,
                    ServiceHandler,
                    SysConfigHandler,
