@@ -7,8 +7,9 @@ service RPCServer{
 message Request {
   string context = 1;
   string method = 2;
-  string kwargs = 3;
-  string version = 4;
+  string args = 3;
+  string kwargs = 4;
+  string version = 5;
 }
 
 message Response {

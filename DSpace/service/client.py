@@ -108,20 +108,29 @@ class BaseClient(object):
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
 
-    def call(self, context, method, version="v1.0", **kwargs):
-        if self.async_support:
-            return self._async_call(context, method, version, **kwargs)
-        else:
-            return self._sync_call(context, method, version, **kwargs)
+    def __getattr__(self, name):
+        def _wapper(ctxt, *args, **kwargs):
+            return self.call(ctxt, name, *args, **kwargs)
+        return _wapper
 
-    def _sync_call(self, context, method, version, **kwargs):
+    def call(self, context, method, *args, **kwargs):
+        if self.async_support:
+            return self._async_call(context, method, *args, **kwargs)
+        else:
+            return self._sync_call(context, method, *args, **kwargs)
+
+    def _sync_call(self, context, method, *args, **kwargs):
+        version = kwargs.pop("version", "v1.0")
         _context = self.serializer.serialize_context(context)
-        kwargs = self.serializer.serialize_entity(context, kwargs)
+        _args = self.serializer.serialize_entity(context, args)
+        _kwargs = self.serializer.serialize_entity(context, kwargs)
+        logger.info("args(%s)", args)
         try:
             response = self._stub.call(stor_pb2.Request(
                 context=json.dumps(_context),
                 method=method,
-                kwargs=json.dumps(kwargs),
+                args=json.dumps(_args),
+                kwargs=json.dumps(_kwargs),
                 version=version
             ))
         except grpc.RpcError as e:
@@ -144,14 +153,17 @@ class BaseClient(object):
         except Exception as e:
             f.set_exception(e)
 
-    def _async_call(self, context, method, version, **kwargs):
+    def _async_call(self, context, method, *args, **kwargs):
+        version = kwargs.pop("version", "v1.0")
         context = self.serializer.serialize_context(context)
-        kwargs = self.serializer.serialize_entity(context, kwargs)
+        _args = self.serializer.serialize_entity(context, args)
+        _kwargs = self.serializer.serialize_entity(context, kwargs)
         try:
             gf = self._stub.call.future(stor_pb2.Request(
                 context=json.dumps(context),
                 method=method,
-                kwargs=json.dumps(kwargs),
+                args=json.dumps(_args),
+                kwargs=json.dumps(_kwargs),
                 version=version
             ))
         except grpc.RpcError as e:

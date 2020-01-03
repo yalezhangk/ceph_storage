@@ -16,11 +16,12 @@ _b = sys.version_info[0] < 3 and (
 _sym_db = _symbol_database.Default()
 
 _serialized_pb = (
-    '\n\nstor.proto\"K\n\x07Request\x12\x0f\n\x07\x63ontext\x18\x01 \x01'
-    '(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\x0e\n\x06kwargs'
-    '\x18\x03 \x01(\t\x12\x0f\n\x07version\x18\x04 \x01(\t\"\x19\n\x08Response'
-    '\x12\r\n\x05value\x18\x01 \x01(\t2*\n\tRPCServer\x12\x1d\n\x04\x63\x61ll'
-    '\x12\x08.Request\x1a\t.Response\"\x00\x62\x06proto3'
+    '\n\nstor.proto\"Y\n\x07Request\x12\x0f\n\x07\x63ontext\x18\x01 \x01'
+    '(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x03'
+    '\x01(\t\x12\x0e\n\x06kwargs\x18\x04 \x01(\t\x12\x0f\n\x07version\x18'
+    '\x05 \x01(\t\"\x19\n\x08Response\x12\r\n\x05value\x18\x01 \x01(\t2*'
+    '\n\tRPCServer\x12\x1d\n\x04\x63\x61ll\x12\x08.Request\x1a\t.Response'
+    '\"\x00\x62\x06proto3'
 )
 
 
@@ -55,15 +56,22 @@ _REQUEST = _descriptor.Descriptor(
             is_extension=False, extension_scope=None,
             serialized_options=None, file=DESCRIPTOR),
         _descriptor.FieldDescriptor(
-            name='kwargs', full_name='Request.kwargs', index=2,
+            name='args', full_name='Request.args', index=2,
             number=3, type=9, cpp_type=9, label=1,
             has_default_value=False, default_value=_b("").decode('utf-8'),
             message_type=None, enum_type=None, containing_type=None,
             is_extension=False, extension_scope=None,
             serialized_options=None, file=DESCRIPTOR),
         _descriptor.FieldDescriptor(
-            name='version', full_name='Request.version', index=3,
+            name='kwargs', full_name='Request.kwargs', index=3,
             number=4, type=9, cpp_type=9, label=1,
+            has_default_value=False, default_value=_b("").decode('utf-8'),
+            message_type=None, enum_type=None, containing_type=None,
+            is_extension=False, extension_scope=None,
+            serialized_options=None, file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='version', full_name='Request.version', index=4,
+            number=5, type=9, cpp_type=9, label=1,
             has_default_value=False, default_value=_b("").decode('utf-8'),
             message_type=None, enum_type=None, containing_type=None,
             is_extension=False, extension_scope=None,
@@ -81,7 +89,7 @@ _REQUEST = _descriptor.Descriptor(
     oneofs=[
     ],
     serialized_start=14,
-    serialized_end=89,
+    serialized_end=103,
 )
 
 
@@ -111,8 +119,8 @@ _RESPONSE = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[
     ],
-    serialized_start=91,
-    serialized_end=116,
+    serialized_start=105,
+    serialized_end=130,
 )
 
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
@@ -142,8 +150,8 @@ _RPCSERVER = _descriptor.ServiceDescriptor(
     file=DESCRIPTOR,
     index=0,
     serialized_options=None,
-    serialized_start=118,
-    serialized_end=160,
+    serialized_start=132,
+    serialized_end=174,
     methods=[
         _descriptor.MethodDescriptor(
             name='call',

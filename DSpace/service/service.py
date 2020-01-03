@@ -25,31 +25,34 @@ cluster_opts = [
 CONF.register_opts(cluster_opts)
 
 
-class RPCHandler(stor_pb2_grpc.RPCServerServicer):
+class Dispatcher(stor_pb2_grpc.RPCServerServicer):
     def __init__(self, handler, *args, **kwargs):
-        super(RPCHandler, self).__init__(*args, **kwargs)
+        super(Dispatcher, self).__init__(*args, **kwargs)
         self.handler = handler
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
         self.debug_mode = kwargs.get('debug_mode', False)
 
     def call(self, request, context):
-        logger.debug("get rpc call: ctxt(%s), method(%s), kwargs(%s),"
-                     " version(%s)" % (
+        logger.debug("get rpc call: ctxt(%s), method(%s), args(%s), "
+                     "kwargs(%s), version(%s)" % (
                          request.context,
                          request.method,
+                         request.args,
                          request.kwargs,
                          request.version,
                      ))
         method = request.method
         ctxt = self.serializer.deserialize_context(json.loads(request.context))
+        args = self.serializer.deserialize_entity(
+            ctxt, json.loads(request.args))
         kwargs = self.serializer.deserialize_entity(
             ctxt, json.loads(request.kwargs))
         if not hasattr(self.handler, method):
             raise exception.NoSuchMethod(method=method)
         func = getattr(self.handler, method)
         try:
-            ret = func(ctxt, **kwargs)
+            ret = func(ctxt, *args, **kwargs)
             logger.debug("%s ret: %s" % (
                 func.__name__,
                 json.dumps(
@@ -98,7 +101,7 @@ class ServiceBase(object):
         server = grpc.server(futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers))
         stor_pb2_grpc.add_rpc_server_servicer_to_server(
-            RPCHandler(self.handler), server)
+            Dispatcher(self.handler), server)
         port = '{}:{}'.format(self.rpc_ip, self.rpc_port)
         server.add_insecure_port(port)
         server.start()
