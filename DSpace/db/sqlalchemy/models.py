@@ -367,7 +367,7 @@ class SysConfig(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     key = Column(String(255))
-    value = Column(String(255))
+    value = Column(Text())
     value_type = Column(String(36))
     display_description = Column(String(255))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
