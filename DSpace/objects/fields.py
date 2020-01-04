@@ -285,6 +285,13 @@ class OsdTypeField(BaseEnumField):
     AUTO_TYPE = OsdType()
 
 
+class OsdBackendType(BaseStorEnum):
+    T2CE = 't2ce'
+    KERNEL = 'kernel'
+
+    ALL = (T2CE, KERNEL)
+
+
 class OsdStatus(BaseStorEnum):
     ACTIVE = 'active'
     WARNING = 'warning'

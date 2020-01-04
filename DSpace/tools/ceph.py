@@ -5,6 +5,7 @@ import json
 import logging
 import time
 
+import six
 from oslo_utils import encodeutils
 
 from DSpace.exception import ActionTimeoutError
@@ -12,6 +13,7 @@ from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
+from DSpace.i18n import _
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
 
@@ -950,10 +952,15 @@ class RADOSClient(object):
         return get_json_output(outbuf)
 
     def _send_osd_command(self, osd_id, command_str):
-        ret, outbuf, _ign = self.client.osd_command(osd_id, command_str, '')
+        if isinstance(osd_id, six.string_types):
+            osd_id = int(osd_id)
+        if not isinstance(osd_id, int):
+            raise CephException(_("osd id must int type"))
+        ret, outbuf, err = self.client.osd_command(osd_id, command_str, '')
         if ret:
             raise CephException(
-                message="execute command failed: {}".format(command_str))
+                message="execute command failed: {}, ret: {}, outbuf: {}, "
+                "err: {}".format(command_str, ret, outbuf, err))
         return get_json_output(outbuf)
 
     def get_device_class(self):
@@ -1430,3 +1437,31 @@ class RADOSClient(object):
         outbuf = encodeutils.safe_decode(outbuf)
         df_data = json.loads(outbuf)
         return df_data
+
+    def osd_metadata(self, osd_id):
+        logger.info("get osd metadata: osd.%s", osd_id)
+        if isinstance(osd_id, six.string_types):
+            osd_id = int(osd_id)
+        if not isinstance(osd_id, int):
+            raise CephException(_("osd id must int type"))
+        cmd = {
+            "prefix": "osd metadata",
+            "id": osd_id,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("get osd metadata res: %s", res)
+        return res
+
+    def auth_get_key(self, entity):
+        logger.info("auth get: %s", entity)
+        cmd = {
+            "prefix": "auth get-key",
+            "entity": entity,
+            "format": "json"
+        }
+        command_str = json.dumps(cmd)
+        res = self._send_mon_command(command_str)
+        logger.info("auth get %s res: %s", entity, res)
+        return res

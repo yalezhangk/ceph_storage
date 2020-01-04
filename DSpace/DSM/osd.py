@@ -15,8 +15,8 @@ from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
+from DSpace.taskflows.osd import OsdCreateTaskflow
 from DSpace.tools.prometheus import PrometheusTool
-from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,6 @@ class OsdHandler(AdminBaseHandler):
                 osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
                 osd.metrics.update({'kb_used': [0, size['kb_used']]})
                 # TODO OSD实时容量数据放到定时任务中
-                osd.size = int(size['kb']) * 1024
                 osd.used = int(size['kb_used']) * 1024
                 try:
                     osd.save()
@@ -123,29 +122,10 @@ class OsdHandler(AdminBaseHandler):
         return objects.Osd.get_by_id(ctxt, osd_id,
                                      expected_attrs=expected_attrs)
 
-    @retry(exception.OsdStatusNotUp, retries=6)
-    def wait_osd_up(self, ctxt, osd_name):
-        # retries=6: max wait 63s
-        logger.info("check osd is up: %s", osd_name)
-        ceph_client = CephTask(ctxt)
-        osd_tree = ceph_client.get_osd_tree()
-        _osds = osd_tree.get("stray") or []
-        osds = filter(lambda x: (x.get('name') == osd_name and
-                                 x.get('status') == "up"),
-                      _osds)
-        if len(list(osds)) > 0:
-            logger.info("osd is up: %s", osd_name)
-            return True
-        else:
-            logger.info("osd not up: %s", osd_name)
-            raise exception.OsdStatusNotUp()
-
     def _osd_create(self, ctxt, node, osd, begin_action=None):
         try:
-            task = NodeTask(ctxt, node)
-            osd = task.ceph_osd_install(osd)
-            self.wait_osd_up(ctxt, osd.osd_name)
-            self._osds_update_size(ctxt, [osd])
+            tf = OsdCreateTaskflow(ctxt)
+            tf.run(osd=osd)
             osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
             logger.info("osd.%s create success", osd.osd_id)
@@ -161,7 +141,7 @@ class OsdHandler(AdminBaseHandler):
             op_status = 'CREATE_ERROR'
             err_msg = str(e)
 
-        except exception.StorException as e:
+        except Exception as e:
             logger.exception(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
@@ -173,6 +153,7 @@ class OsdHandler(AdminBaseHandler):
         self.finish_action(begin_action, osd.id, osd.osd_name,
                            osd, osd.status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
+        self._osds_update_size(ctxt, [osd])
         wb_client.send_message(ctxt, osd, op_status, msg)
 
     def _set_osd_partation_role(self, ctxt, osd):
@@ -210,23 +191,6 @@ class OsdHandler(AdminBaseHandler):
     def _osd_get_free_id(self, ctxt, osd_fsid):
         task = CephTask(ctxt)
         return task.osd_new(osd_fsid)
-
-    def _osd_config_set(self, ctxt, osd):
-        if osd.cache_partition_id:
-            ceph_cfg = objects.CephConfig(
-                ctxt, group="osd.%s" % osd.osd_id,
-                key='backend_type',
-                value='t2ce',
-                value_type=s_fields.ConfigType.STRING
-            )
-            ceph_cfg.create()
-        ceph_cfg = objects.CephConfig(
-            ctxt, group="osd.%s" % osd.osd_id,
-            key='osd_objectstore',
-            value=osd.type,
-            value_type=s_fields.ConfigType.STRING
-        )
-        ceph_cfg.create()
 
     def _osd_create_disk_check(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
@@ -329,7 +293,6 @@ class OsdHandler(AdminBaseHandler):
         osd.create()
         osd = objects.Osd.get_by_id(ctxt, osd.id, joined_load=True)
         self._set_osd_partation_role(ctxt, osd)
-        self._osd_config_set(ctxt, osd)
 
         # apply async
         self.task_submit(self._osd_create, ctxt, node, osd, begin_action)
@@ -456,7 +419,6 @@ class OsdHandler(AdminBaseHandler):
             osd.metrics.update({'kb': [0, size['kb']]})
             osd.metrics.update({'kb_avail': [0, size['kb_avail']]})
             osd.metrics.update({'kb_used': [0, size['kb_used']]})
-            osd.size = int(size['kb']) * 1024
             osd.used = int(size['kb_used']) * 1024
             osd.save()
 

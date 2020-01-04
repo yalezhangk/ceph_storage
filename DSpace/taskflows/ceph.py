@@ -739,6 +739,10 @@ class CephTask(object):
             rados_client.osd_rm(osd_name)
             rados_client.auth_del(osd_name)
 
+    def auth_get_key(self, entity):
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.auth_get_key(entity)
+
     def get_pools(self):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.get_pools()
@@ -919,3 +923,8 @@ class CephTask(object):
         logger.debug("Check ceph cluster status")
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             return rados_client.status()
+
+    def osd_metadata(self, osd_id):
+        logger.debug("get osd metadata")
+        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+            return rados_client.osd_metadata(osd_id)

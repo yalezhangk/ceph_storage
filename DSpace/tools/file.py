@@ -60,6 +60,7 @@ class File(ToolBase):
                               stdout=stdout, stderr=stderr)
 
     def chown(self, path, user='root', group='root'):
+        path = self._wapper(path)
         cmd = ["chown", "-R", "{}:{}".format(user, group), path]
         rc, stdout, stderr = self.executor.run_command(cmd)
         if not rc:

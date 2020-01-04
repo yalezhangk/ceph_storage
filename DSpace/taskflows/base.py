@@ -7,6 +7,7 @@ import taskflow.engines
 from oslo_log import log as logging
 from taskflow import task
 from taskflow.patterns import linear_flow as lf
+from taskflow.types.failure import Failure
 
 from DSpace import context
 from DSpace import objects
@@ -84,6 +85,14 @@ class Task(task.Task):
         t = self._task
         t.finish()
 
+    def failed_task(self):
+        t = self._task
+        t.failed()
+
+    def revert(self, result, flow_failures):
+        if isinstance(result, Failure):
+            self.failed_task()
+
 
 class ExampleTask(Task):
     def execute(self, ctxt, tf):
@@ -124,6 +133,7 @@ class Taskflow(object):
         except Exception as e:
             msg = str(e)
             tf.failed(msg)
+            raise e
 
 
 def main():

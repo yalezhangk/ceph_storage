@@ -4,6 +4,7 @@ import configparser
 import logging
 import time
 from io import StringIO
+from os import path
 
 import six
 
@@ -32,8 +33,9 @@ class CephHandler(AgentBaseHandler):
         file_tool.write("/etc/ceph/ceph.conf", content)
         return True
 
-    def ceph_key_write(self, context, entity, keyring_path, content):
-        logger.info("write ceph keys to %s", keyring_path)
+    def ceph_key_write(self, context, entity, keyring_dir, keyring_name,
+                       content):
+        logger.info("write ceph keys to %s/%s", keyring_dir, keyring_name)
         configer = configparser.ConfigParser()
         configer[entity] = {}
         configer[entity]["key"] = content
@@ -41,7 +43,10 @@ class CephHandler(AgentBaseHandler):
         configer.write(buf)
         client = self._get_executor()
         file_tool = FileTool(client)
+        file_tool.mkdir(keyring_dir)
+        keyring_path = path.join(keyring_dir, keyring_name)
         file_tool.write(keyring_path, buf.getvalue())
+        file_tool.chown(keyring_path, user='ceph', group='ceph')
 
     def ceph_prepare_disk(self, context, osd):
         kwargs = {

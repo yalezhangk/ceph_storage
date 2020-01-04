@@ -31,6 +31,8 @@ from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
 from DSpace.utils import template
 from DSpace.utils import validator
+from DSpace.utils.cluster_config import CEPH_CONFIG_DIR
+from DSpace.utils.cluster_config import CEPH_LIB_DIR
 from DSpace.utils.cluster_config import get_full_ceph_version
 
 logger = logging.getLogger(__name__)
@@ -377,58 +379,31 @@ class NodeTask(object):
 
     def init_admin_key(self):
         agent = self.get_agent()
-        ssh = self.get_ssh_executor()
         admin_entity = "client.admin"
-        file_tool = FileTool(ssh)
-        ceph_config_dir = "/etc/ceph"
-        file_tool.mkdir(ceph_config_dir)
-        keyring_path = "{}/ceph.client.admin.keyring".format(ceph_config_dir)
+        keyring_name = "ceph.client.admin.keyring"
         admin_keyring = objects.CephConfig.get_by_key(
             self.ctxt, 'keyring', 'client.admin')
         if not admin_keyring:
             logger.error("cephx is enable, but no admin keyring found")
-            raise exc.CephException(message='cephx is enable, but no admin'
-                                            'keyring found')
-        agent.ceph_key_write(self.ctxt, admin_entity, keyring_path,
-                             admin_keyring.value)
-        file_tool.chown(ceph_config_dir, user='ceph', group='ceph')
+            raise exc.CephException(
+                message='cephx is enable, but no admin'
+                        'keyring found')
+        agent.ceph_key_write(self.ctxt, admin_entity, CEPH_CONFIG_DIR,
+                             keyring_name, admin_keyring.value)
 
     def init_bootstrap_keys(self, bootstrap_type):
         agent = self.get_agent()
-        ssh = self.get_ssh_executor()
-        file_tool = FileTool(ssh)
         bootstrap_entity = "client.bootstrap-{}".format(bootstrap_type)
-        bootstrap_key_dir = "/var/lib/ceph/bootstrap-{}".format(bootstrap_type)
-        file_tool.mkdir(bootstrap_key_dir)
-        keyring_path = "{}/ceph.keyring".format(bootstrap_key_dir)
+        keyring_dir = "{}/bootstrap-{}".format(CEPH_LIB_DIR, bootstrap_type)
+        keying_name = 'ceph.keyring'
         bootstrap_key = self.collect_keyring(bootstrap_entity)
         if not bootstrap_key:
             logger.error("cephx is enable, but no bootstrap keyring found")
-            raise exc.CephException(message='cephx is enable, but no bootstrap'
-                                            'keyring found')
-        agent.ceph_key_write(self.ctxt, bootstrap_entity, keyring_path,
-                             bootstrap_key)
-        file_tool.chown(bootstrap_key_dir, user='ceph', group='ceph')
-
-    def ceph_osd_install(self, osd):
-        # write ceph.conf
-        logger.debug("get config")
-        configs = self._osd_configs(osd)
-        agent = self.get_agent()
-
-        enable_cephx = objects.sysconfig.sys_config_get(
-            self.ctxt, key=ConfigKey.ENABLE_CEPHX
-        )
-        if enable_cephx:
-            logger.debug("cephx is enable")
-            agent.ceph_config_set(self.ctxt, configs)
-            self.init_admin_key()
-            self.init_bootstrap_keys("osd")
-        else:
-            logger.debug("cephx is not enable")
-        logger.debug("osd create on node")
-        osd = agent.ceph_osd_create(self.ctxt, osd, configs)
-        return osd
+            raise exc.CephException(
+                message='cephx is enable, but no bootstrap'
+                        'keyring found')
+        agent.ceph_key_write(self.ctxt, bootstrap_entity, keyring_dir,
+                             keying_name, bootstrap_key)
 
     def ceph_osd_uninstall(self, osd):
         logger.info("osd destroy on node")
@@ -1061,12 +1036,16 @@ class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
                                     "node_exporter")
 
 
-class NodeBaseTask(BaseTask):
+class NodeAgentMixin(object):
     def _get_agent(self, ctxt, node):
         client = AgentClientManager(
             ctxt, cluster_id=ctxt.cluster_id
         ).get_client(node.id)
         return client
+
+
+class NodeBaseTask(BaseTask, NodeAgentMixin):
+    pass
 
 
 class OsdUninstall(NodeBaseTask):

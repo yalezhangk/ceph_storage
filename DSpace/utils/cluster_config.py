@@ -4,6 +4,7 @@ from DSpace.i18n import _
 
 CEPH_CONFIG_DIR = "/etc/ceph/"
 CEPH_CONFIG_PATH = path.join(CEPH_CONFIG_DIR, "ceph.conf")
+CEPH_LIB_DIR = "/var/lib/ceph/"
 
 SUPPORT_CEPH_VERSION = [{
     "name": "luminous",
