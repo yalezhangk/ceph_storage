@@ -1005,6 +1005,38 @@ def user_update(context, user_id, values):
 ###############
 
 
+def taskflow_create(context, values):
+    return IMPL.taskflow_create(context, values)
+
+
+def taskflow_destroy(context, taskflow_id):
+    return IMPL.taskflow_destroy(context, taskflow_id)
+
+
+def taskflow_get(context, taskflow_id):
+    return IMPL.taskflow_get(context, taskflow_id)
+
+
+def taskflow_get_all(context, filters, marker, limit,
+                     offset, sort_keys, sort_dirs,
+                     expected_attrs=None):
+    return IMPL.taskflow_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def taskflow_get_count(context, filters):
+    return IMPL.taskflow_get_count(context, filters=filters)
+
+
+def taskflow_update(context, taskflow_id, values):
+    return IMPL.taskflow_update(context, taskflow_id, values)
+
+
+###############
+
+
 def task_create(context, values):
     return IMPL.task_create(context, values)
 

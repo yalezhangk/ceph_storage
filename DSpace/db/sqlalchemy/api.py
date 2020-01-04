@@ -4046,6 +4046,93 @@ def user_get_count(context, filters=None):
 
 
 ###############################
+def _taskflow_get_query(context, session=None):
+    return model_query(context, models.Taskflow, session=session)
+
+
+def _taskflow_get(context, taskflow_id, session=None):
+    result = _taskflow_get_query(context, session)
+    result = result.filter_by(id=taskflow_id).first()
+
+    if not result:
+        raise exception.TaskflowNotFound(taskflow_id=taskflow_id)
+
+    return result
+
+
+@require_context
+def taskflow_create(context, values):
+    taskflow_ref = models.Taskflow()
+    taskflow_ref.update(values)
+    if "cluster_id" not in values:
+        taskflow_ref.cluster_id = context.cluster_id
+    session = get_session()
+    with session.begin():
+        taskflow_ref.save(session)
+
+    return taskflow_ref
+
+
+def taskflow_destroy(context, taskflow_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.Taskflow, session=session). \
+            filter_by(id=taskflow_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+@require_context
+def taskflow_get(context, taskflow_id, expected_attrs=None):
+    return _taskflow_get(context, taskflow_id)
+
+
+@require_context
+def taskflow_get_all(context, marker=None, limit=None, sort_keys=None,
+                     sort_dirs=None, filters=None, offset=None,
+                     expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.Taskflow, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        return query.all()
+
+
+@require_context
+def taskflow_update(context, taskflow_id, values):
+    session = get_session()
+    with session.begin():
+        query = _taskflow_get_query(context, session)
+        result = query.filter_by(id=taskflow_id).update(values)
+        if not result:
+            raise exception.TaskflowNotFound(taskflow_id=taskflow_id)
+
+
+@require_context
+def taskflow_get_count(context, filters=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _taskflow_get_query(context, session)
+        query = process_filters(models.Taskflow)(query, filters)
+        return query.count()
+
+
+###############################
 
 
 def _task_get_query(context, session=None):

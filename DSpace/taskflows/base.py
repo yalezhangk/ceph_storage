@@ -13,11 +13,13 @@ from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import TaskStatus
 
 logger = logging.getLogger(__name__)
 
 
 class PrepareTask(task.Task):
+    """Deprecated"""
     def execute(self, ctxt, task_info):
         return True
 
@@ -35,6 +37,7 @@ class PrepareTask(task.Task):
 
 
 class CompleteTask(task.Task):
+    """Deprecated"""
     def execute(self, task_info):
         t = task_info.get('task')
         t.status = s_fields.TaskStatus.SUCCESS
@@ -42,14 +45,11 @@ class CompleteTask(task.Task):
 
 
 class BaseTask(task.Task):
+    """Deprecated"""
 
     def execute(self, task_info):
-        t = task_info.get('task')
-        if not t:
-            return
-        t.current = self.name
-        t.step += 1
-        t.save()
+        logger.info("BaseTask is Deprecated")
+        pass
 
 
 def create_flow(ctxt):
@@ -57,10 +57,7 @@ def create_flow(ctxt):
         ctxt,
         name="Example",
         description="Example",
-        current="",
-        step_num=0,
         status=s_fields.TaskStatus.RUNNING,
-        step=0
     )
     t.create()
     wf = lf.Flow('TaskFlow')
@@ -75,13 +72,68 @@ def create_flow(ctxt):
     logger.info("Create flow run success")
 
 
+class Task(task.Task):
+
+    def prepare_task(self, ctxt, tf):
+        t = objects.Task(ctxt, name=self.name, status=TaskStatus.RUNNING,
+                         taskflow_id=tf.id)
+        t.create()
+        self._task = t
+
+    def finish_task(self):
+        t = self._task
+        t.finish()
+
+
+class ExampleTask(Task):
+    def execute(self, ctxt, tf):
+        self.prepare_task(ctxt, tf)
+        logger.info("I am example")
+        self.finish_task()
+
+
+class Taskflow(object):
+    def __init__(self, ctxt, name=None):
+        self.ctxt = ctxt
+        if not name:
+            name = self.__class__.__name__
+        self.name = name
+
+    def _create_tf(self):
+        tf = objects.Taskflow(self.ctxt, name=self.name,
+                              status=TaskStatus.RUNNING)
+        tf.create()
+        return tf
+
+    def taskflow(self, **kwargs):
+        wf = lf.Flow('TaskFlow')
+        wf.add(ExampleTask())
+        return wf
+
+    def run(self, **kwargs):
+        tf = self._create_tf()
+        wf = self.taskflow(**kwargs)
+        store = kwargs
+        store.update({
+            "ctxt": self.ctxt,
+            'tf': tf
+        })
+        try:
+            taskflow.engines.run(wf, store=store)
+            tf.finish()
+        except Exception as e:
+            msg = str(e)
+            tf.failed(msg)
+
+
 def main():
     CONF(sys.argv[1:], project='stor',
          version=version.version_string())
     logging.setup(CONF, "stor")
     objects.register_all()
     ctxt = context.get_context()
-    create_flow(ctxt)
+    tf = Taskflow(ctxt)
+    tf.run()
 
 
 if __name__ == '__main__':

@@ -976,7 +976,6 @@ def include_flow(ctxt, t, datas):
 
 def include_clean_flow(ctxt, t):
     # update task
-    t.step_num = 4
     t.save()
 
     # crate task flow
@@ -1006,10 +1005,7 @@ def main():
         ctxt,
         name="Example",
         description="Example",
-        current="",
-        step_num=0,
         status=s_fields.TaskStatus.RUNNING,
-        step=0
     )
     t.create()
     datas = [{

@@ -35,6 +35,7 @@ def register_all():
     __import__('DSpace.objects.service')
     __import__('DSpace.objects.sysconfig')
     __import__('DSpace.objects.task')
+    __import__('DSpace.objects.taskflow')
     __import__('DSpace.objects.user')
     __import__('DSpace.objects.volume')
     __import__('DSpace.objects.volume_access_path')
