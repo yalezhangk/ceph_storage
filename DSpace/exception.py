@@ -100,7 +100,7 @@ class UserNotFound(NotFound):
 
 
 class TaskflowNotFound(NotFound):
-    message = _("Taskflow %(task_id)s could not be found.")
+    message = _("Taskflow %(taskflow_id)s could not be found.")
 
 
 class TaskNotFound(NotFound):
