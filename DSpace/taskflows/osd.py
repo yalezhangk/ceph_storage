@@ -171,3 +171,96 @@ class OsdCreateTaskflow(Taskflow):
         wf.add(OsdActive())
         wf.add(OsdWaitUp())
         return wf
+
+
+class OsdMarkOut(Task):
+    def execute(self, ctxt, osd, tf):
+        logger.info("%s osd mark out", osd.osd_name)
+        self.prepare_task(ctxt, tf)
+        ceph_client = CephTask(ctxt)
+        logger.info("out osd %s from cluster", osd.osd_name)
+        ceph_client.mark_osds_out(osd.osd_name)
+        self.finish_task()
+
+
+class OsdClearData(Task, NodeAgentMixin):
+    def execute(self, ctxt, osd, tf):
+        logger.info("%s osd mark out", osd.osd_name)
+        self.prepare_task(ctxt, tf)
+        agent = self._get_agent(ctxt, osd.node)
+        osd = agent.ceph_osd_destroy(ctxt, osd)
+        self.finish_task()
+
+
+class OsdRemoveFromCluster(Task):
+    def execute(self, ctxt, osd, tf):
+        logger.info("%s osd mark out", osd.osd_name)
+        self.prepare_task(ctxt, tf)
+        ceph_client = CephTask(ctxt)
+        logger.info("remove osd %s from cluster", osd.osd_name)
+        ceph_client.osd_remove_from_cluster(osd.osd_name)
+        self.finish_task()
+
+
+class OsdClearDB(Task):
+    def _config_remove(self, ctxt, osd):
+        logger.debug("osd clear config")
+        osd_cfgs = objects.CephConfigList.get_all(
+            ctxt, filters={'group': "osd.%s" % osd.osd_id}
+        )
+        for cfg in osd_cfgs:
+            cfg.destroy()
+
+    def _clear_partition_role(self, ctxt, osd):
+        logger.debug("osd clear partition role")
+        osd.disk.status = s_fields.DiskStatus.AVAILABLE
+        osd.disk.save()
+
+        accelerate_disk = []
+        if osd.db_partition_id:
+            osd.db_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.db_partition.save()
+            accelerate_disk.append(osd.db_partition.disk_id)
+        if osd.cache_partition_id:
+            osd.cache_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.cache_partition.save()
+            accelerate_disk.append(osd.cache_partition.disk_id)
+        if osd.journal_partition_id:
+            osd.journal_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.journal_partition.save()
+            accelerate_disk.append(osd.journal_partition.disk_id)
+        if osd.wal_partition_id:
+            osd.wal_partition.status = s_fields.DiskStatus.AVAILABLE
+            osd.wal_partition.save()
+            accelerate_disk.append(osd.wal_partition.disk_id)
+        accelerate_disk = set(accelerate_disk)
+        if accelerate_disk:
+            ac_disk = objects.DiskList.get_all(
+                ctxt, filters={'id': accelerate_disk})
+            for disk in ac_disk:
+                disk.status = s_fields.DiskStatus.AVAILABLE
+                disk.save()
+
+    def execute(self, ctxt, osd, tf):
+        logger.info("%s osd clear db", osd.osd_name)
+        self.prepare_task(ctxt, tf)
+        self._config_remove(ctxt, osd)
+        self._clear_partition_role(ctxt, osd)
+        self.finish_task()
+
+
+class OsdDeleteTaskflow(Taskflow):
+    """Osd delete
+
+    mark osd out
+    deactive and clean disk
+    remove osd from cluster
+    clear db update
+    """
+    def taskflow(self, **kwargs):
+        wf = lf.Flow('OsdDeleteTaskflow')
+        wf.add(OsdMarkOut())
+        wf.add(OsdClearData())
+        wf.add(OsdRemoveFromCluster())
+        wf.add(OsdClearDB())
+        return wf

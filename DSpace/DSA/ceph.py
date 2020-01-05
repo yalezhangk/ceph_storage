@@ -226,15 +226,16 @@ class CephHandler(AgentBaseHandler):
 
     def ceph_osd_destroy(self, context, osd):
         logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
-        # clear config
-        self.ceph_config_clear_group(context, osd.osd_name)
         client = self._get_ssh_executor()
         # clean osd
         self._clean_osd(context, osd)
+        logger.info("osd %s(osd.%s), service disable", osd.id, osd.osd_id)
         service_tool = ServiceTool(client)
         osd_service = "ceph-osd@{}".format(osd.osd_id)
         service_tool.disable(osd_service)
-        logger.info("osd %s(osd.%s), service disable", osd.id, osd.osd_id)
+        # clear config
+        logger.info("osd %s(osd.%s), config clear", osd.id, osd.osd_id)
+        self.ceph_config_clear_group(context, osd.osd_name)
         logger.info("osd %s(osd.%s), remove success", osd.id, osd.osd_id)
         return osd
 

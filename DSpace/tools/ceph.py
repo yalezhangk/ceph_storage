@@ -237,8 +237,14 @@ class CephTool(ToolBase):
 
     @retry(RunCommandError)
     def osd_zap(self, diskname):
+        if not diskname:
+            logger.warning("Device is None")
+            return True
         cmd = ["dspace-disk", "zap", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
+        if "No such file or directory" in stderr:
+            logger.warning("Device %s not found", diskname)
+            return True
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)

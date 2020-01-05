@@ -405,12 +405,6 @@ class NodeTask(object):
         agent.ceph_key_write(self.ctxt, bootstrap_entity, keyring_dir,
                              keying_name, bootstrap_key)
 
-    def ceph_osd_uninstall(self, osd):
-        logger.info("osd destroy on node")
-        agent = self.get_agent()
-        osd = agent.ceph_osd_destroy(self.ctxt, osd)
-        return osd
-
     def ceph_rgw_package_install(self):
         logger.info("Install radosgw package on node")
         agent = self.get_agent()

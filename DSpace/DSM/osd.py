@@ -16,6 +16,7 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
 from DSpace.taskflows.osd import OsdCreateTaskflow
+from DSpace.taskflows.osd import OsdDeleteTaskflow
 from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
@@ -146,9 +147,9 @@ class OsdHandler(AdminBaseHandler):
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
             logger.info("osd.%s create error", osd.osd_id)
-            msg = _("create error: osd.{}").format(osd.osd_id)
-            op_status = 'CREATE_ERROR'
             err_msg = str(e)
+            msg = _("create osd.{} error: {}").format(osd.osd_id, err_msg)
+            op_status = 'CREATE_ERROR'
 
         self.finish_action(begin_action, osd.id, osd.osd_name,
                            osd, osd.status, err_msg=err_msg)
@@ -300,73 +301,24 @@ class OsdHandler(AdminBaseHandler):
 
         return osd
 
-    def _osd_config_remove(self, ctxt, osd):
-        logger.debug("osd clear config")
-        osd_cfgs = objects.CephConfigList.get_all(
-            ctxt, filters={'group': "osd.%s" % osd.osd_id}
-        )
-        for cfg in osd_cfgs:
-            cfg.destroy()
-
-    def _osd_clear_partition_role(self, ctxt, osd):
-        logger.debug("osd clear partition role")
-        osd.disk.status = s_fields.DiskStatus.AVAILABLE
-        osd.disk.save()
-
-        accelerate_disk = []
-        if osd.db_partition_id:
-            osd.db_partition.status = s_fields.DiskStatus.AVAILABLE
-            osd.db_partition.save()
-            accelerate_disk.append(osd.db_partition.disk_id)
-        if osd.cache_partition_id:
-            osd.cache_partition.status = s_fields.DiskStatus.AVAILABLE
-            osd.cache_partition.save()
-            accelerate_disk.append(osd.cache_partition.disk_id)
-        if osd.journal_partition_id:
-            osd.journal_partition.status = s_fields.DiskStatus.AVAILABLE
-            osd.journal_partition.save()
-            accelerate_disk.append(osd.journal_partition.disk_id)
-        if osd.wal_partition_id:
-            osd.wal_partition.status = s_fields.DiskStatus.AVAILABLE
-            osd.wal_partition.save()
-            accelerate_disk.append(osd.wal_partition.disk_id)
-        accelerate_disk = set(accelerate_disk)
-        if accelerate_disk:
-            ac_disk = objects.DiskList.get_all(
-                ctxt, filters={'id': accelerate_disk})
-            for disk in ac_disk:
-                disk.status = s_fields.DiskStatus.AVAILABLE
-                disk.save()
-
     def _osd_delete(self, ctxt, node, osd, begin_action=None):
         logger.info("trying to delete osd.%s", osd.osd_id)
         try:
-            ceph_client = CephTask(ctxt)
-            logger.info("out osd %s from cluster", osd.osd_name)
-            ceph_client.mark_osds_out(osd.osd_name)
-
-            logger.info("destroy osd %s from node", osd.osd_name)
-            task = NodeTask(ctxt, node)
-            osd = task.ceph_osd_uninstall(osd)
-
-            logger.info("remove osd %s from cluster", osd.osd_name)
-            ceph_client.osd_remove_from_cluster(osd.osd_name)
-
-            self._osd_config_remove(ctxt, osd)
-            self._osd_clear_partition_role(ctxt, osd)
+            tf = OsdDeleteTaskflow(ctxt)
+            tf.run(osd=osd)
             osd.destroy()
             msg = _("delete osd.{} success").format(osd.osd_id)
             logger.info("delete osd.%s success", osd.osd_id)
             status = 'success'
             op_status = "DELETE_SUCCESS"
             err_msg = None
-        except exception.StorException as e:
+        except Exception as e:
             logger.error("delete osd.%s error: %s", osd.osd_id, e)
             status = s_fields.OsdStatus.ERROR
             osd.status = status
             osd.save()
             err_msg = str(e)
-            msg = _("delete osd.{} error").format(osd.osd_id)
+            msg = _("delete osd.{} error: {}").format(osd.osd_id, err_msg)
             op_status = "DELETE_ERROR"
         logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
 
