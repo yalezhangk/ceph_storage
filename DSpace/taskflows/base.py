@@ -176,7 +176,7 @@ class Taskflow(object):
         If your task does not allow parallel execution,
         you need to call require_lock.
         """
-        return task_manager.is_name_exists()
+        return task_manager.is_name_exists(self.name)
 
     def require_lock(self, lock_name=None, blocking=True):
         """Require lock
