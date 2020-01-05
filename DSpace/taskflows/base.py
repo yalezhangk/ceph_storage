@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
+import time
+from concurrent import futures
 
 import six
 import taskflow.engines
@@ -15,8 +17,49 @@ from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import TaskStatus
+from DSpace.utils.coordination import COORDINATOR
 
 logger = logging.getLogger(__name__)
+
+
+class TaskFlowManager(object):
+    _tasks = {}
+    _names = {}
+
+    def add(self, tf):
+        logger.info("taskflow add %s", tf)
+        self._tasks[tf.id] = tf
+        name = tf.name
+        if name not in self._names:
+            self._names[name] = {}
+        self._names[name][tf.id] = tf
+
+    def pop(self, tf):
+        logger.info("taskflow pop %s", tf)
+        if tf.id not in self._tasks:
+            logger.warning("taskflow %s(%s) not found in id list",
+                           tf.name, tf.id)
+        else:
+            self._tasks.pop(tf.id, None)
+        name = tf.name
+        if name not in self._names:
+            logger.warning("taskflow %s not found in name list", name)
+        elif tf.id not in self._names[name]:
+            logger.warning("taskflow %s(%s) not found in name list",
+                           tf.name, tf.id)
+        else:
+            self._names[name].pop(tf.id, None)
+
+    def is_name_exists(self, taskflow_name):
+        if taskflow_name not in self._names:
+            return False
+        elif len(self._names[taskflow_name]) == 0:
+            return False
+        else:
+            return True
+
+
+task_manager = TaskFlowManager()
 
 
 class PrepareTask(task.Task):
@@ -74,9 +117,15 @@ def create_flow(ctxt):
 
 
 class Task(task.Task):
+    def _get_task_name(self):
+        name = self.name
+        if '.' in name:
+            name = name.split(".")[-1]
+        return name
 
     def prepare_task(self, ctxt, tf):
-        t = objects.Task(ctxt, name=self.name, status=TaskStatus.RUNNING,
+        name = self._get_task_name()
+        t = objects.Task(ctxt, name=name, status=TaskStatus.RUNNING,
                          taskflow_id=tf.id)
         t.create()
         self._task = t
@@ -107,6 +156,8 @@ class Taskflow(object):
         if not name:
             name = self.__class__.__name__
         self.name = name
+        self.coordinator = COORDINATOR
+        self.lock = None
 
     def _create_tf(self):
         tf = objects.Taskflow(self.ctxt, name=self.name,
@@ -119,6 +170,29 @@ class Taskflow(object):
         wf.add(ExampleTask())
         return wf
 
+    def check_exists(self):
+        """Check Taskflow exists
+
+        If your task does not allow parallel execution,
+        you need to call require_lock.
+        """
+        return task_manager.is_name_exists()
+
+    def require_lock(self, lock_name=None, blocking=True):
+        """Require lock
+
+        If your task does not allow parallel execution,
+        you need to call this first.
+        """
+        lock_name = lock_name or self.name
+        self.lock = self.coordinator.get_lock(lock_name)
+        return self.lock.acquire(blocking=blocking)
+
+    def release_lock(self):
+        if self.lock:
+            self.lock.release()
+            self.lock = None
+
     def run(self, **kwargs):
         tf = self._create_tf()
         wf = self.taskflow(**kwargs)
@@ -128,12 +202,45 @@ class Taskflow(object):
             'tf': tf
         })
         try:
+            task_manager.add(tf)
             taskflow.engines.run(wf, store=store)
             tf.finish()
         except Exception as e:
             msg = str(e)
             tf.failed(msg)
             raise e
+        finally:
+            task_manager.pop(tf)
+            self.release_lock()
+
+
+##################
+# for test
+
+
+class SleepTask(Task):
+    def execute(self, ctxt, tf):
+        self.prepare_task(ctxt, tf)
+        logger.info("Before sleep")
+        time.sleep(10)
+        logger.info("After sleep")
+        self.finish_task()
+
+
+class TestTaskflow(Taskflow):
+    def taskflow(self, **kwargs):
+        logger.info("taskflow build")
+        wf = lf.Flow('TestTaskflow')
+        wf.add(SleepTask())
+        return wf
+
+
+def run_task(ctxt):
+    logger.info("task new")
+    t1 = TestTaskflow(ctxt)
+    lock = t1.require_lock()
+    logger.info("lock: %s", lock)
+    t1.run()
 
 
 def main():
@@ -141,9 +248,15 @@ def main():
          version=version.version_string())
     logging.setup(CONF, "stor")
     objects.register_all()
+    COORDINATOR.start()
     ctxt = context.get_context()
-    tf = Taskflow(ctxt)
-    tf.run()
+    executor = futures.ThreadPoolExecutor(
+        max_workers=CONF.task_workers)
+    executor.submit(run_task, ctxt)
+    executor.submit(run_task, ctxt)
+    executor.shutdown(wait=True)
+    # time.sleep(19)
+    logger.info("shutdown")
 
 
 if __name__ == '__main__':
