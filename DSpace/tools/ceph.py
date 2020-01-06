@@ -12,9 +12,9 @@ from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
 from DSpace.exception import DeviceOrResourceBusy
+from DSpace.exception import PermissionDenied
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
-from DSpace.exception import PermissionDenied
 from DSpace.i18n import _
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
