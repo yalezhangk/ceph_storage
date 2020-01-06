@@ -11,6 +11,7 @@ from oslo_utils import encodeutils
 from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
+from DSpace.exception import DeviceOrResourceBusy
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
 from DSpace.i18n import _
@@ -240,12 +241,13 @@ class CephTool(ToolBase):
         if not diskname:
             logger.warning("Device is None")
             return True
-        # TODO: Device or resource busy
         cmd = ["dspace-disk", "zap", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if "No such file or directory" in stderr:
             logger.warning("Device %s not found", diskname)
             return True
+        if "Device or resource busy" in stderr:
+            raise DeviceOrResourceBusy()
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)

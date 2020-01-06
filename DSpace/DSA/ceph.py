@@ -17,6 +17,7 @@ from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
 from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
+from DSpace.utils import retry
 from DSpace.utils.cluster_config import CEPH_CONFIG_PATH
 from DSpace.utils.coordination import synchronized
 
@@ -123,6 +124,7 @@ class CephHandler(AgentBaseHandler):
         file_tool.rm("/etc/ceph/")
         return True
 
+    @retry(exception.DeviceOrResourceBusy)
     def _clean_osd(self, context, osd):
         logger.info("osd %s(osd.%s), clean", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
