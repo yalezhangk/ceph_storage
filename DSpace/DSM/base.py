@@ -81,30 +81,11 @@ class AdminBaseHandler(object):
                       resource_name=None, after_obj=None, status=None,
                       action=None, err_msg=None, diff_data=None,
                       *args, **kwargs):
-        if isinstance(after_obj, StorObject):
-            after_data = json.dumps(after_obj.to_dict())
-        else:
-            after_data = json.dumps(after_obj)
-        finish_data = {
-            'resource_id': resource_id,
-            'resource_name': resource_name,
-            'after_data': (after_data if after_data else None),
-            'status': 'success',
-            'finish_time': timeutils.utcnow(),
-            'err_msg': err_msg,
-            'diff_data': diff_data
-        }
-        if action:
-            finish_data.update({'action': action})
-        if status:
-            if status in ['active', 'success', 'available', 'deleted']:
-                finish_data.update({'status': 'success'})
-            else:
-                finish_data.update({'status': 'fail'})
-        begin_action.update(finish_data)
-        logger.debug('finish action, resource_name:%s, action:%s, status:%s',
-                     resource_name, action, finish_data['status'])
-        begin_action.save()
+        begin_action.finish_action(
+            resource_id=resource_id, resource_name=resource_name,
+            after_obj=after_obj, status=status, action=action,
+            err_msg=err_msg, diff_data=diff_data,
+            *args, **kwargs)
 
     def get_ceph_cluster_status(self, ctxt):
         cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)

@@ -5,6 +5,7 @@ from taskflow.patterns import linear_flow as lf
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.base import Task
@@ -178,6 +179,11 @@ class OsdTaskflowMixin(object):
         else:
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
+        err_msg = _("DSpace manager service stoped.")
+        begin_action = objects.ActionLog.get_by_id(self.ctxt, tf.action_log_id)
+        begin_action.finish_action(
+            osd.id, osd.osd_name,
+            osd, osd.status, err_msg=err_msg)
 
 
 @TaskflowRegistry.register

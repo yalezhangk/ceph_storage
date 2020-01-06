@@ -309,7 +309,6 @@ class Taskflow(object):
         """Mark a taskflow failed"""
         tf = self.tf
         tf.failed(_("DSpace manager service stoped."))
-        # TODO: mark action log to failed
 
 
 ##################
