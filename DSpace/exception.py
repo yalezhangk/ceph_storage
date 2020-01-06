@@ -99,6 +99,14 @@ class UserNotFound(NotFound):
     message = _("User %(user_id)s could not be found.")
 
 
+class TaskflowNotFound(NotFound):
+    message = _("Taskflow %(taskflow_id)s could not be found.")
+
+
+class TaskNotFound(NotFound):
+    message = _("Task %(task_id)s could not be found.")
+
+
 class SysConfigNotFound(NotFound):
     message = _("Sys Config %(sys_config_id)s could not be found.")
 

@@ -13,16 +13,17 @@ from DSpace.objects.fields import TaskStatus
 
 
 @base.StorObjectRegistry.register
-class Task(base.StorPersistentObject, base.StorObject,
-           base.StorObjectDictCompat, base.StorComparableObject):
+class Taskflow(base.StorPersistentObject, base.StorObject,
+               base.StorObjectDictCompat, base.StorComparableObject):
 
     fields = {
         'id': fields.IntegerField(),
         'name': fields.StringField(),
+        'description': fields.StringField(nullable=True),
         'status': s_fields.TaskStatusField(
             default=s_fields.TaskStatus.RUNNING),
+        'reason': fields.StringField(nullable=True),
         'finished_at': fields.DateTimeField(nullable=True),
-        'taskflow_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(nullable=True),
     }
 
@@ -32,49 +33,50 @@ class Task(base.StorPersistentObject, base.StorObject,
                                               reason='already created')
         updates = self.stor_obj_get_changes()
 
-        db_task = db.task_create(self._context, updates)
-        self._from_db_object(self._context, self, db_task)
+        db_taskflow = db.taskflow_create(self._context, updates)
+        self._from_db_object(self._context, self, db_taskflow)
+
+    def save(self):
+        updates = self.stor_obj_get_changes()
+        if updates:
+            db.taskflow_update(self._context, self.id, updates)
+
+        self.obj_reset_changes()
 
     def finish(self):
         self.status = TaskStatus.SUCCESS
         self.finished_at = timeutils.utcnow()
         self.save()
 
-    def failed(self):
+    def failed(self, reason):
         self.status = TaskStatus.FAILED
+        self.reason = reason
         self.finished_at = timeutils.utcnow()
         self.save()
 
-    def save(self):
-        updates = self.stor_obj_get_changes()
-        if updates:
-            db.task_update(self._context, self.id, updates)
-
-        self.obj_reset_changes()
-
     def destroy(self):
-        updated_values = db.task_destroy(self._context, self.id)
+        updated_values = db.taskflow_destroy(self._context, self.id)
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
 
 @base.StorObjectRegistry.register
-class TaskList(base.ObjectListBase, base.StorObject):
+class TaskflowList(base.ObjectListBase, base.StorObject):
 
     fields = {
-        'objects': fields.ListOfObjectsField('Task'),
+        'objects': fields.ListOfObjectsField('Taskflow'),
     }
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        tasks = db.task_get_all(
+        taskflows = db.taskflow_get_all(
             context, filters, marker, limit, offset,
             sort_keys, sort_dirs)
-        return base.obj_make_list(context, cls(context), objects.Task,
-                                  tasks)
+        return base.obj_make_list(context, cls(context), objects.Taskflow,
+                                  taskflows)
 
     @classmethod
     def get_count(cls, context, filters=None):
-        count = db.task_get_count(context, filters)
+        count = db.taskflow_get_count(context, filters)
         return count

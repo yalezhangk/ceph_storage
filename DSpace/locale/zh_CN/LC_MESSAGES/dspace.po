@@ -33,6 +33,12 @@ msgstr "资源找不到"
 msgid "User %(user_id)s could not be found."
 msgstr "用户 %(user_id)s 未找到"
 
+msgid "Taskflow %(taskflow_id)s could not be found."
+msgstr "任务 %(taskflow_id)s 未找到"
+
+msgid "Task %(task_id)s could not be found."
+msgstr "子任务 %(task_id)s 未找到"
+
 msgid "Sys Config %(sys_config_id)s could not be found."
 msgstr "系统配置 %(sys_config_id)s 未找到"
 
@@ -765,8 +771,8 @@ msgstr "创建硬盘成功：osd.{}"
 msgid "create error: osd.{} is offline"
 msgstr "创建硬盘失败：osd.{} 离线"
 
-msgid "create error: osd.{}"
-msgstr "创建硬盘失败：osd.{}"
+msgid "create osd.{} error: {}"
+msgstr "创建硬osd.{}盘失败：{}"
 
 msgid "Disk %s not available"
 msgstr "磁盘 %s 不可用"
@@ -795,8 +801,8 @@ msgstr "最大硬盘数为 %s"
 msgid "delete osd.{} success"
 msgstr "删除硬盘成功：osd.{}"
 
-msgid "delete osd.{} error"
-msgstr "删除硬盘失败：osd.{}"
+msgid "delete osd.{} error: {}"
+msgstr "删除硬盘osd.{}失败：{}"
 
 msgid "Only available and error osd can be delete"
 msgstr "只能删除可用与错误的硬盘"
@@ -827,6 +833,9 @@ msgstr "该物理盘不是加速盘"
 
 msgid "osd.%s is replacing, please wait"
 msgstr "osd.%s正在换盘中, 请稍等"
+
+msgid "create error: osd.{}"
+msgstr "创建硬盘失败：osd.{}"
 
 msgid "Osd status should be REPLACE_PREPARED"
 msgstr "osd 未清理完成"
@@ -1186,6 +1195,9 @@ msgstr "业务网络ip未找到"
 
 msgid "admin_ip,cluster_ip,public_ip is required"
 msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
+
+msgid "osd id must int type"
+msgstr "osd id 必须为数字"
 
 msgid "old style configuration can use only dictionary or memcached backends"
 msgstr "旧样式的配置只能使用字典或缓存后端"

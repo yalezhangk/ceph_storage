@@ -536,17 +536,24 @@ class User(BASE, StorBase):
     current_cluster_id = Column(String(36), nullable=True)
 
 
-class Task(BASE, StorBase):
-    __tablename__ = 'tasks'
+class Taskflow(BASE, StorBase):
+    __tablename__ = 'taskflows'
     id = Column(Integer, primary_key=True)
     name = Column(String(64))
     description = Column(String(255))
     status = Column(String(32))
-    current = Column(String(255))
     reason = Column(Text)
-    step = Column(Integer)
-    step_num = Column(Integer)
     finished_at = Column(DateTime)
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class Task(BASE, StorBase):
+    __tablename__ = 'tasks'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64))
+    status = Column(String(32))
+    finished_at = Column(DateTime)
+    taskflow_id = Column(Integer, ForeignKey('taskflows.id'))
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
 
 

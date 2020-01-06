@@ -4,6 +4,7 @@ import configparser
 import logging
 import time
 from io import StringIO
+from os import path
 
 import six
 
@@ -32,8 +33,9 @@ class CephHandler(AgentBaseHandler):
         file_tool.write("/etc/ceph/ceph.conf", content)
         return True
 
-    def ceph_key_write(self, context, entity, keyring_path, content):
-        logger.info("write ceph keys to %s", keyring_path)
+    def ceph_key_write(self, context, entity, keyring_dir, keyring_name,
+                       content):
+        logger.info("write ceph keys to %s/%s", keyring_dir, keyring_name)
         configer = configparser.ConfigParser()
         configer[entity] = {}
         configer[entity]["key"] = content
@@ -41,7 +43,10 @@ class CephHandler(AgentBaseHandler):
         configer.write(buf)
         client = self._get_executor()
         file_tool = FileTool(client)
+        file_tool.mkdir(keyring_dir)
+        keyring_path = path.join(keyring_dir, keyring_name)
         file_tool.write(keyring_path, buf.getvalue())
+        file_tool.chown(keyring_path, user='ceph', group='ceph')
 
     def ceph_prepare_disk(self, context, osd):
         kwargs = {
@@ -221,15 +226,16 @@ class CephHandler(AgentBaseHandler):
 
     def ceph_osd_destroy(self, context, osd):
         logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
-        # clear config
-        self.ceph_config_clear_group(context, osd.osd_name)
         client = self._get_ssh_executor()
         # clean osd
         self._clean_osd(context, osd)
+        logger.info("osd %s(osd.%s), service disable", osd.id, osd.osd_id)
         service_tool = ServiceTool(client)
         osd_service = "ceph-osd@{}".format(osd.osd_id)
         service_tool.disable(osd_service)
-        logger.info("osd %s(osd.%s), service disable", osd.id, osd.osd_id)
+        # clear config
+        logger.info("osd %s(osd.%s), config clear", osd.id, osd.osd_id)
+        self.ceph_config_clear_group(context, osd.osd_name)
         logger.info("osd %s(osd.%s), remove success", osd.id, osd.osd_id)
         return osd
 

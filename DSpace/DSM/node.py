@@ -960,10 +960,7 @@ class NodeHandler(AdminBaseHandler):
             ctxt,
             name="Import Cluster",
             description="Import Cluster",
-            current="",
-            step_num=0,
             status=s_fields.TaskStatus.RUNNING,
-            step=0
         )
         t.create()
         self.task_submit(self._nodes_inclusion, ctxt, t, datas, begin_action)

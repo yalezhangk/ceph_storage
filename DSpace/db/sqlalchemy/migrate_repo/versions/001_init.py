@@ -623,8 +623,8 @@ def define_tables(meta):
         mysql_charset='utf8'
     )
 
-    tasks = Table(
-        'tasks', meta,
+    taskflows = Table(
+        'taskflows', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
@@ -633,11 +633,24 @@ def define_tables(meta):
         Column('name', String(64)),
         Column('description', String(255)),
         Column('status', String(32)),
-        Column('current', String(255)),
         Column('reason', Text),
-        Column('step', Integer),
-        Column('step_num', Integer),
         Column('finished_at', DateTime),
+        Column('cluster_id', String(36), ForeignKey('clusters.id')),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    tasks = Table(
+        'tasks', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('name', String(64)),
+        Column('status', String(32)),
+        Column('finished_at', DateTime),
+        Column('taskflow_id', Integer, ForeignKey('taskflows.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
@@ -727,7 +740,8 @@ def define_tables(meta):
             sysconf, ceph_config, license_files, log_files, alert_rules,
             email_groups, alert_groups, alert_group_relate_rule,
             alert_group_relate_email, alert_logs, action_logs, networks,
-            services, users, tasks, radosgw_routers, radosgws, router_services]
+            services, users, taskflows, tasks, radosgw_routers, radosgws,
+            router_services]
 
 
 def upgrade(migrate_engine):
