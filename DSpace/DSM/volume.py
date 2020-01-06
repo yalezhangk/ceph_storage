@@ -36,10 +36,11 @@ class VolumeHandler(AdminBaseHandler):
         pool_size = self.pool_fact_total_size_bytes(ctxt, pool_id)
         size = data.get('size')
         if not pool_size.get('is_avaible'):
-            raise exception.InvalidInput(reason='current pool size is fulled')
-        if size > pool_size.get('size'):
             raise exception.InvalidInput(
-                reason='size can not over current pool_total_size')
+                reason=_('current pool size is fulled'))
+        if size > pool_size.get('size', 0):
+            raise exception.InvalidInput(
+                reason=_('size can not over current pool_total_size'))
 
     def _check_name_exist(self, ctxt, data):
         display_name = data.get('display_name')
@@ -57,6 +58,7 @@ class VolumeHandler(AdminBaseHandler):
         batch_create = data.get('batch_create')
         if batch_create:
             # 批量创建
+            logger.debug('begin batch_create volume')
             prefix_name = data.get('display_name')
             number = data.get('number')
             volumes = []
@@ -81,11 +83,13 @@ class VolumeHandler(AdminBaseHandler):
                             volume_data['display_name'])
             return volumes
         else:
+            display_name = data.get('display_name')
+            logger.debug('begin create volume, display_name: %s', display_name)
             volume_data = {
                 'volume_name': "volume-{}".format(str(uuid.uuid4())),
                 'size': data.get('size'),
                 'status': s_fields.VolumeStatus.CREATING,
-                'display_name': data.get('display_name'),
+                'display_name': display_name,
                 'display_description': data.get('display_description'),
                 'pool_id': data.get('pool_id'),
                 'cluster_id': ctxt.cluster_id
@@ -109,24 +113,26 @@ class VolumeHandler(AdminBaseHandler):
             ceph_client.rbd_create(pool.pool_name, volume_name, size)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_create success,volume_name=%s', volume_name)
-            msg = _("create volume success")
+            op_status = "CREATE_SUCCESS"
+            msg = _("create volume success: %s") % volume.display_name
             err_msg = None
         except exception.StorException as e:
-            logger.error('volume_create error,volume_name=%s,reason:%s',
-                         volume, str(e))
+            logger.exception('volume_create error,volume_name=%s,reason:%s',
+                             volume_name, str(e))
             status = s_fields.VolumeStatus.ERROR
-            msg = _("create volume error")
+            op_status = "CREATE_ERROR"
+            msg = _("create volume error: %s") % volume.display_name
             err_msg = str(e)
         volume.status = status
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status,
-                           err_msg=err_msg)
+                           volume, status, err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, "CREATED", msg)
+        wb_client.send_message(ctxt, volume, op_status, msg)
 
     def volume_update(self, ctxt, volume_id, data):
+        logger.debug('volume begin update display_name')
         volume = self.volume_get(ctxt, volume_id)
         display_name = data.get('display_name')
         if volume.display_name == display_name:
@@ -134,12 +140,11 @@ class VolumeHandler(AdminBaseHandler):
         else:
             self._check_name_exist(ctxt, data)
         begin_action = self.begin_action(ctxt, AllResourceType.VOLUME,
-                                         AllActionType.UPDATE)
+                                         AllActionType.UPDATE, volume)
         volume.display_name = display_name
         volume.save()
         logger.info('volume update success,volume_name=%s', display_name)
-        self.finish_action(begin_action, volume_id, display_name,
-                           objects.json_encode(volume))
+        self.finish_action(begin_action, volume_id, display_name, volume)
         return volume
 
     def _check_volume_status(self, volume):
@@ -153,20 +158,21 @@ class VolumeHandler(AdminBaseHandler):
         has_snap = objects.VolumeSnapshotList.get_all(ctxt, filters={
             'volume_id': volume.id})
         if has_snap:
-            raise exception.InvalidInput(
-                reason=_('The volume {} has snapshot').format(volume.name))
+            raise exception.InvalidInput(reason=_(
+                'The volume {} has snapshot').format(volume.display_name))
         if volume.volume_access_path:
             raise exception.InvalidInput(
                 reason=_('The volume {} has related access_path').format(
-                    volume.name))
+                    volume.display_name))
 
     def volume_delete(self, ctxt, volume_id):
         expected_attrs = ['volume_access_path']
         volume = objects.Volume.get_by_id(
             ctxt, volume_id, expected_attrs=expected_attrs)
+        logger.debug('volume begin delete: %s', volume.display_name)
         self._verify_volume_del(ctxt, volume)
         begin_action = self.begin_action(
-            ctxt, AllResourceType.VOLUME, AllActionType.DELETE)
+            ctxt, AllResourceType.VOLUME, AllActionType.DELETE, volume)
         volume.status = s_fields.VolumeStatus.DELETING
         volume.save()
         self.task_submit(self._volume_delete, ctxt, volume, begin_action)
@@ -181,36 +187,38 @@ class VolumeHandler(AdminBaseHandler):
             ceph_client = CephTask(ctxt)
             ceph_client.rbd_delete(pool.pool_name, volume_name)
             logger.info('volume_delete success,volume_name=%s', volume_name)
-            msg = _("delete volume success")
+            msg = _("delete volume success: %s") % volume.display_name
             status = 'success'
             volume.destroy()
+            op_status = "DELETE_SUCCESS"
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_delete error,volume_name=%s,reason:%s',
                          volume_name, str(e))
-            msg = _("delete volume error")
+            msg = _("delete volume error: %s") % volume.display_name
             volume.status = status
             volume.save()
+            op_status = "DELETE_ERROR"
             err_msg = str(e)
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status,
-                           err_msg=err_msg)
+                           volume, status, err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, 'DELETED', msg)
+        wb_client.send_message(ctxt, volume, op_status, msg)
 
     def volume_extend(self, ctxt, volume_id, data):
         # 扩容
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        logger.debug('volume: %s begin extend', volume.display_name)
         self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         data.update({'pool_id': volume.pool_id})
         self._check_volume_size(ctxt, data)
         begin_action = self.begin_action(
-            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_EXTEND)
+            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_EXTEND, volume)
         extra_data = {'old_size': volume.size}
         volume.size = data.get('size')
         volume.status = s_fields.VolumeStatus.EXTENDING
@@ -226,47 +234,55 @@ class VolumeHandler(AdminBaseHandler):
         volume_name = volume.volume_name
         size = volume.size
         old_size = extra_data.get('old_size')
+        if size > old_size:
+            op_action = 'VOLUME_EXTEND'
+            op_msg = _('volume extend')
+        else:
+            op_action = 'VOLUME_SHRINK'
+            op_msg = _('volume shrink')
         try:
             ceph_client = CephTask(ctxt)
             ceph_client.rbd_resize(pool.pool_name, volume_name, size)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_resize success,volume_name=%s, size=%s',
                         volume_name, size)
+            op_status = '{}_SUCCESS'.format(op_action)
             now_size = size
-            msg = _("volume resize success")
+            msg = _('{} success: {}').format(op_msg, volume.display_name)
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_resize error,volume_name=%s,reason:%s',
                          volume_name, str(e))
+            op_status = '{}_ERROR'.format(op_action)
             now_size = old_size
-            msg = _("volume resize error")
+            msg = _('{} error: {}').format(op_msg, volume.display_name)
             err_msg = str(e)
         volume.status = status
         volume.size = now_size
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status,
-                           err_msg=err_msg)
+                           volume, status, err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, 'VOLUME_RESIZE', msg)
+        wb_client.send_message(ctxt, volume, op_status, msg)
 
     def volume_shrink(self, ctxt, volume_id, data):
         # 缩容
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        logger.debug('volume: %s begin shrink', volume.display_name)
         self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         data.update({'pool_id': volume.pool_id})
         # size can not more than pool size
         self._check_volume_size(ctxt, data)
         begin_action = self.begin_action(
-            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_SHRINK)
+            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_SHRINK, volume)
         extra_data = {'old_size': volume.size}
         volume.size = data.get('size')
-        volume.status = s_fields.VolumeStatus.SHRINK
+        volume.status = s_fields.VolumeStatus.SHRINKING
         volume.save()
         self.task_submit(self._volume_resize, ctxt, volume, extra_data,
                          begin_action)
@@ -280,6 +296,7 @@ class VolumeHandler(AdminBaseHandler):
                                           expected_attrs=expected_attrs)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        logger.debug('volume: %s begin rollback', volume.display_name)
         self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         snap_id = data.get('volume_snapshot_id')
@@ -288,14 +305,17 @@ class VolumeHandler(AdminBaseHandler):
             raise exception.VolumeSnapshotNotFound(volume_snapshot_id=snap_id)
         if snap.volume_id != int(volume_id):
             raise exception.InvalidInput(_(
-                'The volume_id {} has not the snap_id {}').format(
-                volume_id, snap_id))
+                'The volume: {} has not the snap: {}').format(
+                volume.display_name, snap.display_name))
         if volume.volume_access_path:
             raise exception.InvalidInput(_(
-                'The volume {} has access_path, can not rollback').format(
-                volume_id, snap_id))
+                'The volume: {} has access_path, can not rollback').format(
+                volume.display_name))
         begin_action = self.begin_action(
-            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_ROLLBACK)
+            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_ROLLBACK,
+            volume)
+        volume.status = s_fields.VolumeStatus.ROLLBACKING
+        volume.save()
         extra_data = {'snap_name': snap.uuid}
         self.task_submit(self._volume_rollback, ctxt, volume, extra_data,
                          begin_action)
@@ -314,27 +334,29 @@ class VolumeHandler(AdminBaseHandler):
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('vulume_rollback success,%s@%s',
                         volume_name, snap_name)
-            msg = _("volume rollback success")
+            op_status = "VOLUME_ROLLBACK_SUCCESS"
+            msg = _("volume rollback success: %s") % volume.display_name
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_rollback error,%s@%s,reason:%s',
                          volume_name, snap_name, str(e))
-            msg = _("volume rollback error")
+            op_status = "VOLUME_ROLLBACK_ERROR"
+            msg = _("volume rollback error: %s") % volume.display_name
             err_msg = str(e)
         volume.status = status
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status,
-                           err_msg=err_msg)
+                           volume, status, err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, 'VOLUME_ROLLBACK', msg)
+        wb_client.send_message(ctxt, volume, op_status, msg)
 
     def volume_unlink(self, ctxt, volume_id):
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
+        logger.debug('begin volume_unlink: %s', volume.display_name)
         self.check_mon_host(ctxt)
         self._check_volume_status(volume)
         if not volume.is_link_clone:
@@ -342,7 +364,9 @@ class VolumeHandler(AdminBaseHandler):
                 msg=_('the volume_name {} has not relate_snap').format(
                     volume.volume_name))
         begin_action = self.begin_action(
-            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_UNLINK)
+            ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_UNLINK, volume)
+        volume.status = s_fields.VolumeStatus.UNLINKING
+        volume.save()
         self.task_submit(self._volume_unlink, ctxt, volume, begin_action)
         logger.info('volume unlink task has begin,volume_name=%s',
                     volume.display_name)
@@ -359,24 +383,25 @@ class VolumeHandler(AdminBaseHandler):
             ceph_client.rbd_flatten(pool_name, volume_name)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_unlink success,%s/%s', pool_name, volume_name)
-            msg = _("volume unlink success")
+            op_status = "VOLUME_UNLINK_SUCCESS"
+            msg = _("volume unlink success: %s") % volume.display_name
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_unlink error,%s/%s,reason:%s',
                          pool_name, volume_name, str(e))
-            msg = _("volume unlink error")
+            op_status = "VOLUME_UNLINK_ERROR"
+            msg = _("volume unlink error: %s") % volume.display_name
             err_msg = str(e)
         if status == s_fields.VolumeStatus.ACTIVE:
             volume.is_link_clone = False  # 断开关系链
         volume.status = status
         volume.save()
         self.finish_action(begin_action, volume.id, volume.display_name,
-                           objects.json_encode(volume), status,
-                           err_msg=err_msg)
+                           volume, status, err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, 'VOLUME_UNLINK', msg)
+        wb_client.send_message(ctxt, volume, op_status, msg)
 
     def _volume_create_from_snapshot(self, ctxt, verify_data, begin_action):
         p_pool_name = verify_data['p_pool_name']
@@ -395,13 +420,15 @@ class VolumeHandler(AdminBaseHandler):
                 ceph_client.rbd_flatten(c_pool_name, c_volume_name)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume clone success, volume_name=%s', c_volume_name)
-            msg = 'volume clone success'
+            op_status = "VOLUME_CLONE_SUCCESS"
+            msg = _('volume clone success: %s') % c_volume_name
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume clone error, volume_name=%s,reason:%s',
                          c_volume_name, str(e))
-            msg = 'volume clone error'
+            op_status = "VOLUME_CLONE_ERROR"
+            msg = _('volume clone error: %s') % c_volume_name
             err_msg = str(e)
         new_volume.status = status
         new_volume.save()
@@ -411,7 +438,7 @@ class VolumeHandler(AdminBaseHandler):
                            err_msg=err_msg)
         # send msg
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, new_volume, 'VOLUME_CLONE', msg)
+        wb_client.send_message(ctxt, new_volume, op_status, msg)
 
     def _verify_clone_data(self, ctxt, snapshot_id, data):
         self.check_mon_host(ctxt)
@@ -450,6 +477,7 @@ class VolumeHandler(AdminBaseHandler):
         }
 
     def volume_create_from_snapshot(self, ctxt, snapshot_id, data):
+        logger.debug('begin volume_create_from_snapshot')
         verify_data = self._verify_clone_data(ctxt, snapshot_id, data)
         # create volume
         batch_create = data.get('batch_create')
@@ -457,6 +485,7 @@ class VolumeHandler(AdminBaseHandler):
             # 批量克隆
             number = data.get('number')
             prefix_name = verify_data['display_name']
+            logger.debug('begin batch_clone, prefix_name=%s', prefix_name)
             new_volumes = []
             for i in range(int(number)):
                 volume_data = {
@@ -483,6 +512,8 @@ class VolumeHandler(AdminBaseHandler):
                 new_volumes.append(new_volume)
             return new_volumes
         else:
+            display_name = verify_data['display_name']
+            logger.debug('begin clone, volume_name=%s', display_name)
             begin_action = self.begin_action(ctxt, AllResourceType.VOLUME,
                                              AllActionType.CLONE)
             uid = str(uuid.uuid4())
@@ -490,7 +521,7 @@ class VolumeHandler(AdminBaseHandler):
             volume_data = {
                 "cluster_id": ctxt.cluster_id,
                 'volume_name': volume_name,
-                'display_name': verify_data['display_name'],
+                'display_name': display_name,
                 'display_description': verify_data['display_description'],
                 'size': verify_data['size'],
                 'status': s_fields.VolumeStatus.CREATING,

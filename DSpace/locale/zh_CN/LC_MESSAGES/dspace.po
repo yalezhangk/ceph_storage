@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2019-12-30 18:46+0800\n"
+"POT-Creation-Date: 2020-01-06 18:58+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -455,6 +455,54 @@ msgstr "参数 'smtp' 未找到"
 
 msgid "New password not allow equal to old password"
 msgstr "新密码不能与旧密码相同"
+
+msgid "volume_access_path: {} is already exists!"
+msgstr "卷访问路径：{} 已存在"
+
+msgid "no username or password input"
+msgstr ""
+
+msgid "username or password too short"
+msgstr "用户名或密码太短"
+
+msgid "username or password too long"
+msgstr "用户名或密码太长"
+
+msgid "no access_path input"
+msgstr ""
+
+msgid "name or type not found"
+msgstr "名称或类型未找到"
+
+msgid "no node_id input"
+msgstr ""
+
+msgid "no chap_enable input"
+msgstr ""
+
+msgid "no client_group_id input"
+msgstr ""
+
+msgid "no volume_ids input"
+msgstr ""
+
+msgid "iqn: {} is not allowed!"
+msgstr ""
+
+msgid "no mutual_username or  mutual_password input"
+msgstr ""
+
+msgid "mutual_username or mutual_passwordtoo short"
+msgstr ""
+
+msgid "mutual_username or mutual_passwordtoo long"
+msgstr ""
+
+msgid "no name input"
+msgstr ""
+
+msgid "no mutual_chap_enable input"
+msgstr ""
 
 msgid "alert_group name already exists!"
 msgstr "告警通知名称已存在"
@@ -1025,6 +1073,90 @@ msgstr "节点{}: 服务{}已恢复健康"
 
 msgid "Object gateway role has been set, please remove all object gateway role"
 msgstr "对象存储网关角色已设置，请先移除所有的网关角色"
+
+msgid "current pool size is fulled"
+msgstr "存储池已满"
+
+msgid "size can not over current pool_total_size"
+msgstr "不能超过当前存储池大小"
+
+msgid "Volume name {} already exists!"
+msgstr "块存储卷: {} 已存在"
+
+msgid "create volume success: %s"
+msgstr "创建块存储卷成功：%s"
+
+msgid "create volume error: %s"
+msgstr "创建块存储卷失败：%s"
+
+msgid "The volume {} has snapshot"
+msgstr "块存储卷：{} 上有快照"
+
+msgid "The volume {} has related access_path"
+msgstr "块存储卷：{} 已关联访问路径"
+
+msgid "delete volume success: %s"
+msgstr "删除块存储卷成功：%s"
+
+msgid "delete volume error: %s"
+msgstr "删除块存储卷失败：%s"
+
+msgid "volume extend"
+msgstr "块存储卷扩容"
+
+msgid "volume shrink"
+msgstr "块存储卷缩容"
+
+msgid "{} success: {}"
+msgstr "{}成功: {}"
+
+msgid "{} error: {}"
+msgstr "{}失败：{}"
+
+msgid "The volume: {} has not the snap: {}"
+msgstr "块存储卷：{} 上没有此快照：{}"
+
+msgid "The volume: {} has access_path, can not rollback"
+msgstr "块存储卷：{} 已关联访问路径, 无法回滚"
+
+msgid "volume rollback success: %s"
+msgstr "块存储卷回滚成功：%s"
+
+msgid "volume rollback error: %s"
+msgstr "块存储卷回滚成功：%s"
+
+msgid "the volume_name {} has not relate_snap"
+msgstr "块存储卷：{} 上没有关联快照"
+
+msgid "volume unlink success: %s"
+msgstr "块存储卷断开关系链成功：%s"
+
+msgid "volume unlink error: %s"
+msgstr "块存储卷断开关系链失败：%s"
+
+msgid "volume clone success: %s"
+msgstr "块存储卷克隆成功：%s"
+
+msgid "volume clone error: %s"
+msgstr "块存储卷克隆失败：%s"
+
+msgid "snap name {} already exists!"
+msgstr "卷快照：{} 已存在"
+
+msgid "volume_snapshot create success: %s"
+msgstr "卷快照创建成功：%s"
+
+msgid "volume_snapshot create error: %s"
+msgstr "卷快照创建失败：%s"
+
+msgid "delete snapshot success: %s"
+msgstr "卷快照删除成功：%s"
+
+msgid "delete snapshot error: %s"
+msgstr "卷快照删除失败：%s"
+
+msgid "snapshot {} has clone volume, can not del"
+msgstr "卷快照：{} 上有克隆出的卷，无法删除"
 
 msgid "Version should be less than or equal to %(max_version)d."
 msgstr "版本需要小于或等于 %(max_version)d"
