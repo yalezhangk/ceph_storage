@@ -49,6 +49,7 @@ class CephHandler(AgentBaseHandler):
         file_tool.write(keyring_path, buf.getvalue())
         file_tool.chown(keyring_path, user='ceph', group='ceph')
 
+    @synchronized("ceph-osd-{osd.id}")
     def ceph_prepare_disk(self, context, osd):
         kwargs = {
             "diskname": osd.disk.name,
@@ -73,6 +74,7 @@ class CephHandler(AgentBaseHandler):
         ceph_tool.disk_prepare(**kwargs)
         return True
 
+    @synchronized("ceph-config-{osd.id}")
     def ceph_active_disk(self, context, osd):
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
@@ -152,6 +154,7 @@ class CephHandler(AgentBaseHandler):
         logger.info("osd %s(osd.%s), clear partition success",
                     osd.id, osd.osd_id)
 
+    @synchronized("ceph-osd-{osd.id}")
     def ceph_osd_clean(self, context, osd):
         self._clean_osd(context, osd)
         return osd
@@ -164,6 +167,7 @@ class CephHandler(AgentBaseHandler):
         if umount:
             ceph_tool.osd_umount(osd.osd_id)
 
+    @synchronized("ceph-osd-{osd.id}")
     def ceph_osd_restart(self, context, osd):
         logger.info("osd %s(osd.%s), restart", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
@@ -226,6 +230,7 @@ class CephHandler(AgentBaseHandler):
         disk_tool.data_clear(partition_name)
         logger.info("clear partition %s success", partition_name)
 
+    @synchronized("ceph-osd-{osd.id}")
     def ceph_osd_destroy(self, context, osd):
         logger.info("osd %s(osd.%s), destroy", osd.id, osd.osd_id)
         client = self._get_ssh_executor()
