@@ -635,6 +635,10 @@ def define_tables(meta):
         Column('status', String(32)),
         Column('reason', Text),
         Column('finished_at', DateTime),
+        Column('args', Text()),
+        Column('enable_redo', Boolean),
+        Column('enable_clean', Boolean),
+        Column('action_log_id', Integer, ForeignKey('action_logs.id')),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'

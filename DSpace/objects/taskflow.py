@@ -23,7 +23,11 @@ class Taskflow(base.StorPersistentObject, base.StorObject,
         'status': s_fields.TaskStatusField(
             default=s_fields.TaskStatus.RUNNING),
         'reason': fields.StringField(nullable=True),
+        'args': fields.StringField(nullable=True),
         'finished_at': fields.DateTimeField(nullable=True),
+        'action_log_id': fields.IntegerField(nullable=True),
+        'enable_redo': fields.BooleanField(),
+        'enable_clean': fields.BooleanField(),
         'cluster_id': fields.UUIDField(nullable=True),
     }
 

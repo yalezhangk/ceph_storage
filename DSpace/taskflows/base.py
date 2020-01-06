@@ -151,18 +151,28 @@ class ExampleTask(Task):
 
 
 class Taskflow(object):
-    def __init__(self, ctxt, name=None):
+    enable_redo = False
+    enable_clean = False
+
+    def __init__(self, ctxt, name=None, action_log_id=None, args=None,
+                 tf=None):
         self.ctxt = ctxt
         if not name:
             name = self.__class__.__name__
         self.name = name
         self.coordinator = COORDINATOR
         self.lock = None
+        self.tf = tf
+        self.action_log_id = action_log_id
+        self.args = args
 
-    def _create_tf(self):
-        tf = objects.Taskflow(self.ctxt, name=self.name,
-                              status=TaskStatus.RUNNING)
+    def create_tf(self):
+        tf = objects.Taskflow(
+            self.ctxt, name=self.name, enable_clean=self.enable_clean,
+            enable_redo=self.enable_redo, status=TaskStatus.RUNNING,
+            args=self.args, action_log_id=self.action_log_id)
         tf.create()
+        self.tf = tf
         return tf
 
     def taskflow(self, **kwargs):
@@ -194,7 +204,11 @@ class Taskflow(object):
             self.lock = None
 
     def run(self, **kwargs):
-        tf = self._create_tf()
+        """Run taskflow"""
+        if not self.tf:
+            tf = self.create_tf()
+        else:
+            tf = self.tf
         wf = self.taskflow(**kwargs)
         store = kwargs
         store.update({
@@ -212,6 +226,18 @@ class Taskflow(object):
         finally:
             task_manager.pop(tf)
             self.release_lock()
+
+    def redo(self, **kwargs):
+        """Redo a failed taskflow"""
+        pass
+
+    def clean(self, **kwargs):
+        """Clean a failed taskflow"""
+        pass
+
+    def failed(self, **kwargs):
+        """Mark a taskflow failed"""
+        pass
 
 
 ##################
@@ -240,7 +266,10 @@ def run_task(ctxt):
     t1 = TestTaskflow(ctxt)
     lock = t1.require_lock()
     logger.info("lock: %s", lock)
-    t1.run()
+    try:
+        t1.run()
+    except Exception as e:
+        logger.exception(e)
 
 
 def main():
