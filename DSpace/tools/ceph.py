@@ -240,6 +240,7 @@ class CephTool(ToolBase):
         if not diskname:
             logger.warning("Device is None")
             return True
+        # TODO: Device or resource busy
         cmd = ["dspace-disk", "zap", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if "No such file or directory" in stderr:

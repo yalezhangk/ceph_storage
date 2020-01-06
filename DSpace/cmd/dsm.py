@@ -5,6 +5,7 @@ import sys
 from oslo_log import log as logging
 
 from DSpace import objects
+from DSpace import taskflows
 from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.DSM.admin import service
@@ -16,6 +17,7 @@ def main():
          version=version.version_string())
     logging.setup(CONF, "stor")
     objects.register_all()
+    taskflows.register_all()
     COORDINATOR.start()
     service()
 

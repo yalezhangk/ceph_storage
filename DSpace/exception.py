@@ -103,6 +103,10 @@ class TaskflowNotFound(NotFound):
     message = _("Taskflow %(taskflow_id)s could not be found.")
 
 
+class TaskflowArgsError(StorException):
+    message = _("Taskflow %(taskflow_id)s args %(args) error.")
+
+
 class TaskNotFound(NotFound):
     message = _("Task %(task_id)s could not be found.")
 

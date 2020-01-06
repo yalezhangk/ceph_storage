@@ -5,6 +5,7 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
+from DSpace import taskflows
 from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
@@ -15,8 +16,6 @@ from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
-from DSpace.taskflows.osd import OsdCreateTaskflow
-from DSpace.taskflows.osd import OsdDeleteTaskflow
 from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
@@ -125,7 +124,7 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_create(self, ctxt, node, osd, begin_action=None):
         try:
-            tf = OsdCreateTaskflow(ctxt)
+            tf = taskflows.OsdCreateTaskflow(ctxt)
             tf.run(osd=osd)
             osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
@@ -304,7 +303,7 @@ class OsdHandler(AdminBaseHandler):
     def _osd_delete(self, ctxt, node, osd, begin_action=None):
         logger.info("trying to delete osd.%s", osd.osd_id)
         try:
-            tf = OsdDeleteTaskflow(ctxt)
+            tf = taskflows.OsdDeleteTaskflow(ctxt)
             tf.run(osd=osd)
             osd.destroy()
             msg = _("delete osd.{} success").format(osd.osd_id)

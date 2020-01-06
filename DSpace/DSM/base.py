@@ -15,6 +15,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.base import StorObject
 from DSpace.objects.fields import ConfigKey
+from DSpace.taskflows.base import task_manager
 from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
 from DSpace.utils.mail import send_mail
@@ -29,12 +30,22 @@ class AdminBaseHandler(object):
     def __init__(self):
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
-        ctxt = context.get_context()
+        ctxt = context.get_context(user_id="admin")
         self.debug_mode = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DEBUG_MODE)
         self.container_namespace = objects.sysconfig.sys_config_get(
             ctxt, "image_namespace")
         self.map_util = ServiceMap(self.container_namespace)
+        self.bootstrap(ctxt)
+
+    def bootstrap(self, ctxt):
+        clusters = objects.ClusterList.get_all(ctxt)
+        for cluster in clusters:
+            ctxt = context.get_context(cluster.id, user_id="admin")
+            self._clean_taskflow(ctxt)
+
+    def _clean_taskflow(self, ctxt):
+        task_manager.bootstrap(ctxt)
 
     def _wapper(self, fun, *args, **kwargs):
         try:
