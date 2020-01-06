@@ -14,6 +14,7 @@ from DSpace.exception import CephException
 from DSpace.exception import DeviceOrResourceBusy
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
+from DSpace.exception import PermissionDenied
 from DSpace.i18n import _
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
@@ -263,6 +264,7 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    @retry(PermissionDenied)
     def osd_deactivate_flag(self, osd_id):
         mount = "/var/lib/ceph/osd/ceph-%s/" % osd_id
         for f in ['active', 'ready']:
@@ -273,6 +275,8 @@ class CephTool(ToolBase):
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
         if rc == 1 and "No such file" in stderr:
             return
+        if "Permission denied" in stderr:
+            raise PermissionDenied()
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)

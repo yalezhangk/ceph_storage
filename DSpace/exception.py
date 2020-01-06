@@ -546,3 +546,7 @@ class OsdStatusNotUp(StorException):
 
 class DeviceOrResourceBusy(StorException):
     message = _("Device or resource busy")
+
+
+class PermissionDenied(StorException):
+    message = _("Permission denied")
