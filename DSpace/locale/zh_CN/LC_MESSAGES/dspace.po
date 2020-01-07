@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-14 02:45-0500\n"
+"POT-Creation-Date: 2020-01-15 17:08+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -360,11 +360,17 @@ msgstr "权限不允许"
 msgid "Docker socket file %(path)s not found"
 msgstr "Docker服务的socket文件 %(path)s 未找到"
 
+msgid "Docker socket cmd %(cmd)s error: %(reason)s"
+msgstr "DBUS 命令 %(cmd)s 错误: %(reason)s"
+
 msgid "Dbus socket file %(path)s not found"
 msgstr "Dbus的socket文件 %(path)s 未找到"
 
 msgid "Dbus command for %(service)s error: %(reason)s"
 msgstr "DBUS 命令 %(service)s 错误: %(reason)s"
+
+msgid "Restart service %(service)s failed"
+msgstr "重新启动服务 %(service)s 失败"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -525,14 +531,14 @@ msgstr ""
 msgid "alert_group name already exists!"
 msgstr "告警通知名称已存在"
 
-msgid "DSA service in node(%s) not available"
-msgstr "节点（%s）上 DSA 服务不可用"
-
 msgid "alert notify: {}"
 msgstr "告警通知: {}"
 
 msgid "alert center"
 msgstr "告警中心"
+
+msgid "DSA service in node(%s) not available"
+msgstr "节点（%s）上 DSA 服务不可用"
 
 msgid "Ceph config update failed"
 msgstr "Ceph配置修改失败"
@@ -620,18 +626,6 @@ msgstr "osd.{}已恢复健康"
 
 msgid "osd.{} is offline"
 msgstr "osd.{}已离线"
-
-msgid "Node {}: DSA service status is inactive, trying to restart."
-msgstr "节点{}：DSA服务已停止，尝试进行重启"
-
-msgid "Node {}: DSA restart failed, mark it to error"
-msgstr "节点{}: DSA服务重启失败，标记为错误状态"
-
-msgid "Node {}: DSA status is inactive"
-msgstr "节点{}: DSA服务已停止"
-
-msgid "Node {}: DSA status is active"
-msgstr "节点{}: DSA服务已恢复健康"
 
 msgid "reconnect to ceph cluster {}"
 msgstr "已连接到ceph集群{}"
@@ -1053,41 +1047,17 @@ msgstr "只能更新可用与错误的对象路由"
 msgid "There must be at least one rgw in router"
 msgstr "对象路由中至少需要存在一个对象网关"
 
-msgid "Node {}: service {} in status is inactive, trying to restart"
-msgstr "节点{}: 服务{}已停止，尝试进行重启"
+msgid "Node {}: service {} status is active"
+msgstr "节点{}: 服务{}已恢复健康"
 
-msgid "Node {}: service {} restart failed, mark it to ERROR"
-msgstr "节点{}: 服务{}无法重新启动，标记为错误状态"
-
-msgid "Node {}: radosgw {} status is inactive, trying to restart"
-msgstr "节点{}: 对象存储网关{}已停止，尝试进行重启"
-
-msgid "Node {}: radosgw {} restart failed, mark it to ERROR"
-msgstr "节点{}：对象存储网关{}重启失败，标记为错误状态"
-
-msgid "Node {}：service {} status is down, trying to restart"
-msgstr "节点{}: 服务{}已停止，尝试进行重启"
-
-msgid "Node {}：service {} restart failed, mark it to error"
-msgstr "节点{}: 服务{}重启失败，标记为错误状态"
-
-msgid "Node {}: radosgw {} status is inactive"
-msgstr "节点{}: 对象网关服务{}已停止"
-
-msgid "Node {}: radosgw {} status is active"
-msgstr "节点{}: 对象网关服务{}已恢复健康"
-
-msgid "Node {}: radosgw router service {} status is inactive"
-msgstr "节点{}: 对象路由服务{}已停止"
-
-msgid "Node {}: radosgw router service {} status is active"
-msgstr "节点{}: 对象路由服务{}已恢复健康"
+msgid "Node {}: service {} status is ERROR"
+msgstr "节点{}: 服务{}状态错误"
 
 msgid "Node {}: service {} status is inactive"
 msgstr "节点{}: 服务{}已停止"
 
-msgid "Node {}: service {} status is active"
-msgstr "节点{}: 服务{}已恢复健康"
+msgid "Node {}：service {} status is down, trying to restart"
+msgstr "节点{}: 服务{}已停止，尝试进行重启"
 
 msgid "Object gateway role has been set, please remove all object gateway role"
 msgstr "对象存储网关角色已设置，请先移除所有的网关角色"

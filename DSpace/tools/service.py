@@ -123,3 +123,15 @@ class ServiceDbus(ToolBase):
         except dbus.exceptions.DBusException as e:
             logger.warning("Get service status error: %s", e)
             raise RunDbusError(service=service, reason=str(e))
+
+    def restart(self, service):
+        try:
+            bus = dbus.SystemBus()
+            systemd = bus.get_object('org.freedesktop.systemd1',
+                                     '/org/freedesktop/systemd1')
+            manager = dbus.Interface(systemd,
+                                     'org.freedesktop.systemd1.Manager')
+            manager.RestartUnit(service, 'fail')
+        except dbus.exceptions.DBusException as e:
+            logger.warning("Get service status error: %s", e)
+            raise RunDbusError(service=service, reason=str(e))

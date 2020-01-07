@@ -564,9 +564,17 @@ class DockerSockNotFound(NotFound):
     message = _("Docker socket file %(path)s not found")
 
 
+class DockerSockCmdError(StorException):
+    message = _("Docker socket cmd %(cmd)s error: %(reason)s")
+
+
 class DbusSocketNotFound(NotFound):
     message = _("Dbus socket file %(path)s not found")
 
 
 class RunDbusError(StorException):
     message = _("Dbus command for %(service)s error: %(reason)s")
+
+
+class RestartServiceFailed(StorException):
+    message = _("Restart service %(service)s failed")

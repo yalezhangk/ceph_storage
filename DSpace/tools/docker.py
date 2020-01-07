@@ -5,6 +5,7 @@ import os
 
 import docker
 
+from DSpace.exception import DockerSockCmdError
 from DSpace.exception import DockerSockNotFound
 from DSpace.exception import ProgrammingError
 from DSpace.exception import RunCommandError
@@ -163,11 +164,11 @@ class Docker(ToolBase):
             return False
 
 
-class DockerSockTool(ToolBase):
+class DockerSocket(ToolBase):
     SOCKET_FILE = "/var/run/docker.sock"
 
     def __init__(self, *args, **kwargs):
-        super(DockerSockTool, self).__init__(*args, **kwargs)
+        super(DockerSocket, self).__init__(*args, **kwargs)
         self.docker_sock = None
         self._check_socket_file()
         self.client = docker.DockerClient(base_url=self.docker_sock)
@@ -179,6 +180,12 @@ class DockerSockTool(ToolBase):
         self.docker_sock = "unix://" + docker_socket
 
     def status(self, container_name):
+        """
+        :param container_name: The name of container
+        :return:  Return the status of container. Status will be 'running'，
+                 'restarting' or 'exited'. If errors happen, it will return
+                 None.
+        """
         logger.debug("Get container status for %s", container_name)
         try:
             container = self.client.containers.get(container_name)
@@ -187,3 +194,12 @@ class DockerSockTool(ToolBase):
             logger.warning(e)
             status = None
         return status
+
+    def restart(self, container_name):
+        logger.debug("Restart container for %s", container_name)
+        try:
+            container = self.client.containers.get(container_name)
+            container.restart()
+        except docker.errors.APIError as e:
+            logger.warning(e)
+            raise DockerSockCmdError(cmd="restart", reason=str(e))

@@ -16,7 +16,6 @@ from DSpace.objects import fields as s_fields
 from DSpace.taskflows.ceph import CephTask
 from DSpace.tools.base import SSHExecutor
 from DSpace.tools.ceph import CephTool
-from DSpace.tools.docker import Docker as DockerTool
 from DSpace.utils.coordination import synchronized
 
 logger = logging.getLogger(__name__)
@@ -30,7 +29,6 @@ class CronHandler(AdminBaseHandler):
         self.task_submit(self._check_ceph_cluster_status)
         self.task_submit(self._osd_slow_requests_get_all)
         self.task_submit(self._osd_tree_cron)
-        self.task_submit(self._dsa_check_cron)
         self.task_submit(self._node_check_cron)
 
     def _osd_slow_requests_get(self):
@@ -289,96 +287,6 @@ class CronHandler(AdminBaseHandler):
                     logger.error("Osd.%s is not in cluster", osd_id)
                     osd.status = s_fields.OsdStatus.ERROR
                     osd.save()
-
-    def _dsa_check_cron(self):
-        self.wait_ready()
-        logger.info("Start dsa check crontab")
-        if not CONF.dsa_heartbeat_check or not CONF.heartbeat_check:
-            logger.info("dsa check not enable")
-            return
-        while True:
-            try:
-                self.dsa_check()
-            except LockAcquireFailed as e:
-                logger.debug(e)
-                time.sleep(CONF.dsa_check_interval * 2)
-                continue
-            except Exception as e:
-                logger.exception("Dsa check cron Exception: %s", e)
-            time.sleep(CONF.dsa_check_interval)
-
-    def _restart_dsa(self, ctxt, dsa, node):
-        logger.warning("DSA in node %s is down, trying to restart",
-                       dsa.node_id)
-        ssh = SSHExecutor(hostname=str(node.ip_address),
-                          password=node.password)
-        docker_tool = DockerTool(ssh)
-        retry_times = 0
-        container_name = self.map_util.base['DSA']
-        dsa.status = s_fields.ServiceStatus.STARTING
-        dsa.save()
-        msg = _("Node {}: DSA service status is inactive, trying to restart.")\
-            .format(node.hostname)
-        self.send_websocket(ctxt, dsa, "SERVICE_RESTART", msg)
-        while retry_times < 10:
-            try:
-                docker_tool.restart(container_name)
-                if docker_tool.status(container_name):
-                    logger.info("DSA service has been restarted")
-                    break
-            except exception.StorException as e:
-                logger.error(e)
-                retry_times += 1
-                if retry_times == 10:
-                    dsa.status = s_fields.ServiceStatus.ERROR
-                    dsa.save()
-                    msg = _(
-                        "Node {}: DSA restart failed, mark it to error"
-                    ).format(node.hostname)
-                    self.send_service_alert(
-                        ctxt, dsa, "service_status", "Service", "ERROR",
-                        msg, "SERVICE_ERROR"
-                    )
-
-    @synchronized('cron_dsa_check', blocking=False)
-    def dsa_check(self):
-        dsas = objects.ServiceList.get_all(
-            self.ctxt, filters={'name': 'DSA', 'cluster_id': '*'})
-        logger.debug("dsa_check: %s", dsas)
-        for dsa in dsas:
-            ctxt = context_tool.get_context(cluster_id=dsa.cluster_id)
-            dsa_status = dsa.status
-            self.check_service_status(self.ctxt, dsa)
-            node = objects.Node.get_by_id(ctxt, dsa.node_id)
-            if (dsa.status == s_fields.ServiceStatus.INACTIVE and
-                    dsa_status == s_fields.ServiceStatus.ACTIVE):
-                logger.error("DSA in node %s is inactive", dsa.node_id)
-                if not self.if_service_alert(ctxt, node=node):
-                    continue
-                msg = _("Node {}: DSA status is inactive"
-                        ).format(node.hostname)
-                self.send_service_alert(
-                    ctxt, dsa, "service_status", "DSA", "WARN", msg,
-                    "SERVICE_INACTIVE")
-                if self.debug_mode:
-                    continue
-                dsa.conditional_update({
-                    "status": s_fields.ServiceStatus.STARTING
-                }, expected_values={
-                    "status": s_fields.ServiceStatus.ACTIVE
-                })
-                self.task_submit(self._restart_dsa, ctxt, dsa, node)
-            if (dsa.status == s_fields.ServiceStatus.ACTIVE and
-                    (dsa_status in [s_fields.ServiceStatus.INACTIVE,
-                                    s_fields.ServiceStatus.STARTING])):
-                logger.error("DSA in node %s is active", dsa.node_id)
-                if not self.if_service_alert(ctxt, node=node):
-                    continue
-                msg = _("Node {}: DSA status is active"
-                        ).format(node.hostname)
-                self.send_service_alert(
-                    ctxt, dsa, "service_status", "DSA", "INFO", msg,
-                    "SERVICE_ACTIVE")
 
     def _node_check_cron(self):
         self.wait_ready()
