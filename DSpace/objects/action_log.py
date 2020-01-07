@@ -1,9 +1,16 @@
+import json
+import logging
+
+from oslo_utils import timeutils
 from oslo_versionedobjects import fields
 
 from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects.base import StorObject
+
+logger = logging.getLogger(__name__)
 
 
 @base.StorObjectRegistry.register
@@ -61,6 +68,35 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
             obj.user = objects.User._from_db_object(
                 context, objects.User(context), user)
         return super(ActionLog, cls)._from_db_object(context, obj, db_obj)
+
+    def finish_action(self, resource_id=None,
+                      resource_name=None, after_obj=None, status=None,
+                      action=None, err_msg=None, diff_data=None,
+                      *args, **kwargs):
+        if isinstance(after_obj, StorObject):
+            after_data = json.dumps(after_obj.to_dict())
+        else:
+            after_data = json.dumps(after_obj)
+        finish_data = {
+            'resource_id': resource_id,
+            'resource_name': resource_name,
+            'after_data': (after_data if after_data else None),
+            'status': 'success',
+            'finish_time': timeutils.utcnow(),
+            'err_msg': err_msg,
+            'diff_data': diff_data
+        }
+        if action:
+            finish_data.update({'action': action})
+        if status:
+            if status in ['active', 'success', 'available', 'deleted']:
+                finish_data.update({'status': 'success'})
+            else:
+                finish_data.update({'status': 'fail'})
+        self.update(finish_data)
+        logger.debug('finish action, resource_name:%s, action:%s, status:%s',
+                     resource_name, action, finish_data['status'])
+        self.save()
 
 
 @base.StorObjectRegistry.register

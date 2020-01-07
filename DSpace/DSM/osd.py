@@ -124,7 +124,8 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_create(self, ctxt, node, osd, begin_action=None):
         try:
-            tf = taskflows.OsdCreateTaskflow(ctxt)
+            tf = taskflows.OsdCreateTaskflow(
+                ctxt, action_log_id=begin_action.id)
             tf.run(osd=osd)
             osd.status = s_fields.OsdStatus.ACTIVE
             osd.save()
@@ -303,7 +304,8 @@ class OsdHandler(AdminBaseHandler):
     def _osd_delete(self, ctxt, node, osd, begin_action=None):
         logger.info("trying to delete osd.%s", osd.osd_id)
         try:
-            tf = taskflows.OsdDeleteTaskflow(ctxt)
+            tf = taskflows.OsdDeleteTaskflow(
+                ctxt, action_log_id=begin_action.id)
             tf.run(osd=osd)
             osd.destroy()
             msg = _("delete osd.{} success").format(osd.osd_id)
