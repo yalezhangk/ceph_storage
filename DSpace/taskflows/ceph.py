@@ -635,8 +635,7 @@ class CephTask(object):
             self.rbd_remove(pool_name, rbd_name)
         except exc.CephException:
             shell_client = Executor()
-            cmd = ['rbd rm {}/{} -c {}'.format(
-                pool_name, rbd_name, self.conf_file)]
+            cmd = ['rbd', 'rm', pool_name/rbd_name, '-c', self.conf_file]
             rc, out, err = shell_client.run_command(cmd, timeout=0)
             if rc:
                 raise exc.CephException(message=out)

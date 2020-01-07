@@ -525,6 +525,7 @@ class PoolHandler(AdminBaseHandler):
                     'is_avaible': True if is_avaible > 0 else False,
                     'size': size
                 }
+        logger.error('get pool fact size error, pool_name=%s', pool_name)
         return {}
 
     def _generate_osd_tree(self, ctxt, osds):

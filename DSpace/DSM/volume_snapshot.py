@@ -28,15 +28,18 @@ class VolumeSnapshotHandler(AdminBaseHandler):
     def volume_snapshot_get_count(self, ctxt, filters=None):
         return objects.VolumeSnapshotList.get_count(ctxt, filters=filters)
 
-    def _check_snap_create(self, ctxt, data):
-        self.check_mon_host(ctxt)
-        display_name = data.get('display_name')
+    def _check_snap_name(self, ctxt, name):
         is_exist = objects.VolumeSnapshotList.get_all(
-            ctxt, filters={'display_name': display_name})
+            ctxt, filters={'display_name': name})
         if is_exist:
             raise exception.InvalidInput(
                 reason=_('snap name {} already exists!').format(
-                    display_name))
+                    name))
+
+    def _check_snap_create(self, ctxt, data):
+        self.check_mon_host(ctxt)
+        display_name = data.get('display_name')
+        self._check_snap_name(ctxt, display_name)
         volume_id = data.get('volume_id')
         volume = objects.Volume.get_by_id(ctxt, volume_id)
         if not volume:
@@ -58,6 +61,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         return snap_data
 
     def volume_snapshot_create(self, ctxt, data):
+        logger.debug('snap begin create')
         snap_data = self._check_snap_create(ctxt, data)
         begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
                                          AllActionType.CREATE)
@@ -83,22 +87,23 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             status = s_fields.VolumeSnapshotStatus.ACTIVE
             logger.info('create snapshot success,%s/%s@%s',
                         pool_name, volume_name, snap_name)
-            msg = 'volume_snapshot create success'
+            op_status = "SNAPSHOT_CREATE_SUCCESS"
+            msg = _('volume_snapshot create success: %s') % snap.display_name
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeSnapshotStatus.ERROR
             logger.error('create snapshot error,%s/%s@%s,reason:%s',
                          pool_name, volume_name, snap_name, str(e))
-            msg = 'volume_snapshot create error'
+            op_status = "SNAPSHOT_CREATE_ERROR"
+            msg = _('volume_snapshot create error: %s') % snap.display_name
             err_msg = str(e)
         snap.status = status
         snap.save()
         self.finish_action(begin_action, snap.id, snap.display_name,
-                           objects.json_encode(snap), status,
-                           err_msg=err_msg)
+                           snap, status, err_msg=err_msg)
         # send ws message
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, snap, "CREATED", msg)
+        wb_client.send_message(ctxt, snap, op_status, msg)
 
     def volume_snapshot_get(self, ctxt, volume_snapshot_id,
                             expected_attrs=None):
@@ -107,16 +112,18 @@ class VolumeSnapshotHandler(AdminBaseHandler):
 
     def volume_snapshot_update(self, ctxt, volume_snapshot_id, data):
         volume_snapshot = self.volume_snapshot_get(ctxt, volume_snapshot_id)
-        begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
-                                         AllActionType.UPDATE)
         display_name = data.get('display_name')
+        if display_name != volume_snapshot.display_name:
+            self._check_snap_name(ctxt, display_name)
+        begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
+                                         AllActionType.UPDATE, volume_snapshot)
         display_description = data.get('display_description')
         volume_snapshot.display_name = display_name
         volume_snapshot.display_description = display_description
         volume_snapshot.save()
         logger.info('snapshot update success,snapshot_name=%s', display_name)
         self.finish_action(begin_action, volume_snapshot_id, display_name,
-                           objects.json_encode(volume_snapshot))
+                           volume_snapshot)
         return volume_snapshot
 
     def _snap_delete(self, ctxt, snap, extra_data, begin_action):
@@ -131,7 +138,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             snap.destroy()
             status = 'success'
             logger.info('snapshot_delete success,snap_name=%s', snap_name)
-            msg = _("delete snapshot success")
+            op_status = "SNAPSHOT_DELETE_SUCCESS"
+            msg = _("delete snapshot success: %s") % snap.display_name
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeSnapshotStatus.ERROR
@@ -139,13 +147,13 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             snap.save()
             logger.error('snapshot_delete error,%s/%s@%s,reason:%s',
                          pool_name, volume_name, snap_name, str(e))
-            msg = _('delete snapshot error')
+            op_status = "SNAPSHOT_DELETE_ERROR"
+            msg = _('delete snapshot error: %s') % snap.display_name
             err_msg = str(e)
         self.finish_action(begin_action, snap.id, snap.display_name,
-                           objects.json_encode(snap), status,
-                           err_msg=err_msg)
+                           snap, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, snap, 'DELETED', msg)
+        wb_client.send_message(ctxt, snap, op_status, msg)
 
     def _check_del_snap(self, ctxt, volume_snapshot_id):
         self.check_mon_host(ctxt)
@@ -174,10 +182,11 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         }
 
     def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
+        logger.debug('begin delete snap: %s', volume_snapshot_id)
         extra_data = self._check_del_snap(ctxt, volume_snapshot_id)
-        begin_action = self.begin_action(
-            ctxt, AllResourceType.SNAPSHOT, AllActionType.DELETE)
         snap = extra_data['snap']
+        begin_action = self.begin_action(
+            ctxt, AllResourceType.SNAPSHOT, AllActionType.DELETE, snap)
         snap.status = s_fields.VolumeSnapshotStatus.DELETING
         snap.save()
         self.task_submit(self._snap_delete, ctxt, snap, extra_data,
