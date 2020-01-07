@@ -36,6 +36,9 @@ msgstr "用户 %(user_id)s 未找到"
 msgid "Taskflow %(taskflow_id)s could not be found."
 msgstr "任务 %(taskflow_id)s 未找到"
 
+msgid "Taskflow %(taskflow_id)s args %(args) error."
+msgstr "任务 %(taskflow_id)s 参数%(args)错误"
+
 msgid "Task %(task_id)s could not be found."
 msgstr "子任务 %(task_id)s 未找到"
 
@@ -341,6 +344,12 @@ msgstr "连接IP地址 %(ip)s 错误"
 
 msgid "Osd status not up"
 msgstr "硬盘状态不支持此操作"
+
+msgid "Device or resource busy"
+msgstr "设备或资源忙"
+
+msgid "Permission denied"
+msgstr "权限不允许"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -1246,6 +1255,9 @@ msgstr "模型 %s 不支持有条件的更新。"
 
 msgid "Invalid config type"
 msgstr "不合法的配置类型"
+
+msgid "DSpace manager service stoped."
+msgstr "DSpace服务停止"
 
 msgid "Crush hostname Invalid"
 msgstr "主机名无效"

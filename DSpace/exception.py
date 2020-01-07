@@ -542,3 +542,11 @@ class LockCreationFailed(StorException):
 
 class OsdStatusNotUp(StorException):
     message = _("Osd status not up")
+
+
+class DeviceOrResourceBusy(StorException):
+    message = _("Device or resource busy")
+
+
+class PermissionDenied(StorException):
+    message = _("Permission denied")
