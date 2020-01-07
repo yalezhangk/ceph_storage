@@ -9,6 +9,7 @@ from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.base import Task
 from DSpace.taskflows.base import Taskflow
+from DSpace.taskflows.base import TaskflowRegistry
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeAgentMixin
 from DSpace.utils import retry
@@ -163,14 +164,40 @@ class OsdWaitUp(Task):
         self.finish_task()
 
 
-class OsdCreateTaskflow(Taskflow):
-    def taskflow(self, **kwargs):
+class OsdTaskflowMixin(object):
+    def _format_args(self, osd=None):
+        return {"osd_id": osd.id}
+
+    def _mark_osd_error(self, tf, expected_status=None):
+        if 'osd_id' not in tf.args:
+            raise exception.TaskflowArgsError(taskflow_id=tf.id, args=tf.args)
+        osd_id = tf.args['osd_id']
+        osd = objects.Osd.get_by_id(self.ctxt, osd_id)
+        if expected_status and osd.status != expected_status:
+            logger.warning("osd(db_id=%s) is not creating", osd.id)
+        else:
+            osd.status = s_fields.OsdStatus.ERROR
+            osd.save()
+
+
+@TaskflowRegistry.register
+class OsdCreateTaskflow(Taskflow, OsdTaskflowMixin):
+    def taskflow(self, osd=None):
         wf = lf.Flow('OsdCreateTaskflow')
         wf.add(OsdConfigSet())
         wf.add(OsdDiskPrepare())
         wf.add(OsdActive())
         wf.add(OsdWaitUp())
         return wf
+
+    def format_args(self, osd=None):
+        return self._format_args(osd)
+
+    def failed(self, **kwargs):
+        logger.info("%s called", self.name)
+        # call parent method
+        super(OsdCreateTaskflow, self).failed(**kwargs)
+        self._mark_osd_error(self.tf, s_fields.OsdStatus.CREATING)
 
 
 class OsdMarkOut(Task):
@@ -249,7 +276,8 @@ class OsdClearDB(Task):
         self.finish_task()
 
 
-class OsdDeleteTaskflow(Taskflow):
+@TaskflowRegistry.register
+class OsdDeleteTaskflow(Taskflow, OsdTaskflowMixin):
     """Osd delete
 
     mark osd out
@@ -264,3 +292,12 @@ class OsdDeleteTaskflow(Taskflow):
         wf.add(OsdRemoveFromCluster())
         wf.add(OsdClearDB())
         return wf
+
+    def format_args(self, osd=None):
+        return self._format_args(osd)
+
+    def failed(self, **kwargs):
+        logger.info("%s called", self.name)
+        # call parent method
+        super(OsdDeleteTaskflow, self).failed(**kwargs)
+        self._mark_osd_error(self.tf, s_fields.OsdStatus.DELETING)

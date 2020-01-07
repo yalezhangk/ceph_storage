@@ -52,8 +52,9 @@ class RequestContext(context.RequestContext):
                             _del_read_deleted)
 
 
-def get_context(cluster_id=None):
-    ctxt = RequestContext(user_id='admin', is_admin=False,
+def get_context(cluster_id=None, user_id=None):
+    user_id = user_id or "admin"
+    ctxt = RequestContext(user_id=user_id, is_admin=False,
                           cluster_id=cluster_id)
     return ctxt
 

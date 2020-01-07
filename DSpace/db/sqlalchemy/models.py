@@ -544,7 +544,7 @@ class Taskflow(BASE, StorBase):
     status = Column(String(32))
     reason = Column(Text)
     finished_at = Column(DateTime)
-    args = Column(Text())  # task args
+    args = Column(JsonEncodedDict())
     enable_redo = Column(Boolean, default=False)
     enable_clean = Column(Boolean, default=False)
     action_log_id = Column(Integer, ForeignKey('action_logs.id'))

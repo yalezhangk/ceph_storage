@@ -1,20 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
 import sys
 import time
 from concurrent import futures
 
 import six
 import taskflow.engines
-from oslo_log import log as logging
 from taskflow import task
 from taskflow.patterns import linear_flow as lf
 from taskflow.types.failure import Failure
 
 from DSpace import context
+from DSpace import exception
 from DSpace import objects
+from DSpace import taskflows
 from DSpace import version
 from DSpace.common.config import CONF
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import TaskStatus
 from DSpace.utils.coordination import COORDINATOR
@@ -22,9 +25,51 @@ from DSpace.utils.coordination import COORDINATOR
 logger = logging.getLogger(__name__)
 
 
+# TODO: Common Registry
+class TaskflowRegistry(object):
+    _registry = None
+    _taskflows = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._registry:
+            cls._registry = super(TaskflowRegistry, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._registry
+
+    def __init__(self, *args, **kwargs):
+        if self._taskflows is None:
+            self._taskflows = {}
+
+    @classmethod
+    def register(cls, tf_cls):
+        logger.info("register taskflow %s", tf_cls)
+        registry = cls()
+        registry._register_class(tf_cls)
+        return tf_cls
+
+    def _register_class(self, cls):
+        name = cls.obj_name()
+        if name not in self._taskflows:
+            logger.info("taskflow %s registered", name)
+            setattr(taskflows, name, cls)
+
+
 class TaskFlowManager(object):
     _tasks = {}
     _names = {}
+
+    def __init__(self):
+        self._executor = futures.ThreadPoolExecutor(
+            max_workers=CONF.task_workers)
+
+    def _wapper(self, fun, *args, **kwargs):
+        try:
+            fun(*args, **kwargs)
+        except Exception as e:
+            logger.exception("Unexpected exception: %s", e)
+
+    def task_submit(self, fun, *args, **kwargs):
+        self._executor.submit(self._wapper, fun, *args, **kwargs)
 
     def add(self, tf):
         logger.info("taskflow add %s", tf)
@@ -57,6 +102,21 @@ class TaskFlowManager(object):
             return False
         else:
             return True
+
+    def _mark_failed_task(self, ctxt):
+        taskflow_objs = objects.TaskflowList.get_all(
+            ctxt, filters={"status": TaskStatus.RUNNING})
+        for t in taskflow_objs:
+            cls = getattr(taskflows, t.name, None)
+            if not cls:
+                raise exception.TaskflowNotFound(taskflow_id=t.name)
+            logger.info("taskflow %s mark failed", t.id)
+            taskflow = cls.from_obj(ctxt, t)
+            self.task_submit(taskflow.failed)
+
+    def bootstrap(self, ctxt):
+        logger.info("TaskFlowManager bootstrap")
+        self._mark_failed_task(ctxt)
 
 
 task_manager = TaskFlowManager()
@@ -154,23 +214,30 @@ class Taskflow(object):
     enable_redo = False
     enable_clean = False
 
-    def __init__(self, ctxt, name=None, action_log_id=None, args=None,
+    def __init__(self, ctxt, action_log_id=None,
                  tf=None):
         self.ctxt = ctxt
-        if not name:
-            name = self.__class__.__name__
-        self.name = name
+        self.name = self.obj_name()
         self.coordinator = COORDINATOR
         self.lock = None
         self.tf = tf
         self.action_log_id = action_log_id
-        self.args = args
 
-    def create_tf(self):
+    @classmethod
+    def obj_name(cls):
+        """Return the object's name"""
+        return cls.__name__
+
+    @classmethod
+    def from_obj(cls, ctxt, tf):
+        return cls(ctxt, tf.action_log_id, tf)
+
+    def create_tf(self, **kwargs):
+        args = self.format_args(**kwargs)
         tf = objects.Taskflow(
             self.ctxt, name=self.name, enable_clean=self.enable_clean,
             enable_redo=self.enable_redo, status=TaskStatus.RUNNING,
-            args=self.args, action_log_id=self.action_log_id)
+            args=args, action_log_id=self.action_log_id)
         tf.create()
         self.tf = tf
         return tf
@@ -203,10 +270,13 @@ class Taskflow(object):
             self.lock.release()
             self.lock = None
 
+    def format_args(self, **kwargs):
+        return None
+
     def run(self, **kwargs):
         """Run taskflow"""
         if not self.tf:
-            tf = self.create_tf()
+            tf = self.create_tf(**kwargs)
         else:
             tf = self.tf
         wf = self.taskflow(**kwargs)
@@ -229,15 +299,17 @@ class Taskflow(object):
 
     def redo(self, **kwargs):
         """Redo a failed taskflow"""
-        pass
+        raise NotImplementedError
 
     def clean(self, **kwargs):
         """Clean a failed taskflow"""
-        pass
+        raise NotImplementedError
 
     def failed(self, **kwargs):
         """Mark a taskflow failed"""
-        pass
+        tf = self.tf
+        tf.failed(_("DSpace manager service stoped."))
+        # TODO: mark action log to failed
 
 
 ##################
