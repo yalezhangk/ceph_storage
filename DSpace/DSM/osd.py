@@ -6,7 +6,6 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace import taskflows
-from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -559,9 +558,7 @@ class OsdHandler(AdminBaseHandler):
 
     def _osd_accelerate_disk_replace(self, ctxt, disk, osds, values):
         logger.info("start to replace accelerate disk %s", disk.name)
-        client = AgentClientManager(
-            ctxt, cluster_id=disk.cluster_id
-        ).get_client(node_id=disk.node.id)
+        client = self.agent_manager.get_client(node_id=disk.node.id)
 
         partitions = client.disk_partitions_create(
             ctxt, node=disk.node, disk=disk, values=values)

@@ -34,12 +34,12 @@ class Dispatcher(stor_pb2_grpc.RPCServerServicer):
         self.debug_mode = kwargs.get('debug_mode', False)
 
     def call(self, request, context):
-        logger.debug("get rpc call: ctxt(%s), method(%s), args(%s), "
-                     "kwargs(%s), version(%s)" % (
-                         request.context,
+        logger.debug("get rpc call: method(%s), args(%s), "
+                     "kwargs(%s), ctxt(%s), version(%s)" % (
                          request.method,
                          request.args,
                          request.kwargs,
+                         request.context,
                          request.version,
                      ))
         method = request.method

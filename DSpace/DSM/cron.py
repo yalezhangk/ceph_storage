@@ -10,7 +10,6 @@ from DSpace import context as context_tool
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.DSA.client import AgentClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -50,9 +49,7 @@ class CronHandler(AdminBaseHandler):
             total = 0
             # 循环 发送osd列表至每个agent
             for node_id, osds in osd_all.items():
-                client = AgentClientManager(
-                    ctxt, cluster_id=ctxt.cluster_id
-                ).get_client(node_id=node_id)
+                client = self.agent_manager.get_client(node_id=node_id)
                 try:
                     data = client.ceph_slow_request(ctxt, osds)
                     # 循环每个agent返回的osd的慢请求列表
@@ -82,6 +79,7 @@ class CronHandler(AdminBaseHandler):
             self.slow_requests.update({ctxt.cluster_id: res})
 
     def _osd_slow_requests_get_all(self):
+        self.wait_ready()
         logger.debug("Start ceph cluster check crontab")
         while True:
             try:
@@ -91,6 +89,7 @@ class CronHandler(AdminBaseHandler):
             time.sleep(CONF.slow_request_get_time_interval)
 
     def _osd_tree_cron(self):
+        self.wait_ready()
         logger.debug("Start osd check crontab")
         if not CONF.osd_heartbeat_check or not CONF.heartbeat_check:
             logger.info("osd check not enable")
@@ -232,9 +231,7 @@ class CronHandler(AdminBaseHandler):
         osd_all = dict([(key, list(group)) for key, group in osds])
         osds_status = {}
         for node_id, osds in osd_all.items():
-            client = AgentClientManager(
-                context, cluster_id=context.cluster_id
-            ).get_client(node_id=node_id)
+            client = self.agent_manager.get_client(node_id=node_id)
             try:
                 res = client.get_osds_status(context, osds)
                 osds_status.update(res)
@@ -294,6 +291,7 @@ class CronHandler(AdminBaseHandler):
                     osd.save()
 
     def _dsa_check_cron(self):
+        self.wait_ready()
         logger.info("Start dsa check crontab")
         if not CONF.dsa_heartbeat_check or not CONF.heartbeat_check:
             logger.info("dsa check not enable")
@@ -383,6 +381,7 @@ class CronHandler(AdminBaseHandler):
                     "SERVICE_ACTIVE")
 
     def _node_check_cron(self):
+        self.wait_ready()
         logger.debug("Start node check crontab")
         while True:
             try:
@@ -438,6 +437,7 @@ class CronHandler(AdminBaseHandler):
                     })
 
     def _check_ceph_cluster_status(self):
+        self.wait_ready()
         logger.debug("Start ceph cluster check crontab")
         while True:
             try:
