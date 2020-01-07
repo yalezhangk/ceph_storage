@@ -195,9 +195,9 @@ class OsdCreateTaskflow(Taskflow, OsdTaskflowMixin):
 
     def failed(self, **kwargs):
         logger.info("%s called", self.name)
-        # call parent method
-        super(OsdCreateTaskflow, self).failed(**kwargs)
         self._mark_osd_error(self.tf, s_fields.OsdStatus.CREATING)
+        # call parent method, mark taskflow failed
+        super(OsdCreateTaskflow, self).failed(**kwargs)
 
 
 class OsdMarkOut(Task):
@@ -298,6 +298,6 @@ class OsdDeleteTaskflow(Taskflow, OsdTaskflowMixin):
 
     def failed(self, **kwargs):
         logger.info("%s called", self.name)
-        # call parent method
-        super(OsdDeleteTaskflow, self).failed(**kwargs)
         self._mark_osd_error(self.tf, s_fields.OsdStatus.DELETING)
+        # call parent method, mark taskflow failed
+        super(OsdDeleteTaskflow, self).failed(**kwargs)
