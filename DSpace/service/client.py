@@ -17,6 +17,15 @@ from DSpace.service.serializer import RequestContextSerializer
 logger = logging.getLogger(__name__)
 
 
+class RPCMixin(object):
+    def get_stub(self, ip, port):
+        url = "{}:{}".format(ip, port)
+        logger.debug("Try connect: %s", url)
+        channel = grpc.insecure_channel(url)
+        stub = stor_pb2_grpc.RPCServerStub(channel)
+        return stub
+
+
 class BaseClientManager:
     """Client Manager
 

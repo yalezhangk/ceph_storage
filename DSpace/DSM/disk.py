@@ -3,7 +3,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -71,9 +70,7 @@ class DiskHandler(AdminBaseHandler):
             node = objects.Node.get_by_id(ctxt, disk.node_id)
             begin_action = self.begin_action(ctxt, Resource.DISK,
                                              Action.DISK_LIGHT, disk)
-            client = AgentClientManager(
-                ctxt, cluster_id=disk.cluster_id
-            ).get_client(node_id=disk.node_id)
+            client = self.agent_manager.get_client(node_id=disk.node_id)
             _success = client.disk_light(ctxt, led=led, node=node,
                                          name=disk.name)
             if _success:
@@ -90,9 +87,7 @@ class DiskHandler(AdminBaseHandler):
 
     def _disk_partitions_create(self, ctxt, node, disk, values,
                                 begin_action=None):
-        client = AgentClientManager(
-            ctxt, cluster_id=disk.cluster_id
-        ).get_client(node_id=disk.node_id)
+        client = self.agent_manager.get_client(node_id=disk.node_id)
         partitions = client.disk_partitions_create(ctxt, node=node, disk=disk,
                                                    values=values)
         if partitions:
@@ -171,9 +166,7 @@ class DiskHandler(AdminBaseHandler):
 
     def _disk_partitions_remove(self, ctxt, node, disk, values,
                                 begin_action=None):
-        client = AgentClientManager(
-            ctxt, cluster_id=disk.cluster_id
-        ).get_client(node_id=disk.node_id)
+        client = self.agent_manager.get_client(node_id=disk.node_id)
         _success = client.disk_partitions_remove(ctxt, node=node,
                                                  name=disk.name, )
         if _success:
@@ -230,8 +223,7 @@ class DiskHandler(AdminBaseHandler):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         if not disk.name:
             return []
-        client = AgentClientManager(
-            ctxt, cluster_id=disk.cluster_id).get_client(node_id=disk.node_id)
+        client = self.agent_manager.get_client(node_id=disk.node_id)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         smart = client.disk_smart_get(ctxt, node=node, name=disk.name)
         return smart

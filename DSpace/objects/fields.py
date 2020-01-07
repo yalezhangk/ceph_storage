@@ -80,6 +80,7 @@ class NodeStatus(BaseStorEnum):
 
     ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING_ROLE,
            REMOVING_ROLE, WARNING)
+    ALIVE = (ACTIVE, DEPLOYING_ROLE, REMOVING_ROLE, WARNING)
 
 
 class NodeStatusField(BaseEnumField):
@@ -612,3 +613,9 @@ class ConfigKey(BaseStorEnum):
     DSA_RUN_DIR = 'dsa_run_dir'
     UDEV_DIR = 'udev_dir'
     ENABLE_CEPHX = 'enable_cephx'
+
+
+class DSMStatus(BaseStorEnum):
+    INIT = "init"
+    ACTIVE = "active"
+    BACKUP = "backup"

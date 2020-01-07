@@ -1,4 +1,5 @@
 import json
+import time
 from concurrent import futures
 
 from oslo_log import log as logging
@@ -15,6 +16,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.base import StorObject
 from DSpace.objects.fields import ConfigKey
+from DSpace.objects.fields import DSMStatus
 from DSpace.taskflows.base import task_manager
 from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
@@ -28,6 +30,7 @@ class AdminBaseHandler(object):
     slow_requests = {}
 
     def __init__(self):
+        self.status = DSMStatus.INIT
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
         ctxt = context.get_context(user_id="admin")
@@ -39,13 +42,42 @@ class AdminBaseHandler(object):
         self.bootstrap(ctxt)
 
     def bootstrap(self, ctxt):
+        self._setup_agent_manager(ctxt)
         clusters = objects.ClusterList.get_all(ctxt)
         for cluster in clusters:
             ctxt = context.get_context(cluster.id, user_id="admin")
+            self._add_node_to_agent_manager(ctxt)
             self._clean_taskflow(ctxt)
+
+    def _setup_agent_manager(self, ctxt):
+        agent_port = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.AGENT_PORT)
+        agent_manager = AgentClientManager(ctxt, agent_port)
+        self.agent_manager = agent_manager
+        setattr(context, 'agent_manager', agent_manager)
+
+    def _add_node_to_agent_manager(self, ctxt):
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={"status": s_fields.NodeStatus.ALIVE})
+        logger.info("Node get all %s", nodes)
+        for node in nodes:
+            logger.info("add node to agent manager %s", node)
+            self.agent_manager.add_node(node)
 
     def _clean_taskflow(self, ctxt):
         task_manager.bootstrap(ctxt)
+
+    def is_ready(self):
+        return self.status == DSMStatus.ACTIVE
+
+    def wait_ready(self):
+        while True:
+            if self.is_ready():
+                break
+            time.sleep(1)
+
+    def to_active(self):
+        self.status = DSMStatus.ACTIVE
 
     def _wapper(self, fun, *args, **kwargs):
         try:
@@ -165,8 +197,7 @@ class AdminBaseHandler(object):
             service.save()
 
     def notify_node_update(self, ctxt, node):
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id).get_client(node.id)
+        client = self.agent_manager.get_client(node.id)
         client.node_update_infos(ctxt, node)
 
     def if_service_alert(self, ctxt, check_cluster=True, node=None):

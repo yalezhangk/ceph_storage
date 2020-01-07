@@ -13,10 +13,10 @@ from taskflow import engines
 from taskflow.patterns import linear_flow as lf
 from taskflow.patterns import unordered_flow as uf
 
+from DSpace import context
 from DSpace import exception as exc
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.DSA.client import AgentClientManager
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
@@ -160,9 +160,7 @@ class PrometheusTargetMixin(object):
         admin_node = objects.NodeList.get_all(
             ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
         for node in admin_node:
-            client = AgentClientManager(
-                ctxt, cluster_id=node.cluster_id
-            ).get_client(node_id=node.id)
+            client = context.agent_manager.get_client(node_id=node.id)
 
             logger.info("Add to %s prometheus target file: %s, %s",
                         node.hostname, ip, port)
@@ -182,9 +180,7 @@ class PrometheusTargetMixin(object):
         admin_node = objects.NodeList.get_all(
             ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
         for node in admin_node:
-            client = AgentClientManager(
-                ctxt, cluster_id=node.cluster_id
-            ).get_client(node_id=node.id)
+            client = context.agent_manager.get_client(node_id=node.id)
 
             logger.info("Remove from %s prometheus target file: %s, %s",
                         node.hostname, ip, port)
@@ -221,9 +217,7 @@ class NodeTask(object):
         return sftp_client, transport
 
     def get_agent(self):
-        client = AgentClientManager(
-            self.ctxt, cluster_id=self.ctxt.cluster_id
-        ).get_client(self.node.id)
+        client = context.agent_manager.get_client(node_id=self.node.id)
         return client
 
     def chrony_install(self):
@@ -797,6 +791,7 @@ class DSpaceAgentUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin,
             self.target_remove(ctxt, node, 'node_exporter')
         except Exception:
             logger.warning("node_exporter target remove failed")
+        context.agent_manager.del_node(node)
         self.service_delete(ctxt, "DSA", node.id)
         self._node_remove_container(ctxt, ssh, "dsa", "dspace")
         config_dir = objects.sysconfig.sys_config_get(
@@ -906,16 +901,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             restart=restart,
             volumes=volumes
         )
-        agent_port = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.AGENT_PORT)
-        endpoint = {"ip": str(node.ip_address), "port": agent_port}
-        rpc_service = objects.RPCService(
-            ctxt, service_name='agent',
-            hostname=node.hostname,
-            endpoint=endpoint,
-            cluster_id=node.cluster_id,
-            node_id=node.id)
-        rpc_service.create()
+        context.agent_manager.add_node(node)
         self.wait_agent_ready(ctxt, node)
         self.service_create(ctxt, "DSA", node.id, "base")
         self.target_add(ctxt, node, 'node_exporter')
@@ -928,9 +914,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
                 logger.error("dsa cann't connect in 30 seconds")
                 raise exc.InvalidInput("dsa connect error")
             try:
-                agent = AgentClientManager(
-                    ctxt, cluster_id=ctxt.cluster_id
-                ).get_client(node.id)
+                agent = context.agent_manager.get_client(node_id=node.id)
                 state = agent.check_dsa_status(ctxt)
                 if state == 'ready':
                     break
@@ -1032,9 +1016,7 @@ class DSpaceExpoterUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
 
 class NodeAgentMixin(object):
     def _get_agent(self, ctxt, node):
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node.id)
+        client = context.agent_manager.get_client(node.id)
         return client
 
 

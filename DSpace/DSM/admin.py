@@ -71,7 +71,9 @@ class AdminHandler(ActionLogHandler,
                    VolumeHandler,
                    VolumeClientGroupHandler,
                    VolumeSnapshotHandler):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(AdminHandler, self).__init__(*args, **kwargs)
+        self.to_active()
 
 
 class AdminService(ServiceBase):

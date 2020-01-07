@@ -2,7 +2,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -113,16 +112,12 @@ class ComponentHandler(AdminBaseHandler):
         else:
             mon = objects.NodeList.get_all(ctxt, filters=filters)
             node_id = int(mon[0].id)
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=node_id)
+        client = self.agent_manager.get_client(node_id)
         res = restart[service](ctxt, component.get("id"), client)
         return res
 
     def _rgw_start_op(self, ctxt, radosgw, begin_action=None):
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=radosgw.node_id)
+        client = self.agent_manager.get_client(node_id=radosgw.node_id)
         try:
             client.ceph_services_start(ctxt, "rgw", radosgw.name)
             node = objects.Node.get_by_id(ctxt, radosgw.node_id)
@@ -178,9 +173,7 @@ class ComponentHandler(AdminBaseHandler):
         return res
 
     def _rgw_stop_op(self, ctxt, radosgw, begin_action=None):
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=radosgw.node_id)
+        client = self.agent_manager.get_client(node_id=radosgw.node_id)
         try:
             client.ceph_services_stop(ctxt, "rgw", radosgw.name)
             radosgw.status = s_fields.RadosgwStatus.STOPPED

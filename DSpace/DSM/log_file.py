@@ -5,7 +5,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSA.client import AgentClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -40,9 +39,7 @@ class LogFileHandler(AdminBaseHandler):
             raise exception.InvalidInput(reason=_('service_type must is mon '
                                                   'or osd'))
         # 2 agent获取日志文件元数据
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=int(node_id))
+        client = self.agent_manager.get_client(node.id)
         metadata = client.get_logfile_metadata(
             ctxt, node=node, service_type=service_type)
         if not metadata:
@@ -127,9 +124,7 @@ class LogFileHandler(AdminBaseHandler):
         directory = log_file.directory
         filename = log_file.filename
         # 2 agent获取日志文件的大小
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=int(node_id))
+        client = self.agent_manager.get_client(node.id)
         file_size = client.log_file_size(
             ctxt, node, directory, filename)
         logger.info('get log file size success, id:%s', log_file_id)
@@ -146,9 +141,7 @@ class LogFileHandler(AdminBaseHandler):
         directory = log_file.directory
         filename = log_file.filename
         # 2 agent获取日志文件的base64的content
-        client = AgentClientManager(
-            ctxt, cluster_id=ctxt.cluster_id
-        ).get_client(node_id=int(node_id))
+        client = self.agent_manager.get_client(node.id)
         content = client.read_log_file_content(
             ctxt, node, directory, filename, offset, length)
         logger.info('download_log_file success, id:%s', log_file_id)
