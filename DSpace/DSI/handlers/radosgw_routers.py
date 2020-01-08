@@ -28,7 +28,7 @@ create_router_schema = {
                 "virtual_ip": {"type": ["string", "null"], "format": "ipv4"},
                 "virtual_router_id": {
                     "type": "integer",
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 255
                 },
                 "port": {

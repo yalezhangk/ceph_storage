@@ -351,6 +351,12 @@ msgstr "设备或资源忙"
 msgid "Permission denied"
 msgstr "权限不允许"
 
+msgid "Docker socket file %(path)s not found"
+msgstr "Docker服务的socket文件 %(path)s 未找到"
+
+msgid "Dbus socket file %(path)s not found"
+msgstr "Dbus的socket文件 %(path)s 未找到"
+
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
 
@@ -1021,7 +1027,7 @@ msgid "The node %s has radosgw router"
 msgstr "节点%s上已存在对象路由"
 
 msgid "The virtual ip %s is used by another node"
-msgstr "虚拟IP地址 %s 已被其他对象存储网关使用"
+msgstr "虚拟IP地址 %s 已被其他节点使用"
 
 msgid "delete radosgw router {} success"
 msgstr "删除对象路由成功：{}"
@@ -1390,5 +1396,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-

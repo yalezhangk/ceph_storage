@@ -31,9 +31,9 @@ class ServiceMap(object):
         }
 
         self.role_monitor = {
-            "MON": "ceph-mon@$HOSTNAME",
-            "MGR": "ceph-mgr@$HOSTNAME",
-            "MDS": "ceph-mds@$HOSTNAME",
+            "MON": "ceph-mon@$HOSTNAME.service",
+            "MGR": "ceph-mgr@$HOSTNAME.service",
+            "MDS": "ceph-mds@$HOSTNAME.service",
         }
 
         self.role_block_gateway = {

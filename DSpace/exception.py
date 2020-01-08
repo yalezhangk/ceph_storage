@@ -550,3 +550,15 @@ class DeviceOrResourceBusy(StorException):
 
 class PermissionDenied(StorException):
     message = _("Permission denied")
+
+
+class DockerSockNotFound(NotFound):
+    message = _("Docker socket file %(path)s not found")
+
+
+class DbusSocketNotFound(NotFound):
+    message = _("Dbus socket file %(path)s not found")
+
+
+class RunDbusError(StorException):
+    message = _("Dbus command for %(service)s error: %(reason)s")

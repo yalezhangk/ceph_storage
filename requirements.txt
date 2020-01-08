@@ -24,3 +24,5 @@ taskflow
 networkx==1.11
 retrying
 redis
+dbus-python
+docker
