@@ -402,6 +402,8 @@ class AllActionType(BaseStorEnum):
     OSD_RESTART = 'osd_restart'
     RGW_START = 'rgw_start'
     RGW_STOP = 'rgw_stop'
+    RGW_ROUTER_ADD = 'rgw_router_add'
+    RGW_ROUTER_REMOVE = 'rgw_router_remove'
 
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
@@ -410,7 +412,8 @@ class AllActionType(BaseStorEnum):
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
            CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE,
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
-           OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO)
+           OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
+           RGW_ROUTER_REMOVE)
 
 
 class AllActionStatus(BaseStorEnum):

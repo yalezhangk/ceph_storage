@@ -337,8 +337,13 @@ class RadosgwRouterHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Only available and error"
                                            " radosgw router can be updated"))
         self._router_node_check(ctxt, rgw_router)
+        action = data.get('action')
+        if action == "add":
+            action_type = Action.RGW_ROUTER_ADD
+        if action == "remove":
+            action_type = Action.RGW_ROUTER_REMOVE
         begin_action = self.begin_action(ctxt, Resource.RADOSGW_ROUTER,
-                                         Action.UPDATE, rgw_router)
+                                         action_type, rgw_router)
         rgw_router.status = s_fields.RadosgwRouterStatus.UPDATING
         rgw_router.save()
         self.task_submit(self._rgw_router_update, ctxt, rgw_router, data,
