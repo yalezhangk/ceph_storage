@@ -489,10 +489,12 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True),
         Column('resource_type', String(32)),
         Column('type', String(64)),
+        Column('trigger_mode', String(64)),
         Column('trigger_value', String(64)),
         Column('level', String(64)),
         Column('trigger_period', String(64)),
         Column('enabled', Boolean, default=False),
+        Column('data_source', String(64)),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
