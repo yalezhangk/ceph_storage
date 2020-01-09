@@ -2,7 +2,6 @@ import json
 import time
 
 from netaddr import IPAddress
-from netaddr import IPNetwork
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
@@ -10,7 +9,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.DSI.wsclient import WebSocketClientManager
-from DSpace.DSM.base import AdminBaseHandler
+from DSpace.DSM.radosgw import RadosgwMixin
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
@@ -22,7 +21,7 @@ from DSpace.tools.system import System as SystemTool
 logger = logging.getLogger(__name__)
 
 
-class RadosgwRouterHandler(AdminBaseHandler):
+class RadosgwRouterHandler(RadosgwMixin):
 
     def _check_router_status(self, routers):
         for router in routers:
@@ -72,13 +71,14 @@ class RadosgwRouterHandler(AdminBaseHandler):
                 raise exception.InvalidInput(
                     _("The radosgw %s has router") % rgw.display_name)
 
+        # check if router name is used
         rgw_router = objects.RadosgwRouterList.get_all(
             ctxt, filters={'name': data.get('name')})
         if rgw_router:
             raise exception.InvalidInput(
                 _("The Router name %s has been used") % data.get('name'))
 
-        # check vip
+        # check if vip is used
         virtual_ip = data.get('virtual_ip')
         if not virtual_ip:
             data['virtual_router_id'] = None
@@ -89,6 +89,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("The virtual ip %s has been used") % virtual_ip)
 
+        # check if virtual id is used
         rgw_router = objects.RadosgwRouterList.get_all(
             ctxt, filters={'virtual_router_id': data.get('virtual_router_id')})
         if rgw_router:
@@ -97,12 +98,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
                 % data.get('virtual_router_id'))
 
         # Check if virtual ip address is in gateway_cidr
-        gateway_cidr = objects.sysconfig.sys_config_get(
-            ctxt, key="gateway_cidr")
-        if IPAddress(virtual_ip) not in IPNetwork(gateway_cidr):
-            raise exception.InvalidInput(
-                _("The virtual ip address %s is not in gateway_cidr")
-                % virtual_ip)
+        self.check_gateway_cidr(ctxt, virtual_ip)
 
         # Check http and https port
         http_port = data.get('port')
@@ -115,7 +111,9 @@ class RadosgwRouterHandler(AdminBaseHandler):
         nodes = data.get("nodes")
         for n in nodes:
             node = objects.Node.get_by_id(ctxt, n.get("node_id"))
-            self.check_agent_available(ctxt, node)
+            # check if node is role_object_gateway
+            self.check_gateway_node(ctxt, node)
+            # check if node is used by another router
             service = objects.RouterServiceList.get_all(
                 ctxt, filters={"node_id": node.id}
             )
@@ -124,7 +122,7 @@ class RadosgwRouterHandler(AdminBaseHandler):
                 raise exception.InvalidInput(
                     _("The node %s has radosgw router") % node.hostname)
 
-        # Check if vip can be used
+        # Check if vip is used by another node
         ssh_client = SSHExecutor()
         sys_tool = SystemTool(ssh_client)
         if sys_tool.ping(virtual_ip):
@@ -259,15 +257,20 @@ class RadosgwRouterHandler(AdminBaseHandler):
             node = objects.Node.get_by_id(ctxt, n['node_id'])
             self.check_agent_available(ctxt, node)
 
-    def rgw_router_delete(self, ctxt, rgw_router_id):
-        rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id,
-                                                     joined_load=True)
-        logger.info("Radosgw router delete %s.", rgw_router.name)
+    def _rgw_router_delete_check(self, ctxt, rgw_router):
+        # check router status
         if rgw_router.status not in [s_fields.RadosgwRouterStatus.ACTIVE,
                                      s_fields.RadosgwRouterStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " radosgw router can be deleted"))
+        # check router node
         self._router_node_check(ctxt, rgw_router)
+
+    def rgw_router_delete(self, ctxt, rgw_router_id):
+        rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id,
+                                                     joined_load=True)
+        logger.info("Radosgw router delete %s.", rgw_router.name)
+        self._rgw_router_delete_check(ctxt, rgw_router)
         begin_action = self.begin_action(ctxt, Resource.RADOSGW_ROUTER,
                                          Action.DELETE, rgw_router)
         rgw_router.status = s_fields.RadosgwRouterStatus.DELETING
@@ -296,14 +299,14 @@ class RadosgwRouterHandler(AdminBaseHandler):
             rgw_router = objects.RadosgwRouter.get_by_id(
                 ctxt, rgw_router.id, joined_load=True)
             nodes = json.loads(rgw_router.nodes)
-            for n in nodes:
-                node = objects.Node.get_by_id(ctxt, n['node_id'])
-                task = NodeTask(ctxt, node)
-                task.rgw_router_update()
             if action == "add":
                 self._add_radosgw_to_router(ctxt, radosgws, rgw_router)
             elif action == "remove":
                 self._delete_radosgw_from_router(ctxt, radosgws)
+            for n in nodes:
+                node = objects.Node.get_by_id(ctxt, n['node_id'])
+                task = NodeTask(ctxt, node)
+                task.rgw_router_update()
             rgw_router.status = s_fields.RadosgwRouterStatus.ACTIVE
             rgw_router.save()
             msg = _("Update radosgw router {} success").format(rgw_router.name)
@@ -327,16 +330,31 @@ class RadosgwRouterHandler(AdminBaseHandler):
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
                            rgw_router, status, err_msg=err_msg)
 
+    def _rgw_router_update_check(self, ctxt, rgw_router, data):
+        # router status check
+        if rgw_router.status not in [s_fields.RadosgwRouterStatus.ACTIVE,
+                                     s_fields.RadosgwRouterStatus.ERROR]:
+            raise exception.InvalidInput(_("Only available and error"
+                                           " radosgw router can be updated"))
+        # node check
+        self._router_node_check(ctxt, rgw_router)
+        # action check
+        action = data.get('action')
+        if action == "remove":
+            # check if rgw is the last
+            rgws = objects.RadosgwList.get_all(
+                ctxt, filters={"router_id": rgw_router.id})
+            if len(rgws) == len(data.get("radosgws")):
+                raise exception.InvalidInput(
+                    _("There must be at least one rgw in router"))
+
     def rgw_router_update(self, ctxt, rgw_router_id, data):
         rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id,
                                                      joined_load=True)
         logger.info("Radosgw router update %s with %s.",
                     rgw_router.name, data)
-        if rgw_router.status not in [s_fields.RadosgwRouterStatus.ACTIVE,
-                                     s_fields.RadosgwRouterStatus.ERROR]:
-            raise exception.InvalidInput(_("Only available and error"
-                                           " radosgw router can be updated"))
-        self._router_node_check(ctxt, rgw_router)
+        self._rgw_router_update_check(ctxt, rgw_router, data)
+
         action = data.get('action')
         if action == "add":
             action_type = Action.RGW_ROUTER_ADD
