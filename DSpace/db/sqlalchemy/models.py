@@ -455,11 +455,13 @@ class AlertRule(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     resource_type = Column(String(32))
-    type = Column(String(64))  # 告警类型
-    trigger_value = Column(String(64))  # 触发值 eg:>80%
+    type = Column(String(64))  # 告警类型:集群容量使用率
+    trigger_mode = Column(String(64))  # eq:=,gt:>,lt:<
+    trigger_value = Column(String(64))  # 触发值 0.8
     level = Column(String(64))  # 告警级别
     trigger_period = Column(String(64))  # 告警周期(分钟)
     enabled = Column(Boolean, default=False)  # 是否启用
+    data_source = Column(String(64))  # 数据来源:dspace/prometheus
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     alert_groups = relationship(
         'AlertGroup', secondary=alert_group_relate_rule,
