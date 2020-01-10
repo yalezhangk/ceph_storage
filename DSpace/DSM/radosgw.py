@@ -21,7 +21,26 @@ from DSpace.utils import template
 logger = logging.getLogger(__name__)
 
 
-class RadosgwHandler(AdminBaseHandler):
+class RadosgwMixin(AdminBaseHandler):
+
+    def check_gateway_node(self, ctxt, node):
+        # check if node is role_object_gateway
+        if not node.role_object_gateway:
+            raise exception.InvalidInput(
+                _("The role of node %s is not role_object_gateway")
+                % node.hostname)
+        # check node agent
+        self.check_agent_available(ctxt, node)
+
+    def check_gateway_cidr(self, ctxt, ip):
+        gateway_cidr = objects.sysconfig.sys_config_get(
+            ctxt, key="gateway_cidr")
+        if IPAddress(ip) not in IPNetwork(gateway_cidr):
+            raise exception.InvalidInput(
+                _("The ip address %s is not in gateway_cidr") % ip)
+
+
+class RadosgwHandler(RadosgwMixin):
 
     def _check_radosgw_status(self, ctxt, radosgws):
         for rgw in radosgws:
@@ -51,18 +70,10 @@ class RadosgwHandler(AdminBaseHandler):
 
     def _radosgw_create_check(self, ctxt, node, data):
         logger.info("Check node %s for radosgw", node.id)
+        # check node
+        self.check_gateway_node(ctxt, node)
         # check mon is ready
         self.check_mon_host(ctxt)
-        node_task = NodeTask(ctxt, node)
-        node_infos = node_task.node_get_infos()
-
-        # Check if dsa alive
-        self.check_agent_available(ctxt, node)
-        # Check if the role of node is role_object_gateway
-        if not node.role_object_gateway:
-            raise exception.InvalidInput(
-                _("The role of node %s is not role_object_gateway")
-                % data['ip_address'])
 
         # Check if name is used
         rgw_db = objects.RadosgwList.get_all(
@@ -78,26 +89,17 @@ class RadosgwHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 _("The port %s is used by another radosgw") % data['port'])
 
-        # Check if ip address is valid
-        node_networks = node_infos.get('networks')
-        valid_ip = False
-        for net in node_networks:
-            if net.get('ip_address') == data['ip_address']:
-                valid_ip = True
-                break
-        if not valid_ip:
+        # Check if ip address is gateway ip
+        if (IPAddress(data['ip_address']) !=
+                IPAddress(node.object_gateway_ip_address)):
             raise exception.InvalidInput(
                 _("The ip address %s is invalid") % data['ip_address'])
 
         # Check if ip address is in gateway_cidr
-        gateway_cidr = objects.sysconfig.sys_config_get(
-            ctxt, key="gateway_cidr")
-        if IPAddress(data['ip_address']) not in IPNetwork(gateway_cidr):
-            raise exception.InvalidInput(
-                _("The ip address %s is not in gateway_cidr")
-                % data['ip_address'])
+        self.check_gateway_cidr(ctxt, data['ip_address'])
 
         # Check if port is used
+        node_task = NodeTask(ctxt, node)
         if not node_task.check_port(data['port']):
             raise exception.InvalidInput(
                 _("The port %s is used") % data['port'])
@@ -258,9 +260,19 @@ class RadosgwHandler(AdminBaseHandler):
                            radosgw, status, err_msg=err_msg)
 
     def _radosgw_delete_check(self, ctxt, radosgw):
-        # check if dsa alive
+        # radosgw common check
         node = objects.Node.get_by_id(ctxt, radosgw.node_id)
         self.check_agent_available(ctxt, node)
+
+        # check radosgw status
+        if radosgw.status not in [s_fields.RadosgwStatus.ACTIVE,
+                                  s_fields.RadosgwStatus.INACTIVE,
+                                  s_fields.RadosgwStatus.STOPPED,
+                                  s_fields.RadosgwStatus.ERROR]:
+            raise exception.InvalidInput(
+                _("Only available 、inactive 、stopped or error radosgw can "
+                  "be deleted"))
+
         # check radosgw router on radosgw
         if radosgw.router_id:
             raise exception.InvalidInput(
@@ -269,13 +281,6 @@ class RadosgwHandler(AdminBaseHandler):
     def radosgw_delete(self, ctxt, rgw_id):
         radosgw = objects.Radosgw.get_by_id(ctxt, rgw_id)
         logger.info("Radosgw delete %s.", radosgw.name)
-        if radosgw.status not in [s_fields.RadosgwStatus.ACTIVE,
-                                  s_fields.RadosgwStatus.INACTIVE,
-                                  s_fields.RadosgwStatus.STOPPED,
-                                  s_fields.RadosgwStatus.ERROR]:
-            raise exception.InvalidInput(
-                _("Only available 、inactive 、stopped or error radosgw can "
-                  "be deleted"))
         self._radosgw_delete_check(ctxt, radosgw)
         begin_action = self.begin_action(
             ctxt, Resource.RADOSGW, Action.DELETE, radosgw)

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-06 18:58+0800\n"
+"POT-Creation-Date: 2020-01-09 19:17+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -963,6 +963,9 @@ msgstr "机架 {} 已存在"
 msgid "The role of node %s is not role_object_gateway"
 msgstr "节点 %s 的角色不是对象存储网关"
 
+msgid "The ip address %s is not in gateway_cidr"
+msgstr "此IP地址 %s 不在对象存储网关地址范围内"
+
 msgid "The name %s is used by another radosgw"
 msgstr "名称 %s 已被其他对象存储网关使用"
 
@@ -971,9 +974,6 @@ msgstr "端口 %s 已被其他对象存储网关使用"
 
 msgid "The ip address %s is invalid"
 msgstr "此IP地址 %s 不合法"
-
-msgid "The ip address %s is not in gateway_cidr"
-msgstr "此IP地址 %s 不在对象存储网关地址范围内"
 
 msgid "The port %s is used"
 msgstr "端口 %s 已被占用"
@@ -996,11 +996,11 @@ msgstr "删除对象存储网关成功：{}"
 msgid "delete radosgw {} error"
 msgstr "删除对象存储网关失败：{}"
 
-msgid "Must remove radosgw router before radosgw"
-msgstr "必须在删除对象存储网关前删除对象路由"
-
 msgid "Only available 、inactive 、stopped or error radosgw can be deleted"
 msgstr "只能删除健康、已停止与错误状态的对象存储网关"
+
+msgid "Must remove radosgw router before radosgw"
+msgstr "必须在删除对象存储网关前删除对象路由"
 
 msgid "The radosgw %s has router"
 msgstr "对象存储网关 %s 已经绑定路由"
@@ -1013,9 +1013,6 @@ msgstr "虚拟IP %s 已被占用"
 
 msgid "The virtual router id %s has been used"
 msgstr "虚拟路由ID %s 已被使用"
-
-msgid "The virtual ip address %s is not in gateway_cidr"
-msgstr "此虚拟IP地址 %s 不在对象存储网关地址范围内"
 
 msgid "HTTP port and HTTPS port can not be same"
 msgstr "HTTP端口和HTTPS端口不能相同"
@@ -1043,6 +1040,9 @@ msgstr "更新对象路由失败：{}"
 
 msgid "Only available and error radosgw router can be updated"
 msgstr "只能更新可用与错误的对象路由"
+
+msgid "There must be at least one rgw in router"
+msgstr "对象路由中至少需要存在一个对象网关"
 
 msgid "Node {}: service {} in status is inactive, trying to restart"
 msgstr "节点{}: 服务{}已停止，尝试进行重启"
@@ -1390,3 +1390,5 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
+
