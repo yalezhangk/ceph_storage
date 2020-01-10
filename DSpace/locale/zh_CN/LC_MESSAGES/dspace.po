@@ -357,6 +357,9 @@ msgstr "Docker服务的socket文件 %(path)s 未找到"
 msgid "Dbus socket file %(path)s not found"
 msgstr "Dbus的socket文件 %(path)s 未找到"
 
+msgid "Dbus command for %(service)s error: %(reason)s"
+msgstr "DBUS 命令 %(service)s 错误: %(reason)s"
+
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
 
@@ -837,6 +840,9 @@ msgstr "创建硬盘失败：osd.{} 离线"
 msgid "create osd.{} error: {}"
 msgstr "创建硬osd.{}盘失败：{}"
 
+msgid "Disk(%s) status not available"
+msgstr "磁盘(%s)状态不可用"
+
 msgid "Disk %s not available"
 msgstr "磁盘 %s 不可用"
 
@@ -857,6 +863,9 @@ msgstr "%s 不支持 filestore"
 
 msgid "%s not support cache"
 msgstr "%s 不支持 filestore"
+
+msgid "Node status not idle"
+msgstr "节点未处于空闲状态"
 
 msgid "Max osd num is %s"
 msgstr "最大硬盘数为 %s"
