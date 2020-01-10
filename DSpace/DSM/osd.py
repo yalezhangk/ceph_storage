@@ -156,25 +156,31 @@ class OsdHandler(AdminBaseHandler):
         self._osds_update_size(ctxt, [osd])
         wb_client.send_message(ctxt, osd, op_status, msg)
 
+    def _update_disk_status(self, disk):
+        update_value = {
+            "status": s_fields.DiskStatus.INUSE,
+        }
+        expected_values = {
+            "status": s_fields.DiskStatus.AVAILABLE
+        }
+        if not disk.conditional_update(update_value, expected_values):
+            raise exception.InvalidInput(
+                _("Disk(%s) status not available") % disk.name)
+
     def _set_osd_partation_role(self, ctxt, osd):
-        osd.disk.status = s_fields.DiskStatus.INUSE
-        osd.disk.save()
+        self._update_disk_status(osd.disk)
         accelerate_disk = []
         if osd.db_partition_id:
-            osd.db_partition.status = s_fields.DiskStatus.INUSE
-            osd.db_partition.save()
+            self._update_disk_status(osd.db_partition)
             accelerate_disk.append(osd.db_partition.disk_id)
         if osd.cache_partition_id:
-            osd.cache_partition.status = s_fields.DiskStatus.INUSE
-            osd.cache_partition.save()
+            self._update_disk_status(osd.cache_partition)
             accelerate_disk.append(osd.cache_partition.disk_id)
         if osd.journal_partition_id:
-            osd.journal_partition.status = s_fields.DiskStatus.INUSE
-            osd.journal_partition.save()
+            self._update_disk_status(osd.journal_partition)
             accelerate_disk.append(osd.journal_partition.disk_id)
         if osd.wal_partition_id:
-            osd.wal_partition.status = s_fields.DiskStatus.INUSE
-            osd.wal_partition.save()
+            self._update_disk_status(osd.wal_partition)
             accelerate_disk.append(osd.wal_partition.disk_id)
         accelerate_disk = set(accelerate_disk)
         if accelerate_disk:
@@ -216,37 +222,7 @@ class OsdHandler(AdminBaseHandler):
                 _("The partition is not on the same machine as the "
                   "disk") % partition_id)
 
-    def _osd_create_check_store(self, ctxt, data):
-        ceph_version = objects.sysconfig.sys_config_get(
-            ctxt, 'ceph_version_name')
-        if (ceph_version == s_fields.CephVersion.T2STOR):
-            if data.get('type') == s_fields.OsdType.FILESTORE:
-                raise exception.InvalidInput(
-                    _("%s not support filestore") % ceph_version)
-        else:
-            if data.get('cache_partition_id'):
-                raise exception.InvalidInput(
-                    _("%s not support cache") % ceph_version)
-
-    def _osd_create_check(self, ctxt, data):
-        # check mon is ready
-        self.check_mon_host(ctxt)
-        # osd num check
-        max_osd_num = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.MAX_OSD_NUM
-        )
-        osd_num = objects.OsdList.get_count(ctxt)
-        if osd_num >= max_osd_num:
-            raise exception.InvalidInput(_("Max osd num is %s") % max_osd_num)
-
-    def osd_create(self, ctxt, data):
-        logger.info("Osd create with %s.", data)
-
-        self._osd_create_check(ctxt, data)
-        self._osd_create_check_store(ctxt, data)
-        # data check
-        disk_id = data.get('disk_id')
-        disk = self._osd_create_disk_check(ctxt, disk_id)
+    def _osd_create_partitions_check(self, ctxt, data, disk):
         # db
         self._osd_create_partition_check(
             ctxt, data, 'db_partition_id',
@@ -263,7 +239,60 @@ class OsdHandler(AdminBaseHandler):
         self._osd_create_partition_check(
             ctxt, data, 'journal_partition_id',
             s_fields.DiskPartitionRole.JOURNAL, disk)
+
+    def _osd_create_check_store(self, ctxt, data):
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, 'ceph_version_name')
+        if (ceph_version == s_fields.CephVersion.T2STOR):
+            if data.get('type') == s_fields.OsdType.FILESTORE:
+                raise exception.InvalidInput(
+                    _("%s not support filestore") % ceph_version)
+        else:
+            if data.get('cache_partition_id'):
+                raise exception.InvalidInput(
+                    _("%s not support cache") % ceph_version)
+
+    def _osd_create_node_check(self, ctxt, node):
+        if node.status not in s_fields.NodeStatus.IDLE:
+            raise exception.InvalidInput(
+                _("Node status not idle"))
+
+    def _osd_create_check(self, ctxt, data):
+        # check mon is ready
+        self.check_mon_host(ctxt)
+        # osd num check
+        max_osd_num = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.MAX_OSD_NUM
+        )
+        osd_num = objects.OsdList.get_count(ctxt)
+        if osd_num >= max_osd_num:
+            raise exception.InvalidInput(_("Max osd num is %s") % max_osd_num)
+
+    def osd_create(self, ctxt, data):
+        """Osd Create
+
+        check mon available
+        check dsa available
+        check node status
+        """
+        logger.info("Osd create with %s.", data)
+
+        # check mon available
+        # osd num check
+        self._osd_create_check(ctxt, data)
+        self._osd_create_check_store(ctxt, data)
+        disk_id = data.get('disk_id')
+        # disk check
+        disk = self._osd_create_disk_check(ctxt, disk_id)
+        # partitions check
+        self._osd_create_partitions_check(ctxt, data, disk)
         logger.debug("Parameter check pass.")
+
+        node_id = disk.node_id
+        node = objects.Node.get_by_id(ctxt, node_id)
+        # check node status
+        # check agent
+        self.check_agent_available(ctxt, node)
 
         # get osd id
         osd_fsid = str(uuid.uuid4())
@@ -272,10 +301,6 @@ class OsdHandler(AdminBaseHandler):
                     osd_id, osd_fsid)
 
         # db create
-        node_id = disk.node_id
-        node = objects.Node.get_by_id(ctxt, node_id)
-        # check agent
-        self.check_agent_available(ctxt, node)
         begin_action = self.begin_action(ctxt, Resource.OSD, Action.CREATE)
         osd = objects.Osd(
             ctxt, node_id=node_id,
@@ -438,7 +463,9 @@ class OsdHandler(AdminBaseHandler):
                                           "please wait" % disk.slot))
 
     def osd_disk_replace_prepare(self, ctxt, osd_id):
+        self.check_mon_host(ctxt)
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        self.check_agent_available(ctxt, osd.node)
         if osd.status not in [s_fields.OsdStatus.MAINTAIN,
                               s_fields.OsdStatus.ACTIVE,
                               s_fields.OsdStatus.WARNING,
@@ -541,7 +568,9 @@ class OsdHandler(AdminBaseHandler):
                 osd.status, err_msg=err_msg)
 
     def osd_disk_replace(self, ctxt, osd_id):
+        self.check_mon_host(ctxt)
         osd = objects.Osd.get_by_id(ctxt, osd_id, joined_load=True)
+        self.check_agent_available(ctxt, osd.name)
         if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
             raise exception.InvalidInput(_("Osd status should be "
                                            "REPLACE_PREPARED"))
@@ -597,9 +626,11 @@ class OsdHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
 
     def osd_accelerate_disk_replace(self, ctxt, disk_id):
+        self.check_mon_host(ctxt)
         disk = objects.Disk.get_by_id(
             ctxt, disk_id, expected_attrs=['partition_used', 'node',
                                            'partitions'])
+        self.check_agent_available(disk.node)
         if not disk.partitions:
             raise exception.InvalidInput(_("accelerate disk has no "
                                            "partitions"))

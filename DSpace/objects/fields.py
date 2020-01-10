@@ -81,6 +81,7 @@ class NodeStatus(BaseStorEnum):
     ALL = (CREATING, ACTIVE, DELETING, ERROR, DEPLOYING_ROLE,
            REMOVING_ROLE, WARNING)
     ALIVE = (ACTIVE, DEPLOYING_ROLE, REMOVING_ROLE, WARNING)
+    IDLE = (ACTIVE, WARNING)
 
 
 class NodeStatusField(BaseEnumField):
