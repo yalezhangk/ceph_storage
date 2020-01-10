@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-09 19:17+0800\n"
+"POT-Creation-Date: 2020-01-10 05:37-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -196,6 +196,9 @@ msgstr ""
 
 msgid "License %(license_id)s could not be found."
 msgstr "证书 %(license_id)s 未找到"
+
+msgid "%(reason)s"
+msgstr "%(reason)s"
 
 msgid "AlertRule %(alert_rule_id)s could not be found."
 msgstr "告警规则 %(alert_rule_id)s 未找到"
@@ -419,12 +422,6 @@ msgstr "文件名不存在"
 
 msgid "file not yet generate or file path is error"
 msgstr "文件没有生成或文件路径错误"
-
-msgid "Only one node can set roles at the same time"
-msgstr "同时只有一个节点可以添加或者移除角色"
-
-msgid "node:{} create error"
-msgstr "节点 {} 创建错误"
 
 msgid "node_metrics_network: net_name required"
 msgstr "节点网络监控需要参数 'net_name'"
@@ -687,17 +684,11 @@ msgstr "邮箱: %s 重复"
 msgid "service_type must is mon or osd"
 msgstr "服务类型只支持 'mon'或'osd'"
 
-msgid "node remove success: {}"
-msgstr "节点 {} 移除成功"
+msgid "There are nodes updating roles"
+msgstr "有节点正在设置角色中"
 
-msgid "node remove error: {}"
-msgstr "节点 {} 移除失败"
-
-msgid "Node status not allow!"
-msgstr "节点状态不支持此操作"
-
-msgid "admin role could not delete!"
-msgstr "管理角色无法被删除"
+msgid "Node status %s not allowed"
+msgstr "节点状态 %s 不支持此操作"
 
 msgid "Please remove disk partition first!"
 msgstr "请先移除磁盘分区"
@@ -729,12 +720,6 @@ msgstr "节点%s还有硬盘未删除"
 msgid "Node %s has accelerate disk!"
 msgstr "节点%s还有加速盘未删除"
 
-msgid "The admin role has been installed."
-msgstr "管理角色已被安装"
-
-msgid "The admin role has not yet been installed"
-msgstr "管理角色还未安装"
-
 msgid "The object gateway role has been installed."
 msgstr "对象网关角色已被安装"
 
@@ -747,11 +732,14 @@ msgstr "节点 %s 还存在对象存储网关"
 msgid "Node %s has radosgw router!"
 msgstr "节点 %s 还存在对象路由"
 
-msgid "The block gateway role has been installed."
-msgstr "块存储网关角色已被安装"
+msgid "node remove success: {}"
+msgstr "节点 {} 移除成功"
 
-msgid "The block gateway role has not yet been installed"
-msgstr "块存储角色还未安装"
+msgid "node remove error: {}"
+msgstr "节点 {} 移除失败"
+
+msgid "admin role could not delete!"
+msgstr "管理角色无法被删除"
 
 msgid "node %s: set mon role success"
 msgstr "节点%s: 添加主控角色成功"
@@ -794,9 +782,6 @@ msgstr "节点%s: 设置角色成功"
 
 msgid "node %s: set roles error"
 msgstr "节点%s: 设置角色失败"
-
-msgid "Only host's status is active can set role(host_name: %s)"
-msgstr "%s：仅当服务器状态健康才能设置角色"
 
 msgid "Please provide roles"
 msgstr "请先移除硬盘"
@@ -1300,33 +1285,6 @@ msgstr "Ceph cluster_network 与集群存储网络配置不同"
 
 msgid "Admin ip(%s) alreay in platform"
 msgstr "管理网Ip(%s) 在平台中已经存在"
-
-msgid "Admin IP, Gateway IP, Public IP and Cluster IP is required"
-msgstr "Admin IP、Gateway IP、Public IP和Cluster IP是必须的"
-
-msgid "Admin IP already exists!"
-msgstr "Admin IP已存在"
-
-msgid "Admin IP not in admin cidr ({})"
-msgstr "Admin IP不在管理网络网段内"
-
-msgid "Cluster IP already exists!"
-msgstr "Cluster IP已存在"
-
-msgid "Cluster IP not in cluster cidr ({})"
-msgstr "Cluster IP不在存储网络网段内"
-
-msgid "Public IP already exists!"
-msgstr "Public IP已存在"
-
-msgid "public ip not in public cidr ({})"
-msgstr "Public IP不在业务网络网段内"
-
-msgid "Gateway IP already exists!"
-msgstr "Gateway IP已存在"
-
-msgid "Gateway IP not in gateway cidr ({})"
-msgstr "Gateway IP不在网关网络网段内"
 
 msgid "Repository not available"
 msgstr "安装源不可用"
