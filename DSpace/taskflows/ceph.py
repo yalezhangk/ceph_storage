@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 class CephTask(object):
     ctxt = None
 
+    rgw_pools = ['.rgw.root',
+                 'default.rgw.meta',
+                 'default.rgw.buckets.index',
+                 'default.rgw.buckets.non-ec']
+
     def __init__(self, ctxt):
         self.ctxt = ctxt
         if ctxt:
@@ -202,11 +207,7 @@ class CephTask(object):
                     pool_name=pool_name, rep_size=rep_size)
             if pool_role == 'gateway':
                 pg_num = 32
-                rgw_pools = ['.rgw.root',
-                             'default.rgw.meta',
-                             'default.rgw.buckets.index',
-                             'default.rgw.buckets.non-ec']
-                for pool in rgw_pools:
+                for pool in self.rgw_pools:
                     rados_client.pool_create(pool_name=pool,
                                              pool_type=pool_type,
                                              rule_name=rule_name,
@@ -291,11 +292,7 @@ class CephTask(object):
         with RADOSClient(self.rados_args(), timeout='5') as rados_client:
             rados_client.pool_delete(pool_name)
             if pool_role == 'gateway':
-                rgw_pools = ['.rgw.root',
-                             'default.rgw.meta',
-                             'default.rgw.buckets.index',
-                             'default.rgw.buckets.non-ec']
-                for pool in rgw_pools:
+                for pool in self.rgw_pools:
                     rados_client.pool_delete(pool)
 
     def crush_delete(self, crush_content):
@@ -580,6 +577,12 @@ class CephTask(object):
                 raise exc.PoolNameNotFound(pool=pool_name)
             client.pool_set_replica_size(pool_name=pool_name,
                                          rep_size=rep_size)
+            if pool.role == 'gateway':
+                for rgw_pool in self.rgw_pools:
+                    if not client.pool_exists(rgw_pool):
+                        raise exc.PoolNameNotFound(pool=rgw_pool)
+                    client.pool_set_replica_size(pool_name=rgw_pool,
+                                                 rep_size=rep_size)
 
     def update_crush_policy(self, pools, crush_content):
         rule_name = crush_content.get('crush_rule_name')
@@ -595,6 +598,11 @@ class CephTask(object):
                 if not client.pool_exists(pool_name):
                     raise exc.PoolNameNotFound(pool=pool_name)
                 client.set_pool_info(pool_name, "crush_rule", rule_name)
+                if pool.role == 'gateway':
+                    for rgw_pool in self.rgw_pools:
+                        if not client.pool_exists(rgw_pool):
+                            raise exc.PoolNameNotFound(pool=rgw_pool)
+                        client.set_pool_info(rgw_pool, "crush_rule", rule_name)
             client.rule_remove(tmp_rule_name)
             return client.rule_get(rule_name)
 
