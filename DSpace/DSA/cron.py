@@ -10,8 +10,8 @@ from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.DSA.base import AgentBaseHandler
 from DSpace.objects import fields as s_fields
-from DSpace.tools.docker import Docker as DockerTool
-from DSpace.tools.service import Service as ServiceTool
+from DSpace.tools.docker import DockerSockTool as DockerTool
+from DSpace.tools.service import ServiceDbus as ServiceTool
 from DSpace.utils.service_map import ServiceMap
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,8 @@ class CronHandler(AgentBaseHandler):
                     if rgw.status == s_fields.RadosgwStatus.STOPPED:
                         continue
                     self.service_map['role_object_gateway'].update({
-                        rgw.name: "ceph-radosgw@rgw.{}".format(rgw.name)
+                        rgw.name:
+                            "ceph-radosgw@rgw.{}.service".format(rgw.name)
                     })
             if k == "radosgw_routers":
                 for service in v:
@@ -103,15 +104,36 @@ class CronHandler(AgentBaseHandler):
             return s_fields.RouterServiceStatus.ACTIVE if status \
                 else s_fields.RouterServiceStatus.INACTIVE
 
-    def service_check(self):
-        logger.debug("Get node services status")
-        ssh_client = self._get_ssh_executor()
-        if not ssh_client:
+    def _get_systemd_status(self, service_tool, name):
+        status = service_tool.status(name)
+        if status == "active":
+            return True
+        else:
             return False
-        docker_tool = DockerTool(ssh_client)
-        service_tool = ServiceTool(ssh_client)
-        services = {}
+
+    def _get_docker_status(self, docker_tool, name):
+        status = docker_tool.status(container_name=name)
+        logger.info("Container %s status: %s", name, status)
+        if status == "running":
+            return True
+        else:
+            return False
+
+    def service_check(self):
         logger.debug("Check service according to map: %s", self.service_map)
+        client = self._get_executor()
+        try:
+            docker_tool = DockerTool(client)
+        except exception.StorException as e:
+            logger.warning(e)
+            docker_tool = None
+        try:
+            service_tool = ServiceTool(client)
+        except exception.StorException as e:
+            logger.warning(e)
+            service_tool = None
+
+        services = {}
         for role, sers in six.iteritems(self.service_map):
             services.update({role: []})
             for k, v in six.iteritems(sers):
@@ -120,10 +142,13 @@ class CronHandler(AgentBaseHandler):
                         continue
                 v = v.replace('$HOSTNAME', self.node.hostname)
                 try:
+                    status = None
                     if role in self.container_roles:
-                        status = docker_tool.status(name=v)
+                        if docker_tool:
+                            status = self._get_docker_status(docker_tool, v)
                     else:
-                        status = service_tool.status(name=v)
+                        if service_tool:
+                            status = self._get_systemd_status(service_tool, v)
                 except exception.StorException as e:
                     logger.error("Get service status error: {}".format(e))
                     status = s_fields.ServiceStatus.INACTIVE

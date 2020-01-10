@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import os
 
+import docker
+
+from DSpace.exception import DockerSockNotFound
 from DSpace.exception import ProgrammingError
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
@@ -157,3 +161,29 @@ class Docker(ToolBase):
             return True
         else:
             return False
+
+
+class DockerSockTool(ToolBase):
+    SOCKET_FILE = "/var/run/docker.sock"
+
+    def __init__(self, *args, **kwargs):
+        super(DockerSockTool, self).__init__(*args, **kwargs)
+        self.docker_sock = None
+        self._check_socket_file()
+        self.client = docker.DockerClient(base_url=self.docker_sock)
+
+    def _check_socket_file(self):
+        docker_socket = self._wapper(self.SOCKET_FILE)
+        if not os.path.exists(docker_socket):
+            raise DockerSockNotFound(path=docker_socket)
+        self.docker_sock = "unix://" + docker_socket
+
+    def status(self, container_name):
+        logger.debug("Get container status for %s", container_name)
+        try:
+            container = self.client.containers.get(container_name)
+            status = container.status
+        except Exception as e:
+            logger.warning(e)
+            status = None
+        return status
