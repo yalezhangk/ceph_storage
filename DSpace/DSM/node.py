@@ -21,17 +21,155 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.include import InclusionNodesCheck
 from DSpace.taskflows.include import include_clean_flow
 from DSpace.taskflows.include import include_flow
-from DSpace.taskflows.node import NodeMixin
 from DSpace.taskflows.node import NodesCheck
 from DSpace.taskflows.node import NodeTask
 from DSpace.taskflows.node import PrometheusTargetMixin
 from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config
+from DSpace.utils.coordination import synchronized
 
 logger = logging.getLogger(__name__)
 
 
-class NodeHandler(AdminBaseHandler):
+class NodeMixin(object):
+    task_map = {}
+
+    def __init__(self):
+        # Get task from db
+        pass
+
+    def _add_node_task(self, ctxt, node, task):
+        logger.debug("add task %s to node task map", task)
+        if self.task_map.get(node.id):
+            self.task_map[node.id].append(task)
+        else:
+            self.task_map[node.id] = [task]
+
+    def _remove_node_task(self, ctxt, node, task, remove_map=False):
+        logger.debug("remove task %s from node task map", task)
+        if self.task_map.get(node.id) and task in self.task_map[node.id]:
+            self.task_map[node.id].remove(task)
+        if remove_map and node.id in self.task_map.keys():
+            del self.task_map[node.id]
+
+    def _check_roles_tasking(self, ctxt):
+        logger.debug("checking if there are nodes updating nodes")
+        for node_id, tasks in six.iteritems(self.task_map):
+            if s_fields.NodeStatus.UPDATING_ROLES in tasks:
+                raise exc.InvalidInput(_("There are nodes updating roles"))
+
+    def _check_node_status(self, ctxt, node, deleted=False):
+        logger.debug("check node %s status", node.hostname)
+        allowed_status = [s_fields.NodeStatus.ACTIVE,
+                          s_fields.NodeStatus.WARNING]
+        if deleted:
+            allowed_status.append(s_fields.NodeStatus.ERROR)
+        if node.status not in allowed_status:
+            raise exc.InvalidInput(
+                _("Node status %s not allowed") % node.status)
+
+    def _check_node_disks(self, ctxt, node):
+        logger.debug("check node %s disks", node.hostname)
+        disk_partition_num = objects.DiskPartitionList.get_count(
+            ctxt, filters={"node_id": node.id, "role": [
+                s_fields.DiskPartitionRole.CACHE,
+                s_fields.DiskPartitionRole.DB,
+                s_fields.DiskPartitionRole.WAL,
+                s_fields.DiskPartitionRole.JOURNAL,
+            ]}
+        )
+        if disk_partition_num:
+            raise exc.InvalidInput(_("Please remove disk partition first!"))
+
+    def _mon_install_check(self, ctxt, node=None, new_mon_num=1):
+        logger.debug("check node mon install")
+        if node and node.role_monitor:
+            raise exc.InvalidInput(_("The monitor role has been installed."))
+        public_network = objects.sysconfig.sys_config_get(
+            ctxt, key="public_cidr"
+        )
+        cluster_network = objects.sysconfig.sys_config_get(
+            ctxt, key="cluster_cidr"
+        )
+        max_mon_num = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.MAX_MONITOR_NUM
+        )
+        mon_num = objects.NodeList.get_count(
+            ctxt, filters={"role_monitor": True}
+        )
+        if not public_network or not cluster_network:
+            raise exc.InvalidInput(_("Please set network planning"))
+        if mon_num + new_mon_num > max_mon_num:
+            raise exc.InvalidInput(_("Max monitor num is %s") % max_mon_num)
+
+    def _mon_uninstall_check(self, ctxt, node):
+        logger.debug("check node %s mon uninstall", node.hostname)
+        if not node.role_monitor:
+            raise exc.InvalidInput(_(
+                "The monitor role has not yet been installed"))
+        osd_num = objects.OsdList.get_count(ctxt)
+        mon_num = objects.NodeList.get_count(
+            ctxt, filters={"role_monitor": True}
+        )
+        if osd_num and mon_num == 1:
+            raise exc.InvalidInput(_("Please remove osd first!"))
+
+    def _storage_install_check(self, ctxt, node):
+        logger.debug("check node %s storage install", node.hostname)
+        if node.role_storage:
+            raise exc.InvalidInput(_("The storage role has been installed."))
+
+    def _storage_uninstall_check(self, ctxt, node):
+        logger.debug("check node %s storage uninstall", node.hostname)
+        if not node.role_storage:
+            raise exc.InvalidInput(_(
+                "The storage role has not yet been installed"))
+        node_osds = objects.OsdList.get_count(
+            ctxt, filters={"node_id": node.id}
+        )
+        if node_osds:
+            raise exc.InvalidInput(_("Node %s has osd!") % node.hostname)
+        node_accelerate_disks = objects.DiskList.get_count(
+            ctxt,
+            filters={"node_id": node.id, "role": s_fields.DiskRole.ACCELERATE}
+        )
+        if node_accelerate_disks:
+            raise exc.InvalidInput(_("Node %s has accelerate "
+                                     "disk!") % node.hostname)
+
+    def _rgw_install_check(self, ctxt, node):
+        logger.debug("check node %s rgw install", node.hostname)
+        if node.role_object_gateway:
+            raise exc.InvalidInput(_(
+                "The object gateway role has been installed."))
+
+    def _rgw_uninstall_check(self, ctxt, node):
+        logger.debug("check node %s rgw uninstall", node.hostname)
+        if not node.role_object_gateway:
+            raise exc.InvalidInput(_(
+                "The object gateway role has not yet been installed"))
+        filters = {"node_id": node.id}
+        node_rgws = objects.RadosgwList.get_count(ctxt, filters=filters)
+        if node_rgws:
+            raise exc.InvalidInput(_("Node %s has radosgw!") % node.hostname)
+        router_service = objects.RouterServiceList.get_all(
+            ctxt, filters=filters)
+        if router_service:
+            raise exc.InvalidInput(
+                _("Node %s has radosgw router!") % node.hostname)
+
+    def _bgw_install_check(self, ctxt, node):
+        if node.role_block_gateway:
+            raise exc.InvalidInput(_(
+                "The block gateway role has been installed."))
+
+    def _bgw_uninstall_check(self, ctxt, node):
+        if not node.role_block_gateway:
+            raise exc.InvalidInput(_(
+                "The block gateway role has not yet been installed"))
+
+
+class NodeHandler(AdminBaseHandler, NodeMixin):
 
     def node_get(self, ctxt, node_id, expected_attrs=None):
         node_info = objects.Node.get_by_id(
@@ -67,19 +205,15 @@ class NodeHandler(AdminBaseHandler):
 
     def _node_delete(self, ctxt, node, begin_action):
         node_task = NodeTask(ctxt, node)
-
         try:
-            if node.role_monitor:
-                if self._mon_uninstall(ctxt, node) != 'success':
-                    raise exc.NodeRolesUpdateError(node=node.hostname)
             if node.role_storage:
                 if self._storage_uninstall(ctxt, node) != 'success':
                     raise exc.NodeRolesUpdateError(node=node.hostname)
-            if node.role_block_gateway:
-                if self._bgw_uninstall(ctxt, node) != 'success':
-                    raise exc.NodeRolesUpdateError(node=node.hostname)
             if node.role_object_gateway:
                 if self._rgw_uninstall(ctxt, node) != 'success':
+                    raise exc.NodeRolesUpdateError(node=node.hostname)
+            if node.role_monitor:
+                if self._mon_uninstall(ctxt, node) != 'success':
                     raise exc.NodeRolesUpdateError(node=node.hostname)
 
             node_task.ceph_package_uninstall()
@@ -103,6 +237,9 @@ class NodeHandler(AdminBaseHandler):
             msg = _("node remove error: {}").format(node.hostname)
             err_msg = str(e)
             op_status = "DELETE_ERROR"
+        self._remove_node_task(ctxt, node, s_fields.NodeStatus.DELETING)
+        self._remove_node_task(
+            ctxt, node, s_fields.NodeStatus.UPDATING_ROLES, remove_map=True)
 
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
@@ -130,49 +267,38 @@ class NodeHandler(AdminBaseHandler):
         return node
 
     def _node_delete_check(self, ctxt, node):
-        allowed_status = [s_fields.NodeStatus.ACTIVE,
-                          s_fields.NodeStatus.WARNING,
-                          s_fields.NodeStatus.ERROR]
-        if node.status not in allowed_status:
-            raise exc.InvalidInput(_("Node status not allow!"))
         if node.role_admin:
             raise exc.InvalidInput(_("admin role could not delete!"))
-        # TODO concurrence not support now, need remove when support
-        roles_status = [s_fields.NodeStatus.CREATING,
-                        s_fields.NodeStatus.DELETING,
-                        s_fields.NodeStatus.DEPLOYING_ROLE,
-                        s_fields.NodeStatus.REMOVING_ROLE]
-        nodes = objects.NodeList.get_all(
-            ctxt, filters={'status': roles_status})
-        if len(nodes) and node.role_monitor:
-            raise exc.InvalidInput(_("Only one node can set roles at the"
-                                     " same time"))
+        self._check_node_status(ctxt, node, deleted=True)
+        # check node roles
+        has_roles = False
         if node.role_monitor:
+            has_roles = True
             self._mon_uninstall_check(ctxt, node)
         if node.role_storage:
+            has_roles = True
             self._storage_uninstall_check(ctxt, node)
-        disk_partition_num = objects.DiskPartitionList.get_count(
-            ctxt, filters={"node_id": node.id, "role": [
-                s_fields.DiskPartitionRole.CACHE,
-                s_fields.DiskPartitionRole.DB,
-                s_fields.DiskPartitionRole.WAL,
-                s_fields.DiskPartitionRole.JOURNAL,
-            ]}
-        )
-        if disk_partition_num:
-            raise exc.InvalidInput(_("Please remove disk partition first!"))
-
-        if node.role_object_gateway:
-            self._rgw_uninstall_check(ctxt, node)
+        if node.role_storage:
+            has_roles = True
+            self._storage_uninstall_check(ctxt, node)
+        if has_roles:
+            self.check_agent_available(ctxt, node)
+            self._check_roles_tasking(ctxt)
+        self._check_node_disks(ctxt, node)
+        return has_roles
 
     def node_delete(self, ctxt, node_id):
         node = objects.Node.get_by_id(ctxt, node_id)
         # judge node could be delete
-        self._node_delete_check(ctxt, node)
+        has_roles = self._node_delete_check(ctxt, node)
         begin_action = self.begin_action(
             ctxt, Resource.NODE, Action.DELETE, node)
         node.status = s_fields.NodeStatus.DELETING
         node.save()
+        self._add_node_task(ctxt, node, s_fields.NodeStatus.DELETING)
+        if has_roles:
+            self._add_node_task(
+                ctxt, node, s_fields.NodeStatus.UPDATING_ROLES)
         self.task_submit(self._node_delete, ctxt, node, begin_action)
         return node
 
@@ -257,96 +383,6 @@ class NodeHandler(AdminBaseHandler):
             cephconf.value = value
             cephconf.save()
         return cephconf
-
-    def _mon_install_check(self, ctxt, node=None):
-        if node and node.role_monitor:
-            raise exc.InvalidInput(_("The monitor role has been installed."))
-        public_network = objects.sysconfig.sys_config_get(
-            ctxt, key="public_cidr"
-        )
-        cluster_network = objects.sysconfig.sys_config_get(
-            ctxt, key="cluster_cidr"
-        )
-        max_mon_num = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.MAX_MONITOR_NUM
-        )
-        mon_num = objects.NodeList.get_count(
-            ctxt, filters={"role_monitor": True}
-        )
-        if not public_network or not cluster_network:
-            raise exc.InvalidInput(_("Please set network planning"))
-        if mon_num >= max_mon_num:
-            raise exc.InvalidInput(_("Max monitor num is %s") % max_mon_num)
-
-    def _mon_uninstall_check(self, ctxt, node):
-        if not node.role_monitor:
-            raise exc.InvalidInput(_(
-                "The monitor role has not yet been installed"))
-        osd_num = objects.OsdList.get_count(ctxt)
-        mon_num = objects.NodeList.get_count(
-            ctxt, filters={"role_monitor": True}
-        )
-        if osd_num and mon_num == 1:
-            raise exc.InvalidInput(_("Please remove osd first!"))
-
-    def _storage_install_check(self, ctxt, node):
-        if node.role_storage:
-            raise exc.InvalidInput(_("The storage role has been installed."))
-
-    def _storage_uninstall_check(self, ctxt, node):
-        if not node.role_storage:
-            raise exc.InvalidInput(_(
-                "The storage role has not yet been installed"))
-        node_osds = objects.OsdList.get_count(
-            ctxt, filters={"node_id": node.id}
-        )
-        if node_osds:
-            raise exc.InvalidInput(_("Node %s has osd!") % node.hostname)
-        node_accelerate_disks = objects.DiskList.get_count(
-            ctxt,
-            filters={"node_id": node.id, "role": s_fields.DiskRole.ACCELERATE}
-        )
-        if node_accelerate_disks:
-            raise exc.InvalidInput(_("Node %s has accelerate "
-                                     "disk!") % node.hostname)
-
-    def _mds_install_check(self, ctxt, node):
-        if node.role_admin:
-            raise exc.InvalidInput(_("The admin role has been installed."))
-
-    def _mds_uninstall_check(self, ctxt, node):
-        if not node.role_admin:
-            raise exc.InvalidInput(_(
-                "The admin role has not yet been installed"))
-
-    def _rgw_install_check(self, ctxt, node):
-        if node.role_object_gateway:
-            raise exc.InvalidInput(_(
-                "The object gateway role has been installed."))
-
-    def _rgw_uninstall_check(self, ctxt, node):
-        if not node.role_object_gateway:
-            raise exc.InvalidInput(_(
-                "The object gateway role has not yet been installed"))
-        filters = {"node_id": node.id}
-        node_rgws = objects.RadosgwList.get_count(ctxt, filters=filters)
-        if node_rgws:
-            raise exc.InvalidInput(_("Node %s has radosgw!") % node.hostname)
-        router_service = objects.RouterServiceList.get_all(
-            ctxt, filters=filters)
-        if router_service:
-            raise exc.InvalidInput(
-                _("Node %s has radosgw router!") % node.hostname)
-
-    def _bgw_install_check(self, ctxt, node):
-        if node.role_block_gateway:
-            raise exc.InvalidInput(_(
-                "The block gateway role has been installed."))
-
-    def _bgw_uninstall_check(self, ctxt, node):
-        if not node.role_block_gateway:
-            raise exc.InvalidInput(_(
-                "The block gateway role has not yet been installed"))
 
     def _generate_mon_secret(self):
         key = os.urandom(16)
@@ -441,6 +477,7 @@ class NodeHandler(AdminBaseHandler):
             )
             service.create()
 
+    @synchronized('mon_install', blocking=True)
     def _mon_install(self, ctxt, node):
         logger.info("mon install on node %s, ip:%s", node.id, node.ip_address)
         begin_action = self.begin_action(
@@ -516,6 +553,7 @@ class NodeHandler(AdminBaseHandler):
         for service in services:
             service.destroy()
 
+    @synchronized('mon_uninstall', blocking=True)
     def _mon_uninstall(self, ctxt, node):
         logger.info("mon uninstall on node %s, ip:%s",
                     node.id, node.ip_address)
@@ -681,16 +719,14 @@ class NodeHandler(AdminBaseHandler):
         install_role_map = {
             'monitor': self._mon_install,
             'storage': self._storage_install,
-            'mds': self._mds_install,
             'radosgw': self._rgw_install,
-            'blockgw': self._bgw_install,
+            'blockgw': self._bgw_install
         }
         uninstall_role_map = {
             'monitor': self._mon_uninstall,
             'storage': self._storage_uninstall,
-            'mds': self._mds_uninstall,
             'radosgw': self._rgw_uninstall,
-            'blockgw': self._bgw_uninstall,
+            'blockgw': self._bgw_uninstall
         }
         try:
             for role in i_roles:
@@ -712,6 +748,8 @@ class NodeHandler(AdminBaseHandler):
             op_status = "SET_ROLES_ERROR"
         node.status = s_fields.NodeStatus.ACTIVE
         node.save()
+        self._remove_node_task(
+            ctxt, node, s_fields.NodeStatus.UPDATING_ROLES)
         # notify dsa to update node info
         try:
             self._notify_dsa_update(ctxt, node)
@@ -723,23 +761,9 @@ class NodeHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, node, op_status, msg)
 
     def node_roles_set(self, ctxt, node_id, data):
-        # TODO concurrence not support now, need remove when support
-        roles_status = [s_fields.NodeStatus.CREATING,
-                        s_fields.NodeStatus.DELETING,
-                        s_fields.NodeStatus.DEPLOYING_ROLE,
-                        s_fields.NodeStatus.REMOVING_ROLE]
-        nodes = objects.NodeList.get_all(
-            ctxt, filters={'status': roles_status})
-        if len(nodes):
-            raise exc.InvalidInput(_("Only one node can set roles at the"
-                                     " same time"))
-
         node = objects.Node.get_by_id(ctxt, node_id)
-        allowed_status = [s_fields.NodeStatus.ACTIVE,
-                          s_fields.NodeStatus.WARNING]
-        if node.status not in allowed_status:
-            raise exc.InvalidInput(_("Only host's status is active can set "
-                                     "role(host_name: %s)") % node.hostname)
+        self._check_node_status(ctxt, node)
+        self._check_roles_tasking(ctxt)
         self.check_agent_available(ctxt, node)
         i_roles = set(data.get('install_roles'))
         u_roles = set(data.get('uninstall_roles'))
@@ -750,14 +774,12 @@ class NodeHandler(AdminBaseHandler):
         install_check_role_map = {
             'monitor': self._mon_install_check,
             'storage': self._storage_install_check,
-            'mds': self._mds_install_check,
             'radosgw': self._rgw_install_check,
             'blockgw': self._bgw_install_check
         }
         uninstall_check_role_map = {
             'monitor': self._mon_uninstall_check,
             'storage': self._storage_uninstall_check,
-            'mds': self._mds_uninstall_check,
             'radosgw': self._rgw_uninstall_check,
             'blockgw': self._bgw_uninstall_check
         }
@@ -767,45 +789,31 @@ class NodeHandler(AdminBaseHandler):
         for role in u_roles:
             func = uninstall_check_role_map.get(role)
             func(ctxt, node)
-        deploying_nodes = objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "status": [s_fields.NodeStatus.DEPLOYING_ROLE,
-                           s_fields.NodeStatus.REMOVING_ROLE]
-            }
-        )
-        if deploying_nodes:
-            raise exc.InvalidInput(_("Only one node can set roles at the"
-                                     " same time"))
+
         if len(i_roles):
             node.status = s_fields.NodeStatus.DEPLOYING_ROLE
         else:
             node.status = s_fields.NodeStatus.REMOVING_ROLE
         node.save()
+        self._add_node_task(ctxt, node, s_fields.NodeStatus.UPDATING_ROLES)
         logger.info('node %s roles check pass', node.hostname)
         self.task_submit(self._node_roles_set, ctxt, node, i_roles, u_roles)
         return node
 
-    def _node_create(self, ctxt, node, data):
+    def _node_create(self, ctxt, node, roles):
+        logger.debug("add node {} to cluster".format(node.hostname))
         begin_action = self.begin_action(ctxt, Resource.NODE, Action.CREATE)
         node_task = NodeTask(ctxt, node)
         try:
             node_task.dspace_agent_install()
             node_task.chrony_install()
             node_task.node_exporter_install()
-            roles = data.get('roles', "").split(',')
-            role_monitor = "monitor" in roles
-            role_storage = "storage" in roles
-            role_block_gateway = "blockgw" in roles
-            role_object_gateway = "objectgw" in roles
-            if role_monitor:
-                self._mon_install(ctxt, node)
-            if role_storage:
+            if "storage" in roles:
                 self._storage_install(ctxt, node)
-            if role_block_gateway:
-                self._bgw_install(ctxt, node)
-            if role_object_gateway:
+            if "objectgw" in roles:
                 self._rgw_install(ctxt, node)
+            if "monitor" in roles:
+                self._mon_install(ctxt, node)
             node.disks = objects.DiskList.get_all(
                 ctxt, filters={"node_id": node.id})
             node.status = s_fields.NodeStatus.ACTIVE
@@ -823,6 +831,10 @@ class NodeHandler(AdminBaseHandler):
             err_msg = str(e)
             op_status = "CREATE_ERROR"
         node.save()
+        self._remove_node_task(ctxt, node, s_fields.NodeStatus.CREATING)
+        if len(roles):
+            self._remove_node_task(
+                ctxt, node, s_fields.NodeStatus.UPDATING_ROLES)
 
         # notify dsa to update node info
         try:
@@ -837,37 +849,37 @@ class NodeHandler(AdminBaseHandler):
                            node, node.status, err_msg=err_msg)
         return node
 
+    @synchronized('node-create', blocking=True)
     def node_create(self, ctxt, data):
-        logger.debug("add node to cluster {}".format(data.get('ip_address')))
+        roles = data.get("roles")
+        nodes_info = data.get("nodes")
+        if len(roles):
+            self._check_roles_tasking(ctxt)
+            if "monitor" in roles:
+                self._mon_install_check(
+                    ctxt, new_mon_num=len(nodes_info))
 
-        NodeMixin._check_node_ip_address(ctxt, data)
-        # TODO concurrence not support now, need remove when support
-        roles_status = [s_fields.NodeStatus.CREATING,
-                        s_fields.NodeStatus.DELETING,
-                        s_fields.NodeStatus.DEPLOYING_ROLE,
-                        s_fields.NodeStatus.REMOVING_ROLE]
-        nodes = objects.NodeList.get_all(
-            ctxt, filters={'status': roles_status})
-        roles = data.get('roles', "").split(',')
-        role_monitor = "monitor" in roles
-        if len(nodes) and role_monitor:
-            raise exc.InvalidInput(_("Only one node can set roles at the"
-                                     " same time"))
-        if role_monitor:
-            self._mon_install_check(ctxt)
-
-        node = objects.Node(
-            ctxt, ip_address=data.get('ip_address'),
-            hostname=data.get('hostname'),
-            password=data.get('password'),
-            cluster_ip=data.get('cluster_ip'),
-            public_ip=data.get('public_ip'),
-            object_gateway_ip_address=data.get('gateway_ip'),
-            role_admin=True if "admin" in roles else False,
-            status=s_fields.NodeStatus.CREATING)
-        node.create()
-        self.task_submit(self._node_create, ctxt, node, data)
-        return node
+        nodes = []
+        for n in nodes_info:
+            self._node_check_ip(ctxt, n)
+            node = objects.Node(
+                ctxt, ip_address=n.get('ip_address'),
+                hostname=n.get('hostname'),
+                password=n.get('password'),
+                cluster_ip=n.get('cluster_ip'),
+                public_ip=n.get('public_ip'),
+                object_gateway_ip_address=n.get('gateway_ip'),
+                role_admin=True if "admin" in roles else False,
+                status=s_fields.NodeStatus.CREATING)
+            node.create()
+            # add task to task_map
+            self._add_node_task(ctxt, node, s_fields.NodeStatus.CREATING)
+            if len(roles):
+                self._add_node_task(
+                    ctxt, node, s_fields.NodeStatus.UPDATING_ROLES)
+            self.task_submit(self._node_create, ctxt, node, roles)
+            nodes.append(node)
+        return nodes
 
     def node_get_infos(self, ctxt, data):
         logger.debug("get node infos: {}".format(data.get('ip_address')))

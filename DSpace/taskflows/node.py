@@ -7,7 +7,6 @@ from pathlib import Path
 import paramiko
 import six
 import taskflow
-from netaddr import IPAddress
 from netaddr import IPNetwork
 from taskflow import engines
 from taskflow.patterns import linear_flow as lf
@@ -39,82 +38,6 @@ logger = logging.getLogger(__name__)
 CODE_DIR_CONTAINER = "/root/.local/lib/python3.6/site-packages/DSpace/"
 SKIP_NET_DEVICE = "docker0|lo"
 PROMETHEUS_TARGET_PATH = '/prometheus/targets/targets.json'
-
-
-class NodeMixin(object):
-    @classmethod
-    def _check_node_ip_address(cls, ctxt, data):
-        ip_address = data.get('ip_address')
-        cluster_ip = data.get('cluster_ip')
-        public_ip = data.get('public_ip')
-        gateway_ip = data.get('gateway_ip')
-        admin_cidr = objects.sysconfig.sys_config_get(ctxt, key="admin_cidr")
-        public_cidr = objects.sysconfig.sys_config_get(ctxt, key="public_cidr")
-        cluster_cidr = objects.sysconfig.sys_config_get(ctxt,
-                                                        key="cluster_cidr")
-        gateway_cidr = objects.sysconfig.sys_config_get(ctxt,
-                                                        key="gateway_cidr")
-        if not all([ip_address, cluster_ip, public_ip, gateway_ip]):
-            raise exc.Invalid(_("Admin IP, Gateway IP, Public IP and "
-                                "Cluster IP is required"))
-        if objects.NodeList.get_all(
-                ctxt, filters={"cluster_id": "*", "ip_address": ip_address}):
-            raise exc.Invalid(_("Admin IP already exists!"))
-        if IPAddress(ip_address) not in IPNetwork(admin_cidr):
-            raise exc.Invalid(_("Admin IP not in admin cidr ({})"
-                                ).format(admin_cidr))
-        if objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "cluster_ip": cluster_ip
-            }
-        ):
-            raise exc.Invalid(_("Cluster IP already exists!"))
-        if (IPAddress(cluster_ip) not in
-                IPNetwork(cluster_cidr)):
-            raise exc.Invalid(_("Cluster IP not in cluster cidr ({})"
-                                ).format(cluster_cidr))
-        if objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "public_ip": public_ip
-            }
-        ):
-            raise exc.Invalid(_("Public IP already exists!"))
-        if (IPAddress(public_ip) not in
-                IPNetwork(public_cidr)):
-            raise exc.Invalid(_("public ip not in public cidr ({})"
-                                ).format(public_cidr))
-        if objects.NodeList.get_all(
-            ctxt,
-            filters={
-                "object_gateway_ip_address": gateway_ip
-            }
-        ):
-            raise exc.Invalid(_("Gateway IP already exists!"))
-        if (IPAddress(gateway_ip) not in
-                IPNetwork(gateway_cidr)):
-            raise exc.Invalid(_("Gateway IP not in gateway cidr ({})"
-                                ).format(gateway_cidr))
-
-    @classmethod
-    def _collect_node_ip_address(cls, ctxt, node_info):
-        admin_ip = node_info.get('admin_ip')
-        node_data = {
-            'hostname': node_info.get('hostname'),
-            'ip_address': admin_ip
-        }
-        public_cidr = objects.sysconfig.sys_config_get(ctxt, key="public_cidr")
-        cluster_cidr = objects.sysconfig.sys_config_get(ctxt,
-                                                        key="cluster_cidr")
-        for network in node_info.get("networks"):
-            ip_addr = network.get("ip_address")
-            if (IPAddress(ip_addr) in IPNetwork(public_cidr)):
-                node_data['public_ip'] = ip_addr
-            if (IPAddress(ip_addr) in IPNetwork(cluster_cidr)):
-                node_data['cluster_ip'] = ip_addr
-
-        return node_data
 
 
 class ServiceMixin(object):
@@ -692,10 +615,8 @@ class ContainerUninstallMixin(object):
             return
         if status:
             docker_tool.stop(container_name)
-            docker_tool.rm(container_name)
-        else:
-            docker_tool.rm(container_name)
         try:
+            docker_tool.rm(container_name)
             docker_tool.image_rm(
                 "{}/{}:{}".format(image_namespace, image_name, dspace_version))
         except exc.StorException as e:

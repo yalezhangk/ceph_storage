@@ -17,7 +17,6 @@ from DSpace import objects
 from DSpace.context import get_context
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 
@@ -36,22 +35,30 @@ create_node_schema = {
                 "gateway_ip": {"type": "string", "format": "ipv4"},
                 "cluster_ip": {"type": "string", "format": "ipv4"},
                 "public_ip": {"type": "string", "format": "ipv4"},
-                "roles": {"type": "string"},
             },
             "required": ["ip_address", "cluster_ip", "public_ip"],
             "additionalProperties": False
-        }
+        },
+        "role": {
+            "type": "string",
+            "enum": [
+                "admin", "monitor", "storage", "radosgw", "blockgw"
+            ]
+        },
     },
     "type": "object",
     "properties": {
-        "node": {"$ref": "#/definitions/node"},
         "nodes": {
             "type": "array",
             "items": {"type": "object", "$ref": "#/definitions/node"},
             "minItems": 1
         },
-    }, "maxProperties": 1, "additionalProperties": False,
-    "anyOf": [{"required": ["node"]}, {"required": ["nodes"]}]
+        "roles": {
+            "type": "array",
+            "items": {"type": "string", "$ref": "#/definitions/role"},
+        }
+    }, "maxProperties": 2, "additionalProperties": False,
+    "anyOf": [{"required": ["nodes"]}]
 }
 
 update_node_schema = {
@@ -293,42 +300,11 @@ class NodeListHandler(ClusterAPIHandler):
         data = json_decode(self.request.body)
         validate(data, schema=create_node_schema,
                  format_checker=draft7_format_checker)
-        if 'node' in data:
-            data = data.get('node')
-            client = self.get_admin_client(ctxt)
-            node = yield client.node_create(ctxt, data)
-
-            self.write(objects.json_encode({
-                "node": node
-            }))
-        elif 'nodes' in data:
-            datas = data.get('nodes')
-            client = self.get_admin_client(ctxt)
-            nodes = []
-            for data in datas:
-                if 'monitor' in data.get('roles', ''):
-                    raise exception.InvalidInput(_("Only one node can set "
-                                                   "roles at the same time"))
-            for data in datas:
-                try:
-                    node = yield client.node_create(ctxt, data)
-                    nodes.append(node)
-                except Exception as e:
-                    hostname = data['hostname']
-                    err_msg = _('node:{} create error').format(hostname)
-                    logger.exception(
-                        'node:%s create error:%s', hostname, e)
-                    wb_client = WebSocketClientManager(
-                        context=ctxt).get_client()
-                    wb_client.send_message(
-                        ctxt, data, "CREATE_ERROR", err_msg,
-                        resource_type='Node')
-
-            self.write(objects.json_encode({
-                "nodes": nodes
-            }))
-        else:
-            raise ValueError("data not accept: %s", data)
+        client = self.get_admin_client(ctxt)
+        nodes = yield client.node_create(ctxt, data)
+        self.write(objects.json_encode({
+            "nodes": nodes
+        }))
 
 
 @URLRegistry.register(r"/nodes/([0-9]*)/")
