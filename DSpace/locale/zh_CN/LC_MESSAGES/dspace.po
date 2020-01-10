@@ -197,9 +197,6 @@ msgstr ""
 msgid "License %(license_id)s could not be found."
 msgstr "证书 %(license_id)s 未找到"
 
-msgid "Invalid input received: %(reason)s"
-msgstr "不合法的输入： %(reason)s"
-
 msgid "AlertRule %(alert_rule_id)s could not be found."
 msgstr "告警规则 %(alert_rule_id)s 未找到"
 

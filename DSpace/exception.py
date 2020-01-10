@@ -337,7 +337,7 @@ class LicenseNotFound(NotFound):
 
 
 class InvalidInput(Invalid):
-    message = _("Invalid input received: %(reason)s")
+    message = _("%(reason)s")
 
 
 class AlertRuleNotFound(NotFound):
