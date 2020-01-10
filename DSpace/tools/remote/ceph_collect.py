@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+from __future__ import print_function
+
 import argparse
 import ConfigParser
 import errno
@@ -9,6 +12,7 @@ import re
 import socket
 import struct
 import subprocess
+import sys
 
 try:
     import yum
@@ -549,8 +553,13 @@ def cluster_check(args):
     return response
 
 
+def stdout_print(data):
+    print(json.dumps(data), file=sys.__stdout__)
+
+
 def main():
     # TODO: Merge check
+    sys.stdout = sys.stderr
     parser = argparse.ArgumentParser(description='Node info collect.')
     parser.add_argument("action")
     parser.add_argument('--ceph_version', action='store_true',
@@ -575,31 +584,31 @@ def main():
     action = args.action
     if action == "collect_nodes":
         data = collect_nodes()
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "ceph_services":
         data = collect_ceph_services()
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "ceph_osd":
         # TODO: get osd info
         data = collect_osd_info()
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "ceph_config":
         data = collect_ceph_config()
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "ceph_keyring":
         data = collect_ceph_keyring()
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "check_planning":
         data = check_planning()
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "check":
         # TODO: move all check to check function
         data = check(args)
-        print(json.dumps(data))
+        stdout_print(data)
     elif action == "cluster_check":
         # TODO: move all cluster check to check function
         data = cluster_check(args)
-        print(json.dumps(data))
+        stdout_print(data)
 
 
 if __name__ == '__main__':
