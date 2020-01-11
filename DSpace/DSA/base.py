@@ -10,6 +10,7 @@ from DSpace.context import RequestContext
 from DSpace.DSM.client import AdminClientManager
 from DSpace.tools.base import Executor
 from DSpace.tools.base import SSHExecutor
+from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class AgentBaseHandler(object):
     def _get_executor(self):
         return Executor()
 
+    @retry(exception.IPConnectError)
     def _get_ssh_executor(self, node=None):
         if not node:
             node = self.node
@@ -72,5 +74,5 @@ class AgentBaseHandler(object):
                                      password=node.password)
         except exception.StorException as e:
             logger.error("Connect to {} failed: {}".format(CONF.my_ip, e))
-            return None
+            raise exception.IPConnectError(ip=CONF.my_ip)
         return ssh_client
