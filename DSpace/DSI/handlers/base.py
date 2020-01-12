@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class BaseAPIHandler(RequestHandler):
     ctxt = None
+    dsm_client = None
 
     def initialize(self):
         session_cls = get_session()
@@ -159,11 +160,12 @@ class BaseAPIHandler(RequestHandler):
         logger.exception("%s raise exception: %s", self.request.uri, e)
 
     def get_admin_client(self, ctxt):
-        client = AdminClientManager(
-            ctxt,
-            async_support=True
-        ).get_client()
-        return client
+        if not self.dsm_client:
+            self.dsm_client = AdminClientManager(
+                ctxt,
+                async_support=True
+            ).get_client()
+        return self.dsm_client
 
     def get_cluster_id(self):
         cluster_id = self.get_query_argument('cluster_id', default=None)
