@@ -9,6 +9,7 @@ import six
 from oslo_utils import encodeutils
 
 from DSpace.exception import ActionTimeoutError
+from DSpace.exception import CephCommandTimeout
 from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
 from DSpace.exception import DeviceOrResourceBusy
@@ -958,6 +959,8 @@ class RADOSClient(object):
 
     def _send_mon_command(self, command_str):
         ret, outbuf, err = self.client.mon_command(command_str, '')
+        if ret == -110:
+            raise CephCommandTimeout()
         if ret:
             raise CephException(
                 message="execute command failed: {}, ret: {}, outbuf: {}, "

@@ -136,6 +136,9 @@ msgstr "Ceph 异常"
 msgid "error connecting to the cluster"
 msgstr "集群连接异常"
 
+msgid "Ceph command timeout"
+msgstr "Ceph 命令超时"
+
 msgid "Data balance %(action)s error, mode %(mode)s"
 msgstr "数据平衡 %(action)s 错误， 启用的模式：%(mode)s"
 
@@ -732,6 +735,12 @@ msgstr "节点 %s 还存在对象存储网关"
 msgid "Node %s has radosgw router!"
 msgstr "节点 %s 还存在对象路由"
 
+msgid "The block gateway role has been installed."
+msgstr "对象网关角色已被安装"
+
+msgid "The block gateway role has not yet been installed"
+msgstr "对象网关角色还未安装"
+
 msgid "node remove success: {}"
 msgstr "节点 {} 移除成功"
 
@@ -819,8 +828,8 @@ msgstr "创建硬盘成功：osd.{}"
 msgid "create error: osd.{} is offline"
 msgstr "创建硬盘失败：osd.{} 离线"
 
-msgid "create osd.{} error: {}"
-msgstr "创建硬osd.{}盘失败：{}"
+msgid "create {} error: {}"
+msgstr "创建{}失败：{}"
 
 msgid "Disk(%s) status not available"
 msgstr "磁盘(%s)状态不可用"
@@ -852,11 +861,11 @@ msgstr "节点未处于空闲状态"
 msgid "Max osd num is %s"
 msgstr "最大硬盘数为 %s"
 
-msgid "delete osd.{} success"
-msgstr "删除硬盘成功：osd.{}"
+msgid "delete {} success"
+msgstr "删除硬盘成功：{}"
 
-msgid "delete osd.{} error: {}"
-msgstr "删除硬盘osd.{}失败：{}"
+msgid "delete {} error: {}"
+msgstr "删除硬盘{}失败：{}"
 
 msgid "Only available and error osd can be delete"
 msgstr "只能删除可用与错误的硬盘"
@@ -1360,3 +1369,4 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
