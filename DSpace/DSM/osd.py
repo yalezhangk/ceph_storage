@@ -145,12 +145,14 @@ class OsdHandler(AdminBaseHandler):
             logger.exception(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
-            logger.info("osd.%s create error", osd.osd_id)
+            res_name = osd.osd_name if osd.osd_id else osd.disk.name
+            logger.info("%s create error", res_name)
             err_msg = str(e)
-            msg = _("create osd.{} error: {}").format(osd.osd_id, err_msg)
+            msg = _("create {} error: {}").format(res_name, err_msg)
             op_status = 'CREATE_ERROR'
 
-        self.finish_action(begin_action, osd.id, osd.osd_name,
+        res_name = osd.osd_name if osd.osd_id else osd.disk.name
+        self.finish_action(begin_action, osd.id, res_name,
                            osd, osd.status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         self._osds_update_size(ctxt, [osd])
@@ -193,10 +195,6 @@ class OsdHandler(AdminBaseHandler):
                 else:
                     disk.status = s_fields.DiskStatus.INUSE
                 disk.save()
-
-    def _osd_get_free_id(self, ctxt, osd_fsid):
-        task = CephTask(ctxt)
-        return task.osd_new(osd_fsid)
 
     def _osd_create_disk_check(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
@@ -296,9 +294,7 @@ class OsdHandler(AdminBaseHandler):
 
         # get osd id
         osd_fsid = str(uuid.uuid4())
-        osd_id = self._osd_get_free_id(ctxt, osd_fsid)
-        logger.info("Alloc osd id %s with osd fsid %s from ceph.",
-                    osd_id, osd_fsid)
+        osd_id = None
 
         # db create
         begin_action = self.begin_action(ctxt, Resource.OSD, Action.CREATE)
@@ -326,28 +322,29 @@ class OsdHandler(AdminBaseHandler):
         return osd
 
     def _osd_delete(self, ctxt, node, osd, begin_action=None):
-        logger.info("trying to delete osd.%s", osd.osd_id)
+        res_name = osd.osd_name if osd.osd_id else osd.disk.name
+        logger.info("trying to delete osd.%s", res_name)
         try:
             tf = taskflows.OsdDeleteTaskflow(
                 ctxt, action_log_id=begin_action.id)
             tf.run(osd=osd)
             osd.destroy()
-            msg = _("delete osd.{} success").format(osd.osd_id)
-            logger.info("delete osd.%s success", osd.osd_id)
+            msg = _("delete {} success").format(res_name)
+            logger.info("osd delete {} success", res_name)
             status = 'success'
             op_status = "DELETE_SUCCESS"
             err_msg = None
         except Exception as e:
-            logger.error("delete osd.%s error: %s", osd.osd_id, e)
+            logger.error("delete %s error: %s", res_name, e)
             status = s_fields.OsdStatus.ERROR
             osd.status = status
             osd.save()
             err_msg = str(e)
-            msg = _("delete osd.{} error: {}").format(osd.osd_id, err_msg)
+            msg = _("delete {} error: {}").format(res_name, err_msg)
             op_status = "DELETE_ERROR"
         logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
 
-        self.finish_action(begin_action, osd.id, osd.osd_name,
+        self.finish_action(begin_action, osd.id, res_name,
                            osd, status, err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, op_status, msg)
