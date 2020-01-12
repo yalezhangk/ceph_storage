@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import os
+import shutil
 
 import six
 
@@ -35,8 +36,20 @@ class CephTask(object):
                 ctxt.cluster_id)
             self.key_file = '/etc/ceph/{}/ceph.client.admin.keyring'.format(
                 ctxt.cluster_id)
-            self._generate_config_file()
-            self._generate_admin_keyring()
+
+    def gen_config(self):
+        logger.info("Ceph config directory '%s' create" % (self.conf_dir))
+        self._generate_config_file()
+        self._generate_admin_keyring()
+
+    def clear_config(self):
+        try:
+            shutil.rmtree(self.conf_dir)
+            logger.info("Directory '%s' has been removed successfully" % (
+                self.conf_dir))
+        except OSError as error:
+            logger.warning(error)
+            logger.info("Directory '%s' can not be removed" % (self.conf_dir))
 
     def ceph_admin_keyring(self):
         admin_keyring = objects.CephConfig.get_by_key(
