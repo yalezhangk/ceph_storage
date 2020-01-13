@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-16 14:04+0800\n"
+"POT-Creation-Date: 2020-01-13 16:20+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -452,9 +452,6 @@ msgstr "'BlueStore' 不支持 'journal' 类型"
 
 msgid "FileStore not support DB, WAL or Cache"
 msgstr "'FileStore' 不支持 'DB', 'WAL' 或 'Cache'类型"
-
-msgid "osd:hostname={},disk_name={} create error: {}"
-msgstr "{}:{}创建硬盘错误: {}"
 
 msgid "osd_top not number"
 msgstr "osd_top应为数字"
@@ -1379,3 +1376,4 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
