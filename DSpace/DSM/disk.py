@@ -325,7 +325,7 @@ class DiskHandler(AdminBaseHandler):
                 logger.info('alert %s happen: %s', alert_log.resource_type,
                             alert_log.alert_value)
         if disk.role == s_fields.DiskRole.ACCELERATE:
-            if disk.status == s_fields.DiskStatus.REPLACING:
+            if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
                 logger.info("%s in replacing task, do nothing", disk.name)
             else:
                 for partition in disk.partitions:
