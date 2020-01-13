@@ -10,6 +10,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import CephVersion
 from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.cluster import cluster_delete_flow
@@ -234,6 +235,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         begin_action = self.begin_action(
             ctxt, Resource.CLUSTER, Action.CREATE)
         # TODO check key value
+        if ConfigKey.CEPH_VERSION_NAME not in data:
+            data[ConfigKey.CEPH_VERSION_NAME] = CephVersion.T2STOR
         for key, value in six.iteritems(data):
             sysconf = objects.SysConfig(
                 ctxt, key=key, value=value,

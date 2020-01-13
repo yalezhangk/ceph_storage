@@ -9,6 +9,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.node import NodeTask
 from DSpace.tools.prometheus import PrometheusTool
 
@@ -132,7 +133,7 @@ class DiskHandler(AdminBaseHandler):
 
     def disk_partitions_create(self, ctxt, disk_id, values):
         ceph_version = objects.sysconfig.sys_config_get(
-            ctxt, 'ceph_version_name')
+            ctxt, ConfigKey.CEPH_VERSION_NAME)
         if (ceph_version == s_fields.CephVersion.T2STOR):
             t2stor_support_type = [
                 s_fields.DiskPartitionRole.DB,

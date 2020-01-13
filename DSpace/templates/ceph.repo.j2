@@ -1,23 +1,5 @@
-[ceph-base]
-name=Base packages and requirements
-baseurl={{ ceph_repo }}/rpm/x86/base
-enabled=1
-gpgcheck=0
-
-[ceph]
+[ceph-{{ceph_version_name}}]
 name=Ceph packages
-baseurl={{ ceph_repo }}/rpm/x86/ceph-rpms
-enabled=1
-gpgcheck=0
-
-[ceph-tools]
-name=Some useful tools
-baseurl={{ ceph_repo }}/rpm/x86/tools
-enabled=1
-gpgcheck=0
-
-[ceph-elasticsearch]
-name=Elasticsearch and java packages
-baseurl={{ ceph_repo }}/rpm/x86/elasticsearch
+baseurl={{ dspace_repo }}/rpm/$basearch/ceph-{{ceph_version_name}}
 enabled=1
 gpgcheck=0
