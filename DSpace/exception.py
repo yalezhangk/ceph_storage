@@ -234,6 +234,10 @@ class RunCommandArgsError(StorException):
     message = _("Argument 'args' to run_command must be list or string")
 
 
+class NodeLowSpaceException(StorException):
+    message = _("Node sys disk space less than %(percent)s%%")
+
+
 class CephException(StorException):
     message = _("Ceph exception")
 

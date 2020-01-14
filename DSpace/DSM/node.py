@@ -492,6 +492,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             ctxt, key=ConfigKey.ENABLE_CEPHX
         )
         try:
+            node_task.ceph_mon_pre_check()
             if len(mon_nodes) == 1:
                 self._init_ceph_config(ctxt, enable_cephx=enable_cephx)
             mon_host = ",".join(
@@ -520,22 +521,32 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             op_status = "SET_ROLE_MON_SUCCESS"
             status = 'success'
             err_msg = None
-        except Exception as e:
-            logger.exception('set mon role failed %s', e)
-            # restore monitor
-            node_task.ceph_mon_uninstall()
+        except exc.NodeLowSpaceException as e:
             node.role_monitor = False
             node.save()
-            mon_nodes.remove(node)
-            mon_host = ",".join(
-                [str(n.public_ip) for n in mon_nodes]
-            )
-            mon_initial_members = ",".join([n.hostname for n in mon_nodes])
-            self._set_ceph_conf(
-                ctxt, key="mon_host", value=mon_host, value_type='string')
-            self._set_ceph_conf(
-                ctxt, key="mon_initial_members", value=mon_initial_members,
-                value_type='string')
+            msg = _("node %s: set mon role error") % node.hostname
+            op_status = "SET_ROLE_MON_ERROR"
+            status = 'fail'
+            err_msg = str(e)
+        except Exception as e:
+            logger.exception('set mon role failed %s', e)
+            # try to restore monitor
+            try:
+                node_task.ceph_mon_uninstall()
+                mon_nodes.remove(node)
+                mon_host = ",".join(
+                    [str(n.public_ip) for n in mon_nodes]
+                )
+                mon_initial_members = ",".join([n.hostname for n in mon_nodes])
+                self._set_ceph_conf(
+                    ctxt, key="mon_host", value=mon_host, value_type='string')
+                self._set_ceph_conf(
+                    ctxt, key="mon_initial_members", value=mon_initial_members,
+                    value_type='string')
+            except Exception:
+                logger.error('restore monitor failed')
+            node.role_monitor = False
+            node.save()
             msg = _("node %s: set mon role error") % node.hostname
             op_status = "SET_ROLE_MON_ERROR"
             status = 'fail'

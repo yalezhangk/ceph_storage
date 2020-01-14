@@ -391,7 +391,7 @@ class DiskHandler(AdminBaseHandler):
 
     def _disk_update_accelerate(self, ctxt, disk, disk_info, node_id):
         logger.info('update accelerate disk: %s', disk.name)
-        if disk.status == s_fields.DiskStatus.REPLACING:
+        if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
             logger.info("%s in replacing task, do nothing", disk.name)
         else:
             # check disk part table

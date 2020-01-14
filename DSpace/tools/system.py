@@ -6,6 +6,7 @@ import struct
 
 import six
 
+from DSpace.common.config import CONF
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
 
@@ -140,6 +141,10 @@ class System(ToolBase):
             res['networks'].append(network)
 
         return res
+
+    def get_node_fsstat(self):
+        fs_stat = os.statvfs(CONF.host_prefix)
+        return fs_stat
 
     def check_selinux(self):
         cmd = ['getenforce']

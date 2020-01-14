@@ -271,6 +271,17 @@ class CephHandler(AgentBaseHandler):
         ceph_tool = CephTool(client)
         return ceph_tool.collect_keyring(entity)
 
+    def ceph_mon_pre_check(self, context, mon_data_avail_min=30):
+        client = self._get_executor()
+        sys_tool = SystemTool(client)
+        fs_stat = sys_tool.get_node_fsstat()
+        byte_total = (float)(fs_stat.f_blocks * fs_stat.f_bsize)
+        byte_avail = (float)(fs_stat.f_bavail * fs_stat.f_bsize)
+        if ((byte_avail/byte_total)*100) < mon_data_avail_min:
+            raise exception.NodeLowSpaceException(
+                percent=mon_data_avail_min)
+        return True
+
     def ceph_mon_create(self, context, fsid, mon_secret=None,
                         mgr_dspace_port=None):
         client = self._get_ssh_executor()
