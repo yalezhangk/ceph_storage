@@ -20,6 +20,22 @@ from DSpace.utils.cluster_config import CEPH_LIB_DIR
 logger = logging.getLogger(__name__)
 
 
+class OsdAllocId(Task):
+    def execute(self, ctxt, osd, tf):
+        logger.info("%s osd alloc id", osd.osd_name)
+        self.prepare_task(ctxt, tf)
+        osd_fsid = osd.fsid
+        osd_id = self._osd_get_free_id(ctxt, osd_fsid)
+        osd.osd_id = osd_id
+        logger.info("Alloc osd id %s with osd fsid %s from ceph.",
+                    osd_id, osd_fsid)
+        self.finish_task()
+
+    def _osd_get_free_id(self, ctxt, osd_fsid):
+        task = CephTask(ctxt)
+        return task.osd_new(osd_fsid)
+
+
 class OsdConfigSet(Task, NodeAgentMixin):
     """Osd config set
 
@@ -190,6 +206,7 @@ class OsdTaskflowMixin(object):
 class OsdCreateTaskflow(Taskflow, OsdTaskflowMixin):
     def taskflow(self, osd=None):
         wf = lf.Flow('OsdCreateTaskflow')
+        wf.add(OsdAllocId())
         wf.add(OsdConfigSet())
         wf.add(OsdDiskPrepare())
         wf.add(OsdActive())
@@ -291,8 +308,10 @@ class OsdDeleteTaskflow(Taskflow, OsdTaskflowMixin):
     remove osd from cluster
     clear db update
     """
-    def taskflow(self, **kwargs):
+    def taskflow(self, osd=None, **kwargs):
         wf = lf.Flow('OsdDeleteTaskflow')
+        if not osd.osd_id:
+            return wf
         wf.add(OsdMarkOut())
         wf.add(OsdClearData())
         wf.add(OsdRemoveFromCluster())
