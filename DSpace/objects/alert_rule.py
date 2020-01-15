@@ -14,10 +14,13 @@ class AlertRule(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'resource_type': fields.StringField(),
         'type': fields.StringField(),
+        'trigger_mode': fields.StringField(),
         'trigger_value': fields.StringField(nullable=True),
         'level': fields.StringField(nullable=True),
         'trigger_period': fields.StringField(nullable=True),
         'enabled': fields.BooleanField(),
+        'data_source': fields.StringField(),
+        'query_grammar': fields.StringField(nullable=True),
         'cluster_id': fields.UUIDField(),
         'alert_groups': fields.ListOfObjectsField('AlertGroup', nullable=True)
     }

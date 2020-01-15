@@ -2,6 +2,7 @@ from oslo_log import log as logging
 from oslo_utils import strutils
 
 from DSpace import objects
+from DSpace.DSM.alert_rule import EmailHelper
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType
@@ -75,4 +76,14 @@ class MailHandler(AdminBaseHandler):
                 sysconf.create()
         self.finish_action(begin_action, None, 'smtp_sysconf',
                            sysconf)
+        # 开关开启/关闭，告警中心相应改变
+        smtp_enabled = data.get('smtp_enabled')
+        notify_group = self.alert_watcher.get_notify(ctxt.cluster_id)
+        if notify_group:
+            if smtp_enabled is True:
+                mail_conf = self.smtp_get(ctxt)
+                mail_conf.pop('smtp_enabled')
+                notify_group.append(EmailHelper('email_helper', mail_conf))
+            elif smtp_enabled is False:
+                notify_group.remove('email_helper')
         return sysconf

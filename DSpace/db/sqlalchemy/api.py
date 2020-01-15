@@ -2434,9 +2434,7 @@ def license_get_latest_valid(context, marker=None, limit=None, sort_keys=None,
 
 
 def _network_get_query(context, session=None):
-    return model_query(
-        context, models.Network, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+    return model_query(context, models.Network, session=session)
 
 
 def _network_get(context, net_id, session=None):
@@ -2603,8 +2601,11 @@ def alert_rule_update(context, alert_rule_id, values):
 def alert_rule_get_all(context, marker=None, limit=None, sort_keys=None,
                        sort_dirs=None, filters=None, offset=None):
     filters = filters or {}
-    if "cluster_id" not in filters.keys():
-        filters['cluster_id'] = context.cluster_id
+    if filters.get('cluster_id') != "*":
+        if "cluster_id" not in filters.keys():
+            filters['cluster_id'] = context.cluster_id
+    else:
+        filters.pop('cluster_id')
     session = get_session()
     with session.begin():
         # Generate the query

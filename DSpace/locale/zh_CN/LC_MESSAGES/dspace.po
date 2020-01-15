@@ -537,6 +537,40 @@ msgstr "告警通知: {}"
 msgid "alert center"
 msgstr "告警中心"
 
+msgid "Cluster capacity usage is above {}, (current value is: {})"
+msgstr "集群容量使用率超过了{}, 当前值是{}"
+
+msgid "hostname:{} CPU usage is above {} (current value is: {})"
+msgstr "节点{}：CPU使用率超过了{}，当前值是{}"
+
+msgid "hostname:{} Memory usage is above {} (current value is: {})"
+msgstr "节点{}：内存使用率超过了{}，当前值是{}"
+
+msgid "hostname:{} Sys disk usage is above {} (current value is: {})"
+msgstr "节点{}：系统盘使用率超过了{}，当前值是{}"
+
+msgid ""
+"hostname: {}, drive_letter: {} Disk usage is above {} (current value is {})"
+msgstr "节点{}：物理盘({})使用率超过了{}，当前值是{}"
+
+msgid "pool_name: {}, Pool capacity usage is above {} (current value is: {})"
+msgstr "存储池{}：容量使用率超过了{}，当前值是{}"
+
+msgid ""
+"hostname: {}, osd_name: {}, Osd capacity usage is above {} (current value "
+"is: {})"
+msgstr "节点{}：硬盘({})容量使用率超过了{}，当前值是{}"
+
+msgid ""
+"hostname: {}, network_name: {}, transmit bandwidth usage is above {} "
+"(current value is: {})"
+msgstr "节点{}：网卡({})发送带宽使用率超过了{}，当前值是{}"
+
+msgid ""
+"hostname: {}, network_name: {}, receive bandwidth usage is above {} (current "
+"value is: {})"
+msgstr "节点{}：网卡({})接收带宽使用率超过了{}，当前值是{}"
+
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
 
