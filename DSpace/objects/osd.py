@@ -52,6 +52,8 @@ class Osd(base.StorPersistentObject, base.StorObject,
 
     @property
     def osd_name(self):
+        if not self.osd_id:
+            return None
         return "osd.%s" % self.osd_id
 
     def create(self):
