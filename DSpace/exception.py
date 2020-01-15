@@ -242,6 +242,10 @@ class CephConnectTimeout(StorException):
     message = _("error connecting to the cluster")
 
 
+class CephCommandTimeout(StorException):
+    message = _("Ceph command timeout")
+
+
 class DataBalanceActionError(CephException):
     message = _("Data balance %(action)s error, mode %(mode)s")
 
