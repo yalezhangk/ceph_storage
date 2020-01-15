@@ -18,6 +18,7 @@ from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.objects.fields import ConfigKey
+from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.include import InclusionNodesCheck
 from DSpace.taskflows.include import include_clean_flow
 from DSpace.taskflows.include import include_flow
@@ -466,6 +467,9 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             task = NodeTask(ctxt, n)
             for config in configs:
                 task.ceph_config_update(ctxt, config)
+        if not mon_nodes:
+            tool = CephTask(ctxt)
+            tool.clear_config()
 
     def _create_mon_service(self, ctxt, node):
         logger.debug("Create service for mon and mgr in database")
@@ -514,6 +518,8 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
                 self._save_admin_keyring(ctxt, node_task)
             node.role_monitor = True
             node.save()
+            ceph = CephTask(ctxt)
+            ceph.gen_config()
             PrometheusTargetMixin().target_add(ctxt, node, service='mgr')
             self._sync_ceph_configs(ctxt)
             self._create_mon_service(ctxt, node)
@@ -577,6 +583,8 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             node.role_monitor = False
             node.save()
             self._sync_ceph_configs(ctxt)
+            ceph = CephTask(ctxt)
+            ceph.gen_config()
             msg = _("node %s: unset mon role success") % node.hostname
             op_status = "UNSET_ROLE_MON_SUCCESS"
             PrometheusTargetMixin().target_remove(ctxt, node, service='mgr')
