@@ -143,6 +143,10 @@ class System(ToolBase):
 
         return res
 
+    def get_node_fsstat(self):
+        fs_stat = os.statvfs(CONF.host_prefix)
+        return fs_stat
+
     def check_selinux(self):
         cmd = ['getenforce']
         rc, stdout, stderr = self.run_command(cmd)

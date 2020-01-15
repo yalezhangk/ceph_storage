@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-10 05:37-0500\n"
+"POT-Creation-Date: 2020-01-14 02:45-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -129,6 +129,9 @@ msgstr ""
 
 msgid "Argument 'args' to run_command must be list or string"
 msgstr "参数必须是字符串"
+
+msgid "Node sys disk space less than %(percent)s%%"
+msgstr "节点系统盘可使用空间少于%(percent)s%%"
 
 msgid "Ceph exception"
 msgstr "Ceph 异常"

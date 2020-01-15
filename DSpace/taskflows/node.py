@@ -211,6 +211,15 @@ class NodeTask(object):
             'task_info': {}
         })
 
+    def ceph_mon_pre_check(self):
+        logger.info("install ceph mon pre check")
+        agent = self.get_agent()
+        mon_data_avail_min = objects.CephConfig.get_by_key(
+            self.ctxt, group="*", key="mon_data_avail_warn")
+        if not mon_data_avail_min:
+            mon_data_avail_min = 30
+        agent.ceph_mon_pre_check(self.ctxt, mon_data_avail_min)
+
     def ceph_mon_install(self, mon_secret=None):
         logger.info("install ceph mon")
         ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
