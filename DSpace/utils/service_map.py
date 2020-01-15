@@ -39,3 +39,13 @@ class ServiceMap(object):
         self.role_block_gateway = {
             "TCMU": "tcmu",
         }
+
+        self.map = {}
+        self.map.update(self.base)
+        self.map.update(self.role_admin)
+        self.map.update(self.role_monitor)
+        self.map.update(self.role_block_gateway)
+
+    def get_service_name(self, name):
+        service_name = self.map.get(name)
+        return service_name

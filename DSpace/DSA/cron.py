@@ -10,7 +10,7 @@ from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.DSA.base import AgentBaseHandler
 from DSpace.objects import fields as s_fields
-from DSpace.tools.docker import DockerSockTool as DockerTool
+from DSpace.tools.docker import DockerSocket as DockerTool
 from DSpace.tools.service import ServiceDbus as ServiceTool
 from DSpace.utils.service_map import ServiceMap
 
