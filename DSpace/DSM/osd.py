@@ -94,22 +94,20 @@ class OsdHandler(AdminBaseHandler):
         if not osds:
             return osds
 
+        prometheus = PrometheusTool(ctxt)
+        need_osds = []
+        for osd in osds:
+            if not osd.need_size():
+                continue
+            need_osds.append(osd)
         if tab == "default":
             logger.debug("Get osd metrics: tab=default")
-            osds = self._osds_update_size(ctxt, osds)
-            for osd in osds:
-                if not osd.need_size():
-                    continue
-                prometheus = PrometheusTool(ctxt)
-                prometheus.osd_get_pg_state(osd)
+            prometheus.osds_get_capacity(need_osds)
+            prometheus.osds_get_pg_state(need_osds)
 
         if tab == "io":
             logger.debug("Get osd metrics: tab=io")
-            prometheus = PrometheusTool(ctxt)
-            for osd in osds:
-                if not osd.need_size():
-                    continue
-                prometheus.osd_disk_perf(osd)
+            prometheus.osds_disk_perf(need_osds)
 
         return osds
 
@@ -528,7 +526,7 @@ class OsdHandler(AdminBaseHandler):
         for osd in osds:
             if osd.status in s_fields.OsdStatus.REPLACE_STATUS:
                 raise exception.Invalid(_("osd.%s is replacing, please "
-                                          "wait" % osd.osd_id))
+                                          "wait") % osd.osd_id)
         disk.status = s_fields.DiskStatus.REPLACE_PREPARING
         disk.save()
         self.task_submit(self._accelerate_disk_prepare, ctxt, disk)
