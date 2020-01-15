@@ -48,6 +48,7 @@ class CephHandler(AgentBaseHandler):
         keyring_path = path.join(keyring_dir, keyring_name)
         file_tool.write(keyring_path, buf.getvalue())
         file_tool.chown(keyring_path, user='ceph', group='ceph')
+        file_tool.chmod(keyring_path, "0644")
 
     @synchronized("ceph-osd-{osd.id}")
     def ceph_prepare_disk(self, context, osd):
@@ -318,6 +319,7 @@ class CephHandler(AgentBaseHandler):
         self._wait_mon_ready(client)
 
         public_ip = self.node.public_ip
+
         ceph_tool.module_enable("dspace", str(public_ip), mgr_dspace_port)
         return True
 
@@ -364,7 +366,7 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # Install package
         package_tool = PackageTool(client)
-        package_tool.install(["ceph-radosgw"])
+        package_tool.install_rgw()
         return True
 
     def ceph_rgw_package_uninstall(self, context):
@@ -372,7 +374,7 @@ class CephHandler(AgentBaseHandler):
         client = self._get_ssh_executor()
         # Uninstall package
         package_tool = PackageTool(client)
-        package_tool.uninstall(["ceph-radosgw"])
+        package_tool.uninstall_rgw()
         return True
 
     def _check_radosgw_status(self, client, radosgw):

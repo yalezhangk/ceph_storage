@@ -16,8 +16,15 @@ import sys
 
 try:
     import yum
+    pkg_mgr = "yum"
 except ImportError:
     yum = None
+
+try:
+    import apt
+    pkg_mgr = "apt"
+except ImportError:
+    apt = None
 
 try:
     import dbus
@@ -315,6 +322,42 @@ def _reset_dns_resolve():
     run_command(cmd)
 
 
+def _get_pkg_version_by_apt(pkg):
+    resolve_timeout = 1.5
+    retries = 1
+    _setup_dns_resolve(resolve_timeout, retries)
+    pkg_cache = apt.Cache()
+    installed = None
+    available = None
+    unavailable = False
+    try:
+        pkg = pkg_cache[pkg]
+        if pkg.is_installed:
+            # installed
+            pkg_version = pkg.installed.version
+            installed = {
+                "version": pkg_version.split("-")[0],
+                "release": pkg_version.split("-")[1]
+            }
+        else:
+            # available
+            pkg_version = pkg.candidate.version
+            available = {
+                "version": pkg_version.split("-")[0],
+                "release": pkg_version.split("-")[1]
+            }
+    except KeyError:
+        unavailable = True
+
+    _reset_dns_resolve()
+
+    return {
+        "installed": installed,
+        "available": available,
+        "unavailable": unavailable
+    }
+
+
 def _get_pkg_version_by_yum(pkg):
     # yum clean all
     cmd = ['yum', 'clean', 'all']
@@ -361,7 +404,10 @@ def _get_pkg_version_by_yum(pkg):
 
 
 def get_pkg_version(pkg):
-    return _get_pkg_version_by_yum(pkg)
+    if pkg_mgr == "yum":
+        return _get_pkg_version_by_yum(pkg)
+    elif pkg_mgr == "apt":
+        return _get_pkg_version_by_apt(pkg)
 
 
 def get_ceph_version():
