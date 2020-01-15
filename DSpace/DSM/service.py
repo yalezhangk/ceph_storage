@@ -219,7 +219,7 @@ class ContainerHelper(ServiceHelper):
         raise exception.RestartServiceFailed(service=self.obj_name)
 
 
-class ServiceManager(AdminBaseHandler):
+class ServiceManager(AdminBaseMixin):
     _services = None
 
     def __init__(self):
@@ -337,7 +337,11 @@ class ServiceHandler(AdminBaseHandler):
         self.container_roles = self.map_util.container_roles
         self.service_manager = ServiceManager()
         if CONF.heartbeat_check:
-            self.task_submit(self.service_manager.loop)
+            self.task_submit(self._service_check)
+
+    def _service_check(self):
+        self.wait_ready()
+        self.service_manager.loop()
 
     def _check_service_status(self, ctxt, services):
         for service in services:
