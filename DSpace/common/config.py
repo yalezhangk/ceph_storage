@@ -117,6 +117,12 @@ global_opts = [
     cfg.StrOpt('os_distro',
                default=None,
                help="Current OS Distro"),
+    cfg.IntOpt('alert_rule_check_interval',
+               default=60,
+               help='Alert rule check interval'),
+    cfg.IntOpt('alert_rule_average_time',
+               default=60,
+               help='Alert rule average time'),
 ]
 
 CONF.register_cli_opts(core_opts)
