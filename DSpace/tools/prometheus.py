@@ -63,6 +63,10 @@ bluefs_capacity = ['db_total_bytes', 'db_used_bytes',
                    'wal_total_bytes', 'wal_used_bytes',
                    'slow_total_bytes', 'slow_used_bytes']
 
+disk_metrics = ['write_iops_rate', 'read_iops_rate', 'write_bytes_rate',
+                'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
+                'io_rate']
+
 
 class PrometheusTool(object):
     prometheus_url = None
@@ -320,10 +324,6 @@ class PrometheusTool(object):
             node.metrics.update({metric: data})
 
     def disk_get_perf(self, disk):
-        disk_metrics = ['write_iops_rate', 'read_iops_rate',
-                        'write_bytes_rate',
-                        'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
-                        'io_rate']
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
         for m in disk_metrics:
             metric_method = "node_disk_" + m
@@ -334,10 +334,6 @@ class PrometheusTool(object):
             disk.metrics.update({m: data})
 
     def disk_get_histroy_perf(self, disk, start, end):
-        disk_metrics = ['write_iops_rate', 'read_iops_rate',
-                        'write_bytes_rate',
-                        'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
-                        'io_rate']
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
         metrics = {}
         for m in disk_metrics:
@@ -476,6 +472,26 @@ class PrometheusTool(object):
             })
             osd.metrics.update({m: value})
 
+    def osds_get_capacity(self, osds):
+        prometheus = PrometheusClient(url=self.prometheus_url)
+        logger.info("osds get capacity")
+        filters = {
+            'cluster_id': self.ctxt.cluster_id
+        }
+        capacitys = {}
+        for osd in osds:
+            capacitys[osd.osd_id] = osd
+        for m in osd_capacity:
+            metric = "ceph_osd_capacity_" + m
+            values = json.loads(prometheus.query(
+                metric=metric, filter=filters))['data']['result']
+            for value in values:
+                osd_id = value['metric']['osd_id']
+                v = value['value']
+                if osd_id in capacitys.keys():
+                    osd = capacitys[osd_id]
+                    osd.metrics.update({m: v})
+
     def osd_get_bluefs_capacity(self, osd):
         logger.info("osd_get_bluefs_capacity: osd_id: %s.", osd.id)
         for m in bluefs_capacity:
@@ -521,10 +537,6 @@ class PrometheusTool(object):
         return metrics
 
     def osd_disk_perf(self, osd):
-        disk_metrics = ['write_iops_rate', 'read_iops_rate',
-                        'write_bytes_rate', 'read_bytes_rate',
-                        'write_lat_rate', 'read_lat_rate',
-                        'io_rate']
         disk = objects.Disk.get_by_id(self.ctxt, osd.disk_id)
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
         for m in disk_metrics:
@@ -542,11 +554,28 @@ class PrometheusTool(object):
                         'device': osd.cache_partition})
                 osd.metrics.update({"cache_{}".format(m): data})
 
+    def osds_disk_perf(self, osds):
+        disk_perf = {}
+        for osd in osds:
+            if not disk_perf.get(osd.node.hostname):
+                disk_perf[osd.node.hostname] = {}
+            disk_perf[osd.node.hostname][osd.disk.name] = osd
+        for m in disk_metrics:
+            metric_method = "node_disk_" + m
+            datas = self.get_node_exporter_metrics(
+                metric_method, filter={'cluster_id': self.ctxt.cluster_id})
+            if not datas:
+                continue
+            for data in datas:
+                disk_name = data['metric']['device']
+                hostname = data['metric']['hostname']
+                value = data['value']
+                if hostname in disk_perf.keys():
+                    osd = disk_perf[hostname].get(disk_name)
+                    if osd:
+                        osd.metrics.update({m: value})
+
     def osd_disk_histroy_metircs(self, osd, start, end, metrics):
-        disk_metrics = ['write_iops_rate', 'read_iops_rate',
-                        'write_bytes_rate', 'read_bytes_rate',
-                        'write_lat_rate', 'read_lat_rate',
-                        'io_rate']
         disk = objects.Disk.get_by_id(self.ctxt, osd.disk_id)
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
         for m in disk_metrics:
@@ -569,40 +598,56 @@ class PrometheusTool(object):
                     end=end)
                 metrics.update({"cache_{}".format(m): data})
 
-    def osd_get_pg_state(self, osd):
+    def osds_get_pg_state(self, osds):
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             filters = {
-                'osd_id': int(osd.osd_id or '-1'),
-                'cluster_id': osd.cluster_id
+                'cluster_id': self.ctxt.cluster_id
             }
             pg_value = json.loads(prometheus.query(
                 metric='ceph_pg_metadata', filter=filters))['data']['result']
-            healthy = 0
-            degraded = 0
-            recovering = 0
-            unactive = 0
-            pg_total = 0.0
+            pg_state = {}
+            for osd in osds:
+                pg_state[osd.osd_id] = {
+                    'osd': osd,
+                    'healthy': 0,
+                    'degraded': 0,
+                    'recovering': 0,
+                    'unactive': 0,
+                    'pg_total': 0.0
+                }
             for pg in pg_value:
+                osd_id = pg['metric']['osd_id']
                 state = pg['metric']['state']
-                pg_total += 1
+                if osd_id not in pg_state.keys():
+                    continue
+                pg_state[osd_id]['pg_total'] += 1
                 if 'active+clean' == state:
-                    healthy += 1
+                    pg_state[osd_id]['healthy'] += 1
                 elif ('unactive' in state) or ('stale' in state) or (
                         'down' in state) or ('unknown' in state):
-                    unactive += 1
+                    pg_state[osd_id]['unactive'] += 1
                 elif ('recover' in state) or ('backfill' in state) or (
                         'peer' in state) or ('remapped' in state):
-                    recovering += 1
+                    pg_state[osd_id]['recovering'] += 1
                 elif ('degraded' in state) or ('undersized' in state):
-                    degraded += 1
+                    pg_state[osd_id]['degraded'] += 1
 
-            osd.metrics.update({'pg_state': {
-                'healthy': round(healthy / pg_total, 3) if pg_total else 0,
-                'recovering': round(recovering / pg_total,
-                                    3) if pg_total else 0,
-                'degraded': round(degraded / pg_total, 3) if pg_total else 0,
-                'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
+            for osd_id, state in six.iteritems(pg_state):
+                osd = state['osd']
+                healthy = state['healthy']
+                recovering = state['recovering']
+                degraded = state['degraded']
+                unactive = state['unactive']
+                pg_total = state['pg_total']
+                osd.metrics.update({'pg_state': {
+                    'healthy': round(healthy / pg_total, 3) if pg_total else 0,
+                    'recovering': round(recovering / pg_total,
+                                        3) if pg_total else 0,
+                    'degraded': round(degraded / pg_total,
+                                      3) if pg_total else 0,
+                    'unactive': round(unactive / pg_total,
+                                      3) if pg_total else 0}})
         except exception.StorException as e:
             logger.error(e)
             pass
