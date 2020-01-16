@@ -232,6 +232,13 @@ class SyncCephConfig(BaseTask):
             for section in ceph_configs:
                 for key, value in six.iteritems(ceph_configs.get(section)):
                     key = key.replace(" ", "_")
+                    if key == "auth_client_required" and value == "cephx":
+                        objects.sysconfig.sys_config_set(
+                            ctxt, 'enable_cephx', True)
+                    else:
+                        objects.sysconfig.sys_config_set(
+                            ctxt, 'enable_cephx', False)
+
                     self._update_config(ctxt, section, key, value)
             admin_keyring = tool.probe_admin_keyring()
             if admin_keyring:
@@ -239,6 +246,8 @@ class SyncCephConfig(BaseTask):
                 key = admin_keyring.get('entity')
                 value = admin_keyring.get('key')
                 self._update_config(ctxt, "keyring", key, value)
+        ceph_client = CephTask(ctxt)
+        ceph_client.gen_config()
 
     def _update_config(self, ctxt, section, key, value):
         objs = objects.CephConfigList.get_all(
