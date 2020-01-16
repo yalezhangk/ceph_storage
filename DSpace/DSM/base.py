@@ -35,6 +35,8 @@ class AdminBaseMixin(object):
         self.map_util = ServiceMap(self.container_namespace)
         self.debug_mode = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DEBUG_MODE)
+        self._executor = futures.ThreadPoolExecutor(
+            max_workers=CONF.task_workers)
 
     def send_websocket(self, ctxt, service, wb_op_status, alert_msg):
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -141,6 +143,15 @@ class AdminBaseMixin(object):
                 return False
         return True
 
+    def _wapper(self, fun, *args, **kwargs):
+        try:
+            fun(*args, **kwargs)
+        except Exception as e:
+            logger.exception("Unexpected exception: %s", e)
+
+    def task_submit(self, fun, *args, **kwargs):
+        self._executor.submit(self._wapper, fun, *args, **kwargs)
+
 
 class AdminBaseHandler(AdminBaseMixin):
     slow_requests = {}
@@ -148,8 +159,6 @@ class AdminBaseHandler(AdminBaseMixin):
     def __init__(self):
         super(AdminBaseHandler, self).__init__()
         self.status = DSMStatus.INIT
-        self._executor = futures.ThreadPoolExecutor(
-            max_workers=CONF.task_workers)
         ctxt = context.get_context(user_id="admin")
         self.bootstrap(ctxt)
 
@@ -190,15 +199,6 @@ class AdminBaseHandler(AdminBaseMixin):
 
     def to_active(self):
         self.status = DSMStatus.ACTIVE
-
-    def _wapper(self, fun, *args, **kwargs):
-        try:
-            fun(*args, **kwargs)
-        except Exception as e:
-            logger.exception("Unexpected exception: %s", e)
-
-    def task_submit(self, fun, *args, **kwargs):
-        self._executor.submit(self._wapper, fun, *args, **kwargs)
 
     def begin_action(self, ctxt, resource_type=None, action=None,
                      before_obj=None):
