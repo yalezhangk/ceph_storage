@@ -9,6 +9,7 @@ import six
 from oslo_log import log as logging
 from oslo_utils import strutils
 
+from DSpace import exception as exc
 from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
@@ -95,7 +96,7 @@ class WebSocketHelper(AlertNotifyHelper):
         ctxt, msg = re_msg['ctxt'], re_msg['msg']
         resource_obj = re_msg['resource_obj']
         wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, resource_obj, None, msg)
+        wb_client.send_message(ctxt, resource_obj, 'ALERT', msg)
 
 
 class AlertLogHelper(object):
@@ -683,21 +684,28 @@ class AlertRuleHandler(AdminBaseHandler):
 
     def alert_rule_update(self, ctxt, alert_rule_id, data):
         rule = self.alert_rule_get(ctxt, alert_rule_id)
+        enabled = data.get('enabled')
+        trigger_value = data.get('trigger_value')
+        trigger_period = data.get('trigger_period')
         begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ALERT_RULE,
-            action=AllActionType.OPEN_ALERT_RULE, before_obj=rule)
-        rule_data = {
-            'enabled': data.get('enabled')
-        }
-        rule.update(rule_data)
-        rule.save()
-        if rule_data['enabled']:
+            ctxt, resource_type=AllResourceType.ALERT_RULE, before_obj=rule)
+        if enabled is True:
+            rule.enabled = True
             action = AllActionType.OPEN_ALERT_RULE
-        else:
+        elif enabled is False:
+            rule.enabled = False
             action = AllActionType.CLOSE_ALERT_RULE
+        elif trigger_value:
+            rule.trigger_value = trigger_value
+            action = AllActionType.MODIFY_TRIGGER_VALUE
+        elif trigger_period:
+            rule.trigger_period = trigger_period
+            action = AllActionType.MODIFY_TRIGGER_VALUE
+        else:
+            raise exc.InvalidInput(_('alert_rule upda param not exist'))
+        rule.save()
         self.finish_action(begin_action, resource_id=rule.id,
                            resource_name=rule.type,
-                           resource_data=objects.json_encode(rule),
                            action=action, after_obj=rule)
         return rule
 

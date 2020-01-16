@@ -362,9 +362,11 @@ class AllResourceType(BaseStorEnum):
     RADOSGW = 'radosgw'
     RADOSGW_ROUTER = 'radosgw_router'
     SERVICE = 'service'
+    NETWORK_INTERFACE = 'network_interface'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
-           DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE)
+           DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
+           NETWORK_INTERFACE)
 
 
 class AllActionType(BaseStorEnum):
@@ -406,7 +408,8 @@ class AllActionType(BaseStorEnum):
     RGW_STOP = 'rgw_stop'
     RGW_ROUTER_ADD = 'rgw_router_add'
     RGW_ROUTER_REMOVE = 'rgw_router_remove'
-
+    MODIFY_TRIGGER_VALUE = 'modify_trigger_value'
+    MODIFY_TRIGGER_PERIOD = 'modify_trigger_period'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
@@ -415,7 +418,7 @@ class AllActionType(BaseStorEnum):
            CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE,
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
            OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
-           RGW_ROUTER_REMOVE)
+           RGW_ROUTER_REMOVE, MODIFY_TRIGGER_VALUE, MODIFY_TRIGGER_PERIOD)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -449,7 +452,9 @@ class ResourceAction(object):
 
             AllResourceType.ALERT_RULE:
                 [AllActionType.OPEN_ALERT_RULE,
-                 AllActionType.CLOSE_ALERT_RULE],
+                 AllActionType.CLOSE_ALERT_RULE,
+                 AllActionType.MODIFY_TRIGGER_VALUE,
+                 AllActionType.MODIFY_TRIGGER_PERIOD],
 
             AllResourceType.EMAIL_GROUP:
                 [AllActionType.CREATE, AllActionType.UPDATE,
