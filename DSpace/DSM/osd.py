@@ -197,9 +197,10 @@ class OsdHandler(AdminBaseHandler):
     def _osd_create_disk_check(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(ctxt, disk_id)
         if disk.status != s_fields.DiskStatus.AVAILABLE:
-            raise exception.InvalidInput(_("Disk %s not available") % disk_id)
+            raise exception.InvalidInput(
+                _("Disk %s not available") % disk.name)
         if disk.role != s_fields.DiskRole.DATA:
-            raise exception.InvalidInput(_("Disk %s not for data") % disk_id)
+            raise exception.InvalidInput(_("Disk %s not for data") % disk.name)
         return disk
 
     def _osd_create_partition_check(self, ctxt, data, key, role, disk):
