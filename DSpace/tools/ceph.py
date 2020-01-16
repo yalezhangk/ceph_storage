@@ -373,6 +373,8 @@ class CephTool(ToolBase):
     def slow_request_get(self, osds):
         res = []
         for osd in osds:
+            if not osd.osd_id:
+                continue
             logger.debug("Osd.{} slow request get start.".format(osd.osd_id))
             cmd = ["ceph", "daemon", "osd.%s" % osd.osd_id,
                    "dump_historic_slow_ops", '-f', 'json']

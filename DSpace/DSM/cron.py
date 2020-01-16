@@ -37,7 +37,10 @@ class CronHandler(AdminBaseHandler):
             logger.info("Get cluster %s osds slow request "
                         "from agent" % cluster.id)
             # 分组
-            osds = objects.OsdList.get_all(ctxt, expected_attrs=['node'])
+            osds = objects.OsdList.get_all(
+                ctxt, filters={"status": s_fields.OsdStatus.ACTIVE},
+                expected_attrs=['node']
+            )
             osds.sort(key=itemgetter('node_id'))
             osds = groupby(osds, itemgetter('node_id'))
             osd_all = dict([(key, list(group)) for key, group in osds])
