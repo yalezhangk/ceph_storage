@@ -519,7 +519,9 @@ class ResourceAction(object):
                 [AllActionType.RGW_START, AllActionType.RGW_STOP],
 
             AllResourceType.RADOSGW_ROUTER:
-                [AllActionType.CREATE, AllActionType.DELETE],
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.RGW_ROUTER_ADD,
+                 AllActionType.RGW_ROUTER_REMOVE],
 
         }
         return relation
