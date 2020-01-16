@@ -101,9 +101,16 @@ class OsdListHandler(ClusterAPIHandler):
                           'journal_partition']
 
         exact_filters = ['status', 'type', 'disk_type', 'node_id', 'disk_id']
-        fuzzy_filters = ['osd_id']
-        filters = self.get_support_filters(exact_filters, fuzzy_filters)
-
+        filters = self.get_support_filters(exact_filters, [])
+        osd_name = self.get_query_argument('osd_id', default=None)
+        if osd_name:
+            osd_name = osd_name.strip()
+            osd_li = osd_name.split('osd.')
+            if len(osd_li) == 2:
+                osd_id = osd_li[1]
+            else:
+                osd_id = osd_li[0]
+            filters.update({'osd_id~': osd_id})
         tab = self.get_query_argument('tab', default="default")
         if tab not in ["default", "io"]:
             raise exception.InvalidInput(_("this tab not support"))
