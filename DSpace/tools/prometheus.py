@@ -203,6 +203,28 @@ class PrometheusTool(object):
         else:
             return None
 
+    def get_node_exporter_metrics(self, metric, **kwargs):
+        """Get metrics from prometheus
+        Returns: metrics value
+        """
+        node_exporter = DSpaceNodeExporter(url=self.prometheus_url)
+
+        function = getattr(node_exporter, metric)
+
+        graph = kwargs.get('graph')
+        try:
+            value = json.loads(function(**kwargs))
+        except Exception:
+            return None
+
+        if len(value['data']['result']):
+            if graph:
+                return value['data']['result']
+            else:
+                return value['data']['result']
+        else:
+            return None
+
     def node_get_metrics_network(self, node, net_name):
         metrics = {}
         for metric in network_attrs:
