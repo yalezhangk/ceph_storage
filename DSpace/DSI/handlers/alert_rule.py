@@ -20,8 +20,14 @@ update_alert_rule_schema = {
     "properties": {
         "alert_rule": {
             "type": "object",
-            "properties": {"enabled": {"type": "boolean"}},
-            "required": ["enabled"],
+            "properties":
+                {"enabled":
+                    {"type": "boolean"},
+                 "trigger_value":
+                    {"type": "string"},
+                 "trigger_period":
+                    {"type": "string"}
+                 },
             "additionalProperties": False
         },
     },
