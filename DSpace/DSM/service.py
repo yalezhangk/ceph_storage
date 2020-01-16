@@ -122,7 +122,7 @@ class ServiceHelper(AdminBaseMixin):
             "status": self.status_field.INACTIVE
         })
         if res:
-            self.do_restart()
+            self.task_submit(self.do_restart)
 
     def _do_restart(self):
         pass

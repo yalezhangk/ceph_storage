@@ -284,6 +284,10 @@ class CronHandler(AdminBaseHandler):
                     osds.pop(str(osd_status.get('id')))
             if osds:
                 for osd_id, osd in six.iteritems(osds):
+                    if osd.status in [s_fields.OsdStatus.DELETING,
+                                      s_fields.OsdStatus.CREATING]:
+                        continue
+                    # If osd is in db but not in ceph cluster, mark it to error
                     logger.error("Osd.%s is not in cluster", osd_id)
                     osd.status = s_fields.OsdStatus.ERROR
                     osd.save()
