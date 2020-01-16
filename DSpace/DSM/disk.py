@@ -158,7 +158,7 @@ class DiskHandler(AdminBaseHandler):
             "status": disk.can_operation_status
         })
         begin_action = self.begin_action(
-            ctxt, Resource.DISK, Action.CREATE, disk)
+            ctxt, Resource.ACCELERATE_DISK, Action.CREATE, disk)
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         self.task_submit(self._disk_partitions_create, ctxt, node, disk,
                          values, begin_action)
@@ -209,7 +209,7 @@ class DiskHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Disk status not available"))
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         begin_action = self.begin_action(
-            ctxt, Resource.DISK, Action.DELETE, disk)
+            ctxt, Resource.ACCELERATE_DISK, Action.DELETE, disk)
         disk.conditional_update({
             "status": s_fields.DiskStatus.PROCESSING
         }, expected_values={

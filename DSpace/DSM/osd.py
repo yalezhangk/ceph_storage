@@ -409,7 +409,7 @@ class OsdHandler(AdminBaseHandler):
             sr["slow_request_ops"] = sr["slow_request_ops"][:op_top]
         return sr
 
-    def _osd_disk_replace_prepare(self, ctxt, osd):
+    def _osd_disk_replace_prepare(self, ctxt, osd, begin_action=None):
         """
           prepare to replace osd disk
           1. set noout,norecover,nobackfill flag
@@ -426,14 +426,22 @@ class OsdHandler(AdminBaseHandler):
             status = s_fields.OsdStatus.REPLACE_PREPARED
             msg = _("osd.{} replace prepare success").format(osd.osd_id)
             op_status = "OSD_CLEAN_SUCCESS"
+            action_sta = 'success'
+            err_msg = None
         except Exception as e:
             logger.exception("osd.%s replace prepare error: %s", osd.osd_id, e)
             status = s_fields.OsdStatus.ERROR
+            action_sta = 'fail'
+            err_msg = str(e)
             msg = _("osd.{} replace prepare error").format(osd.osd_id)
             op_status = "OSD_CLEAN_ERROR"
 
         osd.status = status
         osd.save()
+        if begin_action:
+            self.finish_action(begin_action, osd.id, osd.osd_name,
+                               after_obj=osd, status=action_sta,
+                               err_msg=err_msg)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, osd, op_status, msg)
         return osd
@@ -468,14 +476,17 @@ class OsdHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("In the operation osd can "
                                            "not replace disk"))
         self._osd_replace_prepare_check(ctxt, osd)
+        begin_action = self.begin_action(
+            ctxt, Resource.OSD, Action.OSD_CLEAN, osd)
         osd.status = s_fields.OsdStatus.REPLACE_PREPARING
         osd.disk.status = s_fields.DiskStatus.REPLACING
         osd.disk.save()
         osd.save()
-        self.task_submit(self._osd_disk_replace_prepare, ctxt, osd)
+        self.task_submit(self._osd_disk_replace_prepare, ctxt, osd,
+                         begin_action)
         return osd
 
-    def _accelerate_disk_prepare(self, ctxt, disk):
+    def _accelerate_disk_prepare(self, ctxt, disk, begin_action=None):
         logger.info("start to clean osd from accelerate disk %s", disk.name)
         osds = self._osds_get_by_accelerate_disk(ctxt, disk.id)
         osd_clean = True
@@ -492,25 +503,31 @@ class OsdHandler(AdminBaseHandler):
             if osd.status == s_fields.OsdStatus.REPLACE_PREPARED:
                 logger.info('osd.%s has been cleaned, continue', osd.osd_id)
                 continue
+            osd_begin_action = self.begin_action(
+                ctxt, Resource.OSD, Action.OSD_CLEAN, osd)
             osd.disk.status = s_fields.DiskStatus.REPLACING
             osd.disk.save()
             osd.status = s_fields.OsdStatus.REPLACE_PREPARING
             osd.save()
-            osd = self._osd_disk_replace_prepare(ctxt, osd)
+            osd = self._osd_disk_replace_prepare(ctxt, osd, osd_begin_action)
             if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
                 osd_clean = False
         if not osd_clean:
             msg = _("accelerate disk {} osd clean error").format(disk.name)
             op_status = "DISK_CLEAN_ERROR"
             status = s_fields.DiskStatus.ERROR
+            acction_sta = 'success'
             logger.error(msg)
         else:
             msg = _("accelerate disk {} osd clean success").format(disk.name)
             op_status = "DISK_CLEAN_SUCCESS"
             status = s_fields.DiskStatus.REPLACE_PREPARED
             logger.info(msg)
+            acction_sta = 'fail'
         disk.status = status
         disk.save()
+        self.finish_action(begin_action, disk.id, disk.name, after_obj=disk,
+                           status=acction_sta)
         # send websocket
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, op_status, msg)
@@ -527,9 +544,12 @@ class OsdHandler(AdminBaseHandler):
             if osd.status in s_fields.OsdStatus.REPLACE_STATUS:
                 raise exception.Invalid(_("osd.%s is replacing, please "
                                           "wait") % osd.osd_id)
+        begin_action = self.begin_action(
+            ctxt, Resource.ACCELERATE_DISK, Action.ACC_DISK_CLEAN, disk)
         disk.status = s_fields.DiskStatus.REPLACE_PREPARING
         disk.save()
-        self.task_submit(self._accelerate_disk_prepare, ctxt, disk)
+        self.task_submit(self._accelerate_disk_prepare, ctxt, disk,
+                         begin_action)
         return disk
 
     def _osd_disk_replace(self, ctxt, osd, begin_action=None):
@@ -580,7 +600,8 @@ class OsdHandler(AdminBaseHandler):
 
         return osd
 
-    def _osd_accelerate_disk_replace(self, ctxt, disk, osds, values):
+    def _osd_accelerate_disk_replace(self, ctxt, disk, osds, values,
+                                     begin_action=None):
         logger.info("start to replace accelerate disk %s", disk.name)
         client = self.agent_manager.get_client(node_id=disk.node.id)
 
@@ -596,6 +617,8 @@ class OsdHandler(AdminBaseHandler):
             msg = _("create disk {} partitions failed").format(disk.name)
             op_status = "DISK_CREATE_PART_ERROR"
             logger.error(msg)
+            self.finish_action(begin_action, disk.id, disk.name,
+                               disk, status='fail', err_msg=msg)
             wb_client.send_message(ctxt, disk, op_status, msg)
             return
 
@@ -618,6 +641,8 @@ class OsdHandler(AdminBaseHandler):
         disk.save()
         logger.info("accelerate disk %s replace finish", disk.name)
         msg = _("accelerate disk {} replace success").format(disk.name)
+        self.finish_action(begin_action, disk.id, disk.name, disk,
+                           status='success')
         wb_client.send_message(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
 
     def osd_accelerate_disk_replace(self, ctxt, disk_id):
@@ -645,8 +670,11 @@ class OsdHandler(AdminBaseHandler):
             if osd.status != s_fields.OsdStatus.REPLACE_PREPARED:
                 raise exception.InvalidInput(_("Osd status should be "
                                                "REPLACE_PREPARED"))
+        begin_action = self.begin_action(
+            ctxt, Resource.ACCELERATE_DISK, Action.ACC_DISK_REBUILD, disk)
         disk.status = s_fields.DiskStatus.REPLACING
         disk.save()
         self.task_submit(
-            self._osd_accelerate_disk_replace, ctxt, disk, osds, values)
+            self._osd_accelerate_disk_replace, ctxt, disk, osds, values,
+            begin_action)
         return disk
