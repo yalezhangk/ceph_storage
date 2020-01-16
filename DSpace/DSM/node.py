@@ -338,9 +338,9 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
                 n.append(node)
         return n
 
-    def node_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                     sort_dirs=None, filters=None, offset=None,
-                     expected_attrs=None):
+    def node_get_all(self, ctxt, tab=None, marker=None, limit=None,
+                     sort_keys=None, sort_dirs=None, filters=None,
+                     offset=None, expected_attrs=None):
         if filters.get('role_object_gateway'):
             if expected_attrs:
                 expected_attrs.append('radosgws')
@@ -355,7 +355,22 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             self._filter_gateway_network(ctxt, nodes)
         if no_router:
             nodes = self._filter_by_routers(ctxt, nodes)
-        self._node_get_metrics_overall(ctxt, nodes)
+        # get metric from prometheus
+        need_nodes = []
+        for node in nodes:
+            if (node.status not in [s_fields.NodeStatus.CREATING,
+                                    s_fields.NodeStatus.DELETING]):
+                need_nodes.append(node)
+            need_nodes.append(node)
+        prometheus = PrometheusTool(ctxt)
+        if tab == "default":
+            prometheus.nodes_get_default_metrics(need_nodes)
+        elif tab == "cpu":
+            prometheus.nodes_get_cpu_metrics(need_nodes)
+        elif tab == "network":
+            prometheus.nodes_get_network_metrics(need_nodes)
+        else:
+            logger.warn("invalid tab: %s", tab)
 
         return nodes
 

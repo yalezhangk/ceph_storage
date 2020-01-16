@@ -67,6 +67,16 @@ disk_metrics = ['write_iops_rate', 'read_iops_rate', 'write_bytes_rate',
                 'read_bytes_rate', 'write_lat_rate', 'read_lat_rate',
                 'io_rate']
 
+node_default_attrs = ['cpu_rate', 'memory_rate']
+
+node_cpu_attrs = ['cpu_rate', 'memory_rate', 'intr_rate',
+                  'context_switches_rate', 'load5', 'vmstat_pgfault_rate']
+
+node_network_attrs = ['network_transmit_packets_rate',
+                      'network_receive_packets_rate',
+                      'network_transmit_rate', 'network_receive_rate',
+                      'network_errs_rate', 'network_drop_rate']
+
 
 class PrometheusTool(object):
     prometheus_url = None
@@ -344,6 +354,66 @@ class PrometheusTool(object):
                 data = self.get_node_exporter_metric(metric_method, filter={
                     'hostname': node.hostname, 'cluster_id': node.cluster_id})
             node.metrics.update({metric: data})
+
+    def nodes_get_default_metrics(self, nodes):
+        logger.info("osds get capacity")
+        nodes_default = {}
+        for node in nodes:
+            nodes_default[node.hostname] = node
+        for m in node_default_attrs:
+            method = 'node_{}'.format(m)
+            datas = self.get_node_exporter_metrics(
+                method, filter={'cluster_id': self.ctxt.cluster_id})
+            if not datas:
+                continue
+            for data in datas:
+                hostname = data['metric']['hostname']
+                value = data['value']
+                if hostname in nodes_default.keys():
+                    node = nodes_default[hostname]
+                    node.metrics.update({m: value})
+
+    def nodes_get_cpu_metrics(self, nodes):
+        logger.info("osds get capacity")
+        nodes_cpu = {}
+        for node in nodes:
+            nodes_cpu[node.hostname] = node
+        for m in node_cpu_attrs:
+            method = 'node_{}'.format(m)
+            datas = self.get_node_exporter_metrics(
+                method, filter={'cluster_id': self.ctxt.cluster_id})
+            if not datas:
+                continue
+            for data in datas:
+                hostname = data['metric']['hostname']
+                value = data['value']
+                if hostname in nodes_cpu.keys():
+                    node = nodes_cpu[hostname]
+                    node.metrics.update({m: value})
+
+    def nodes_get_network_metrics(self, nodes):
+        logger.info("osds get capacity")
+        nodes_network = {}
+        for node in nodes:
+            net_name = self._get_net_name(node.id, node.ip_address)
+            nodes_network[node.hostname] = {
+                'node': node,
+                'net_name': net_name
+            }
+        for m in node_network_attrs:
+            method = 'node_{}'.format(m)
+            datas = self.get_node_exporter_metrics(
+                method, filter={'cluster_id': self.ctxt.cluster_id})
+            if not datas:
+                continue
+            for data in datas:
+                hostname = data['metric']['hostname']
+                net_name = data['metric']['device']
+                value = data['value']
+                if (hostname in nodes_network.keys() and
+                        net_name == nodes_network[hostname]['net_name']):
+                    node = nodes_network[hostname]['node']
+                    node.metrics.update({m: value})
 
     def disk_get_perf(self, disk):
         node = objects.Node.get_by_id(self.ctxt, disk.node_id)
