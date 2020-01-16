@@ -363,10 +363,11 @@ class AllResourceType(BaseStorEnum):
     RADOSGW_ROUTER = 'radosgw_router'
     SERVICE = 'service'
     NETWORK_INTERFACE = 'network_interface'
+    ACCELERATE_DISK = 'accelerate_disk'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
-           NETWORK_INTERFACE)
+           NETWORK_INTERFACE, ACCELERATE_DISK)
 
 
 class AllActionType(BaseStorEnum):
@@ -397,8 +398,7 @@ class AllActionType(BaseStorEnum):
     RACK_UPDATE_TOPLOGY = 'rack_update_toplogy'
     NODE_UPDATE_RACK = 'node_update_rack'
     PAUSE = 'pause'
-    OSD_REPLACE_PREPARE = 'osd_replace_prepare'
-    OSD_REPLACE = 'osd_replace'
+    OSD_REPLACE = 'osd_replace'  # osd换盘
     DATA_BALANCE_ON = 'data_balance_on'
     DATA_BALANCE_OFF = 'data_balance_off'
     MON_RESTART = 'mon_restart'
@@ -410,15 +410,19 @@ class AllActionType(BaseStorEnum):
     RGW_ROUTER_REMOVE = 'rgw_router_remove'
     MODIFY_TRIGGER_VALUE = 'modify_trigger_value'
     MODIFY_TRIGGER_PERIOD = 'modify_trigger_period'
+    ACC_DISK_CLEAN = 'disk_clean'  # 加速盘清理
+    OSD_CLEAN = 'osd_clean'  # osd清理
+    ACC_DISK_REBUILD = 'disk_rebuild'  # 重建加速盘
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
-           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE_PREPARE, OSD_REPLACE,
+           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE,
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
            OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
-           RGW_ROUTER_REMOVE, MODIFY_TRIGGER_VALUE, MODIFY_TRIGGER_PERIOD)
+           RGW_ROUTER_REMOVE, MODIFY_TRIGGER_VALUE, MODIFY_TRIGGER_PERIOD,
+           ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -487,11 +491,11 @@ class ResourceAction(object):
 
             AllResourceType.OSD:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.OSD_RESTART],
+                 AllActionType.OSD_RESTART, AllActionType.OSD_CLEAN,
+                 AllActionType.OSD_REPLACE],
 
             AllResourceType.DISK:
-                [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.CHANGE_DISK_TYPE, AllActionType.DISK_LIGHT],
+                [AllActionType.CHANGE_DISK_TYPE, AllActionType.DISK_LIGHT],
 
             AllResourceType.SYSCONFIG:
                 [AllActionType.UPDATE_CLOCK_SERVER,
@@ -522,6 +526,10 @@ class ResourceAction(object):
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.RGW_ROUTER_ADD,
                  AllActionType.RGW_ROUTER_REMOVE],
+
+            AllResourceType.ACCELERATE_DISK:
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.ACC_DISK_CLEAN, AllActionType.ACC_DISK_REBUILD]
 
         }
         return relation
