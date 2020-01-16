@@ -151,7 +151,7 @@ class BaseAPIHandler(RequestHandler):
             logger.exception("%s raise exception: %s", self.request.uri, e)
             super(BaseAPIHandler, self)._handle_request_exception(e)
 
-    def log_exception(self, op, e):
+    def api_log_exception(self, op, e):
         if isinstance(e, exception.StorException):
             if e.code < 500:
                 # exception content will auto add in end
