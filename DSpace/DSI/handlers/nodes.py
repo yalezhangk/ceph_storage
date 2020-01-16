@@ -192,8 +192,12 @@ class NodeListHandler(ClusterAPIHandler):
         fuzzy_filters = ['hostname', 'ip_address']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(ctxt)
+        tab = self.get_query_argument('tab', default="default")
+        if tab not in ["default", "cpu", "network"]:
+            raise exception.InvalidInput(_("this tab not support"))
+
         nodes = yield client.node_get_all(
-            ctxt, expected_attrs=['disks', 'networks', 'osds'],
+            ctxt, tab=tab, expected_attrs=['disks', 'networks', 'osds'],
             filters=filters, **page_args)
         if 'no_router' in filters:
             del(filters['no_router'])
