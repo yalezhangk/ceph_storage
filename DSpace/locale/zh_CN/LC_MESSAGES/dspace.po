@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-01-16 22:04-0500\n"
+"POT-Creation-Date: 2020-01-17 02:11-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -395,6 +395,9 @@ msgstr "Ceph配置需要参数 'action'"
 
 msgid "Ceph config: config is none!"
 msgstr "Ceph配置需要参数 'config'"
+
+msgid "cluster: name is none"
+msgstr "集群名称不能为空"
 
 msgid "datacenter: name is none"
 msgstr "数据中心需要参数 'name'"
@@ -1379,4 +1382,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-

@@ -246,6 +246,29 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
         return cluster
 
+    def cluster_update_display_name(self, ctxt, id, name):
+        cluster = objects.Cluster.get_by_id(ctxt, id)
+        self._check_cluster_display_name(ctxt, name)
+        begin_action = self.begin_action(
+                ctxt, resource_type=Resource.CLUSTER,
+                action=Action.UPDATE, before_obj=cluster)
+        logger.info(
+                "update cluster name from %s to %s",
+                cluster.display_name, name)
+        cluster.display_name = name
+        cluster.save()
+        self.finish_action(begin_action, resource_id=cluster.id,
+                           resource_name=cluster.display_name,
+                           after_obj=cluster)
+        return cluster
+
+    def _check_cluster_display_name(self, ctxt, display_name):
+        filters = {"display_name": display_name}
+        clusters = objects.ClusterList.get_all(ctxt, filters=filters)
+        if clusters:
+            logger.error("cluster display_name duplicate: %s", display_name)
+            raise exc.ClusterExists(cluster=display_name)
+
     def _cluster_delete(self, ctxt, cluster, src_cluster_id, clean_ceph=False,
                         begin_action=None):
         logger.info("trying to delete cluster-%s", cluster.id)

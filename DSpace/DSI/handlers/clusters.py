@@ -14,6 +14,8 @@ from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.exception import InvalidInput
+from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,22 @@ create_cluster_schema = {
         },
     },
     "required": ["cluster"],
+}
+update_cluster_schema = {
+    "type": "object",
+    "properties": {
+        "cluster": {
+            "type": "object",
+            "properties": {"name": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 32
+            }}, "required": ["name"],
+            "additionalProperties": False
+        },
+    },
+    "required": ["cluster"],
+    "additionalProperties": False
 }
 
 
@@ -182,6 +200,23 @@ class ClusterHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         cluster = yield client.cluster_delete(
             ctxt, cluster_id, clean_ceph=clean_ceph)
+        self.write(objects.json_encode({
+            "cluster": cluster
+        }))
+
+    @gen.coroutine
+    def put(self, cluster_id):
+        data = json_decode(self.request.body)
+        validate(data, schema=update_cluster_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get('cluster')
+        cluster_name = data.get('name')
+        if not cluster_name:
+            raise InvalidInput(reason=_("cluster: name is none"))
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        cluster = yield client.cluster_update_display_name(
+            ctxt, cluster_id, cluster_name)
         self.write(objects.json_encode({
             "cluster": cluster
         }))
