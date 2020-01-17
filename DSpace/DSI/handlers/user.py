@@ -25,9 +25,7 @@ user_login_schema = {
     "type": "object",
     "properties": {
         "username": {
-            "type": "string",
-            "minLength": 5,
-            "maxLength": 32
+            "type": "string"
         },
         "password": {
             "type": "string",
@@ -316,7 +314,7 @@ class UserLoginHandler(PermissionMixin):
         password = data.get('password')
         users = objects.UserList.get_all(ctxt, filters={'name': name})
         if not users:
-            raise exception.NotFound(user_id=name)
+            raise exception.UserNotFound(user_id=name)
         user = users[0]
         ctxt.user_id = user.id
         if not user.current_cluster_id:
