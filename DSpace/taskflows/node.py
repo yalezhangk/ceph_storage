@@ -966,6 +966,15 @@ class OsdUninstall(NodeBaseTask):
         osd.destroy()
 
 
+class DiskClean(NodeBaseTask):
+    def execute(self, ctxt, disk, task_info):
+        super(DiskClean, self).execute(task_info)
+        logger.info("Clean accelerate disk %s on "
+                    "node %s", disk.id, disk.node.hostname)
+        agent = self._get_agent(ctxt, disk.node)
+        agent.disk_partitions_remove(ctxt, disk.node, disk.name)
+
+
 class MonUninstall(NodeBaseTask):
     def execute(self, ctxt, node, task_info):
         super(MonUninstall, self).execute(task_info)

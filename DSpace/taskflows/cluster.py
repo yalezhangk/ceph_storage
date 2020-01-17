@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import taskflow.engines
 from oslo_log import log as logging
 from taskflow.patterns import linear_flow as lf
@@ -11,6 +10,7 @@ from DSpace.taskflows.base import BaseTask
 from DSpace.taskflows.base import CompleteTask
 from DSpace.taskflows.base import PrepareTask
 from DSpace.taskflows.node import CephPackageUninstall
+from DSpace.taskflows.node import DiskClean
 from DSpace.taskflows.node import DSpaceAgentUninstall
 from DSpace.taskflows.node import DSpaceChronyUninstall
 from DSpace.taskflows.node import DSpaceExpoterUninstall
@@ -63,6 +63,21 @@ class UninstallCeph(BaseTask):
                 rebind={'osd': arg}))
             kwargs[arg] = osd
         wf.add(clear_osd_flow)
+
+        # clear accelerate disks
+        disks = objects.DiskList.get_all(
+            ctxt,
+            filters={"role": "accelerate"},
+            expected_attrs=['node'])
+        clear_disk_flow = uf.Flow('Clean accelerate disk')
+        for disk in disks:
+            disk.node.executer = self.get_ssh_executor(disk.node)
+            arg = "disk-%s" % disk.id
+            clear_disk_flow.add(DiskClean(
+                "Clean %s disk" % disk.id,
+                rebind={'disk': arg}))
+            kwargs[arg] = disk
+        wf.add(clear_disk_flow)
 
         # clear storage role package
         osd_nodes = objects.NodeList.get_all(
