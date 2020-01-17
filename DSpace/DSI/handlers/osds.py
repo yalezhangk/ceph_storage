@@ -105,12 +105,18 @@ class OsdListHandler(ClusterAPIHandler):
         osd_name = self.get_query_argument('osd_id', default=None)
         if osd_name:
             osd_name = osd_name.strip()
-            osd_li = osd_name.split('osd.')
-            if len(osd_li) == 2:
-                osd_id = osd_li[1]
+            if osd_name in 'osd.':
+                # 所有
+                pass
             else:
-                osd_id = osd_li[0]
-            filters.update({'osd_id~': osd_id})
+                osd_li = osd_name.split('osd.')
+                if len(osd_li) == 2:
+                    # 模糊 osd.0
+                    osd_id = osd_li[1]
+                else:
+                    # 模糊 0
+                    osd_id = osd_li[0]
+                filters.update({'osd_id~': osd_id})
         tab = self.get_query_argument('tab', default="default")
         if tab not in ["default", "io"]:
             raise exception.InvalidInput(_("this tab not support"))
