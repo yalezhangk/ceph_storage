@@ -566,14 +566,14 @@ class OsdHandler(AdminBaseHandler):
             ceph_client.osds_rm_noout([osd.osd_id])
             logger.info("osd.%s replace success", osd.osd_id)
             op_status = 'OSD_REPLACE_SUCCESS'
-            msg = _("create success: osd.{}").format(osd.osd_id)
+            msg = _("osd.{} replace success").format(osd.osd_id)
             err_msg = None
         except exception.StorException as e:
             logger.error(e)
             osd.status = s_fields.OsdStatus.ERROR
             osd.save()
-            logger.info("osd.%s create error", osd.osd_id)
-            msg = _("create error: osd.{}").format(osd.osd_id)
+            logger.info("osd.%s replace error", osd.osd_id)
+            msg = _("osd.{} replace error").format(osd.osd_id)
             op_status = 'OSD_REPLACE_ERROR'
             err_msg = str(e)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
@@ -638,7 +638,10 @@ class OsdHandler(AdminBaseHandler):
             osd.status = s_fields.OsdStatus.REPLACING
             osd.save()
             self._osd_disk_replace(ctxt, osd)
-        disk.status = s_fields.DiskStatus.AVAILABLE
+        if disk.partition_used < disk.partition_num:
+            disk.status = s_fields.DiskStatus.AVAILABLE
+        else:
+            disk.status = s_fields.DiskStatus.INUSE
         disk.save()
         logger.info("accelerate disk %s replace finish", disk.name)
         msg = _("accelerate disk {} replace success").format(disk.name)
