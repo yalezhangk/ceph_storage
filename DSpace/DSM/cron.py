@@ -119,8 +119,13 @@ class CronHandler(AdminBaseHandler):
             ceph_tool.systemctl_restart('osd', osd.osd_id)
         except exception.StorException as e:
             logger.error(e)
-            osd.status = s_fields.OsdStatus.OFFLINE
-            osd.save()
+            res = osd.conditional_update({
+                "status": s_fields.OsdStatus.OFFLINE
+            }, expected_values={
+                "status": s_fields.OsdStatus.RESTARTING
+            })
+            if not res:
+                return
             msg = _("osd.{} cannot be restarted, mark to offline").format(
                 osd.osd_id)
             self.send_service_alert(context, osd, "osd_status", "Osd",
@@ -162,11 +167,7 @@ class CronHandler(AdminBaseHandler):
         if not osd:
             return
         osd = osd[0]
-        if osd.status in [s_fields.OsdStatus.DELETING,
-                          s_fields.OsdStatus.CREATING,
-                          s_fields.OsdStatus.REPLACE_PREPARED,
-                          s_fields.OsdStatus.REPLACE_PREPARING,
-                          s_fields.OsdStatus.PROCESSING]:
+        if osd.status in s_fields.OsdStatus.OSD_CHECK_IGNORE_STATUS:
             return
         status = self.get_osd_status(context, osd_id, ceph_client)
         if not status:
@@ -179,48 +180,58 @@ class CronHandler(AdminBaseHandler):
                 err_status = [s_fields.OsdStatus.OFFLINE,
                               s_fields.OsdStatus.RESTARTING,
                               s_fields.OsdStatus.ERROR]
-                if osd.status in err_status:
-                    msg = _("osd.{} is active").format(osd.osd_id)
-                    self.send_service_alert(
-                        context, osd, "osd_status", "Osd", "INFO", msg,
-                        "OSD_ACTIVE")
-                osd.conditional_update({
+                res = osd.conditional_update({
                     "status": s_fields.OsdStatus.ACTIVE
                 }, expected_values={
                     "status": err_status
                 })
+                if not res:
+                    return
+                msg = _("osd.{} is active").format(osd.osd_id)
+                self.send_service_alert(
+                    context, osd, "osd_status", "Osd", "INFO", msg,
+                    "OSD_ACTIVE")
             elif status == "in&down":
                 if osd.status in [s_fields.OsdStatus.ACTIVE]:
                     logger.warning("osd.%s status is %s", osd.osd_id, status)
-                    osd.conditional_update({
+                    res = osd.conditional_update({
                         "status": s_fields.OsdStatus.OFFLINE
                     }, expected_values={
                         "status": s_fields.OsdStatus.ACTIVE
                     })
+                    if not res:
+                        return
                     msg = _("osd.{} is offline").format(osd.osd_id)
                     self.send_service_alert(
                         context, osd, "osd_status", "Osd", "WARN", msg,
                         "OSD_OFFLINE")
                     if self.debug_mode:
                         return
-                    osd.conditional_update({
+                    res = osd.conditional_update({
                         "status": s_fields.OsdStatus.RESTARTING
                     }, expected_values={
-                        "status": s_fields.OsdStatus.ACTIVE
+                        "status": s_fields.OsdStatus.OFFLINE
                     })
+                    if not res:
+                        return
                     self.task_submit(self._restart_osd, context, osd)
-                    return
             elif status == "out&up" or status == "out&down":
                 if osd.status in [s_fields.OsdStatus.OFFLINE,
                                   s_fields.OsdStatus.RESTARTING,
                                   s_fields.OsdStatus.ERROR]:
                     return
+                res = osd.conditional_update({
+                    "status": s_fields.OsdStatus.OFFLINE
+                }, expected_values={
+                    "status": [s_fields.OsdStatus.ACTIVE,
+                               s_fields.OsdStatus.WARNING]
+                })
+                if not res:
+                    return
                 logger.warning("osd.%s status is %s", osd.osd_id, status)
                 msg = _("osd.{} is offline").format(osd.osd_id)
                 self.send_service_alert(context, osd, "osd_status", "Osd",
                                         "WARN", msg, "OSD_OFFLINE")
-                osd.status = s_fields.OsdStatus.OFFLINE
-                osd.save()
         except exception.OsdNotFound as e:
             logger.warning(e)
 
