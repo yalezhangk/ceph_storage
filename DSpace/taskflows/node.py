@@ -872,6 +872,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
 
         tpl = template.get('dsa.conf.j2')
         dsa_conf = tpl.render(
+            debug_log=CONF.debug,
             ip_address=str(node.ip_address),
             admin_ip_address=str(admin_ip_address),
             admin_port=admin_port,
