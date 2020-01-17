@@ -30,8 +30,7 @@ cpu_attrs = ['cpu_rate', 'intr_rate', 'context_switches_rate',
              'vmstat_pgfault_rate', 'load5']
 sys_attrs = ['memory_rate']
 
-sys_disk_used_rate_attrs = ['sys_disk_used_rate']
-sys_disk_size_attrs = ['sys_disk_size']
+sys_disk_attrs = ['sys_disk_size', 'sys_disk_used_rate']
 
 disk_attrs = ['disk_io_rate']
 
@@ -41,7 +40,7 @@ network_attrs = ['network_transmit_packets_rate',
                  'network_errs_rate', 'network_drop_rate']
 
 prometheus_attrs = cpu_attrs + sys_attrs + disk_attrs + network_attrs +\
-    sys_disk_used_rate_attrs + sys_disk_size_attrs
+    sys_disk_attrs
 
 osd_rate = ['op_in_bytes', 'op_out_bytes', 'op_w',
             'op_r', 'op_w_latency', 'op_r_latency']
@@ -338,13 +337,7 @@ class PrometheusTool(object):
                         'hostname': node.hostname,
                         'device': sys_disk_name,
                         'cluster_id': node.cluster_id})
-            elif metric in sys_disk_used_rate_attrs:
-                data = self.get_node_exporter_metric(
-                    metric_method, filter={
-                        'hostname': node.hostname,
-                        'mountpoint': '/',
-                        'cluster_id': node.cluster_id})
-            elif metric in sys_disk_size_attrs:
+            elif metric in sys_disk_attrs:
                 data = self.get_node_exporter_metric(
                     metric_method, filter={
                         'hostname': node.hostname,

@@ -173,9 +173,11 @@ class NodeMixin(object):
 class NodeHandler(AdminBaseHandler, NodeMixin):
 
     def node_get(self, ctxt, node_id, expected_attrs=None):
-        node_info = objects.Node.get_by_id(
+        node = objects.Node.get_by_id(
             ctxt, node_id, expected_attrs=expected_attrs)
-        return node_info
+        prometheus = PrometheusTool(ctxt)
+        prometheus.node_get_metrics_overall(node)
+        return node
 
     def node_update(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
