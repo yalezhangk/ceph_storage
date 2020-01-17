@@ -136,6 +136,7 @@ class DiskHandler(AdminBaseHandler):
         if (ceph_version == s_fields.CephVersion.T2STOR):
             t2stor_support_type = [
                 s_fields.DiskPartitionRole.DB,
+                s_fields.DiskPartitionRole.WAL,
                 s_fields.DiskPartitionRole.CACHE,
                 s_fields.DiskPartitionRole.MIX
             ]
