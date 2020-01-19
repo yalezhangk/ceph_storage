@@ -640,12 +640,16 @@ class InstallCephRepo(BaseTask):
         ssh = node.executer
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
-        ceph_repo = objects.sysconfig.sys_config_get(ctxt, "ceph_repo")
+        dspace_repo = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSPACE_REPO)
+        ceph_version_name = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CEPH_VERSION_NAME)
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
         package_tool = PackageTool(ssh)
         repo_content = package_tool.render_repo(
-            "ceph", ceph_repo=ceph_repo)
+            "ceph", dspace_repo=dspace_repo,
+            ceph_version_name=ceph_version_name.lower())
         logger.info("ceph repo_content: %s", repo_content)
         package_tool.configure_repo("ceph", repo_content)
 
@@ -1344,6 +1348,15 @@ class NodesCheck(object):
             return {
                 "check": False,
                 "msg": _("Repository not available")
+            }
+
+        # if enable repo, repo will install in node add, not check repo
+        enable_ceph_repo = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.ENABLE_CEPH_REPO)
+        if enable_ceph_repo:
+            return {
+                    "check": True,
+                    "msg": None
             }
 
         available = pkgs.get('available')

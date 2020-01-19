@@ -636,6 +636,7 @@ class ConfigKey(BaseStorEnum):
     UDEV_DIR = 'udev_dir'
     ENABLE_CEPHX = 'enable_cephx'
     OS_DISTRO = 'os_distro'
+    CEPH_VERSION_NAME = "ceph_version_name"
 
 
 class DSMStatus(BaseStorEnum):
