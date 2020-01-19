@@ -835,6 +835,7 @@ class AlertRuleInitMixin(object):
                 'trigger_value': 'online',
                 'level': 'INFO',
                 'trigger_period': '0',
+                'enabled': True,
                 'data_source': 'dspace',
             },
             {
@@ -844,6 +845,7 @@ class AlertRuleInitMixin(object):
                 'trigger_value': 'offline',
                 'level': 'ERROR',
                 'trigger_period': '0',
+                'enabled': True,
                 'data_source': 'dspace',
             },
             {
