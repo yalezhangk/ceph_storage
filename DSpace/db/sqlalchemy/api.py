@@ -2416,8 +2416,8 @@ def license_update(context, license_id, values):
 
 
 @require_context
-def license_get_latest_valid(context, marker=None, limit=None, sort_keys=None,
-                             sort_dirs=None, filters=None, offset=None):
+def license_get_all(context, marker=None, limit=None, sort_keys=None,
+                    sort_dirs=None, filters=None, offset=None):
     session = get_session()
     with session.begin():
         # Generate the query

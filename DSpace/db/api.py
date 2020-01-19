@@ -593,8 +593,8 @@ def license_update(context, license_id, values):
     return IMPL.license_update(context, license_id, values)
 
 
-def license_get_latest_valid(context, *args, **kwargs):
-    return IMPL.license_get_latest_valid(context, *args, **kwargs)
+def license_get_all(context, *args, **kwargs):
+    return IMPL.license_get_all(context, *args, **kwargs)
 
 
 ###############

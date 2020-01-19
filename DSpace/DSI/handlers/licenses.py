@@ -40,7 +40,7 @@ class LicenseHandler(BaseAPIHandler):
         """
         # unauthorized:未授权，authorized:已授权， lapsed:已失效
         ctxt = self.get_context()
-        licenses = objects.LicenseList.get_latest_valid(ctxt)
+        licenses = objects.LicenseList.get_all(ctxt)
         admin = self.get_admin_client(ctxt)
         has_cluster = objects.ClusterList.get_all(ctxt)
         if has_cluster:
@@ -64,9 +64,13 @@ class LicenseHandler(BaseAPIHandler):
                     result['license'].append({'status': 'unauthorized'})
                 else:
                     is_available = v.is_available()
+                    if per_license.status == 'lapsed':
+                        status = 'lapsed'
+                    else:
+                        status = 'authorized' if is_available else 'lapsed'
                     up_data = {
                         'id': per_license.id,
-                        'status': 'authorized' if is_available else 'lapsed',
+                        'status': status,
                         'not_before': v.not_before,
                         'not_after': v.not_after,
                         'product': 'T2STOR',
@@ -116,6 +120,11 @@ class LicenseHandler(BaseAPIHandler):
             raise InvalidInput(reason=_('the license.key is invalid'))
         else:
             result['license']['result'] = True
+            # 其他的改为已失效
+            licenses = objects.LicenseList.get_all(ctxt)
+            for licen in licenses:
+                licen.status = 'lapsed'
+                licen.save()
         license.create()
         self.write(json.dumps(result))
 

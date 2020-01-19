@@ -76,7 +76,7 @@ class PermissionMixin(BaseAPIHandler):
     @staticmethod
     def license_verify(ctxt, cluster_id=None):
         # license校验
-        licenses = objects.LicenseList.get_latest_valid(ctxt)
+        licenses = objects.LicenseList.get_all(ctxt)
         if not licenses:
             is_available = False
         else:
