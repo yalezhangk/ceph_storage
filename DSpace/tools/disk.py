@@ -153,6 +153,9 @@ class DiskTool(ToolBase):
 
     def data_clear(self, disk):
         disk_path = self._wapper("/dev/%s" % disk)
+        if not os.path.exists(disk_path):
+            logger.warning("%s does not exist", disk_path)
+            return True
         cmd = "dd if=/dev/zero of={} bs=4M count=30".format(disk_path)
         code, out, err = self.run_command(cmd)
         if code:
