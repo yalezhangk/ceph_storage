@@ -144,6 +144,21 @@ update_pool_security_policy_schema = {
 }
 
 
+@URLRegistry.register(r"/pools/block/")
+class BlockPoolListHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        filters = {"role": "data"}
+        pools = yield client.pool_get_all(
+                ctxt, expected_attrs=None,
+                filters=filters)
+        self.write(objects.json_encode({
+            "pools": pools}
+            ))
+
+
 @URLRegistry.register(r"/pools/")
 class PoolListHandler(ClusterAPIHandler):
     @gen.coroutine
