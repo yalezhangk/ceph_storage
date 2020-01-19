@@ -42,10 +42,9 @@ class LicenseList(base.ObjectListBase, base.StorObject):
     }
 
     @classmethod
-    def get_latest_valid(cls, context, filters=None, marker=None, limit=None,
-                         offset=None, sort_keys=None, sort_dirs=None):
-        licenses = db.license_get_latest_valid(context, marker, limit,
-                                               sort_keys, sort_dirs, filters,
-                                               offset)
+    def get_all(cls, context, filters=None, marker=None, limit=None,
+                offset=None, sort_keys=None, sort_dirs=None):
+        licenses = db.license_get_all(context, marker, limit,
+                                      sort_keys, sort_dirs, filters, offset)
         return base.obj_make_list(context, cls(context), objects.License,
                                   licenses)
