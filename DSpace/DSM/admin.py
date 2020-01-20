@@ -15,6 +15,7 @@ from DSpace.DSM.crush_rule import CrushRuleHandler
 from DSpace.DSM.datacenter import DatacenterHandler
 from DSpace.DSM.disk import DiskHandler
 from DSpace.DSM.email_group import EmailGroupHandler
+from DSpace.DSM.license import LicenseHandler
 from DSpace.DSM.log_file import LogFileHandler
 from DSpace.DSM.mail import MailHandler
 from DSpace.DSM.network import NetworkHandler
@@ -53,6 +54,7 @@ class AdminHandler(ActionLogHandler,
                    DatacenterHandler,
                    DiskHandler,
                    EmailGroupHandler,
+                   LicenseHandler,
                    LogFileHandler,
                    MailHandler,
                    NetworkHandler,
