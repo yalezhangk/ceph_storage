@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import base64
-import json
 import logging
 import os
 
@@ -10,11 +9,13 @@ from tornado import gen
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
+from DSpace.DSM.base import AdminBaseHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
+from DSpace.objects.fields import AllActionType as Action
+from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.utils.license_verify import CA_FILE_PATH
 from DSpace.utils.license_verify import PRIVATE_FILE
-from DSpace.utils.license_verify import LicenseVerify
 
 FILE_LEN = 2048
 logger = logging.getLogger(__name__)
@@ -38,50 +39,12 @@ class LicenseHandler(BaseAPIHandler):
         "200":
           description: successful operation
         """
-        # unauthorized:未授权，authorized:已授权， lapsed:已失效
         ctxt = self.get_context()
-        licenses = objects.LicenseList.get_all(ctxt)
-        admin = self.get_admin_client(ctxt)
-        has_cluster = objects.ClusterList.get_all(ctxt)
-        if has_cluster:
-            logging.info('try get cluster size, cluster_id:%s',
-                         ctxt.cluster_id)
-            cluster_info = yield admin.ceph_cluster_info(ctxt)
-            size = int(cluster_info.get('total_cluster_byte', 0))
-            logger.info('try get current cluster:%s node_num', ctxt.cluster_id)
-            node_num = yield admin.node_get_count(ctxt)
-        else:
-            logger.info('not yet cluster_id,'
-                        'cluser_size and node_num default is 0')
-            size = 0
-            node_num = 0
-        result = {'license': []}
-        if licenses:
-            for per_license in licenses:
-                v = LicenseVerify(per_license.content, ctxt)
-                if not v.licenses_data:
-                    logger.error('load license data error')
-                    result['license'].append({'status': 'unauthorized'})
-                else:
-                    is_available = v.is_available()
-                    if per_license.status == 'lapsed':
-                        status = 'lapsed'
-                    else:
-                        status = 'authorized' if is_available else 'lapsed'
-                    up_data = {
-                        'id': per_license.id,
-                        'status': status,
-                        'not_before': v.not_before,
-                        'not_after': v.not_after,
-                        'product': 'T2STOR',
-                        'fact_size': size,
-                        'size': v.license_cluster_size,
-                        'fact_node_num': node_num,
-                        'node_num': v.licenses_node_number
-                    }
-                    result['license'].append(up_data)
-        self.write(json.dumps(result))
+        client = self.get_admin_client(ctxt)
+        result = yield client.license_get_all(ctxt)
+        self.write(objects.json_encode(result))
 
+    @gen.coroutine
     def post(self):
         """
         ---
@@ -103,7 +66,6 @@ class LicenseHandler(BaseAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
-        result = {'license': {'result': False, 'msg': None}}
         file_metas = self.request.files.get('file', None)
         if not file_metas:
             raise InvalidInput(reason=_('can not get file_metas'))
@@ -111,26 +73,13 @@ class LicenseHandler(BaseAPIHandler):
         content = base64.b64encode(byte_content).decode('utf-8')
         if len(content) > FILE_LEN:
             raise InvalidInput(reason=_("File too large"))
-        license = objects.License(ctxt, content=content, status='valid')
-        # TODO license_verify
-        # license_verify校验
-        v = LicenseVerify(license.content, ctxt)
-        if not v.licenses_data:
-            license.status = 'invalid'
-            raise InvalidInput(reason=_('the license.key is invalid'))
-        else:
-            result['license']['result'] = True
-            # 其他的改为已失效
-            licenses = objects.LicenseList.get_all(ctxt)
-            for licen in licenses:
-                licen.status = 'lapsed'
-                licen.save()
-        license.create()
-        self.write(json.dumps(result))
+        client = self.get_admin_client(ctxt)
+        result = yield client.upload_license(ctxt, content)
+        self.write(objects.json_encode(result))
 
 
 @URLRegistry.register(r"/licenses/download_file/")
-class DownloadlicenseHandler(BaseAPIHandler):
+class DownloadlicenseHandler(BaseAPIHandler, AdminBaseHandler):
 
     def get(self):
         """
@@ -153,20 +102,33 @@ class DownloadlicenseHandler(BaseAPIHandler):
         "200":
           description: successful operation
         """
+        ctxt = self.get_context()
         file_name = self.get_argument('file_name')
+        cluster_id = self.get_argument('cluster_id', None)
+        if not cluster_id:
+            raise InvalidInput(_('cluster_id is required'))
+        ctxt.cluster_id = cluster_id
+        begin_action = self.begin_action(
+            ctxt, Resource.LICENSE, Action.DOWNLOAD_LICENSE)
         if file_name == 'certificate.pem':
             file = {file_name: CA_FILE_PATH}
         elif file_name == 'private-key.pem':
             file = {file_name: PRIVATE_FILE}
         else:
-            raise InvalidInput(reason=_('file_name not exist'))
+            err_msg = _('file_name not exist')
+            self.finish_action(begin_action, None, file_name,
+                               status='fail', err_msg=err_msg)
+            raise InvalidInput(reason=err_msg)
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
                         'attachment; filename={}'.format(file_name))
         if not os.path.exists(file[file_name]):
-            raise InvalidInput(reason=_('file not yet generate or '
-                                        'file path is error'))
+            err_msg = _('file not yet generate or file path is error')
+            self.finish_action(begin_action, None, file_name,
+                               status='fail', err_msg=err_msg)
+            raise InvalidInput(reason=err_msg)
         with open(file[file_name], 'r') as f:
             file_content = f.read()
             self.write(file_content)
+        self.finish_action(begin_action, None, file_name, status='success')
         self.finish()

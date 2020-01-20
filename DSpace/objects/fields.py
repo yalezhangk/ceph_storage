@@ -366,10 +366,11 @@ class AllResourceType(BaseStorEnum):
     SERVICE = 'service'
     NETWORK_INTERFACE = 'network_interface'
     ACCELERATE_DISK = 'accelerate_disk'
+    LICENSE = 'license'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
-           NETWORK_INTERFACE, ACCELERATE_DISK)
+           NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE)
 
 
 class AllActionType(BaseStorEnum):
@@ -415,6 +416,8 @@ class AllActionType(BaseStorEnum):
     ACC_DISK_CLEAN = 'disk_clean'  # 加速盘清理
     OSD_CLEAN = 'osd_clean'  # osd清理
     ACC_DISK_REBUILD = 'disk_rebuild'  # 重建加速盘
+    UPLOAD_LICENSE = 'upload_license'
+    DOWNLOAD_LICENSE = 'download_license'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
@@ -424,7 +427,8 @@ class AllActionType(BaseStorEnum):
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
            OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
            RGW_ROUTER_REMOVE, MODIFY_TRIGGER_VALUE, MODIFY_TRIGGER_PERIOD,
-           ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD)
+           ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD, UPLOAD_LICENSE,
+           DOWNLOAD_LICENSE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -531,7 +535,9 @@ class ResourceAction(object):
 
             AllResourceType.ACCELERATE_DISK:
                 [AllActionType.CREATE, AllActionType.DELETE,
-                 AllActionType.ACC_DISK_CLEAN, AllActionType.ACC_DISK_REBUILD]
+                 AllActionType.ACC_DISK_CLEAN, AllActionType.ACC_DISK_REBUILD],
+            AllResourceType.LICENSE:
+                [AllActionType.UPLOAD_LICENSE, AllActionType.DOWNLOAD_LICENSE]
 
         }
         return relation
