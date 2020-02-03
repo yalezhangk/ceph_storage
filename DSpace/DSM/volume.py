@@ -425,21 +425,20 @@ class VolumeHandler(AdminBaseHandler):
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume clone success, volume_name=%s', c_volume_name)
             op_status = "VOLUME_CLONE_SUCCESS"
-            msg = _('volume clone success: %s') % c_volume_name
+            msg = _('volume clone success: %s') % new_volume.display_name
             err_msg = None
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume clone error, volume_name=%s,reason:%s',
                          c_volume_name, str(e))
             op_status = "VOLUME_CLONE_ERROR"
-            msg = _('volume clone error: %s') % c_volume_name
+            msg = _('volume clone error: %s') % new_volume.display_name
             err_msg = str(e)
         new_volume.status = status
         new_volume.save()
         self.finish_action(begin_action, new_volume.id,
                            new_volume.display_name,
-                           objects.json_encode(new_volume), status,
-                           err_msg=err_msg)
+                           new_volume, status, err_msg=err_msg)
         # send msg
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, new_volume, op_status, msg)
