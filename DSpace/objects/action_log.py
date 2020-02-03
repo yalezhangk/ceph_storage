@@ -32,7 +32,7 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
         'diff_data': fields.StringField(nullable=True),
         'status': fields.StringField(),
         'err_msg': fields.StringField(nullable=True),
-        'cluster_id': fields.UUIDField(),
+        'cluster_id': fields.UUIDField(nullable=True),
         'user': fields.ObjectField('User', nullable=True)
     }
 
