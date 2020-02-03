@@ -69,6 +69,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
                       'pool_name': snap_data.pop('pool_name')}
         snap = objects.VolumeSnapshot(ctxt, **snap_data)
         snap.create()
+        snap = objects.VolumeSnapshot.get_by_id(ctxt, snap.id,
+                                                joined_load=True)
         self.task_submit(self._snap_create, ctxt, snap, extra_data,
                          begin_action)
         logger.info('snap create task has begin,snap_name=%s',

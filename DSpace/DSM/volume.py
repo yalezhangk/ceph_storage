@@ -76,6 +76,8 @@ class VolumeHandler(AdminBaseHandler):
                                                  AllActionType.CREATE)
                 volume = objects.Volume(ctxt, **volume_data)
                 volume.create()
+                volume = objects.Volume.get_by_id(ctxt, volume.id,
+                                                  joined_load=True)
                 volumes.append(volume)
                 self.task_submit(self._volume_create, ctxt, volume,
                                  begin_action)
@@ -98,6 +100,8 @@ class VolumeHandler(AdminBaseHandler):
                                              AllActionType.CREATE)
             volume = objects.Volume(ctxt, **volume_data)
             volume.create()
+            volume = objects.Volume.get_by_id(ctxt, volume.id,
+                                              joined_load=True)
             # put into thread pool
             self.task_submit(self._volume_create, ctxt, volume, begin_action)
             logger.info('volume create task has begin,volume_name=%s',
@@ -209,7 +213,7 @@ class VolumeHandler(AdminBaseHandler):
 
     def volume_extend(self, ctxt, volume_id, data):
         # 扩容
-        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        volume = objects.Volume.get_by_id(ctxt, volume_id, joined_load=True)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         logger.debug('volume: %s begin extend', volume.display_name)
@@ -269,7 +273,7 @@ class VolumeHandler(AdminBaseHandler):
 
     def volume_shrink(self, ctxt, volume_id, data):
         # 缩容
-        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        volume = objects.Volume.get_by_id(ctxt, volume_id, joined_load=True)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         logger.debug('volume: %s begin shrink', volume.display_name)
@@ -353,7 +357,7 @@ class VolumeHandler(AdminBaseHandler):
         wb_client.send_message(ctxt, volume, op_status, msg)
 
     def volume_unlink(self, ctxt, volume_id):
-        volume = objects.Volume.get_by_id(ctxt, volume_id)
+        volume = objects.Volume.get_by_id(ctxt, volume_id, joined_load=True)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
         logger.debug('begin volume_unlink: %s', volume.display_name)
@@ -503,6 +507,8 @@ class VolumeHandler(AdminBaseHandler):
                                                  AllActionType.CLONE)
                 new_volume = objects.Volume(ctxt, **volume_data)
                 new_volume.create()
+                new_volume = objects.Volume.get_by_id(ctxt, new_volume.id,
+                                                      joined_load=True)
                 verify_data.update({'new_volume': new_volume})
                 # put into thread pool
                 self.task_submit(self._volume_create_from_snapshot, ctxt,
@@ -531,6 +537,8 @@ class VolumeHandler(AdminBaseHandler):
             }
             new_volume = objects.Volume(ctxt, **volume_data)
             new_volume.create()
+            new_volume = objects.Volume.get_by_id(ctxt, new_volume.id,
+                                                  joined_load=True)
             verify_data.update({'new_volume': new_volume})
             # put into thread pool
             self.task_submit(self._volume_create_from_snapshot, ctxt,
