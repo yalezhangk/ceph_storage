@@ -26,7 +26,7 @@ class TestServiceTool(test.TestCase):
             'docker', 'run', '-d', '--name', 'container', '--network', 'host',
             '-v', '/etc/localtime:/etc/localtime:ro', '-v', 'a:/a',
             '-v', 'b:/b:ro', '-e', 'ENV1=value1', '-e', 'ENV2=value2',
-            '--restart', 'unless-stopped', 'image', 'cmd'
+            '--restart', 'on-failure:5', 'image', 'cmd'
         ])
 
     @mock.patch.object(Executor, 'run_command')

@@ -45,7 +45,7 @@ class Docker(ToolBase):
         if privileged:
             cmd.extend(["--privileged"])
         if restart:
-            cmd.extend(["--restart", "unless-stopped"])
+            cmd.extend(["--restart", "on-failure:5"])
         cmd.append(image)
         if command:
             cmd.append(command)

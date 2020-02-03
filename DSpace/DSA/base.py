@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import sys
 import time
 from concurrent import futures
 
@@ -55,7 +56,19 @@ class AgentBaseHandler(object):
                 self.node = self.admin.node_get(
                     self.ctxt, node_id=CONF.node_id)
                 if self.node:
-                    break
+                    if (self.node.cluster_id == CONF.cluster_id and
+                            self.node.id == CONF.node_id and
+                            str(self.node.ip_address) == CONF.my_ip):
+                        break
+                    else:
+                        logger.error("Node info does not match, exit. "
+                                     "Node cluster id - %s, id - %s, ip - %s",
+                                     self.node.cluster_id, self.node.id,
+                                     self.node.ip_address)
+                        sys.exit(1)
+            except exception.NodeNotFound as e:
+                logger.error(e)
+                sys.exit(1)
             except Exception as e:
                 logger.error("Cannot connect to admin: %s", e)
                 retry_times += 1
