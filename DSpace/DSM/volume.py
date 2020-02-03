@@ -366,7 +366,7 @@ class VolumeHandler(AdminBaseHandler):
         if not volume.is_link_clone:
             raise exception.Invalid(
                 msg=_('the volume_name {} has not relate_snap').format(
-                    volume.volume_name))
+                    volume.display_name))
         begin_action = self.begin_action(
             ctxt, AllResourceType.VOLUME, AllActionType.VOLUME_UNLINK, volume)
         volume.status = s_fields.VolumeStatus.UNLINKING
