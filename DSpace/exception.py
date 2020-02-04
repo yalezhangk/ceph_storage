@@ -578,3 +578,7 @@ class RunDbusError(StorException):
 
 class RestartServiceFailed(StorException):
     message = _("Restart service %(service)s failed")
+
+
+class UserorPasswordError(StorException):
+    message = _("User or Password error")
