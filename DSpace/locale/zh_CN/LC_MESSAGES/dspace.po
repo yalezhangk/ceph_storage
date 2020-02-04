@@ -1382,3 +1382,6 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
+msgid "User or Password error"
+msgstr "账户或密码错误"

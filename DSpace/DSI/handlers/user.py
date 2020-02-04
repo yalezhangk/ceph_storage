@@ -320,7 +320,7 @@ class UserLoginHandler(PermissionMixin):
         password = data.get('password')
         users = objects.UserList.get_all(ctxt, filters={'name': name})
         if not users:
-            raise exception.UserNotFound(user_id=name)
+            raise exception.UserorPasswordError(user_id=name)
         user = users[0]
         ctxt.user_id = user.id
         if not user.current_cluster_id:
@@ -330,7 +330,7 @@ class UserLoginHandler(PermissionMixin):
             user.save()
         r = check_encrypted_password(password, user.password)
         if not r:
-            raise exception.PasswordError()
+            raise exception.UserorPasswordError()
         self.session['user_id'] = user.id
         self.current_user = user.id
         permission = yield self.get_permission(ctxt, user)
