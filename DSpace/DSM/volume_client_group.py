@@ -27,7 +27,9 @@ class VolumeClientGroupHandler(AdminBaseHandler):
             ctxt,
             name=client_group.get('name'),
             type=client_group.get('type'),
-            chap_enable=False,
+            chap_enable=client_group.get('chap_enable'),
+            chap_username=client_group.get('chap_name'),
+            chap_password=client_group.get('chap_password'),
             cluster_id=ctxt.cluster_id
         )
         v.create()
@@ -168,11 +170,6 @@ class VolumeClientGroupHandler(AdminBaseHandler):
             ctxt, id, expected_attrs=["volume_access_paths", "volume_clients"])
         volume_clients = volume_client_group.volume_clients
         access_paths = volume_client_group.volume_access_paths
-        if not access_paths:
-            logger.error("no access path mapping to this client group: %s",
-                         volume_client_group.name)
-            raise exception.VolumeClientGroupNoMapping(
-                volume_client_group=volume_client_group.name)
         access_path_ids = [i.id for i in access_paths]
         for access_path_id in access_path_ids:
             access_path = objects.VolumeAccessPath.get_by_id(

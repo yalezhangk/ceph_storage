@@ -14,9 +14,8 @@ class IscsiHandler(AgentBaseHandler):
         logger.debug("will create iscsi target for access_path: %s",
                      access_path.name)
         iqn_target = access_path.iqn
-        iscsi_ip = node.block_gateway_ip_address
         iscsi.create_target(iqn_target)
-        iscsi.create_portal(iqn_target, iscsi_ip)
+        iscsi.create_portal(iqn_target)
         iscsi.enable_tpg(iqn_target, True)
 
     def unmount_bgw(self, context, access_path):
