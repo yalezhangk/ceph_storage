@@ -16,6 +16,7 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import ConfigKey
 from DSpace.utils.license_verify import LicenseVerify
 from DSpace.utils.security import check_encrypted_password
 
@@ -76,6 +77,11 @@ class PermissionMixin(BaseAPIHandler):
     @staticmethod
     def license_verify(ctxt, cluster_id=None):
         # license校验
+        disable_license = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DISABLE_LICENSE)
+        if disable_license and (disable_license is True):
+            logger.info('skip license verify, return default true')
+            return True
         licenses = objects.LicenseList.get_all(ctxt)
         if not licenses:
             is_available = False

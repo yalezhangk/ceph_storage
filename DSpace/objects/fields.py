@@ -643,6 +643,7 @@ class ConfigKey(BaseStorEnum):
     ENABLE_CEPHX = 'enable_cephx'
     OS_DISTRO = 'os_distro'
     CEPH_VERSION_NAME = "ceph_version_name"
+    DISABLE_LICENSE = 'disable_license'
 
 
 class DSMStatus(BaseStorEnum):
