@@ -517,14 +517,14 @@ class OsdHandler(AdminBaseHandler):
             msg = _("accelerate disk {} osd clean error").format(disk.name)
             op_status = "DISK_CLEAN_ERROR"
             status = s_fields.DiskStatus.ERROR
-            acction_sta = 'success'
             logger.error(msg)
+            acction_sta = 'fail'
         else:
             msg = _("accelerate disk {} osd clean success").format(disk.name)
             op_status = "DISK_CLEAN_SUCCESS"
             status = s_fields.DiskStatus.REPLACE_PREPARED
             logger.info(msg)
-            acction_sta = 'fail'
+            acction_sta = 'success'
         disk.status = status
         disk.save()
         self.finish_action(begin_action, disk.id, disk.name, after_obj=disk,
