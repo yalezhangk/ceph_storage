@@ -17,8 +17,7 @@ class ComponentHandler(AdminBaseHandler):
     service_list = ["mon", "mgr", "osd", "rgw", "mds"]
 
     def _get_mgr_mon_mds_list(self, ctxt):
-        filters = {'status': s_fields.NodeStatus.ACTIVE,
-                   'role_monitor': True}
+        filters = {'role_monitor': True}
         mgr_mons = objects.NodeList.get_all(ctxt, filters=filters)
         return mgr_mons
 
@@ -27,9 +26,7 @@ class ComponentHandler(AdminBaseHandler):
         return osds
 
     def _get_rgw_list(self, ctxt):
-        filters = {'status': s_fields.NodeStatus.ACTIVE,
-                   'role_object_gateway': True}
-        rgws = objects.NodeList.get_all(ctxt, filters=filters)
+        rgws = objects.RadosgwList.get_all(ctxt)
         return rgws
 
     def _mon_restart(self, ctxt, id, agent_client):
@@ -68,13 +65,29 @@ class ComponentHandler(AdminBaseHandler):
             self.finish_action(begin_action, id, osd.osd_name, osd)
             return res
 
-    def _rgw_restart(self, ctxt, id):
-        # TODO rgw尚未开发，数据库无数据
-        pass
+    def _rgw_restart(self, ctxt, id, agent_client):
+        rgw = objects.Radosgw.get_by_id(ctxt, id)
+        if rgw:
+            begin_action = self.begin_action(
+                ctxt, Resource.RADOSGW, Action.RGW_RESTART, rgw)
+            res = agent_client.ceph_services_restart(
+                ctxt, "rgw", rgw.name)
+            self.finish_action(begin_action, id, rgw.display_name, rgw)
+            return res
+        else:
+            raise exception.NodeNotFound(id)
 
-    def _mds_restart(self, ctxt, id):
-        # TODO mds尚未开发，数据库无数据
-        pass
+    def _mds_restart(self, ctxt, id, agent_client):
+        node = objects.Node.get_by_id(ctxt, id)
+        if node:
+            begin_action = self.begin_action(
+                ctxt, Resource.NODE, Action.MDS_RESTART, node)
+            res = agent_client.ceph_services_restart(
+                ctxt, "mds", node.hostname)
+            self.finish_action(begin_action, id, node.hostname, node)
+            return res
+        else:
+            raise exception.NodeNotFound(id)
 
     def components_get_list(self, ctxt, services=None):
         res = {}
@@ -104,14 +117,18 @@ class ComponentHandler(AdminBaseHandler):
             "rgw": self._rgw_restart,
             "mds": self._mds_restart
         }
-        filters = {'status': s_fields.NodeStatus.ACTIVE,
-                   'role_monitor': True}
         if service == "osd":
             osd = objects.Osd.get_by_id(ctxt, component.get("id"))
             node_id = osd.node_id
+        elif service == "rgw":
+            rgw = objects.Radosgw.get_by_id(ctxt, component.get("id"))
+            node_id = rgw.node_id
         else:
+            filters = {'role_monitor': True}
             mon = objects.NodeList.get_all(ctxt, filters=filters)
             node_id = int(mon[0].id)
+        node = objects.Node.get_by_id(ctxt, node_id)
+        self.check_agent_available(ctxt, node)
         client = self.agent_manager.get_client(node_id)
         res = restart[service](ctxt, component.get("id"), client)
         return res
