@@ -348,19 +348,17 @@ class CronHandler(AdminBaseHandler):
                     check_ok = False
                     break
             if check_ok:
-                if node.status == s_fields.NodeStatus.WARNING:
-                    node.conditional_update({
-                        "status": s_fields.NodeStatus.WARNING
-                    }, expected_values={
-                        "status": s_fields.NodeStatus.ACTIVE
-                    })
+                node.conditional_update({
+                    "status": s_fields.NodeStatus.ACTIVE
+                }, expected_values={
+                    "status": s_fields.NodeStatus.WARNING
+                })
             else:
-                if node.status == s_fields.NodeStatus.ACTIVE:
-                    node.conditional_update({
-                        "status": s_fields.NodeStatus.ACTIVE
-                    }, expected_values={
-                        "status": s_fields.NodeStatus.WARNING
-                    })
+                node.conditional_update({
+                    "status": s_fields.NodeStatus.WARNING
+                }, expected_values={
+                    "status": s_fields.NodeStatus.ACTIVE
+                })
 
     def _check_ceph_cluster_status(self):
         self.wait_ready()
