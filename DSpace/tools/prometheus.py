@@ -346,6 +346,9 @@ class PrometheusTool(object):
             else:
                 data = self.get_node_exporter_metric(metric_method, filter={
                     'hostname': node.hostname, 'cluster_id': node.cluster_id})
+            if not data:
+                node.metrics.clear()
+                return
             node.metrics.update({metric: data})
 
     def nodes_get_default_metrics(self, nodes):
