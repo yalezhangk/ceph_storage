@@ -11,7 +11,6 @@ from tornado.escape import json_decode
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.context import RequestContext
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.i18n import _
@@ -22,18 +21,6 @@ from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
 
-user_login_schema = {
-    "type": "object",
-    "properties": {
-        "username": {
-            "type": "string"
-        },
-        "password": {
-            "type": "string",
-        },
-    },
-    "required": ["username", "password"],
-}
 
 user_password_schema = {
     "type": "object",
@@ -266,105 +253,6 @@ class UserHandler(BaseAPIHandler):
         }))
 
 
-@URLRegistry.register(r"/login/")
-class UserLoginHandler(PermissionMixin):
-    def get_context(self):
-        return RequestContext(user_id=None, is_admin=False)
-
-    def get_first_cluster_id(self, ctxt):
-        clusters = objects.ClusterList.get_all(ctxt, limit=1)
-        if clusters:
-            return clusters[0].id
-        else:
-            return None
-
-    @gen.coroutine
-    def post(self):
-        """
-        ---
-        tags:
-        - user
-        summary: user login
-        description: User login.
-        operationId: users.api.login
-        produces:
-        - application/json
-        parameters:
-        - in: header
-          name: X-Cluster-Id
-          description: Cluster ID
-          schema:
-            type: string
-          required: true
-        - in: body
-          name: user
-          description: user's information
-          required: true
-          schema:
-            type: object
-            properties:
-              username:
-                type: string
-                description: user's name
-              password:
-                type: string
-                description: user's password
-        "200":
-          description: successful operation
-        """
-        ctxt = self.get_context()
-        data = json_decode(self.request.body)
-        validate(data, schema=user_login_schema,
-                 format_checker=draft7_format_checker)
-        name = data.get('username')
-        password = data.get('password')
-        users = objects.UserList.get_all(ctxt, filters={'name': name})
-        if not users:
-            raise exception.UserorPasswordError(user_id=name)
-        user = users[0]
-        ctxt.user_id = user.id
-        if not user.current_cluster_id:
-            # 初次登录绑定一个cluster_id
-            first_clu_id = self.get_first_cluster_id(ctxt)
-            user.current_cluster_id = first_clu_id
-            user.save()
-        r = check_encrypted_password(password, user.password)
-        if not r:
-            raise exception.UserorPasswordError()
-        self.session['user_id'] = user.id
-        self.current_user = user.id
-        permission = yield self.get_permission(ctxt, user)
-        self.write(objects.json_encode(permission))
-
-
-@URLRegistry.register(r"/logout/")
-class UserLogoutHandler(BaseAPIHandler):
-    @gen.coroutine
-    def get(self):
-        """
-        ---
-        tags:
-        - user
-        summary: user logout
-        description: User logout.
-        operationId: users.api.logout
-        produces:
-        - application/json
-        parameters:
-        - in: header
-          name: X-Cluster-Id
-          description: Cluster ID
-          schema:
-            type: string
-          required: true
-        "200":
-          description: successful operation
-        """
-        self.get_context()
-        self.session['user'] = None
-        self.write(objects.json_encode({}))
-
-
 @URLRegistry.register(r"/permissions/")
 class PermissionHandler(PermissionMixin):
 
@@ -390,7 +278,7 @@ class PermissionHandler(PermissionMixin):
           description: successful operation
         """
         ctxt = self.get_context()
-        user = objects.User.get_by_id(ctxt, self.current_user)
+        user = self.current_user
         permission = yield self.get_permission(
             ctxt, user,
             cluster_id=self.get_cluster_id())

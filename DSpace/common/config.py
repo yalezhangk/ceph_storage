@@ -123,6 +123,9 @@ global_opts = [
     cfg.IntOpt('alert_rule_average_time',
                default=60,
                help='Alert rule average time'),
+    cfg.StrOpt('auth_backend',
+               default="DBAuth",
+               help='auth_backent'),
 ]
 
 CONF.register_cli_opts(core_opts)

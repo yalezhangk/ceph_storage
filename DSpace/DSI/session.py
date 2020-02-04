@@ -133,6 +133,8 @@ class RedisSession(Session):
     def __getitem__(self, key):
         self.random_index_str = self.handler.get_secure_cookie(
             '__sson__', None)
+        logger.debug("Session(%s) get(%s)",
+                     self.random_index_str, key)
         if not self.random_index_str:
             return None
 

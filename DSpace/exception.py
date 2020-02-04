@@ -77,7 +77,7 @@ class ProgrammingError(StorException):
 
 class NotAuthorized(StorException):
     message = _("Not authorized.")
-    code = 403
+    code = 401
 
 
 class PasswordError(NotAuthorized):

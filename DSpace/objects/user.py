@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from oslo_utils import timeutils
 from oslo_versionedobjects import fields
 
 from DSpace import db
@@ -20,9 +21,20 @@ class User(base.StorPersistentObject, base.StorObject,
     fields = {
         'id': fields.IntegerField(),
         'name': fields.StringField(),
-        'password': fields.SensitiveStringField(),
+        'password': fields.SensitiveStringField(nullable=True),
         'current_cluster_id': fields.UUIDField(nullable=True)
     }
+
+    def obj_load_attr(self, attrname):
+        if attrname in ["password", "current_cluster_id", "updated_at",
+                        "deleted_at"]:
+            setattr(self, attrname, None)
+        elif attrname == "created_at":
+            self.created_at = timeutils.utcnow()
+        elif attrname == "deleted":
+            self.deleted = 0
+        else:
+            super(User, self).obj_load_attr(attrname)
 
     def _encrypt_password(self, updates):
         if 'password' in updates:
