@@ -131,9 +131,10 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                 reason="has volume mappings attached")
         for gateway_id in gateway_ids:
             ap_gateway = objects.VolumeGateway.get_by_id(ctxt, gateway_id)
-            access_path.volume_gateway_remove(
-                volume_gateway_id=ap_gateway.id)
-            ap_gateway.destroy()
+            if ap_gateway.node_id == node_id:
+                access_path.volume_gateway_remove(
+                    volume_gateway_id=ap_gateway.id)
+                ap_gateway.destroy()
         try:
             node = objects.Node.get_by_id(ctxt, node_id)
             task = NodeTask(ctxt, node)

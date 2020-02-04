@@ -30,16 +30,6 @@ create_volume_client_group_schema = {
                     "type": "string",
                     "enum": ["iscsi"]
                 },
-                "chap_name": {
-                    "type": "string",
-                    "minLength": 5,
-                    "maxLength": 32
-                },
-                "chap_password": {
-                    "type": "string",
-                    "minLength": 5,
-                    "maxLength": 32
-                },
                 "clients": {
                     "type": "array",
                     "items": {
