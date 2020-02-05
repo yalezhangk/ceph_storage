@@ -66,8 +66,12 @@ class NodeMixin(object):
         if deleted:
             allowed_status.append(s_fields.NodeStatus.ERROR)
         if node.status not in allowed_status:
-            raise exc.InvalidInput(
-                _("Node status %s not allowed") % node.status)
+            if node.status == s_fields.NodeStatus.ERROR:
+                raise exc.InvalidInput(
+                    _("Node %s status is error, not allow") % node.hostname)
+            else:
+                raise exc.InvalidInput(
+                    _("Node %s in operation, please wait") % node.hostname)
 
     def _check_node_disks(self, ctxt, node):
         logger.debug("check node %s disks", node.hostname)
