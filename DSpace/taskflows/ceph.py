@@ -656,7 +656,8 @@ class CephTask(object):
             self.rbd_remove(pool_name, rbd_name)
         except exc.CephException:
             shell_client = Executor()
-            cmd = ['rbd', 'rm', pool_name/rbd_name, '-c', self.conf_file]
+            rbd_param = '{}/{}'.format(pool_name, rbd_name)
+            cmd = ['rbd', 'rm', rbd_param, '-c', self.conf_file]
             rc, out, err = shell_client.run_command(cmd, timeout=0)
             if rc:
                 raise exc.CephException(message=out)
@@ -680,8 +681,8 @@ class CephTask(object):
             self.rbd_snap_remove(pool_name, rbd_name, snap_name)
         except exc.CephException:
             shell_client = Executor()
-            cmd = ['rbd snap rm {}/{}@{} -c {}'.format(
-                pool_name, rbd_name, snap_name, self.conf_file)]
+            snap_param = '{}/{}@{}'.format(pool_name, rbd_name, snap_name)
+            cmd = ['rbd', 'snap', 'rm', snap_param, '-c', self.conf_file]
             rc, out, err = shell_client.run_command(cmd, timeout=0)
             if rc:
                 raise exc.CephException(message=out)
