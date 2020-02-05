@@ -321,7 +321,7 @@ class DiskHandler(AdminBaseHandler):
                     'resource_name': disk.name,
                     'resource_id': disk.id,
                     'level': alert_rule.level,
-                    'alert_value': alert_rule.trigger_value,
+                    'alert_value': msg,
                     'alert_rule_id': alert_rule.id,
                     'cluster_id': ctxt.cluster_id
                 }
@@ -511,7 +511,7 @@ class DiskHandler(AdminBaseHandler):
                     'resource_name': disk.name,
                     'resource_id': disk.id,
                     'level': alert_rule.level,
-                    'alert_value': alert_rule.trigger_value,
+                    'alert_value': msg,
                     'alert_rule_id': alert_rule.id,
                     'cluster_id': ctxt.cluster_id
                 }
