@@ -413,8 +413,6 @@ class AllActionType(BaseStorEnum):
     RGW_STOP = 'rgw_stop'
     RGW_ROUTER_ADD = 'rgw_router_add'
     RGW_ROUTER_REMOVE = 'rgw_router_remove'
-    MODIFY_TRIGGER_VALUE = 'modify_trigger_value'
-    MODIFY_TRIGGER_PERIOD = 'modify_trigger_period'
     ACC_DISK_CLEAN = 'disk_clean'  # 加速盘清理
     OSD_CLEAN = 'osd_clean'  # osd清理
     ACC_DISK_REBUILD = 'disk_rebuild'  # 重建加速盘
@@ -428,9 +426,8 @@ class AllActionType(BaseStorEnum):
            CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE,
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
            OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
-           RGW_ROUTER_REMOVE, MODIFY_TRIGGER_VALUE, MODIFY_TRIGGER_PERIOD,
-           ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD, UPLOAD_LICENSE,
-           DOWNLOAD_LICENSE)
+           RGW_ROUTER_REMOVE, ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD,
+           UPLOAD_LICENSE, DOWNLOAD_LICENSE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -465,8 +462,7 @@ class ResourceAction(object):
             AllResourceType.ALERT_RULE:
                 [AllActionType.OPEN_ALERT_RULE,
                  AllActionType.CLOSE_ALERT_RULE,
-                 AllActionType.MODIFY_TRIGGER_VALUE,
-                 AllActionType.MODIFY_TRIGGER_PERIOD],
+                 AllActionType.UPDATE],
 
             AllResourceType.EMAIL_GROUP:
                 [AllActionType.CREATE, AllActionType.UPDATE,
