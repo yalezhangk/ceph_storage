@@ -126,6 +126,7 @@ class DiskHandler(AdminBaseHandler):
             "status": s_fields.DiskStatus.PROCESSING
         }, save_all=True)
         # send ws message
+        disk.accelerate_type = values['partition_role']
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, op_status, msg)
         self.finish_action(begin_action, disk.id, disk.name,
@@ -151,7 +152,9 @@ class DiskHandler(AdminBaseHandler):
             ]
             if values['partition_role'] not in luminous_support_type:
                 raise exception.InvalidInput(_("Partition type not support"))
-        disk = objects.Disk.get_by_id(ctxt, disk_id)
+        disk = objects.Disk.get_by_id(
+                ctxt, disk_id,
+                expected_attrs=['partition_used', 'node'])
         if not disk.can_operation():
             raise exception.InvalidInput(_("Disk status not available"))
         disk.conditional_update({
