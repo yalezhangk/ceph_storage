@@ -160,6 +160,7 @@ class AdminBaseHandler(AdminBaseMixin):
         super(AdminBaseHandler, self).__init__()
         self.status = DSMStatus.INIT
         ctxt = context.get_context(user_id="admin")
+        self.ignored_osds = {}
         self.bootstrap(ctxt)
 
     def bootstrap(self, ctxt):

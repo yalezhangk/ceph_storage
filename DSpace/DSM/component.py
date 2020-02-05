@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class ComponentHandler(AdminBaseHandler):
 
     service_list = ["mon", "mgr", "osd", "rgw", "mds"]
+    monitor_service = ["mon", "mgr", "mds"]
 
     def _get_mgr_mon_mds_list(self, ctxt):
         filters = {'role_monitor': True}
@@ -105,8 +106,47 @@ class ComponentHandler(AdminBaseHandler):
                 {_service: getattr(self, '_get_%s_list' % service)(ctxt)})
         return res
 
+    def _get_service_map_info(self, ctxt, service, id):
+        role = None
+        key = None
+        value = None
+        if service in self.monitor_service:
+            role = "role_monitor"
+            key = service.upper()
+            value = self.map_util.role_monitor[service.upper()]
+        elif service == "rgw":
+            rgw = objects.Radosgw.get_by_id(ctxt, id)
+            role = "role_object_gateway"
+            key = rgw.name
+            value = "ceph-radosgw@rgw.{}.service".format(rgw.name)
+        elif service == "osd":
+            role = "role_storage"
+        return role, key, value
+
+    def _ignore_service_check(self, ctxt, service, id, role, key, client):
+        if service == "osd":
+            osd = objects.Osd.get_by_id(ctxt, id)
+            if not self.ignored_osds.get(ctxt.cluster_id):
+                self.ignored_osds.update({ctxt.cluster_id: [osd.osd_id]})
+            else:
+                self.ignored_osds[ctxt.cluster_id].append(osd.osd_id)
+        else:
+            client.service_map_remove(ctxt, role, key)
+
+    def _recover_service_check(self, ctxt, service, id, role, key, value,
+                               client):
+        if service == "osd":
+            osd = objects.Osd.get_by_id(ctxt, id)
+            if not self.ignored_osds.get(ctxt.cluster_id):
+                self.ignored_osds.update({ctxt.cluster_id: [osd.osd_id]})
+            else:
+                self.ignored_osds[ctxt.cluster_id].append(osd.osd_id)
+        else:
+            client.service_map_add(ctxt, role, key, value)
+
     def component_restart(self, ctxt, component):
         service = component.get('service')
+        id = component.get("id")
         if service not in self.service_list:
             logger.error("service type not supported: %s" % service)
             return "service type not supported: %s" % service
@@ -118,10 +158,10 @@ class ComponentHandler(AdminBaseHandler):
             "mds": self._mds_restart
         }
         if service == "osd":
-            osd = objects.Osd.get_by_id(ctxt, component.get("id"))
+            osd = objects.Osd.get_by_id(ctxt, id)
             node_id = osd.node_id
         elif service == "rgw":
-            rgw = objects.Radosgw.get_by_id(ctxt, component.get("id"))
+            rgw = objects.Radosgw.get_by_id(ctxt, id)
             node_id = rgw.node_id
         else:
             filters = {'role_monitor': True}
@@ -130,7 +170,14 @@ class ComponentHandler(AdminBaseHandler):
         node = objects.Node.get_by_id(ctxt, node_id)
         self.check_agent_available(ctxt, node)
         client = self.agent_manager.get_client(node_id)
+
+        role, key, value = self._get_service_map_info(ctxt, service, id)
+        self._ignore_service_check(ctxt, service, id, role, key, client)
+
         res = restart[service](ctxt, component.get("id"), client)
+
+        self._recover_service_check(
+            ctxt, service, id, role, key, value, client)
         return res
 
     def _rgw_start_op(self, ctxt, radosgw, begin_action=None):

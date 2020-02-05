@@ -27,6 +27,7 @@ class ServiceHandler(AgentBaseHandler):
         logger.debug("Restart systemd service: %s", name)
         client = self._get_executor()
         service_tool = ServiceTool(client)
+        service_tool.reset_failed(name)
         service_tool.restart(name)
 
     def systemd_service_status(self, ctxt, name):

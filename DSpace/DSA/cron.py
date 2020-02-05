@@ -188,3 +188,11 @@ class CronHandler(AgentBaseHandler):
         logger.info("Node information update: %s", self.node)
         self.node = node
         self._service_map_init()
+
+    def service_map_remove(self, ctxt, role, name):
+        logger.info("Remove from service_map: %s, %s", role, name)
+        del self.service_map[role][name]
+
+    def service_map_add(self, ctxt, role, key, value):
+        logger.info("Add to service_map: %s, %s, %s", role, key, value)
+        self.service_map[role].update({key: value})
