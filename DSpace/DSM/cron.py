@@ -266,9 +266,12 @@ class CronHandler(AdminBaseHandler):
             return self._get_osd_status_from_dsa(context)
         return {}
 
-    def _make_osd_list(self, osds):
+    def _make_osd_list(self, context, osds):
         res = {}
         for osd in osds:
+            if self.ignored_osds.get(context.cluster_id):
+                if osd.osd_id in self.ignored_osds[context.cluster_id]:
+                    continue
             res.update({osd.osd_id: osd})
         return res
 
@@ -288,14 +291,17 @@ class CronHandler(AdminBaseHandler):
             if not osds:
                 logger.debug("Cluster %s has no osd, ignore", cluster.id)
                 continue
-            osds = self._make_osd_list(osds)
+            osds = self._make_osd_list(context, osds)
             nodes = self._get_osd_tree(ceph_client)
             for osd_status in nodes:
                 if osd_status.get('id') < 0:
                     continue
+                osd_status_id = str(osd_status.get('id'))
+                if not osds.get(osd_status_id):
+                    continue
                 self._set_osd_status(context, osd_status, ceph_client)
-                if osds.get(str(osd_status.get('id'))):
-                    osds.pop(str(osd_status.get('id')))
+                if osds.get(osd_status_id):
+                    osds.pop(osd_status_id)
             if osds:
                 for osd_id, osd in six.iteritems(osds):
                     if osd.status in [s_fields.OsdStatus.DELETING,
