@@ -695,12 +695,10 @@ class AlertRuleHandler(AdminBaseHandler):
         elif enabled is False:
             rule.enabled = False
             action = AllActionType.CLOSE_ALERT_RULE
-        elif trigger_value:
+        elif trigger_value and trigger_period:
             rule.trigger_value = trigger_value
-            action = AllActionType.MODIFY_TRIGGER_VALUE
-        elif trigger_period:
             rule.trigger_period = trigger_period
-            action = AllActionType.MODIFY_TRIGGER_VALUE
+            action = AllActionType.UPDATE
         else:
             raise exc.InvalidInput(_('alert_rule upda param not exist'))
         rule.save()
