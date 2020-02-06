@@ -10,6 +10,10 @@ SUPPORT_CEPH_VERSION = [{
     "name": "luminous",
     "version": "12.2.10",
     "release": "0"
+}, {
+    "name": "t2stor",
+    "version": "12.2.10",
+    "release": "507"
 }]
 
 PKG_MGR = {
@@ -101,7 +105,7 @@ def get_full_ceph_version(v):
     versions = filter(lambda v: v['version'] == version,
                       SUPPORT_CEPH_VERSION)
     release = v.get('release')
-    if not release:
+    if release:
         versions = filter(lambda v: v['release'] == release,
                           versions)
     versions = list(versions)
