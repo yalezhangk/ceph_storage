@@ -244,10 +244,18 @@ class PoolHandler(AdminBaseHandler):
                            resource_name=pool.display_name,
                            after_obj=pool, status=status, err_msg=err_msg)
 
+    def _check_pool_status(self, ctxt, pool):
+        if pool.status in [s_fields.PoolStatus.CREATING,
+                           s_fields.PoolStatus.PROCESSING,
+                           s_fields.PoolStatus.DELETING]:
+            raise exception.InvalidInput(_("Pool %s is in processing, "
+                                           "please wait") % pool.display_name)
+
     def pool_delete(self, ctxt, pool_id):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
+        self._check_pool_status(ctxt, pool)
         if pool['role'] == "gateway":
             rgw_db = objects.RadosgwList.get_all(ctxt)
             if rgw_db:
@@ -313,6 +321,7 @@ class PoolHandler(AdminBaseHandler):
     def pool_increase_disk(self, ctxt, id, data):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
+        self._check_pool_status(ctxt, pool)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.POOL_ADD_DISK, before_obj=pool)
@@ -413,6 +422,7 @@ class PoolHandler(AdminBaseHandler):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, id, expected_attrs=['crush_rule', 'osds'])
+        self._check_pool_status(ctxt, pool)
         osds = data.get('osds')
         self._check_data_lost(ctxt, pool, osds)
         objects.sysconfig.sys_config_set(ctxt, 'pool_undo', {})
@@ -486,6 +496,7 @@ class PoolHandler(AdminBaseHandler):
     def pool_update_policy(self, ctxt, id, data):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(ctxt, id)
+        self._check_pool_status(ctxt, pool)
         rep_size = data.get('replicate_size')
         fault_domain = data.get('failure_domain_type')
         if pool.failure_domain_type == "rack" and fault_domain == "host":

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-06 05:02-0500\n"
+"POT-Creation-Date: 2020-02-06 05:51-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -972,6 +972,9 @@ msgstr "删除存储池成功：{}"
 
 msgid "delete pool error: {}"
 msgstr "删除存储池失败：{}"
+
+msgid "Pool %s is in processing, please wait"
+msgstr "存储池%s正在操作中, 请稍等"
 
 msgid "Please remove the Object storage gateway first"
 msgstr "请先移除对象存储网关"
