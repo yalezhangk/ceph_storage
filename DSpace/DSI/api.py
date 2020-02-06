@@ -1,3 +1,4 @@
+import six
 import socketio
 import tornado.ioloop
 import tornado.web
@@ -6,16 +7,17 @@ from tornado_swagger.setup import setup_swagger
 
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.DSI.handlers import get_routers
+from DSpace.DSI import auth
+from DSpace.DSI import handlers
+from DSpace.DSI.handlers import URLRegistry
 from DSpace.service import ServiceBase
 
 logger = logging.getLogger(__name__)
 
 
 def wapper_api_route(routes):
-    api_prefix = CONF.api_prefix
-    return [tornado.web.url(api_prefix + path, handler)
-            for path, handler in routes]
+    return [tornado.web.url(path, handler)
+            for path, handler in six.iteritems(routes)]
 
 
 class WebSocketHandler(object):
@@ -56,11 +58,13 @@ class WebSocketService(ServiceBase):
 
 def service():
     logger.info("api server run on %d", CONF.api_port)
+    auth.register_all()
+    handlers.register_all()
+
     sio = socketio.AsyncServer(async_mode='tornado', cors_allowed_origins='*',
                                json=objects.Json)
-    routers = get_routers()
-    routers += [(r"/ws/", socketio.get_tornado_handler(sio))]
-    routers = wapper_api_route(routers)
+    URLRegistry.register(r"/ws/")(socketio.get_tornado_handler(sio))
+    routers = wapper_api_route(URLRegistry().routes())
     setup_swagger(routers)
     settings = {
         "cookie_secret": CONF.cookie_secret,

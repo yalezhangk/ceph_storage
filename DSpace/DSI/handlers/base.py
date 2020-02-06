@@ -10,6 +10,7 @@ from tornado.web import RequestHandler
 from DSpace import exception
 from DSpace import objects
 from DSpace.context import RequestContext
+from DSpace.DSI.auth import AuthRegistry
 from DSpace.DSI.session import get_session
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
@@ -21,10 +22,17 @@ logger = logging.getLogger(__name__)
 class BaseAPIHandler(RequestHandler):
     ctxt = None
     dsm_client = None
+    auth = None
 
     def initialize(self):
         session_cls = get_session()
         self.session = session_cls(self)
+        self._setup_auth()
+
+    def _setup_auth(self):
+        if not self.auth:
+            registry = AuthRegistry()
+            self.auth = registry.auth_cls()
 
     def prepare(self):
         if self.request.method != "OPTIONS":
@@ -53,13 +61,14 @@ class BaseAPIHandler(RequestHandler):
         self.set_status(400)
         self.write({"error": msg})
 
+    def validate_auth(self):
+        self.auth.validate(self)
+
     def get_context(self):
         if self.ctxt:
             return self.ctxt
-        fake_user = self.request.headers.get("X-Fake-User", None)
-        if not self.current_user and not fake_user:
-            raise exception.NotAuthorized()
-        user_id = fake_user or self.current_user
+        self.validate_auth()
+        user_id = self.current_user.id
         ctxt = RequestContext(user_id=user_id, is_admin=False)
         logger.debug("Context: %s", ctxt.to_dict())
         client_ip = (self.request.headers.get("X-Real-IP") or

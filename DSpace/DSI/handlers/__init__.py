@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import six
+
+from DSpace.common.config import CONF
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +21,7 @@ class URLRegistry(object):
 
     def __init__(self, *args, **kwargs):
         if self._routes is None:
-            self._routes = []
+            self._routes = {}
 
     @classmethod
     def register(cls, url):
@@ -29,14 +33,24 @@ class URLRegistry(object):
         return _wapper
 
     def register_url(self, url, handler):
-        logger.info("register %s -> %s", url, handler)
-        self._routes.append((url, handler))
+        api_prefix = CONF.api_prefix
+        uri = api_prefix + url
+        if uri not in self._routes:
+            self._routes[uri] = handler
+            logger.info("register %s -> %s", url, handler)
+        else:
+            logger.info("skip %s -> %s", url, handler)
 
     def routes(self):
         return self._routes
 
+    def get_url(self, handler):
+        for url, h in six.iteritems(self._routes):
+            if h == handler:
+                return url
 
-def get_routers():
+
+def register_all():
     __import__('DSpace.DSI.handlers.disk_partitions')
     __import__('DSpace.DSI.handlers.action_log')
     __import__('DSpace.DSI.handlers.alert_group')
@@ -67,5 +81,3 @@ def get_routers():
     __import__('DSpace.DSI.handlers.volume_client_groups')
     __import__('DSpace.DSI.handlers.volume_snapshot')
     __import__('DSpace.DSI.handlers.volumes')
-    registry = URLRegistry()
-    return registry.routes()
