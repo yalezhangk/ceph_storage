@@ -918,8 +918,9 @@ class RADOSClient(object):
         logger.debug('command_str: {}'.format(command_str))
         ret, mon_dump_outbuf, err = self.client.mon_command(command_str, '')
         if ret:
-            logger.error("add osd.{} to {} error: {} {}".format(
-                osd_id, host_name, mon_dump_outbuf, err))
+            msg = "add osd.{} to {} error: code({}) out({}) err({})".format(
+                osd_id, host_name, ret, mon_dump_outbuf, err)
+            logger.error(msg)
             raise CephException(
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
