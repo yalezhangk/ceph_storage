@@ -102,21 +102,9 @@ class OsdListHandler(ClusterAPIHandler):
 
         exact_filters = ['status', 'type', 'disk_type', 'node_id', 'disk_id']
         filters = self.get_support_filters(exact_filters, [])
-        osd_name = self.get_query_argument('osd_id', default=None)
-        if osd_name:
-            osd_name = osd_name.strip()
-            if osd_name in 'osd.':
-                # 所有
-                pass
-            else:
-                osd_li = osd_name.split('osd.')
-                if len(osd_li) == 2:
-                    # 模糊 osd.0
-                    osd_id = osd_li[1]
-                else:
-                    # 模糊 0
-                    osd_id = osd_li[0]
-                filters.update({'osd_id~': osd_id})
+        osd_id = self.get_query_argument('osd_id', default=None)
+        if osd_id:
+            filters = self._osd_filters(osd_id, filters)
         tab = self.get_query_argument('tab', default="default")
         if tab not in ["default", "io"]:
             raise exception.InvalidInput(_("this tab not support"))
@@ -130,6 +118,23 @@ class OsdListHandler(ClusterAPIHandler):
             "osds": osds,
             "total": osd_count
         }))
+
+    def _osd_filters(self, osd_id, filters):
+        osd_name = osd_id.strip()
+        if osd_name in 'osd.':
+            # 所有
+            pass
+        else:
+            osd_li = osd_name.split('osd.')
+            if len(osd_li) == 2:
+                # 正则^ osd.0
+                osd_id = osd_li[1]
+                filters.update({'^osd_id': osd_id})
+            else:
+                # 模糊 0
+                osd_id = osd_li[0]
+                filters.update({'osd_id~': osd_id})
+        return filters
 
     def _osd_create_check(self, osd):
         osd_type = osd.get("type")

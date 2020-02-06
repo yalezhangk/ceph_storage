@@ -273,14 +273,35 @@ def _process_model_like_filter(model, query, filters):
         return query
 
     for key in sorted(filters):
-        column_attr = getattr(model, key)
-        if 'property' == type(column_attr).__name__:
-            continue
         value = filters[key]
         if not (isinstance(value, (six.string_types, int))):
             continue
-        query = query.filter(
-            column_attr.op('LIKE')(u'%%%s%%' % value))
+        if key.endswith('~'):
+            query = _get_query_filters_by_content(model, key, query, value)
+        elif key.startswith('^'):
+            query = _get_query_filters_by_startswith(model, key, query, value)
+        else:
+            continue
+    return query
+
+
+def _get_query_filters_by_content(model, key, query, value):
+    key = key.rstrip('~')
+    column_attr = getattr(model, key)
+    if 'property' == type(column_attr).__name__:
+        return query
+    query = query.filter(
+        column_attr.op('LIKE')(u'%%%s%%' % value))
+    return query
+
+
+def _get_query_filters_by_startswith(model, key, query, value):
+    key = key.lstrip('^')
+    column_attr = getattr(model, key)
+    if 'property' == type(column_attr).__name__:
+        return query
+    query = query.filter(
+        column_attr.op('LIKE')(u'%s%%' % value))
     return query
 
 
@@ -291,10 +312,10 @@ def apply_like_filters(model):
             regex_filters = {}
             for key, value in filters.items():
                 # NOTE(tommylikehu): For inexact match, the filter keys
-                # are in the format of 'key~=value'
-                if key.endswith('~'):
+                # are in the format of 'key~=value' or '^key=value'
+                if key.endswith('~') or key.startswith('^'):
                     exact_filters.pop(key)
-                    regex_filters[key.rstrip('~')] = value
+                    regex_filters[key] = value
             query = process_exact_filters(query, exact_filters)
             return _process_model_like_filter(model, query, regex_filters)
 
