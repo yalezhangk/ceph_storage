@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-05 05:34-0500\n"
+"POT-Creation-Date: 2020-02-06 05:02-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1110,6 +1110,9 @@ msgstr "节点{}: 服务{}已停止，尝试进行重启"
 
 msgid "Object gateway role has been set, please remove all object gateway role"
 msgstr "对象存储网关角色已设置，请先移除所有的网关角色"
+
+msgid "Cluster has ceph-mon service, can't not modify cephx dynamic"
+msgstr "集群中已有ceph-mon服务，不支持动态修改cephx"
 
 msgid "current pool size is fulled"
 msgstr "存储池已满"

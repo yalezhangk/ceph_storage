@@ -9,6 +9,7 @@ from DSpace.i18n import _
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.objects.fields import ConfigKey
+from DSpace.objects.fields import ConfigType
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,8 @@ class SysConfigHandler(AdminBaseHandler):
             ctxt, filters={"cluster_id": ctxt.cluster_id})
         keys = ['cluster_name', 'admin_cidr', 'public_cidr', 'cluster_cidr',
                 'gateway_cidr', 'chrony_server', 'ceph_version',
-                'ceph_version_name', 'is_admin', 'is_import', 'import_task_id']
+                'ceph_version_name', 'is_admin', 'is_import', 'import_task_id',
+                'enable_cephx']
         for key in keys:
             result[key] = None
         for sysconf in sysconfs:
@@ -57,6 +59,16 @@ class SysConfigHandler(AdminBaseHandler):
                   "please remove all object gateway role")
             )
 
+    def _enable_cephx_check(self, ctxt, enable_cephx):
+        filters = {'role_monitor': True}
+        mon_host = objects.NodeList.get_count(ctxt, filters=filters)
+        old_cephx = objects.sysconfig.sys_config_get(
+            ctxt, "enable_cephx", default=False)
+        if mon_host and old_cephx != enable_cephx:
+            raise exception.InvalidInput(
+                _("Cluster has ceph-mon service, can't not "
+                  "modify cephx dynamic"))
+
     def _update_gateway_ip(self, ctxt, gateway_cidr):
         logger.info("Update object_gateway_ip_address for nodes")
         nodes = objects.NodeList.get_all(ctxt)
@@ -78,8 +90,11 @@ class SysConfigHandler(AdminBaseHandler):
 
     def update_sysinfo(self, ctxt, sysinfos):
         gateway_cidr = sysinfos.get('gateway_cidr')
+        enable_cephx = sysinfos.get('enable_cephx')
         if gateway_cidr:
             self._gateway_check(ctxt)
+        if enable_cephx is not None:
+            self._enable_cephx_check(ctxt, enable_cephx)
         cluster_cidr = sysinfos.get('cluster_cidr')
         public_cidr = sysinfos.get('public_cidr')
         admin_cidr = sysinfos.get('admin_cidr')
@@ -109,6 +124,10 @@ class SysConfigHandler(AdminBaseHandler):
         if cluster_cidr:
             objects.sysconfig.sys_config_set(ctxt, 'cluster_cidr',
                                              cluster_cidr)
+        if enable_cephx is not None:
+            objects.sysconfig.sys_config_set(
+                ctxt, 'enable_cephx', enable_cephx,
+                value_type=ConfigType.BOOL)
         if gateway_cidr:
             old_gateway_cidr = objects.sysconfig.sys_config_get(
                 ctxt, "gateway_cidr")
