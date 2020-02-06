@@ -63,7 +63,22 @@ update_volume_access_path_mapping_schema = {
             "properties": {
                 "mapping_list": {
                     "type": "array",
-                    "items": {"type": "integer", "minimum": 1},
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "client_group_id": {
+                                "type": "integer",
+                                "minimum": 1
+                            },
+                            "volume_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                }
+                            }
+                        }
+                    },
                     "minItems": 1,
                     "uniqueItems": True
                 },

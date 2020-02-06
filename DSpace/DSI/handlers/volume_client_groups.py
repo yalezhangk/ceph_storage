@@ -86,7 +86,6 @@ update_volume_client_group_schema = {
                     "uniqueItems": True
                 },
             },
-            "required": ["name"],
             "dependencies": {
                 "type": ["clients"],
                 "clients": ["type"]
@@ -377,12 +376,12 @@ class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
 
     @gen.coroutine
     def post(self, group_id):
-        """编辑客户端组：修改客户端组名称，添加或移除客户端
+        """编辑客户端组：修改客户端组名称
         {"volume_client_group": {"name":"new_client_group"}}
 
+        添加或移除客户端
         {
             "volume_client_group": {
-                "name":"client-group-001",
                 "type":"iscsi",
                 "clients": [
                     {
@@ -464,11 +463,10 @@ class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
         validate(data, schema=update_volume_client_group_schema,
                  format_checker=draft7_format_checker)
         client_group = data.get('volume_client_group')
-        if "name" not in client_group:
-            logger.error("no name in request data")
-            raise exception.InvalidInput(_("no name input"))
-        volume_client_group = yield client.volume_client_group_update_name(
-            ctxt, group_id, client_group)
+        # Only change client group name
+        if "name" in client_group:
+            volume_client_group = yield client.volume_client_group_update_name(
+                ctxt, group_id, client_group)
 
         if "clients" in client_group:
             volume_clients = client_group.pop("clients")
