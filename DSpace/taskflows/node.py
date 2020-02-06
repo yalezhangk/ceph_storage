@@ -1336,8 +1336,12 @@ class NodesCheck(object):
         self.ctxt = ctxt
 
     def _check_compatibility(self, v):
+        version_name = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.CEPH_VERSION_NAME)
         version = get_full_ceph_version(v)
-        if version:
+        logger.info("check version name(%s) get version(%s)",
+                    version_name, version)
+        if version and version['name'].lower() == version_name.lower():
             return True
         return False
 
