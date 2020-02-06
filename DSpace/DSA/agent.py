@@ -1,11 +1,6 @@
-import sys
-import time
-
 from oslo_log import log as logging
 
 from DSpace import exception
-from DSpace import version
-from DSpace.common.config import CONF
 from DSpace.DSA.ceph import CephHandler
 from DSpace.DSA.cron import CronHandler
 from DSpace.DSA.disk import DiskHandler
@@ -20,7 +15,6 @@ from DSpace.service import ServiceBase
 from DSpace.tools.log_file import LogFile as LogFileTool
 from DSpace.tools.service import Service as ServiceTool
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)
 
 
@@ -86,24 +80,6 @@ class AgentHandler(CronHandler, CephHandler, DiskHandler, NetworkHandler,
 class AgentService(ServiceBase):
     service_name = "agent"
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.handler = AgentHandler()
-        super(AgentService, self).__init__()
-
-
-def run_loop():
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        exit(0)
-
-
-def service():
-    CONF(sys.argv[1:], project='stor',
-         version=version.version_string())
-    logging.setup(CONF, "stor")
-    agent = AgentService()
-    agent.start()
-    run_loop()
-    agent.stop()
+        super(AgentService, self).__init__(*args, **kwargs)

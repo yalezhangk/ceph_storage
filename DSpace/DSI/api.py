@@ -43,17 +43,10 @@ class WebSocketHandler(object):
 
 class WebSocketService(ServiceBase):
     service_name = "websocket"
-    rpc_endpoint = None
-    rpc_ip = "192.168.211.129"
-    rpc_port = 2081
 
-    def __init__(self, ioloop, sio):
+    def __init__(self, ioloop, sio, *args, **kwargs):
         self.handler = WebSocketHandler(ioloop, sio)
-        self.rpc_endpoint = {
-            "ip": self.rpc_ip,
-            "port": self.rpc_port
-        }
-        super(WebSocketService, self).__init__()
+        super(WebSocketService, self).__init__(*args, **kwargs)
 
 
 def service():
@@ -73,7 +66,7 @@ def service():
     application = tornado.web.Application(routers, **settings)
     application.listen(CONF.api_port, CONF.my_ip)
     ioloop = tornado.ioloop.IOLoop.current()
-    websocket = WebSocketService(ioloop, sio)
+    websocket = WebSocketService(ioloop, sio, CONF.my_ip, CONF.websocket_port)
     websocket.start()
     tornado.ioloop.IOLoop.current().start()
     websocket.stop()

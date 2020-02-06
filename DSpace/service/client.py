@@ -9,21 +9,12 @@ from tornado.ioloop import IOLoop
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.grpc import stor_pb2
+from DSpace.grpc import stor_pb2_grpc
 from DSpace.objects import base as objects_base
-from DSpace.service import stor_pb2
-from DSpace.service import stor_pb2_grpc
 from DSpace.service.serializer import RequestContextSerializer
 
 logger = logging.getLogger(__name__)
-
-
-class RPCMixin(object):
-    def get_stub(self, ip, port):
-        url = "{}:{}".format(ip, port)
-        logger.debug("Try connect: %s", url)
-        channel = grpc.insecure_channel(url)
-        stub = stor_pb2_grpc.RPCServerStub(channel)
-        return stub
 
 
 class BaseClientManager:
@@ -63,7 +54,10 @@ class BaseClientManager:
         )
         if not services:
             return {}
-        endpoints = {v.node_id: v.endpoint for v in services}
+        endpoints = {
+            v.node_id: "%s:%s" % (v.endpoint['ip'], v.endpoint['port'])
+            for v in services
+        }
         logger.debug("endpints: %s", endpoints)
         return endpoints
 
@@ -82,40 +76,28 @@ class BaseClientManager:
                 service_name=self.service_name, node_id=node_id)
         return endpoints[node_id]
 
-    def get_stub(self, node_id=None):
-        endpoint = self.get_endpoint(node_id)
-        url = "{}:{}".format(endpoint['ip'], endpoint['port'])
-        logger.debug("Try connect: %s", url)
-        channel = grpc.insecure_channel(url)
-        stub = stor_pb2_grpc.RPCServerStub(channel)
-        return stub
-
-    def get_client(self, node_id=None):
-        return self.client_cls(self.get_stub(node_id=node_id),
-                               async_support=self.async_support)
-
-    def get_clients(self, hosts=None):
-        raise NotImplementedError("get_stub not Implemented")
+    def get_client(self):
+        endpoint = self.get_endpoint()
+        client = self.client_cls(endpoint, self.async_support)
+        return client
 
 
-class BaseClients:
-    _clients = None
-
-    def __init__(self, clients=None):
-        self._clients = clients
-
-    def __item__(self, key):
-        return self._clients[key]
-
-
-class BaseClient(object):
+class RPCClient(object):
+    """RPC Client Manager"""
     _stub = None
 
-    def __init__(self, stub, async_support=False):
-        self._stub = stub
+    def __init__(self, endpoint=None, async_support=False):
         self.async_support = async_support
         obj_serializer = objects_base.StorObjectSerializer()
         self.serializer = RequestContextSerializer(obj_serializer)
+        self._stub = self.get_stub(endpoint)
+        self.endpoint = endpoint
+
+    def get_stub(self, endpoint):
+        logger.debug("Try connect: %s", endpoint)
+        channel = grpc.insecure_channel(endpoint)
+        stub = stor_pb2_grpc.RPCServerStub(channel)
+        return stub
 
     def __getattr__(self, name):
         def _wapper(ctxt, *args, **kwargs):
@@ -123,57 +105,65 @@ class BaseClient(object):
         return _wapper
 
     def call(self, context, method, *args, **kwargs):
-        if self.async_support:
-            return self._async_call(context, method, *args, **kwargs)
-        else:
-            return self._sync_call(context, method, *args, **kwargs)
-
-    def _sync_call(self, context, method, *args, **kwargs):
-        version = kwargs.pop("version", "v1.0")
+        logger.info("endpoint(%s) method(%s) args(%s) kwargs(%s)",
+                    self.endpoint, method, args, kwargs)
         _context = self.serializer.serialize_context(context)
         _args = self.serializer.serialize_entity(context, args)
         _kwargs = self.serializer.serialize_entity(context, kwargs)
-        logger.info("args(%s)", args)
+        if self.async_support:
+            return self._async_call(_context, method, *_args, **_kwargs)
+        else:
+            return self._sync_call(_context, method, *_args, **_kwargs)
+
+    def _sync_call(self, context, method, *args, **kwargs):
         try:
             response = self._stub.call(stor_pb2.Request(
-                context=json.dumps(_context),
+                context=json.dumps(context),
                 method=method,
-                args=json.dumps(_args),
-                kwargs=json.dumps(_kwargs),
-                version=version
+                args=json.dumps(args),
+                kwargs=json.dumps(kwargs),
+                version="v1.0"
             ))
         except grpc.RpcError as e:
             logger.exception("rpc connect error: %s", e)
             raise exception.RPCConnectError()
         res = json.loads(response.value)
+        # check redirect
+        if isinstance(res, dict) and res.get('__type__') == "Redirect":
+            logger.info("Redirect to %s", res['endpoint'])
+            self._stub = self.get_stub(res['endpoint'])
+            return self._sync_call(context, method, *args, **kwargs)
         self.serializer.deserialize_exception(context, res)
         ret = self.serializer.deserialize_entity(
             context, res)
         return ret
 
-    def _fwrap(self, f, gf, context):
+    def _fwrap(self, future, gf, context, method, *args, **kwargs):
         try:
             response = gf.result()
             res = json.loads(response.value)
-            self.serializer.deserialize_exception(context, res)
-            ret = self.serializer.deserialize_entity(
-                context, res)
-            f.set_result(ret)
+            # check redirect
+            if isinstance(res, dict) and res.get('__type__') == "Redirect":
+                logger.info("Redirect to %s", res['endpoint'])
+                self._stub = self.get_stub(res['endpoint'])
+                _f = self._async_call(context, method, *args, **kwargs)
+                _f.add_done_callback(lambda f: future.set_result(f.result()))
+            else:
+                self.serializer.deserialize_exception(context, res)
+                ret = self.serializer.deserialize_entity(
+                    context, res)
+                future.set_result(ret)
         except Exception as e:
-            f.set_exception(e)
+            future.set_exception(e)
 
     def _async_call(self, context, method, *args, **kwargs):
-        version = kwargs.pop("version", "v1.0")
-        context = self.serializer.serialize_context(context)
-        _args = self.serializer.serialize_entity(context, args)
-        _kwargs = self.serializer.serialize_entity(context, kwargs)
         try:
             gf = self._stub.call.future(stor_pb2.Request(
                 context=json.dumps(context),
                 method=method,
-                args=json.dumps(_args),
-                kwargs=json.dumps(_kwargs),
-                version=version
+                args=json.dumps(args),
+                kwargs=json.dumps(kwargs),
+                version="v1.0"
             ))
         except grpc.RpcError as e:
             logger.exception("rpc connect error: %s", e)
@@ -183,6 +173,7 @@ class BaseClient(object):
         ioloop = IOLoop.current()
 
         gf.add_done_callback(
-            lambda _: ioloop.add_callback(self._fwrap, f, gf, context)
+            lambda _: ioloop.add_callback(
+                self._fwrap, f, gf, context, method, *args, **kwargs)
         )
         return f

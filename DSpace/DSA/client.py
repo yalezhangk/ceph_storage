@@ -9,20 +9,15 @@ from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
-from DSpace.service import BaseClient
-from DSpace.service.client import RPCMixin
+from DSpace.service.client import RPCClient
 
 logger = logging.getLogger(__name__)
 
 
-class AgentClient(BaseClient):
-    service_name = "agent"
-
-
-class AgentClientManager(RPCMixin):
+class AgentClientManager(object):
     _nodes = None
     _clients = None
-    client_cls = AgentClient
+    client_cls = RPCClient
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, '_inst'):
@@ -36,8 +31,9 @@ class AgentClientManager(RPCMixin):
         self._clients = {}
         self.ctxt = ctxt
 
-    def _get_stub(self, node):
-        return self.get_stub(node.ip_address, self._port)
+    def get_endpoint(self, node):
+        endpoint = "%s:%s" % (node.ip_address, self._port)
+        return endpoint
 
     def add_node(self, node):
         logger.info("add node %s %s", node.id, node.hostname)
@@ -58,12 +54,12 @@ class AgentClientManager(RPCMixin):
         if node_id not in self._nodes:
             logger.warning("node %s not add", node_id)
         if node_id not in self._clients:
-            client = self.client_cls(self._get_stub(self._nodes[node_id]))
+            endpoint = self.get_endpoint(self._nodes[node_id])
+            logger.info("node(%s) endpoint: %s",
+                        self._nodes[node_id].hostname, endpoint)
+            client = self.client_cls(endpoint)
             self._clients[node_id] = client
         return self._clients[node_id]
-
-    def is_alive(self, node):
-        return True
 
     def ping(self):
         logger.info("AgentClientManager ping")

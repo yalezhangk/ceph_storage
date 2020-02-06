@@ -8,18 +8,14 @@ from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
-from DSpace.service import BaseClient
 from DSpace.service import BaseClientManager
-
-
-class AdminClient(BaseClient):
-    pass
+from DSpace.service import RPCClient
 
 
 class AdminClientManager(BaseClientManager):
     cluster = "default"
     service_name = "admin"
-    client_cls = AdminClient
+    client_cls = RPCClient
 
 
 if __name__ == '__main__':

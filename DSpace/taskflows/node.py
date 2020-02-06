@@ -82,7 +82,9 @@ class PrometheusTargetMixin(object):
         port = self._get_port(ctxt, service)
 
         admin_node = objects.NodeList.get_all(
-            ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
+            ctxt, filters={'role_admin': 1, 'cluster_id': '*',
+                           'status': [s_fields.NodeStatus.ACTIVE,
+                                      s_fields.NodeStatus.WARNING]})
         for node in admin_node:
             client = context.agent_manager.get_client(node_id=node.id)
 

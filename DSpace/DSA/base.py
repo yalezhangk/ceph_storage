@@ -41,10 +41,7 @@ class AgentBaseHandler(object):
 
     def _get_node(self):
         endpoints = {
-            "admin": {
-                "ip": CONF.admin_ip,
-                "port": CONF.admin_port,
-            }
+            "admin": "%s:%s" % (CONF.admin_ip, CONF.admin_port)
         }
         self.admin = AdminClientManager(
             self.ctxt, async_support=False, endpoints=endpoints
@@ -70,6 +67,7 @@ class AgentBaseHandler(object):
                 logger.error(e)
                 sys.exit(1)
             except Exception as e:
+                logger.exception(e)
                 logger.error("Cannot connect to admin: %s", e)
                 retry_times += 1
                 time.sleep(retry_interval)

@@ -9,6 +9,7 @@ from oslo_utils import timeutils
 from DSpace import context
 from DSpace import exception as exc
 from DSpace import objects
+from DSpace import taskflows
 from DSpace.common.config import CONF
 from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
@@ -159,11 +160,13 @@ class AdminBaseHandler(AdminBaseMixin):
     def __init__(self):
         super(AdminBaseHandler, self).__init__()
         self.status = DSMStatus.INIT
-        ctxt = context.get_context(user_id="admin")
+        self.ctxt = context.get_context(user_id="admin")
         self.ignored_osds = {}
-        self.bootstrap(ctxt)
+        taskflows.register_all()
 
-    def bootstrap(self, ctxt):
+    def bootstrap(self):
+        logger.info("DSpace admin bootstrap")
+        ctxt = self.ctxt
         self._setup_agent_manager(ctxt)
         clusters = objects.ClusterList.get_all(ctxt)
         for cluster in clusters:

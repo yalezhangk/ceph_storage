@@ -609,6 +609,9 @@ class AlertRuleHandler(AdminBaseHandler):
 
     def __init__(self, *args, **kwargs):
         super(AlertRuleHandler, self).__init__(*args, **kwargs)
+
+    def bootstrap(self):
+        super(AlertRuleHandler, self).bootstrap()
         self._setup_alert_watcher()
 
     def _setup_alert_watcher(self):
