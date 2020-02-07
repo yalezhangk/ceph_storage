@@ -24,7 +24,6 @@ class ServiceMap(object):
             "DSM": self.container_namespace + "_dsm",
             "DSI": self.container_namespace + "_dsi",
             "MARIADB": self.container_namespace + "_mariadb",
-            "ALERTMANAGER": self.container_namespace + "_alertmanager",
             "REDIS": self.container_namespace + "_redis",
             "REDIS_SENTINEL": self.container_namespace + "_redis_sentinel",
             "TOOLBOX": self.container_namespace + "_toolbox",
