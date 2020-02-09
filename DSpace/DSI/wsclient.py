@@ -8,13 +8,13 @@ from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
-from DSpace.service import BaseClient
 from DSpace.service import BaseClientManager
+from DSpace.service import RPCClient
 
 logger = logging.getLogger(__name__)
 
 
-class WebSocketClient(BaseClient):
+class WebSocketClient(RPCClient):
 
     def send_message(self, ctxt, obj, op_type, msg, resource_type=None):
         logger.info("websocket send message: op_type(%s) resource_type(%s)"

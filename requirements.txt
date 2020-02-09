@@ -1,5 +1,5 @@
 tornado
-grpcio
+grpcio==1.27.1
 protobuf
 oslo.versionedobjects
 oslo.db
@@ -7,7 +7,7 @@ oslo.utils
 oslo.config
 oslo.cache
 pymysql
-etcd3
+etcd3==0.11.1
 paramiko
 tooz
 truepy

@@ -26,6 +26,7 @@ class CronHandler(AgentBaseHandler):
         self.container_roles = self.map_util.container_roles
         self._service_map_init()
         self._setup()
+        logger.info("dsa ready")
         self.state = 'ready'
         self.task_submit(self._cron)
 

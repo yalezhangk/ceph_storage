@@ -1,11 +1,13 @@
 #!/bin/python
 
-from .client import BaseClient
 from .client import BaseClientManager
+from .client import RPCClient
 from .service import ServiceBase
+from .service import ServiceCell
 
 __all__ = [
-    "BaseClient",
     "BaseClientManager",
-    "ServiceBase"
+    "RPCClient",
+    "ServiceBase",
+    "ServiceCell",
 ]

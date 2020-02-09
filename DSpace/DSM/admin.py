@@ -1,5 +1,3 @@
-import time
-
 from oslo_config import cfg
 from oslo_log import log as logging
 
@@ -34,11 +32,10 @@ from DSpace.DSM.volume import VolumeHandler
 from DSpace.DSM.volume_access_path import VolumeAccessPathHandler
 from DSpace.DSM.volume_client_group import VolumeClientGroupHandler
 from DSpace.DSM.volume_snapshot import VolumeSnapshotHandler
-from DSpace.service import ServiceBase
+from DSpace.service import ServiceCell
 
 CONF = cfg.CONF
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logger = logging.getLogger(__name__)
 
 
@@ -78,24 +75,9 @@ class AdminHandler(ActionLogHandler,
         self.to_active()
 
 
-class AdminService(ServiceBase):
+class AdminService(ServiceCell):
     service_name = "admin"
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.handler = AdminHandler()
-        super(AdminService, self).__init__()
-
-
-def run_loop():
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        exit(0)
-
-
-def service():
-    admin = AdminService()
-    admin.start()
-    run_loop()
-    admin.stop()
+        super(AdminService, self).__init__(*args, **kwargs)

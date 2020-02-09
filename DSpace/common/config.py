@@ -128,8 +128,19 @@ global_opts = [
                help='auth_backent'),
 ]
 
+etcd_opts = [
+    cfg.HostAddressOpt('host',
+                       sample_default='<HOST_IP_ADDRESS>',
+                       default=netutils.get_my_ipv4(),
+                       help='ETCD IP address'),
+    cfg.IntOpt('port',
+               default=2379,
+               help='The port or etcd.'),
+]
+
 CONF.register_cli_opts(core_opts)
 CONF.register_opts(core_opts)
 CONF.register_opts(global_opts)
+CONF.register_opts(etcd_opts, group='etcd')
 
 CONF.logging_user_identity_format = '%(user)s %(cluster_id)s'

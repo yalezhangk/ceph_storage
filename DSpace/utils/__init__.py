@@ -4,6 +4,7 @@ import logging
 import random
 import socket
 import struct
+import time
 
 import netaddr
 import retrying
@@ -11,6 +12,7 @@ import six
 from dateutil import tz
 
 logger = logging.getLogger(__name__)
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def get_shortened_ipv6(address):
@@ -102,3 +104,11 @@ def cidr2network(cidr):
         struct.pack('!L', address_bin & netmask_bin)
     )
     return network
+
+
+def run_loop():
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        exit(0)

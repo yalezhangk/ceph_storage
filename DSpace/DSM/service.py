@@ -336,6 +336,9 @@ class ServiceHandler(AdminBaseHandler):
         super(ServiceHandler, self).__init__()
         self.container_roles = self.map_util.container_roles
         self.service_manager = ServiceManager()
+
+    def bootstrap(self):
+        super(ServiceHandler, self).bootstrap()
         if CONF.heartbeat_check:
             self.task_submit(self._service_check)
 

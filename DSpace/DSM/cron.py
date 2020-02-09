@@ -26,6 +26,9 @@ class CronHandler(AdminBaseHandler):
         super(CronHandler, self).__init__(*args, **kwargs)
         self.ctxt = context_tool.get_context()
         self.clusters = objects.ClusterList.get_all(self.ctxt)
+
+    def bootstrap(self):
+        super(CronHandler, self).bootstrap()
         self.task_submit(self._check_ceph_cluster_status)
         self.task_submit(self._osd_slow_requests_get_all)
         self.task_submit(self._osd_tree_cron)

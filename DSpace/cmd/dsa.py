@@ -7,7 +7,8 @@ from oslo_log import log as logging
 from DSpace import objects
 from DSpace import version
 from DSpace.common.config import CONF
-from DSpace.DSA.agent import service
+from DSpace.DSA.agent import AgentService
+from DSpace.utils import run_loop
 from DSpace.utils.coordination import COORDINATOR
 
 
@@ -17,7 +18,10 @@ def main():
     logging.setup(CONF, "stor")
     objects.register_all()
     COORDINATOR.start()
-    service()
+    agent = AgentService(rpc_ip=CONF.my_ip, rpc_port=CONF.agent_port)
+    agent.start()
+    run_loop()
+    agent.stop()
 
 
 if __name__ == "__main__":
