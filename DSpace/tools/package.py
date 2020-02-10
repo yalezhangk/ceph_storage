@@ -126,9 +126,9 @@ class YumPackage(PackageBase):
     def configure_repo(self, repo_name, repo_content, **kwargs):
         repo_file = "/etc/yum.repos.d/{}.repo".format(repo_name)
         file_tool = FileTool(self.executor)
-        self.clean()
         # set repo
         file_tool.write(repo_file, repo_content)
+        self.clean()
         self._update_cache()
 
 
@@ -211,10 +211,10 @@ class AptPackage(PackageBase):
 
     def configure_repo(self, repo_name, repo_content, **kwargs):
         repo_file = "/etc/apt/sources.list"
-        self.clean()
         file_tool = FileTool(self.executor)
         # set repo
         file_tool.write(repo_file, repo_content)
+        self.clean()
         self._update_cache()
 
 
