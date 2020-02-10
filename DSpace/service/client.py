@@ -107,21 +107,21 @@ class RPCClient(object):
     def call(self, context, method, *args, **kwargs):
         logger.info("endpoint(%s) method(%s) args(%s) kwargs(%s)",
                     self.endpoint, method, args, kwargs)
-        _context = self.serializer.serialize_context(context)
-        _args = self.serializer.serialize_entity(context, args)
-        _kwargs = self.serializer.serialize_entity(context, kwargs)
         if self.async_support:
-            return self._async_call(_context, method, *_args, **_kwargs)
+            return self._async_call(context, method, *args, **kwargs)
         else:
-            return self._sync_call(_context, method, *_args, **_kwargs)
+            return self._sync_call(context, method, *args, **kwargs)
 
     def _sync_call(self, context, method, *args, **kwargs):
         try:
+            _context = self.serializer.serialize_context(context)
+            _args = self.serializer.serialize_entity(context, args)
+            _kwargs = self.serializer.serialize_entity(context, kwargs)
             response = self._stub.call(stor_pb2.Request(
-                context=json.dumps(context),
+                context=json.dumps(_context),
                 method=method,
-                args=json.dumps(args),
-                kwargs=json.dumps(kwargs),
+                args=json.dumps(_args),
+                kwargs=json.dumps(_kwargs),
                 version="v1.0"
             ))
         except grpc.RpcError as e:
@@ -158,11 +158,14 @@ class RPCClient(object):
 
     def _async_call(self, context, method, *args, **kwargs):
         try:
+            _context = self.serializer.serialize_context(context)
+            _args = self.serializer.serialize_entity(context, args)
+            _kwargs = self.serializer.serialize_entity(context, kwargs)
             gf = self._stub.call.future(stor_pb2.Request(
-                context=json.dumps(context),
+                context=json.dumps(_context),
                 method=method,
-                args=json.dumps(args),
-                kwargs=json.dumps(kwargs),
+                args=json.dumps(_args),
+                kwargs=json.dumps(_kwargs),
                 version="v1.0"
             ))
         except grpc.RpcError as e:
