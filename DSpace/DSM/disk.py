@@ -302,7 +302,7 @@ class DiskHandler(AdminBaseHandler):
             logger.info('No disk found, slot: %s', slot)
             return
         # send websocket
-        msg = _('disk %s offline') % disk.name
+        msg = (_('node %s: disk %s offline') % (disk.node.hostname, disk.name))
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, 'DISK_OFFLINE', msg)
         # create alert log
@@ -492,7 +492,7 @@ class DiskHandler(AdminBaseHandler):
             else:
                 logger.error("Disk role type error")
         # send websocket
-        msg = _('disk %s online') % disk.name
+        msg = (_('node %s: disk %s online') % (disk.node.hostname, disk.name))
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         wb_client.send_message(ctxt, disk, 'DISK_ONLINE', msg)
         # create alert log

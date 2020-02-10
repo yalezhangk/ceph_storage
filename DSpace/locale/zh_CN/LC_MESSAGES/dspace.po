@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-06 05:51-0500\n"
+"POT-Creation-Date: 2020-02-10 02:50-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -525,9 +525,6 @@ msgstr ""
 msgid "mutual_username or mutual_passwordtoo long"
 msgstr ""
 
-msgid "no name input"
-msgstr ""
-
 msgid "no mutual_chap_enable input"
 msgstr ""
 
@@ -700,14 +697,14 @@ msgstr "移除磁盘分区失败"
 msgid "current disk:{} partition has used, can not del"
 msgstr "当前磁盘 {} 分区使用中，无法删除"
 
-msgid "disk %s offline"
-msgstr "物理盘 %s 下线"
+msgid "node %s: disk %s offline"
+msgstr "服务器%s: 物理盘 %s 下线"
 
 msgid "disk %s plug partition different"
 msgstr "新插入物理盘 %s 与原物理盘分区不匹配"
 
-msgid "disk %s online"
-msgstr "物理盘 %s 上线"
+msgid "node %s: disk %s online"
+msgstr "服务器%s: 物理盘 %s 上线"
 
 msgid "email_group name already exists!"
 msgstr "通知列表名称已存在"
