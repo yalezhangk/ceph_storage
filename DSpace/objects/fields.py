@@ -491,7 +491,8 @@ class ResourceAction(object):
             AllResourceType.NODE:
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.SET_ROLES, AllActionType.NODE_UPDATE_RACK,
-                 AllActionType.MON_RESTART, AllActionType.MGR_RESTART],
+                 AllActionType.MON_RESTART, AllActionType.MGR_RESTART,
+                 AllActionType.MDS_RESTART],
 
             AllResourceType.OSD:
                 [AllActionType.CREATE, AllActionType.DELETE,
@@ -524,7 +525,8 @@ class ResourceAction(object):
                 [AllActionType.UPDATE],
 
             AllResourceType.RADOSGW:
-                [AllActionType.RGW_START, AllActionType.RGW_STOP],
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.RGW_START, AllActionType.RGW_STOP],
 
             AllResourceType.RADOSGW_ROUTER:
                 [AllActionType.CREATE, AllActionType.DELETE,
