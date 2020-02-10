@@ -362,8 +362,6 @@ class DiskHandler(AdminBaseHandler):
                     logger.info('disk has osd.%s, set offline', osd.osd_id)
                     task = NodeTask(ctxt, osd.node)
                     task.ceph_osd_offline(osd, umount=True)
-                    osd.status = s_fields.OsdStatus.OFFLINE
-                    osd.save()
                 logger.info('disk %s pull out, mark it error', disk.name)
                 disk.status = s_fields.DiskStatus.ERROR
         else:
@@ -459,10 +457,7 @@ class DiskHandler(AdminBaseHandler):
         if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
             logger.info("%s in replacing task, do nothing", disk.name)
         elif len(osds):
-            osd = osds[0]
-            logger.info('disk has osd.%s, set status to active', osd.osd_id)
-            osd.status = s_fields.OsdStatus.ACTIVE
-            osd.save()
+            logger.info('disk %s has osd, set status to inuse', disk.name)
             disk.status = s_fields.DiskStatus.INUSE
         else:
             if len(disk_info.get('partitions')):
