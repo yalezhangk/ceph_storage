@@ -50,15 +50,15 @@ class SSHExecutor(Executor):
     host_prefix = None
 
     def __init__(self, hostname=None, port=22, user='root', password=None,
-                 pkey=None):
+                 pkey=None, timeout=5):
         """Command executor"""
         super(SSHExecutor, self).__init__()
         self.connect(hostname=hostname, port=port, user=user,
-                     password=password, pkey=pkey)
+                     password=password, pkey=pkey, timeout=timeout)
         self.host_prefix = None
 
     def connect(self, hostname=None, port=22, user='root', password=None,
-                pkey=None):
+                pkey=None, timeout=None):
         """connect remote host
 
         :param hostname: the host to connect
@@ -66,6 +66,7 @@ class SSHExecutor(Executor):
         :param user: ssh user
         :param password: ssh password
         :param pkey: the file-like object to read from
+        :param timeout: connect timeout
         """
         logger.info("try ssh connect: ip(%s), port(%s), user(%s), "
                     "password(%s), pkey(%s)",
@@ -80,7 +81,8 @@ class SSHExecutor(Executor):
             kwargs['pkey'] = pkey
 
         try:
-            self.ssh.connect(hostname, port=port, username=user, **kwargs)
+            self.ssh.connect(hostname, port=port, username=user,
+                             timeout=timeout, **kwargs)
         except paramiko.ssh_exception.AuthenticationException as e:
             logger.warning(e)
             raise exception.SSHAuthInvalid(ip=hostname, password=password)
