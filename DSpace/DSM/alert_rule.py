@@ -106,11 +106,11 @@ class AlertLogHelper(object):
         self.cluster_id = cluster_id
         self.rule = rule
         self.resu_metric = resu_metric
-        self.current_value = current_value
+        self.current_value = '{:.2%}'.format(current_value)
 
     @property
     def trigger_value(self):
-        return self.rule.trigger_value
+        return '{:.2%}'.format(float(self.rule.trigger_value))
 
     @property
     def level(self):
@@ -552,7 +552,7 @@ class PrometheusQuery(AlertQuery):
         value = current_value/_speed
         logger.info('handled network_bandwidth:%s(%s) value is %s', net_name,
                     hostname, value)
-        return value
+        return float(value)
 
 
 class AlertWatcher(object):
