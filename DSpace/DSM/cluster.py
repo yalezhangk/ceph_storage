@@ -127,12 +127,13 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         success = True
         cluster = clusters[0]
         ctxt.cluster_id = cluster.id
-        for ip_address in admin_ips:
-            nodes = objects.NodeList.get_all(
-                ctxt, filters={"ip_address": ip_address}
-            )
-            if not len(nodes) or nodes[0].status != s_fields.NodeStatus.ACTIVE:
-                success = False
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={"ip_address": admin_ips,
+                           'status': [s_fields.NodeStatus.ACTIVE,
+                                      s_fields.NodeStatus.WARNING]}
+        )
+        if len(nodes) != len(admin_ips):
+            success = False
         if not success:
             # clean cluster infos
             for c in clusters:
