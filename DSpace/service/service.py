@@ -167,11 +167,17 @@ class ServiceCell(ServiceBase):
 
     def watch_master(self):
         # watch key
-        value = self.etcd.get(self.etcd_master_key)[0]
-        self.master_endpoint = value.decode('utf-8') if value else None
         events_iterator, cancel = self.etcd.watch(self.etcd_master_key)
+        # get current
+        value = self.etcd.get(self.etcd_master_key)[0]
+        value = value.decode('utf-8') if value else None
+        if value == self.endpoint:
+            self.etcd.delete(self.etcd_master_key)
+        else:
+            self.master_endpoint = value
         # begin to register
         self.task_submit(self.register)
+        # log master
         self.task_submit(self.show_master)
         for event in events_iterator:
             self.master_endpoint = event.value.decode('utf-8')
@@ -191,9 +197,12 @@ class ServiceCell(ServiceBase):
         self.handler.bootstrap()
 
     def lease_refresh(self, lease):
-        while self.master_endpoint == self.endpoint:
+        logger.info("Start lease refresh")
+        i = 0
+        while True:
             try:
-                logger.debug("lease refresh")
+                i = i + 1
+                logger.debug("lease refresh %s times", i)
                 r = lease.refresh()[0]
                 if not r.TTL:
                     break
