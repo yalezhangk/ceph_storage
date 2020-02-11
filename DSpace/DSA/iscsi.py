@@ -59,6 +59,8 @@ class IscsiHandler(AgentBaseHandler):
                      "volumes: %s", access_path.iqn, volume_client.iqn,
                      volumes)
         iscsi.delete_acl(iqn_target, iqn_initiator)
+        for vol in volumes:
+            iscsi.delete_user_backstore(vol.volume_name)
 
     def _create_acl_mapped_lun(self, iqn_target, iqn_initiator, volume):
         so = None

@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 
 class CephHandler(AgentBaseHandler):
     @synchronized("ceph-config-{self.node.id}")
-    def ceph_conf_write(self, context, content):
+    def ceph_conf_write(self, context, content, conf_dir="/etc/ceph"):
         logger.debug("Write Ceph Conf")
         client = self._get_executor()
         file_tool = FileTool(client)
-        file_tool.mkdir("/etc/ceph")
-        file_tool.write("/etc/ceph/ceph.conf", content)
+        file_tool.mkdir(conf_dir)
+        file_tool.write("{}/ceph.conf".format(conf_dir), content)
         return True
 
     def ceph_key_write(self, context, entity, keyring_dir, keyring_name,
@@ -177,10 +177,10 @@ class CephHandler(AgentBaseHandler):
         service_tool.restart(osd_service)
 
     @synchronized("ceph-config-{self.node.id}")
-    def ceph_config_set(self, context, configs):
+    def ceph_config_set(self, context, configs, conf_dir=CEPH_CONFIG_PATH):
         logger.info("ceph config set: %s", configs)
         client = self._get_executor()
-        config_tool = CephConfigTool(CEPH_CONFIG_PATH, client)
+        config_tool = CephConfigTool(conf_dir, client)
         for group, key_values in six.iteritems(configs):
             for key, value in six.iteritems(key_values):
                 config_tool.set_value(key, value, group)

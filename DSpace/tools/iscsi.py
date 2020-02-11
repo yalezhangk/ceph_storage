@@ -186,7 +186,9 @@ def get_acl(iqn, iqn_initiator):
 
 
 def delete_acl(iqn_target, iqn_initiator):
+    tpg = _get_single_tpg(iqn_target)
     acl = get_acl(iqn_target, iqn_initiator)
+    mapped_tpg_luns = []
 
     # delete mapped tpg lun, acl and it's mapped lun
     logger.info("delete acl %s for target %s", iqn_initiator, iqn_target)
@@ -200,6 +202,14 @@ def delete_acl(iqn_target, iqn_initiator):
             ml.delete()
         acl.delete()
     logger.info("delete acl %s success", iqn_initiator)
+
+    # if tpg lun not used by any acl, delete it
+    for tpg_lun in tpg.luns:
+        for lun in tpg_lun.mapped_luns:
+            mapped_tpg_luns.append(lun)
+        if not mapped_tpg_luns:
+            logger.info("will delete useless tpg lun")
+            tpg_lun.delete()
     save_config()
 
 
@@ -233,13 +243,17 @@ def create_user_backstore(pool_name, disk_name, disk_size, osd_op_timeout=30,
 
 
 def delete_user_backstore(disk_name):
+    attached_luns = []
     so = get_user_backstore(disk_name)
     if not so:
         logger.debug('user backstore %s not found, maybe delete it already',
                      disk_name)
     else:
-        so.delete()
-        save_config()
+        for lun in so.attached_luns:
+            attached_luns.append(lun)
+        if not attached_luns:
+            so.delete()
+            save_config()
 
 
 def get_user_backstore(disk_name):
@@ -511,6 +525,13 @@ def _save_backups(savefile):
 def clear_config():
     pass
 
+
+def restore_target(from_file=DEFAULT_SAVE_FILE):
+    try:
+        RTSRoot().restore_from_file(restore_file=from_file)
+    except IOError:
+        # Not an error if the restore file is not present
+        raise exc.IscsiTargetError(action="restore config file")
 
 #############################################################################
 
