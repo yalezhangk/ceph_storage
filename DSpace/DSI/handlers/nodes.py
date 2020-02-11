@@ -1073,9 +1073,12 @@ class NodeInclusionCheckHandler(ClusterAPIHandler):
 
 @URLRegistry.register('/tpl/download/')
 class TplDownload(ClusterAPIHandler):
+    tpls = ["include-example.xlsx",
+            "node-example.xlsx"]
+
     def get(self):
         file_name = self.get_argument('name')
-        if file_name == 'include-example.xlsx':
+        if file_name in self.tpls:
             path = os.path.join(TPL_PATH, file_name)
         else:
             raise InvalidInput(reason=_('file_name not exist'))
