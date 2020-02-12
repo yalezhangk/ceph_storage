@@ -28,13 +28,13 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
             ctxt, ConfigKey.IMAGE_NAMESPACE)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
-        dsa_run_dir = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.DSA_RUN_DIR)
+        dsa_lib_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSA_LIB_DIR)
 
         # run container
         volumes = [
             ("/lib/modules/", "/lib/modules/"),
-            (dsa_run_dir, "/etc/ceph"),
+            (dsa_lib_dir, "/etc/ceph"),
             ("/sys", "/sys"),
             ("/dev", "/dev"),
             ("/run", "/run"),
@@ -99,16 +99,16 @@ class TcmuTask(NodeTask):
     def tcmu_config_set(self):
         enable_cephx = objects.sysconfig.sys_config_get(
             self.ctxt, key=ConfigKey.ENABLE_CEPHX)
-        dsa_run_dir = objects.sysconfig.sys_config_get(
-            self.ctxt, ConfigKey.DSA_RUN_DIR)
+        dsa_lib_dir = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.DSA_LIB_DIR)
         # write ceph config
         configs = self._get_configs(self.ctxt)
         logger.info("config set, get configs: %s", configs)
         agent = self.get_agent()
-        ceph_config_path = path.join(dsa_run_dir, "ceph.conf")
+        ceph_config_path = path.join(dsa_lib_dir, "ceph.conf")
         agent.ceph_config_set(self.ctxt, configs, ceph_config_path)
         if enable_cephx:
-            self.init_admin_key(dsa_run_dir)
+            self.init_admin_key(dsa_lib_dir)
 
     def tcmu_install(self):
         self.tcmu_config_set()

@@ -183,7 +183,7 @@ class DbCommands(object):
             ConfigKey.CEPH_MONITOR_PORT: s_fields.ConfigType.STRING,
             ConfigKey.MGR_DSPACE_PORT: s_fields.ConfigType.STRING,
             ConfigKey.DSA_SOCKET_FILE: s_fields.ConfigType.STRING,
-            ConfigKey.DSA_RUN_DIR: s_fields.ConfigType.STRING,
+            ConfigKey.DSA_LIB_DIR: s_fields.ConfigType.STRING,
             ConfigKey.UDEV_DIR: s_fields.ConfigType.STRING,
             ConfigKey.OS_DISTRO: s_fields.ConfigType.STRING,
             ConfigKey.ENABLE_CEPH_REPO: s_fields.ConfigType.BOOL,
