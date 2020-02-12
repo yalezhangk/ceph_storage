@@ -251,8 +251,12 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 ctxt, key=key, value=value,
                 value_type=s_fields.ConfigType.STRING)
             sysconf.create()
-
-        self.task_submit(self.init_alert_rule, ctxt, cluster.id)
+        cluster_id = cluster.id
+        self.init_alert_rule(ctxt, cluster_id)
+        pro_rules = self.get_cluster_prome_rules(cluster_id)
+        logger.info('new_cluster_id:%s, pro_rules:%s', cluster, pro_rules)
+        self.task_submit(self.update_prometheus_que, pro_rules)
+        self.task_submit(self.update_notify_group, cluster_id)
         if not is_admin:
             # add an admin_cluster actions
             self.finish_action(admin_begin_action, cluster.id,
@@ -290,6 +294,11 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         logger.info("trying to delete cluster-%s", cluster.id)
         wb_client = WebSocketClientManager(context=ctxt).get_client()
         try:
+            pro_rules = self.get_cluster_prome_rules(cluster.id)
+            logger.info('will remove pro_rules:%s,cluster_id:%s',
+                        pro_rules, cluster.id)
+            self.update_prometheus_que(pro_rules, remove=True)
+            self.update_notify_group(cluster.id, remove=True)
             t = objects.Task(
                 ctxt,
                 name="Delete Cluster",

@@ -435,7 +435,8 @@ class PrometheusQuery(AlertQuery):
         """Do prometheus query and send alert"""
         results = self.prome_client.prometheus_get_metrics(self.promql)
         if not results:
-            logger.error('prometheus_results is None, promql: %s', self.promql)
+            logger.warning('prometheus_results is None, promql: %s',
+                           self.promql)
             return
         else:
             logger.debug('promql: %s, results: %s', self.promql, results)
@@ -546,7 +547,7 @@ class PrometheusQuery(AlertQuery):
         if speed_unit == 'Mb/s':
             _speed = (int(speed_num)/8) * 1024 * 1024
         else:
-            logger.warning('network_name:%s(%s) speed_unit is nvalid',
+            logger.warning('network_name:%s(%s) speed_unit is invalid',
                            net_name, hostname)
             return None
         value = current_value/_speed
@@ -595,7 +596,7 @@ class AlertWatcher(object):
 
     def remove_notify(self, cluster_id):
         """Remove AlertNotifyGroup for a cluster"""
-        logger.info("AlertWatcher append cluster_id(%s) notify_group %s",
+        logger.info("AlertWatcher remove cluster_id(%s) notify_group %s",
                     cluster_id)
         self._notifys.pop(cluster_id, None)
 
@@ -616,51 +617,13 @@ class AlertRuleHandler(AdminBaseHandler):
 
     def _setup_alert_watcher(self):
         self.alert_watcher = AlertWatcher()
-        # 1、get all cluster rules 所有告警规则
-        rules = self._get_all_cluster_alert_rules()
-        prome_tool = PrometheusTool(self.ctxt)
-        avg_time = str(CONF.alert_rule_average_time) + 's'
+        # 1. get all cluster prome rules
+        rules = self.get_cluster_prome_rules()
         logger.info('all_clusters_rules:%s', rules)
-        for rule in rules:
-            id = rule.type
-            cluster_id = rule.cluster_id
-            # 2、实例化 query(等于告警规则数量)
-            que = self.alert_watcher.get_query(id)
-            logger.info('pro_que:%s', que)
-            if not que:
-                promql = rule.query_grammar.format(avg_time=avg_time)
-                que = PrometheusQuery(id, promql, prome_tool)
-                self.alert_watcher.append_query(que)
-            que.append_check(cluster_id, que.check_fun)
-            # 2、实例化 notify_group(等于集群数量)
-            notify_group = self.alert_watcher.get_notify(cluster_id)
-            if not notify_group:
-                notify_group = AlertNotifyGroup()
-                self.alert_watcher.append_notify(cluster_id, notify_group)
-            notify_group.append(
-                WebSocketHelper('wbsocket_helper', config=None))
-            smtp = objects.SysConfigList.get_all(
-                self.ctxt, filters={'cluster_id': cluster_id,
-                                    'key': 'smtp_enabled'})
-            mail_conf = {}
-            if smtp:
-                enabled = strutils.bool_from_string(smtp[0].value)
-                if enabled:
-                    smtp_configs = objects.SysConfigList.get_all(
-                        self.ctxt, filters={"cluster_id": cluster_id})
-                    keys = ['smtp_user', 'smtp_password', 'smtp_host',
-                            'smtp_port',
-                            'smtp_enable_ssl', 'smtp_enable_tls']
-                    for smtp_conf in smtp_configs:
-                        if smtp_conf.key in keys:
-                            mail_conf[smtp_conf.key] = smtp_conf.value
-                    # enable_ssl,enable_tls: str -> bool
-                    mail_conf['smtp_enable_ssl'] = strutils.bool_from_string(
-                        mail_conf['smtp_enable_ssl'])
-                    mail_conf['smtp_enable_tls'] = strutils.bool_from_string(
-                        mail_conf['smtp_enable_tls'])
-                    notify_group.append(EmailHelper('email_helper', mail_conf))
-        # 放入线程池中执行AlertWatcher
+        self.update_prometheus_que(rules)
+        clusters = objects.ClusterList.get_all(self.ctxt)
+        for cluster in clusters:
+            self.update_notify_group(cluster.id)
         self.task_submit(self._alert_watcher_check)
         logger.info('alert_watcher_check task has begin')
 
@@ -670,11 +633,69 @@ class AlertRuleHandler(AdminBaseHandler):
         while True:
             self.alert_watcher.check(CONF.alert_rule_check_interval)
 
-    def _get_all_cluster_alert_rules(self):
+    def get_cluster_prome_rules(self, cluster_id=None):
         rules = objects.AlertRuleList.get_all(
-            self.ctxt, filters={'data_source': 'prometheus',
-                                'cluster_id': '*'})
+            self.ctxt, filters={
+                'data_source': 'prometheus', 'cluster_id':
+                    cluster_id if cluster_id else '*'})
         return rules
+
+    def update_prometheus_que(self, rules, remove=None):
+        rules = rules if rules else []
+        prome_tool = PrometheusTool(self.ctxt)
+        avg_time = str(CONF.alert_rule_average_time) + 's'
+        for rule in rules:
+            cluster_id = rule.cluster_id
+            que = self.alert_watcher.get_query(rule.type)
+            if not que:
+                # not prometheus_que, create an new peometheus_que, then append
+                promql = rule.query_grammar.format(avg_time=avg_time)
+                que = PrometheusQuery(rule.type, promql, prome_tool)
+                self.alert_watcher.append_query(que)
+            if remove:
+                # remove_check(cluster_id) when remove a cluster
+                que.remove_check(cluster_id)
+            else:
+                # append_check when add a cluster
+                que.append_check(cluster_id, que.check_fun)
+
+    def update_notify_group(self, cluster_id, remove=None):
+        notify_group = self.alert_watcher.get_notify(cluster_id)
+        if notify_group:
+            # notify_group exist
+            if remove:
+                # remove_notify when remove a cluster
+                self.alert_watcher.remove_notify(cluster_id)
+                return
+        else:
+            # notify_group not exist, add a new notify_group, then append
+            notify_group = AlertNotifyGroup()
+            self.alert_watcher.append_notify(cluster_id, notify_group)
+        # 1. append websocket
+        notify_group.append(
+            WebSocketHelper('wbsocket_helper', config=None))
+        # 2. is or not append email
+        smtp = objects.SysConfigList.get_all(
+            self.ctxt, filters={'cluster_id': cluster_id,
+                                'key': 'smtp_enabled'})
+        mail_conf = {}
+        if smtp:
+            enabled = strutils.bool_from_string(smtp[0].value)
+            if enabled:
+                smtp_configs = objects.SysConfigList.get_all(
+                    self.ctxt, filters={"cluster_id": cluster_id})
+                keys = ['smtp_user', 'smtp_password', 'smtp_host',
+                        'smtp_port',
+                        'smtp_enable_ssl', 'smtp_enable_tls']
+                for smtp_conf in smtp_configs:
+                    if smtp_conf.key in keys:
+                        mail_conf[smtp_conf.key] = smtp_conf.value
+                # enable_ssl,enable_tls: str -> bool
+                mail_conf['smtp_enable_ssl'] = strutils.bool_from_string(
+                    mail_conf['smtp_enable_ssl'])
+                mail_conf['smtp_enable_tls'] = strutils.bool_from_string(
+                    mail_conf['smtp_enable_tls'])
+                notify_group.append(EmailHelper('email_helper', mail_conf))
 
     def alert_rule_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                            sort_dirs=None, filters=None, offset=None):
