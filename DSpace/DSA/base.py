@@ -9,6 +9,7 @@ from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSM.client import AdminClientManager
+from DSpace.tools import iscsi
 from DSpace.tools.base import Executor
 from DSpace.tools.base import SSHExecutor
 from DSpace.utils import retry
@@ -56,6 +57,10 @@ class AgentBaseHandler(object):
                     if (self.node.cluster_id == CONF.cluster_id and
                             self.node.id == CONF.node_id and
                             str(self.node.ip_address) == CONF.my_ip):
+                        # try restore iscsi target config
+                        if self.node.role_block_gateway:
+                            logger.info("trying to restore iscsi config")
+                            iscsi.restore_target()
                         break
                     else:
                         logger.error("Node info does not match, exit. "

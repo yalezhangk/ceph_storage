@@ -826,6 +826,18 @@ msgstr "节点%s: 移除对象存储网关角色成功"
 msgid "node %s: unset rgw role error"
 msgstr "节点%s: 移除对象存储网关角色失败"
 
+msgid "node %s: set bgw role success"
+msgstr "节点%s: 添加块存储网关角色成功"
+
+msgid "node %s: set bgw role error"
+msgstr "节点%s: 添加块存储网关角色失败"
+
+msgid "node %s: unset bgw role success"
+msgstr "节点%s: 移除块存储网关角色成功"
+
+msgid "node %s: unset bgw role error"
+msgstr "节点%s: 移除块存储网关角色失败"
+
 msgid "node %s: set roles success"
 msgstr "节点%s: 设置角色成功"
 

@@ -76,8 +76,10 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         return volume_access_path
 
     def volume_access_path_mount_gw(self, ctxt, id, data):
+        expected_attrs = ['volume_gateways', 'volume_client_groups',
+                          'nodes', 'volumes', 'volume_clients']
         access_path = objects.VolumeAccessPath.get_by_id(
-            ctxt, id, expected_attrs=["volume_gateways"])
+            ctxt, id, expected_attrs=expected_attrs)
         node_id = data.get("node_id")
         node = objects.Node.get_by_id(ctxt, node_id)
         volume_gateways = access_path.volume_gateways
@@ -98,12 +100,26 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             volume_access_path_id=id,
             cluster_id=ctxt.cluster_id
         )
+        volume_ids = [i.id for i in access_path.volumes]
+        volumes = []
+        for volume_id in volume_ids:
+            volume = objects.Volume.get_by_id(
+                ctxt, volume_id, expected_attrs=["pool"])
+            volumes.append(volume)
+        volume_clients = access_path.volume_clients
+
         try:
             task = NodeTask(ctxt, node)
+            logger.info("trying to mount block gateway")
             task.mount_bgw(ctxt, access_path, node)
             ap_gateway.create()
             access_path.volume_gateway_append(
                 volume_gateway_id=ap_gateway.id)
+            # access path already has mappings
+            if volumes and volume_clients:
+                for volume_client in volume_clients:
+                    self._create_mapping(
+                        ctxt, [node_id], access_path, volume_client, volumes)
         except exception.StorException as e:
             logger.error("mount bgw error: %s", e)
             raise e

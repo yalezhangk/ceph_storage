@@ -306,7 +306,7 @@ class NodeTask(object):
         osd = agent.ceph_osd_restart(self.ctxt, osd)
         return osd
 
-    def init_admin_key(self):
+    def init_admin_key(self, keyring_dir=CEPH_CONFIG_DIR):
         agent = self.get_agent()
         admin_entity = "client.admin"
         keyring_name = "ceph.client.admin.keyring"
@@ -317,7 +317,7 @@ class NodeTask(object):
             raise exc.CephException(
                 message='cephx is enable, but no admin'
                         'keyring found')
-        agent.ceph_key_write(self.ctxt, admin_entity, CEPH_CONFIG_DIR,
+        agent.ceph_key_write(self.ctxt, admin_entity, keyring_dir,
                              keyring_name, admin_keyring.value)
 
     def init_bootstrap_keys(self, bootstrap_type):

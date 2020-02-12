@@ -25,6 +25,7 @@ from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodesCheck
 from DSpace.taskflows.node import NodeTask
 from DSpace.taskflows.node import PrometheusTargetMixin
+from DSpace.taskflows.tcmu import TcmuTask
 from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config
 from DSpace.utils.coordination import synchronized
@@ -222,6 +223,10 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             if node.role_monitor:
                 if self._mon_uninstall(ctxt, node) != 'success':
                     raise exc.NodeRolesUpdateError(node=node.hostname)
+            if node.role_block_gateway:
+                if self._bgw_uninstall(ctxt, node) != 'success':
+                    raise exc.NodeRolesUpdateError(node=node.hostname)
+                node_task.tcmu_remove_image()
 
             node_task.ceph_package_uninstall()
             node_task.chrony_uninstall()
@@ -543,6 +548,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             ceph.gen_config()
             PrometheusTargetMixin().target_add(ctxt, node, service='mgr')
             self._sync_ceph_configs(ctxt)
+            # TODO sync configs to block gateway
             self._create_mon_service(ctxt, node)
             msg = _("node %s: set mon role success") % node.hostname
             op_status = "SET_ROLE_MON_SUCCESS"
@@ -604,6 +610,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             node.role_monitor = False
             node.save()
             self._sync_ceph_configs(ctxt)
+            # TODO sync configs to block gateway
             ceph = CephTask(ctxt)
             ceph.gen_config()
             msg = _("node %s: unset mon role success") % node.hostname
@@ -741,14 +748,54 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         return status
 
     def _bgw_install(self, ctxt, node):
-        node.role_block_gateway = True
-        node.save()
-        return node
+        logger.info("trying to install block gateway container")
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
+        try:
+            node_task = TcmuTask(ctxt, node)
+            node_task.tcmu_install()
+            node.role_block_gateway = True
+            node.save()
+            msg = _("node %s: set bgw role success") % node.hostname
+            op_status = "SET_ROLE_BGW_SUCCESS"
+            status = 'success'
+            err_msg = None
+        except Exception as e:
+            logger.exception("set bgw role failed: %s", e)
+            msg = _("node %s: set bgw role error") % node.hostname
+            op_status = "SET_ROLE_BGW_ERROR"
+            status = 'fail'
+            err_msg = str(e)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
+        return status
 
     def _bgw_uninstall(self, ctxt, node):
-        node.role_block_gateway = False
-        node.save()
-        return node
+        logger.info("trying to uninstall block gateway container")
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
+        try:
+            node_task = TcmuTask(ctxt, node)
+            node_task.tcmu_uninstall()
+            node.role_block_gateway = False
+            node.save()
+            msg = _("node %s: unset bgw role success") % node.hostname
+            op_status = "UNSET_ROLE_BGW_SUCCESS"
+            status = 'success'
+            err_msg = None
+        except Exception as e:
+            logger.exception("set bgw role failed: %s", e)
+            msg = _("node %s: unset bgw role error") % node.hostname
+            op_status = "UNSET_ROLE_BGW_ERROR"
+            status = 'fail'
+            err_msg = str(e)
+        wb_client = WebSocketClientManager(context=ctxt).get_client()
+        wb_client.send_message(ctxt, node, op_status, msg)
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
+        return status
 
     def _notify_dsa_update(self, ctxt, node):
         logger.info("Send node update info to %s", node.id)
@@ -854,6 +901,8 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
                 self._rgw_install(ctxt, node)
             if "monitor" in roles:
                 self._mon_install(ctxt, node)
+            if "blockgw" in roles:
+                self._bgw_install(ctxt, node)
             node.disks = objects.DiskList.get_all(
                 ctxt, filters={"node_id": node.id})
             node.status = s_fields.NodeStatus.ACTIVE
