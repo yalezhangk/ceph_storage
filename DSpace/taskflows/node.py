@@ -75,17 +75,37 @@ class PrometheusTargetMixin(object):
         return path + PROMETHEUS_TARGET_PATH
 
     def target_add(self, ctxt, node, service):
-        logger.info("Config from prometheus target file: %s, %s, %s",
-                    service, node.ip_address, node.hostname)
-        ip = node.ip_address
-        hostname = node.hostname
-        port = self._get_port(ctxt, service)
+        logger.info("Config from prometheus target file: %s, %s, %s,"
+                    " role admin(%s)",
+                    service, node.ip_address, node.hostname, node.role_admin)
+        port = str(self._get_port(ctxt, service))
 
-        admin_node = objects.NodeList.get_all(
+        admin_nodes = objects.NodeList.get_all(
             ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
 
-        for node in admin_node:
+        # for cluster init
+        if node.role_admin and service == 'node_exporter':
+            targets = []
+            for admin in admin_nodes:
+                targets.append({
+                    "targets": [str(admin.ip_address) + ":" + port],
+                    "labels": {
+                        "hostname": admin.hostname,
+                        "cluster_id": ctxt.cluster_id
+                    }
+                })
             client = context.agent_manager.get_client(node_id=node.id)
+            client.prometheus_target_add_all(
+                ctxt, targets, path=self._get_path(ctxt))
+
+            logger.info("Add to prometheus target file: %s, %s",
+                        self._get_path(ctxt), targets)
+            return
+        # for add target
+        for admin in admin_nodes:
+            client = context.agent_manager.get_client(node_id=admin.id)
+            ip = node.ip_address
+            hostname = node.hostname
 
             logger.info("Add to %s prometheus target file: %s, %s",
                         node.hostname, ip, port)
