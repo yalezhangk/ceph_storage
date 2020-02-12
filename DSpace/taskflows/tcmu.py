@@ -96,19 +96,22 @@ class TcmuTask(NodeTask):
         }
         return configs
 
-    def tcmu_install(self):
+    def tcmu_config_set(self):
         enable_cephx = objects.sysconfig.sys_config_get(
             self.ctxt, key=ConfigKey.ENABLE_CEPHX)
         dsa_run_dir = objects.sysconfig.sys_config_get(
             self.ctxt, ConfigKey.DSA_RUN_DIR)
         # write ceph config
         configs = self._get_configs(self.ctxt)
+        logger.info("config set, get configs: %s", configs)
         agent = self.get_agent()
         ceph_config_path = path.join(dsa_run_dir, "ceph.conf")
         agent.ceph_config_set(self.ctxt, configs, ceph_config_path)
         if enable_cephx:
             self.init_admin_key(dsa_run_dir)
 
+    def tcmu_install(self):
+        self.tcmu_config_set()
         ssh = self.get_ssh_executor()
         wf = lf.Flow('DSpace tcmu Install')
         tpl = template.get('tcmu-runner.conf')

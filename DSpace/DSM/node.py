@@ -497,6 +497,14 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             tool = CephTask(ctxt)
             tool.clear_config()
 
+    def _sync_bgw_configs(self, ctxt):
+        bgw_nodes = objects.NodeList.get_all(
+            ctxt, filters={"role_block_gateway": True}
+        )
+        for node in bgw_nodes:
+            node_task = TcmuTask(ctxt, node)
+            node_task.tcmu_config_set()
+
     def _create_mon_service(self, ctxt, node):
         logger.debug("Create service for mon and mgr in database")
         for name in ["MON", "MGR", "MDS"]:
@@ -548,7 +556,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             ceph.gen_config()
             PrometheusTargetMixin().target_add(ctxt, node, service='mgr')
             self._sync_ceph_configs(ctxt)
-            # TODO sync configs to block gateway
+            self._sync_bgw_configs(ctxt)
             self._create_mon_service(ctxt, node)
             msg = _("node %s: set mon role success") % node.hostname
             op_status = "SET_ROLE_MON_SUCCESS"
@@ -610,7 +618,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             node.role_monitor = False
             node.save()
             self._sync_ceph_configs(ctxt)
-            # TODO sync configs to block gateway
+            self._sync_bgw_configs(ctxt)
             ceph = CephTask(ctxt)
             ceph.gen_config()
             msg = _("node %s: unset mon role success") % node.hostname
