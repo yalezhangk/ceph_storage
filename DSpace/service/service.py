@@ -1,6 +1,6 @@
 import json
 import logging
-import sys
+import os
 import time
 from concurrent import futures
 from enum import Enum
@@ -91,7 +91,7 @@ class Dispatcher(stor_pb2_grpc.RPCServerServicer):
                     func.__name__, e
                 ))
                 if self.debug_mode:
-                    sys.exit(1)
+                    os._exit(1)
             res = stor_pb2.Response(
                 value=json.dumps(self.serializer.serialize_exception(ctxt, e))
             )
@@ -185,7 +185,8 @@ class ServiceCell(ServiceBase):
             if self.master_endpoint == self.endpoint:
                 self.to_master()
             elif self.role == Role.Master:
-                sys.exit(1)
+                logger.info("I lost master, exit...")
+                os._exit(1)
 
     def start(self):
         self.task_submit(self.watch_master)
@@ -210,7 +211,8 @@ class ServiceCell(ServiceBase):
                 print(e)
                 break
             time.sleep(3)
-        sys.exit(1)
+        logger.info("lease refresh failed. exit...")
+        os._exit(1)
 
     def register(self):
         logger.info("register service")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-import sys
+import os
 import time
 from concurrent import futures
 
@@ -67,10 +67,10 @@ class AgentBaseHandler(object):
                                      "Node cluster id - %s, id - %s, ip - %s",
                                      self.node.cluster_id, self.node.id,
                                      self.node.ip_address)
-                        sys.exit(1)
+                        os._exit(1)
             except exception.NodeNotFound as e:
                 logger.error(e)
-                sys.exit(1)
+                os._exit(1)
             except Exception as e:
                 logger.exception(e)
                 logger.error("Cannot connect to admin: %s", e)
