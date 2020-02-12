@@ -225,15 +225,23 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         """Deploy a new cluster"""
         logger.debug("Create a new cluster")
         self._cluster_create_check(ctxt, data)
+        is_admin = data.get('admin_create')
         cluster = objects.Cluster(
-            ctxt,
-            is_admin=data.get('admin_create'),
-            status=s_fields.ClusterStatus.ACTIVE,
+            ctxt, is_admin=is_admin, status=s_fields.ClusterStatus.ACTIVE,
             display_name=data.get('cluster_name'))
         cluster.create()
-
+        admin_begin_action = None
+        if not is_admin:
+            # add an admin_cluster actions
+            admin_cluster = objects.ClusterList.get_all(
+                ctxt, filters={'is_admin': True})
+            admin_cluster_id = admin_cluster[0].id
+            logger.info('admin_cluster_id is:%s', admin_cluster_id)
+            ctxt.cluster_id = admin_cluster_id
+            admin_begin_action = self.begin_action(
+                ctxt, Resource.CLUSTER, Action.CREATE)
         ctxt.cluster_id = cluster.id
-        begin_action = self.begin_action(
+        new_cluster_action = self.begin_action(
             ctxt, Resource.CLUSTER, Action.CREATE)
         # TODO check key value
         if ConfigKey.CEPH_VERSION_NAME not in data:
@@ -245,8 +253,12 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             sysconf.create()
 
         self.task_submit(self.init_alert_rule, ctxt, cluster.id)
-        self.finish_action(begin_action, cluster.id, cluster.display_name,
-                           after_obj=cluster)
+        if not is_admin:
+            # add an admin_cluster actions
+            self.finish_action(admin_begin_action, cluster.id,
+                               cluster.display_name, after_obj=cluster)
+        self.finish_action(new_cluster_action, cluster.id,
+                           cluster.display_name, after_obj=cluster)
         logger.info('cluster %s init alert_rule task has begin', cluster.id)
         return cluster
 
@@ -360,8 +372,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         ctxt.cluster_id = cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         self._cluster_delete_check(ctxt, cluster, clean_ceph)
+        ctxt.cluster_id = src_cluster_id
         begin_action = self.begin_action(
             ctxt, Resource.CLUSTER, Action.DELETE, before_obj=cluster)
+        ctxt.cluster_id = cluster_id
         cluster.status = s_fields.ClusterStatus.DELETING
         cluster.save()
         self.task_submit(self._cluster_delete,
