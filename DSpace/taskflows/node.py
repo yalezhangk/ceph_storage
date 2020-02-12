@@ -795,8 +795,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ctxt, ConfigKey.LOG_DIR_CONTAINER)
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR)
-        dsa_run_dir = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.DSA_RUN_DIR)
+        dsa_lib_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSA_LIB_DIR)
         config_dir_container = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
         image_namespace = objects.sysconfig.sys_config_get(
@@ -807,7 +807,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
         # write config
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
-        file_tool.mkdir(dsa_run_dir)
+        file_tool.mkdir(dsa_lib_dir)
         file_tool.write("{}/dsa.conf".format(config_dir),
                         self.get_dsa_conf(ctxt, node))
         # run container
@@ -868,8 +868,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ctxt, ConfigKey.ADMIN_PORT)
         agent_port = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.AGENT_PORT)
-        dsa_run_dir = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.DSA_RUN_DIR)
+        dsa_lib_dir = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DSA_LIB_DIR)
         socket_file = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSA_SOCKET_FILE)
         os_distro = objects.sysconfig.sys_config_get(
@@ -884,7 +884,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             agent_port=agent_port,
             node_id=node.id,
             cluster_id=node.cluster_id,
-            dsa_run_dir=dsa_run_dir,
+            dsa_lib_dir=dsa_lib_dir,
             socket_file=socket_file,
             os_distro=os_distro
         )

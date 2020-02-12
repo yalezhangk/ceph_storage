@@ -641,7 +641,7 @@ class ConfigKey(BaseStorEnum):
     CEPH_MONITOR_PORT = 'ceph_monitor_port'
     MGR_DSPACE_PORT = 'mgr_dspace_port'
     DSA_SOCKET_FILE = 'dsa_socket_file'
-    DSA_RUN_DIR = 'dsa_run_dir'
+    DSA_LIB_DIR = 'dsa_lib_dir'
     UDEV_DIR = 'udev_dir'
     ENABLE_CEPHX = 'enable_cephx'
     OS_DISTRO = 'os_distro'
