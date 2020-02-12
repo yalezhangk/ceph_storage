@@ -7,6 +7,7 @@ import traceback
 from jsonschema.exceptions import ValidationError
 from tornado.web import RequestHandler
 
+from DSpace import context
 from DSpace import exception
 from DSpace import objects
 from DSpace.context import RequestContext
@@ -169,12 +170,13 @@ class BaseAPIHandler(RequestHandler):
         logger.exception("%s raise exception: %s", self.request.uri, e)
 
     def get_admin_client(self, ctxt):
-        if not self.dsm_client:
-            self.dsm_client = AdminClientManager(
+        if not hasattr(context, 'dsm_client'):
+            dsm_client = AdminClientManager(
                 ctxt,
                 async_support=True
             ).get_client()
-        return self.dsm_client
+            setattr(context, 'dsm_client', dsm_client)
+        return getattr(context, 'dsm_client')
 
     def get_cluster_id(self):
         cluster_id = self.get_query_argument('cluster_id', default=None)
