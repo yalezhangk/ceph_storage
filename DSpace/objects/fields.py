@@ -400,7 +400,8 @@ class AllActionType(BaseStorEnum):
     UPDATE_GATEWAY_CIDR = 'update_gateway_cidr'
     RACK_UPDATE_TOPLOGY = 'rack_update_toplogy'
     NODE_UPDATE_RACK = 'node_update_rack'
-    PAUSE = 'pause'
+    Cluster_PAUSE = 'cluster_pause'
+    Cluster_UNPAUSE = 'cluster_unpause'
     OSD_REPLACE = 'osd_replace'  # osd换盘
     DATA_BALANCE_ON = 'data_balance_on'
     DATA_BALANCE_OFF = 'data_balance_off'
@@ -423,7 +424,7 @@ class AllActionType(BaseStorEnum):
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
            CLUSTER_INCLUDE, CHANGE_DISK_TYPE, DISK_LIGHT, UPDATE_CLOCK_SERVER,
            UPDATE_GATEWAY_CIDR, RACK_UPDATE_TOPLOGY, NODE_UPDATE_RACK,
-           CLUSTER_INCLUDE_CLEAN, PAUSE, OSD_REPLACE,
+           CLUSTER_INCLUDE_CLEAN, Cluster_PAUSE, Cluster_UNPAUSE, OSD_REPLACE,
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
            OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
            RGW_ROUTER_REMOVE, ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD,
@@ -519,7 +520,9 @@ class ResourceAction(object):
                  AllActionType.CLUSTER_INCLUDE,
                  AllActionType.CLUSTER_INCLUDE_CLEAN,
                  AllActionType.DATA_BALANCE_ON,
-                 AllActionType.DATA_BALANCE_OFF],
+                 AllActionType.DATA_BALANCE_OFF,
+                 AllActionType.Cluster_PAUSE,
+                 AllActionType.Cluster_UNPAUSE],
 
             AllResourceType.CEPH_CONFIG:
                 [AllActionType.UPDATE],
