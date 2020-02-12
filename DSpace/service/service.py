@@ -16,6 +16,7 @@ from DSpace.grpc import stor_pb2
 from DSpace.grpc import stor_pb2_grpc
 from DSpace.objects import base as objects_base
 from DSpace.service.serializer import RequestContextSerializer
+from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -165,30 +166,52 @@ class ServiceCell(ServiceBase):
                 logger.info("Master is %s", self.master_endpoint)
             time.sleep(10)
 
-    def watch_master(self):
+    def _watch_master(self):
         # watch key
         events_iterator, cancel = self.etcd.watch(self.etcd_master_key)
         # get current
-        value = self.etcd.get(self.etcd_master_key)[0]
-        value = value.decode('utf-8') if value else None
-        if value == self.endpoint:
-            self.etcd.delete(self.etcd_master_key)
-        else:
-            self.master_endpoint = value
+        value = self.etcd_get(self.etcd_master_key)
+        self.master_endpoint = value
+        if not self.master_endpoint:
+            self.task_submit(self.register)
+        logger.info("Master endpoint current is: %s", self.master_endpoint)
         # begin to register
-        self.task_submit(self.register)
-        # log master
-        self.task_submit(self.show_master)
+        # wait watch
         for event in events_iterator:
             self.master_endpoint = event.value.decode('utf-8')
-            logger.info("Master endpoint change to: %s", self.master_endpoint)
+            logger.info("Master endpoint change to: %s",
+                        self.master_endpoint)
             if self.master_endpoint == self.endpoint:
                 self.to_master()
             elif self.role == Role.Master:
-                logger.info("I lost master, exit...")
+                logger.error("I lost master, exit...")
                 os._exit(1)
+            elif not self.master_endpoint:
+                self.task_submit(self.register)
+
+    def watch_master(self):
+        while True:
+            try:
+                self._watch_master()
+            except etcd3.exceptions.ConnectionFailedError as e:
+                logger.warning("ectd error: %s", e)
+
+    def clear_etcd_key(self):
+        value = self.etcd_get(self.etcd_master_key)
+        if value == self.endpoint:
+            self.etcd.delete(self.etcd_master_key)
+
+    def etcd_get(self, key):
+        value = self.etcd.get(self.etcd_master_key)[0]
+        value = value.decode('utf-8') if value else None
+        return value
 
     def start(self):
+        # clear dirty key
+        self.clear_etcd_key()
+        # log master
+        self.task_submit(self.show_master)
+        # watch master
         self.task_submit(self.watch_master)
         super(ServiceCell, self).start()
 
@@ -199,34 +222,37 @@ class ServiceCell(ServiceBase):
 
     def lease_refresh(self, lease):
         logger.info("Start lease refresh")
+
+        # try 3 times
+        @retry(etcd3.exceptions.ConnectionFailedError)
+        def _refrese():
+            return lease.refresh()[0]
+
         i = 0
         while True:
             try:
                 i = i + 1
                 logger.debug("lease refresh %s times", i)
-                r = lease.refresh()[0]
+                r = _refrese()
                 if not r.TTL:
                     break
             except Exception as e:
-                print(e)
+                logger.error("lease refresh exception. %s", e)
                 break
             time.sleep(3)
-        logger.info("lease refresh failed. exit...")
+        logger.exit("lease refresh failed. exit...")
         os._exit(1)
 
+    @retry(etcd3.exceptions.ConnectionFailedError)
     def register(self):
         logger.info("register service")
-        i = 0
-        while True:
-            i = i + 1
-            lease = self.etcd.lease(30)
-            r = self.etcd.put_if_not_exists(
-                self.etcd_master_key, self.endpoint, lease)
-            if not r:
-                logger.info("Master existed, sleep for next")
-                time.sleep(5)
-                continue
-            # lease refresh
-            logger.info("Master is Me")
-            self.task_submit(self.lease_refresh, lease)
-            break
+        lease = self.etcd.lease(30)
+        r = self.etcd.put_if_not_exists(
+            self.etcd_master_key, self.endpoint, lease)
+
+        if not r:
+            logger.info("Master existed...")
+            return
+        # lease refresh
+        logger.info("Master is Me")
+        self.task_submit(self.lease_refresh, lease)
