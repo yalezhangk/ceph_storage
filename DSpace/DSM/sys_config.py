@@ -13,6 +13,7 @@ from DSpace.objects.fields import ConfigType
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
+sys_config = _('sys_config')
 
 
 class SysConfigHandler(AdminBaseHandler):
@@ -41,12 +42,12 @@ class SysConfigHandler(AdminBaseHandler):
                 # TODO Use ordered taskflow to execute update chrony
                 self.task_submit(task.chrony_update())
                 status = 'success'
-                self.finish_action(begin_action, None, 'sysconfig',
+                self.finish_action(begin_action, None, sys_config,
                                    chrony_server, status)
             except exception.StorException as e:
                 logger.error("update chrony server error: %s", e)
                 status = 'fail'
-                self.finish_action(begin_action, None, 'sysconfig',
+                self.finish_action(begin_action, None, sys_config,
                                    chrony_server, status, err_msg=str(e))
                 raise e
 
@@ -137,7 +138,7 @@ class SysConfigHandler(AdminBaseHandler):
                 objects.sysconfig.sys_config_set(ctxt, 'gateway_cidr',
                                                  gateway_cidr)
                 self._update_gateway_ip(ctxt, gateway_cidr)
-                self.finish_action(begin_action, None, 'sysconfig',
+                self.finish_action(begin_action, None, sys_config,
                                    gateway_cidr)
 
     def image_namespace_get(self, ctxt):

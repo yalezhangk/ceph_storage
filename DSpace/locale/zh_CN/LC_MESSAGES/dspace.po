@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-10 02:50-0500\n"
+"POT-Creation-Date: 2020-02-12 12:04+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1107,6 +1107,9 @@ msgstr "节点{}: 服务{}已停止"
 
 msgid "Node {}：service {} status is down, trying to restart"
 msgstr "节点{}: 服务{}已停止，尝试进行重启"
+
+msgid "sys_config"
+msgstr "系统配置"
 
 msgid "Object gateway role has been set, please remove all object gateway role"
 msgstr "对象存储网关角色已设置，请先移除所有的网关角色"

@@ -580,7 +580,11 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_pause(self, ctxt, enable=True):
         self.check_mon_host(ctxt)
-        begin_action = self.begin_action(ctxt, Resource.CLUSTER, Action.PAUSE)
+        if enable:
+            action = Action.Cluster_PAUSE
+        else:
+            action = Action.Cluster_UNPAUSE
+        begin_action = self.begin_action(ctxt, Resource.CLUSTER, action)
         try:
             cluster = objects.Cluster.get_by_id(ctxt, ctxt.cluster_id)
             ceph_client = CephTask(ctxt)
