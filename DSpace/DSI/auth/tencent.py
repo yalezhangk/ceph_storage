@@ -19,9 +19,12 @@ from DSpace.exception import NotFound
 logger = logging.getLogger(__name__)
 CONF = cfg.CONF
 auth_opts = [
-    cfg.StrOpt('sso_endpoint',
+    cfg.StrOpt('sso_login_base',
                default=None,
-               help="SSO endpoint"),
+               help="SSO login base endpoint"),
+    cfg.StrOpt('sso_verificate',
+               default=None,
+               help="SSO verificate endpoint"),
 ]
 CONF.register_opts(auth_opts)
 
@@ -32,11 +35,15 @@ class SSOEndopointNotProvided(NotFound):
 
 @AuthRegistry.register
 class TencentTicket(AuthBackend):
-    sso_endpoint = None
+    sso_login = None
+    sso_verificate = None
 
     def __init__(self, *args, **kwargs):
-        self.sso_endpoint = CONF.sso_endpoint
-        if not self.sso_endpoint:
+        self.sso_login = CONF.sso_login_base
+        if not self.sso_login:
+            raise SSOEndopointNotProvided
+        self.sso_verificate = CONF.sso_verificate
+        if not self.sso_verificate:
             raise SSOEndopointNotProvided
 
     @classmethod
@@ -46,19 +53,19 @@ class TencentTicket(AuthBackend):
 
     @property
     def sso_login_url(self):
-        return self.sso_endpoint + "/login"
+        return self.sso_login + "/login"
 
     @property
     def sso_logout_url(self):
-        return self.sso_endpoint + "/logout"
+        return self.sso_login + "/logout"
 
     @property
     def st_url(self):
-        return self.sso_endpoint + "/api/v1.0/auth/serviceValidate"
+        return self.sso_verificate + "/api/v1.0/auth/serviceValidate"
 
     @property
     def tgt_url(self):
-        return self.sso_endpoint + "/api/v1.0/auth/validate"
+        return self.sso_verificate + "/api/v1.0/auth/validate"
 
     def tgt_validate(self, tgt):
         """For all request"""
