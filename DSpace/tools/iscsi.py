@@ -410,6 +410,7 @@ def set_acl_mutual_chap(iqn_target, iqn_initiator, mutual_username,
         raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
     acl.chap_mutual_userid = mutual_username
     acl.chap_mutual_password = mutual_password
+    save_config()
 
 
 def chap_enable(iqn, username, password):

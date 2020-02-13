@@ -174,22 +174,23 @@ class VolumeAccessPathHandler(AdminBaseHandler):
 
         volume_mappings = objects.VolumeMappingList.get_all(
             ctxt, filters={"volume_access_path_id": access_path.id})
-        if not volume_mappings:
-            logger.error("access_path %s has no mapping, "
-                         "ignore set chap", access_path.name)
-            raise exception.AccessPathNoMapping(access_path=access_path.name)
-        gateway_node_ids = [i.node_id for i in volume_gateways]
-        for node_id in gateway_node_ids:
-            try:
-                node = objects.Node.get_by_id(ctxt, node_id)
-                task = NodeTask(ctxt, node)
-                task.bgw_set_chap(ctxt, access_path, chap_enable,
-                                  username, password)
-            except exception.StorException as e:
-                logger.error("volume_access_path %s set chap error %s".format(
-                    access_path.name, e))
-                raise e
-        logger.info("volume_access_path_set_chap success, %s", access_path)
+
+        if volume_mappings:
+            gateway_node_ids = [i.node_id for i in volume_gateways]
+            for node_id in gateway_node_ids:
+                try:
+                    node = objects.Node.get_by_id(ctxt, node_id)
+                    task = NodeTask(ctxt, node)
+                    task.bgw_set_chap(ctxt, access_path, chap_enable,
+                                      username, password)
+                except exception.StorException as e:
+                    logger.error("volume_access_path %s set "
+                                 "chap error %s".format(access_path.name, e))
+                    raise e
+            logger.info("volume_access_path_set_chap success, %s", access_path)
+        else:
+            logger.info("access_path %s has no mapping, "
+                        "ignore set chap to iscsi target", access_path.name)
         access_path.chap_enable = chap_enable
         access_path.chap_username = username
         access_path.chap_password = password

@@ -340,6 +340,10 @@ class VolumeClientGroupEnableChapError(Invalid):
                 "%(volume_client_group)s")
 
 
+class VolumeClientGroupDeleteError(StorException):
+    message = _("can't delete client group: %(reason)s")
+
+
 class LicenseNotFound(NotFound):
     message = _("License %(license_id)s could not be found.")
 

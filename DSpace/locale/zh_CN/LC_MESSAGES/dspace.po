@@ -200,6 +200,9 @@ msgstr ""
 "访问路径 %(access_path)s 未开启chap认证，无法开启客户端组 "
 "%(volume_client_group)s 的双向chap认证"
 
+msgid "can't delete client group: %(reason)s"
+msgstr "无法删除客户端组：%(reason)s"
+
 msgid "License %(license_id)s could not be found."
 msgstr "证书 %(license_id)s 未找到"
 
@@ -302,7 +305,7 @@ msgid "access path %(access_path)s no volume gateway."
 msgstr "访问路径 %(access_path)s 没有块存储网关"
 
 msgid "access path %(access_path)s no such mapping."
-msgstr "访问路径 %(access_path)s 没有此映射"
+msgstr "访问路径 %(access_path)s 不存在任何映射"
 
 msgid "can't unmount bgw: %(reason)s"
 msgstr "无法解除挂载块存储网关: %(reason)s"
@@ -1194,6 +1197,9 @@ msgstr "块存储卷克隆成功：%s"
 
 msgid "volume clone error: %s"
 msgstr "块存储卷克隆失败：%s"
+
+msgid "client group has attached mappings"
+msgstr "该客户端组已经存在映射"
 
 msgid "snap name {} already exists!"
 msgstr "卷快照：{} 已存在"
