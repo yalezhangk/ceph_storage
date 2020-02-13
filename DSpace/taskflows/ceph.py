@@ -11,6 +11,7 @@ import six
 
 from DSpace import exception as exc
 from DSpace import objects
+from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import FaultDomain
 from DSpace.tools.base import Executor
 from DSpace.tools.ceph import RADOSClient
@@ -69,6 +70,17 @@ class CephTask(object):
             res["keyring"] = self.key_file
         logger.info("ceph task, rados args: %s", res)
         return res
+
+    def _enable_cephx(self):
+        enable_cephx = objects.sysconfig.sys_config_get(
+            self.ctxt, key=ConfigKey.ENABLE_CEPHX)
+        return enable_cephx
+
+    def enable_key_file_param(self):
+        if self._enable_cephx():
+            return ['-k', self.key_file]
+        else:
+            return []
 
     def _generate_admin_keyring(self):
         admin_keyring = self.ceph_admin_keyring()
@@ -655,9 +667,11 @@ class CephTask(object):
         try:
             self.rbd_remove(pool_name, rbd_name)
         except exc.CephException:
+            logger.info('will by rbd command to rm volume:%s', rbd_name)
             shell_client = Executor()
             rbd_param = '{}/{}'.format(pool_name, rbd_name)
             cmd = ['rbd', 'rm', rbd_param, '-c', self.conf_file]
+            cmd.extend(self.enable_key_file_param())
             rc, out, err = shell_client.run_command(cmd, timeout=5)
             if rc:
                 raise exc.CephException(message=out)
@@ -680,9 +694,11 @@ class CephTask(object):
         try:
             self.rbd_snap_remove(pool_name, rbd_name, snap_name)
         except exc.CephException:
+            logger.info('will by rbd command to rm snapshot:%s', snap_name)
             shell_client = Executor()
             snap_param = '{}/{}@{}'.format(pool_name, rbd_name, snap_name)
             cmd = ['rbd', 'snap', 'rm', snap_param, '-c', self.conf_file]
+            cmd.extend(self.enable_key_file_param())
             rc, out, err = shell_client.run_command(cmd, timeout=5)
             if rc:
                 raise exc.CephException(message=out)
