@@ -3,6 +3,7 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
@@ -52,12 +53,17 @@ class VolumeClientGroupHandler(AdminBaseHandler):
 
     def volume_client_group_delete(self, ctxt, group_id):
         filters = {"volume_client_group_id": group_id}
+        expected_attrs = ['volume_access_paths', 'volumes', 'volume_clients']
         # delete volume clients of the volume client group
-        # TODO 当客户端组被映射时不能删除
+        volume_client_group = objects.VolumeClientGroup.get_by_id(
+            ctxt, group_id, expected_attrs=expected_attrs)
+        if volume_client_group.volume_access_paths:
+            logger.error("volume_client_group %s has attached mapping, "
+                         "can't delete", volume_client_group.name)
+            raise exception.VolumeClientGroupDeleteError(
+                reason=_("client group has attached mappings"))
         for vc in objects.VolumeClientList.get_all(ctxt, filters=filters):
             vc.destroy()
-        volume_client_group = objects.VolumeClientGroup.get_by_id(
-            ctxt, group_id)
         volume_client_group.destroy()
         return volume_client_group
 
