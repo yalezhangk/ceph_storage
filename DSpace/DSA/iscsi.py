@@ -112,12 +112,12 @@ class IscsiHandler(AgentBaseHandler):
                                 volume_clients, new_volume_clients):
         iqn_target = access_path.iqn
         for volume_client in volume_clients:
-            iqn_initiator = volume_client.iqn
+            iqn_initiator = volume_client['iqn']
             iscsi.delete_acl(iqn_target, iqn_initiator)
             logger.debug("iscsi target %s, delete acl %s",
                          iqn_target, iqn_initiator)
         for volume_client in new_volume_clients:
-            iqn_initiator = volume_client.iqn
+            iqn_initiator = volume_client['iqn']
             iscsi.create_acl(iqn_target, iqn_initiator)
             logger.debug("iscsi target %s, create acl %s",
                          iqn_target, iqn_initiator)

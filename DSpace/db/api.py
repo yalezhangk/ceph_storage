@@ -53,6 +53,10 @@ def sys_config_get_by_key(context, key, cluster_id):
     return IMPL.sys_config_get_by_key(context, key, cluster_id)
 
 
+def volume_client_get_by_iqn(context, iqn):
+    return IMPL.volume_client_get_by_iqn(context, iqn)
+
+
 def sys_config_get_all(context, filters, marker, limit,
                        offset, sort_keys, sort_dirs):
     return IMPL.sys_config_get_all(

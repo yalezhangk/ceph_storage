@@ -470,8 +470,6 @@ class VolumeClientGroupHandler(ClusterAPIHandler, CheckVolumeClientGroup):
 
         if "clients" in client_group:
             volume_clients = client_group.pop("clients")
-            for volume_client in volume_clients:
-                yield self.check_volume_client(ctxt, client, volume_client)
             volume_client_group = yield client.volume_client_group_update(
                 ctxt, group_id, volume_clients)
         self.write(objects.json_encode({
