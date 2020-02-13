@@ -11,6 +11,7 @@ from DSpace import exception as exc
 from DSpace import objects
 from DSpace import taskflows
 from DSpace.common.config import CONF
+from DSpace.context import RequestContext
 from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.i18n import _
@@ -146,6 +147,11 @@ class AdminBaseMixin(object):
 
     def _wapper(self, fun, *args, **kwargs):
         try:
+            # update ctxt
+            if len(args) > 0 and isinstance(args[0], RequestContext):
+                ctxt = args[0]
+                ctxt.update_store()
+            # run fun
             fun(*args, **kwargs)
         except Exception as e:
             logger.exception("Unexpected exception: %s", e)
