@@ -325,7 +325,9 @@ class ServiceManager(AdminBaseMixin):
         if not self._services.get(role):
             self._services[role] = {}
         self._services[role][service_helper.id] = service_helper
-        logger.debug("Add service: %s", self._services)
+        logger.debug("Add to service list, role: %s, name: %s, service id: "
+                     "%s, status: %s", role, service_helper.service_name,
+                     service_helper.id, service_helper.status)
 
     def remove(self, role, service_id):
         self._services[role].pop(service_id)
