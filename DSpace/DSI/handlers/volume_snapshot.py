@@ -56,7 +56,9 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
         expected_attrs = ['volume', 'pool', 'child_volumes']
-
+        joined_load = self.get_query_argument('joined_load', default=None)
+        if joined_load == '0':
+            expected_attrs = []
         exact_filters = ['status', 'volume_id']
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
