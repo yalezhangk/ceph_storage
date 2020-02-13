@@ -2362,6 +2362,15 @@ def volume_client_groups_update(context, values_list):
         return volume_client_groups_ref
 
 
+def volume_client_get_by_iqn(context, iqn):
+    session = get_session()
+    with session.begin():
+        result = _volume_client_get_query(context, session)
+        result = result.filter_by(iqn=iqn).first()
+
+        if not result:
+            return None
+        return result
 ###############################
 
 

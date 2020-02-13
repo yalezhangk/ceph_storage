@@ -86,21 +86,23 @@ class VolumeClientGroupHandler(AdminBaseHandler):
         return volume_client_group
 
     def _client_group_update_direct(self, ctxt, client_group_id,
-                                    old_volume_client_ids,
-                                    new_volume_clients):
-        for old_volume_client_id in old_volume_client_ids:
-            old_volume_client = objects.VolumeClient.get_by_id(
-                ctxt, old_volume_client_id)
-            logger.info("delete old volume client: %s", old_volume_client.iqn)
+                                    update_add_clients,
+                                    update_del_clients):
+
+        for vol_client in update_del_clients:
+            old_volume_client = objects.VolumeClient.get_by_iqn(
+                ctxt, vol_client['iqn'])
+            logger.info("will delete volume client: %s", old_volume_client.iqn)
             old_volume_client.destroy()
-        for vol_client in new_volume_clients:
+
+        for vol_client in update_add_clients:
             v = objects.VolumeClient(
                 ctxt,
                 iqn=vol_client.get('iqn'),
                 client_type=vol_client.get('type'),
                 volume_client_group_id=client_group_id,
                 cluster_id=ctxt.cluster_id)
-            logger.info("create new volume client: %s", v)
+            logger.info("will create new volume client: %s", v.iqn)
             v.create()
 
     def _client_group_update_mapping(self, ctxt, access_path, nodes,
@@ -123,10 +125,23 @@ class VolumeClientGroupHandler(AdminBaseHandler):
             ctxt, id, expected_attrs=["volume_access_paths",
                                       "volume_clients"])
         old_volume_clients = volume_client_group.volume_clients
-        old_volume_client_ids = [i.id for i in old_volume_clients]
+        old_clients = []
+        for i in old_volume_clients:
+            old_clients.append({"type": i.client_type, "iqn": i.iqn})
+        update_add_clients = []
+        update_del_clients = []
+        if len(new_volume_clients) > len(old_clients):
+            update_add_clients = [i for i in new_volume_clients
+                                  if i not in old_clients]
+        else:
+            update_del_clients = [i for i in old_clients
+                                  if i not in new_volume_clients]
+        logger.info("will add clients: %s", update_add_clients)
+        logger.info("will delete clients: %s", update_del_clients)
+
         volume_access_paths = volume_client_group.volume_access_paths
         self._client_group_update_direct(
-            ctxt, id, old_volume_client_ids, new_volume_clients)
+            ctxt, id, update_add_clients, update_del_clients)
         if not volume_access_paths:
             logger.info("no access_path mapping to this client group, "
                         "just update clients for volume_client_group %s",
@@ -151,8 +166,8 @@ class VolumeClientGroupHandler(AdminBaseHandler):
                                                       "nodes"])
             nodes = access_path.nodes
             self._client_group_update_mapping(
-                ctxt, access_path, nodes, volumes, old_volume_clients,
-                updated_volume_clients)
+                ctxt, access_path, nodes, volumes, update_del_clients,
+                update_add_clients)
 
     def _set_mutual_chap(self, ctxt, access_path, nodes, volume_clients,
                          mutual_chap_enable, mutual_username, mutual_password):

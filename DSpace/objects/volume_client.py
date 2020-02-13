@@ -43,6 +43,13 @@ class VolumeClient(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def get_by_iqn(cls, ctxt, iqn):
+        db_obj = db.volume_client_get_by_iqn(ctxt, iqn)
+        if not db_obj:
+            return None
+        return cls._from_db_object(ctxt, cls(ctxt), db_obj)
+
 
 @base.StorObjectRegistry.register
 class VolumeClientList(base.ObjectListBase, base.StorObject):
