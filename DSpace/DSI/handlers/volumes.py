@@ -58,7 +58,9 @@ class VolumeListHandler(ClusterAPIHandler):
         expected_attrs = ['snapshots', 'pool', 'volume_access_path',
                           'volume_client_groups', 'parent_snap',
                           'volume_clients']
-
+        joined_load = self.get_query_argument('joined_load', default=None)
+        if joined_load == '0':
+            expected_attrs = []
         exact_filters = ['status', 'pool_id']
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
