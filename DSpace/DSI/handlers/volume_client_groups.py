@@ -111,7 +111,7 @@ vcp_set_mutual_chap_schema = {
                 "properties": {
                     "mutual_username": {
                         "type": "string",
-                        "minLength": 5,
+                        "minLength": 1,
                         "maxLength": 32
                     },
                     "mutual_password": {
@@ -167,7 +167,7 @@ class CheckVolumeClientGroup():
         if not mutual_username or not mutual_password:
             raise exception.InvalidInput(_("no mutual_username or "
                                            " mutual_password input"))
-        if len(mutual_username) < 5 or len(mutual_password) < 5:
+        if len(mutual_username) < 1 or len(mutual_password) < 5:
             raise exception.InvalidInput(_("mutual_username or mutual_password"
                                            "too short"))
         elif len(mutual_username) > 32 or len(mutual_password) > 32:
