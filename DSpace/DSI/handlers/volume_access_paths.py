@@ -105,7 +105,7 @@ volume_access_path_set_chap_schema = {
                 "properties": {
                     "username": {
                         "type": "string",
-                        "minLength": 5,
+                        "minLength": 1,
                         "maxLength": 32
                     },
                     "password": {
@@ -183,7 +183,7 @@ class CheckVolumeAccessPath():
         password = data.get("password")
         if not username or not password:
             raise exception.InvalidInput(_("no username or password input"))
-        if len(username) < 5 or len(password) < 5:
+        if len(username) < 1 or len(password) < 5:
             raise exception.InvalidInput(_("username or password too short"))
         elif len(username) > 32 or len(password) > 32:
             raise exception.InvalidInput(_("username or password too long"))
