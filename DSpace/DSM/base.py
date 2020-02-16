@@ -20,6 +20,7 @@ from DSpace.objects.base import StorObject
 from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import DSMStatus
 from DSpace.taskflows.base import task_manager
+from DSpace.taskflows.ceph import CephTask
 from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
 from DSpace.utils.mail import send_mail
@@ -178,7 +179,12 @@ class AdminBaseHandler(AdminBaseMixin):
         for cluster in clusters:
             ctxt = context.get_context(cluster.id, user_id="admin")
             self._add_node_to_agent_manager(ctxt)
+            self._gen_ceph_config(ctxt)
             self._clean_taskflow(ctxt)
+
+    def _gen_ceph_config(self, ctxt):
+        ceph_client = CephTask(ctxt)
+        ceph_client.gen_config()
 
     def _setup_agent_manager(self, ctxt):
         agent_port = objects.sysconfig.sys_config_get(
