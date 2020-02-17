@@ -3,6 +3,8 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -12,6 +14,52 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+
+create_volume_schema = {
+    "type": "object",
+    "properties": {
+        "volume": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "display_description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 255
+                },
+                "pool_id": {"type": "integer"},
+                "size": {"type": "integer"},
+                "batch_create": {'type': "boolean"},
+                "number": {'type': "integer"},
+            },
+            "required": ["display_name", "pool_id", "size"],
+        },
+    },
+    "required": ["volume"],
+}
+
+update_volume_schema = {
+    "type": "object",
+    "properties": {
+        "volume": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+            },
+            "required": ["display_name"],
+        },
+    },
+    "required": ["volume"],
+}
 
 
 @URLRegistry.register(r"/volumes/")
@@ -117,6 +165,8 @@ class VolumeListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_volume_schema,
+                 format_checker=draft7_format_checker)
         data = data.get("volume")
         client = self.get_admin_client(ctxt)
         v = yield client.volume_create(ctxt, data)
@@ -194,6 +244,8 @@ class VolumeHandler(ClusterAPIHandler):
         # 编辑:改名
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_volume_schema,
+                 format_checker=draft7_format_checker)
         volume_data = data.get('volume')
         client = self.get_admin_client(ctxt)
         volume = yield client.volume_update(
