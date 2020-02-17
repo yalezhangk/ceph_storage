@@ -10,6 +10,7 @@ from tornado.web import RequestHandler
 from DSpace import context
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSI.auth import AuthRegistry
 from DSpace.DSI.session import get_session
@@ -70,7 +71,8 @@ class BaseAPIHandler(RequestHandler):
             return self.ctxt
         self.validate_auth()
         user_id = self.current_user.id
-        ctxt = RequestContext(user_id=user_id, is_admin=False)
+        ctxt = RequestContext(user_id=user_id, is_admin=False,
+                              ws_ip=CONF.my_ip)
         logger.debug("Context: %s", ctxt.to_dict())
         client_ip = (self.request.headers.get("X-Real-IP") or
                      self.request.headers.get("X-Forwarded-For") or

@@ -7,13 +7,14 @@ from DSpace.i18n import _
 
 class RequestContext(context.RequestContext):
     def __init__(self, read_deleted='no', cluster_id=None, client_ip=None,
-                 **kwargs):
+                 ws_ip=None, **kwargs):
         request_id = kwargs.pop("request_id", None)
         if not request_id:
             request_id = str(uuid.uuid4())
         self.read_deleted = read_deleted
         self.cluster_id = cluster_id
         self.client_ip = client_ip
+        self.ws_ip = ws_ip
         super(RequestContext, self).__init__(
             request_id=request_id, **kwargs)
 
@@ -24,6 +25,7 @@ class RequestContext(context.RequestContext):
             "read_deleted": self.read_deleted,
             "cluster_id": self.cluster_id,
             "client_ip": self.client_ip,
+            "ws_ip": self.ws_ip,
         })
         return res
 
@@ -34,6 +36,7 @@ class RequestContext(context.RequestContext):
                    cluster_id=values['cluster_id'],
                    client_ip=values.get('client_ip'),
                    is_admin=values['is_admin'],
+                   ws_ip=values['ws_ip'],
                    request_id=values['request_id'])
 
     def _get_read_deleted(self):

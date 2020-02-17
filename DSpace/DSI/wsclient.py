@@ -28,6 +28,17 @@ class WebSocketClient(RPCClient):
 class WebSocketClientManager(BaseClientManager):
     service_name = "websocket"
     client_cls = WebSocketClient
+    clients = {}
+
+    def get_client(self):
+        ws_ip = self.context.ws_ip
+        if ws_ip not in self.clients:
+            endpoint = "{}:{}".format(ws_ip, CONF.websocket_port)
+            logger.info("init ws endpoint: %s", endpoint)
+            client = self.client_cls(endpoint,
+                                     async_support=self.async_support)
+            self.clients[ws_ip] = client
+        return self.clients[ws_ip]
 
 
 if __name__ == '__main__':
