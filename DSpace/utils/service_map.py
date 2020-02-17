@@ -3,7 +3,8 @@ class ServiceMap(object):
     def __init__(self, namspace):
         self.container_namespace = namspace
 
-        self.container_roles = ["base", "role_admin", "role_radosgw_router"]
+        self.container_roles = ["base", "role_admin", "role_radosgw_router",
+                                "role_block_gateway"]
 
         self.debug_services = [
             self.container_namespace + "_dsm",
@@ -36,7 +37,7 @@ class ServiceMap(object):
         }
 
         self.role_block_gateway = {
-            "TCMU": "tcmu",
+            "TCMU": self.container_namespace + "_tcmu_runner",
         }
 
         self.map = {}

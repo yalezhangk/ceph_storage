@@ -47,6 +47,7 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
             name="{}_tcmu_runner".format(image_namespace),
             volumes=volumes
         )
+        self.service_create(ctxt, "TCMU", node.id, "role_block_gateway")
 
 
 class DSpaceTcmuUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
@@ -60,6 +61,7 @@ class DSpaceTcmuUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
         container_name = '{}_{}'.format(image_namespace, "tcmu_runner")
         docker_tool.rm(container_name, force=True)
         file_tool.rm("/etc/dbus-1/system.d/tcmu-runner.conf")
+        self.service_delete(ctxt, "TCMU", node.id)
 
 
 class DSpaceTcmuRemove(BaseTask, ContainerUninstallMixin, ServiceMixin):
