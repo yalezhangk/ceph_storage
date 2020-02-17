@@ -3,6 +3,8 @@
 
 import logging
 
+from jsonschema import draft7_format_checker
+from jsonschema import validate
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -12,6 +14,75 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 
 logger = logging.getLogger(__name__)
+
+
+create_snap_schema = {
+    "type": "object",
+    "properties": {
+        "volume_snapshot": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "display_description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 255
+                },
+                "volume_id": {"type": "integer"},
+            },
+            "required": ["display_name", "volume_id"],
+        },
+    },
+    "required": ["volume_snapshot"],
+}
+
+update_snap_schema = {
+    "type": "object",
+    "properties": {
+        "volume_snapshot": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 32
+                },
+                "display_description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 255
+                },
+            },
+            "required": ["display_name"],
+        },
+    },
+    "required": ["volume_snapshot"],
+}
+
+clone_schema = {
+    "type": "object",
+    "properties": {
+        "display_name": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 32
+        },
+        "display_description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 255
+        },
+        "pool_id": {"type": "integer"},
+        "is_link_clone": {"type": "boolean"},
+        "batch_create": {"type": "boolean"},
+        "number": {"type": "integer"}
+    },
+    "required": ["display_name", "pool_id", "is_link_clone"],
+}
 
 
 @URLRegistry.register(r"/volume_snapshots/")
@@ -116,6 +187,8 @@ class VolumeSnapshotListHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=create_snap_schema,
+                 format_checker=draft7_format_checker)
         data = data.get("volume_snapshot")
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_create(ctxt, data)
@@ -210,6 +283,8 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
         # 编辑:改名及描述
         ctxt = self.get_context()
         data = json_decode(self.request.body)
+        validate(data, schema=update_snap_schema,
+                 format_checker=draft7_format_checker)
         volume_data = data.get('volume_snapshot')
         client = self.get_admin_client(ctxt)
         volume_snapshot = yield client.volume_snapshot_update(
@@ -260,6 +335,8 @@ class VolumeSnapshotHandler(ClusterAPIHandler):
 class VolumeSnapshotActionHandler(ClusterAPIHandler):
 
     def _clone(self, client, ctxt, volume_snapshot_id, snapshot_data):
+        validate(snapshot_data, schema=clone_schema,
+                 format_checker=draft7_format_checker)
         return client.volume_create_from_snapshot(ctxt, volume_snapshot_id,
                                                   snapshot_data)
 
