@@ -1,5 +1,3 @@
-import socket
-
 from oslo_cache import core as cache
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -51,12 +49,6 @@ global_opts = [
     cfg.IntOpt('node_id',
                default=None,
                help='Node ID'),
-    cfg.HostAddressOpt('hostname',
-                       sample_default='localhost',
-                       default=socket.gethostname(),
-                       help='Name of this node.  This can be an opaque '
-                            'identifier. It is not necessarily a host name, '
-                            'FQDN, or IP address.'),
     cfg.StrOpt('cookie_secret',
                default="_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
                help="Cookie secret"),
