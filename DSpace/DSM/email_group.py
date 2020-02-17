@@ -80,9 +80,7 @@ class EmailGroupHandler(AdminBaseHandler):
         logger.debug('email_group:%s begin update', email_group_id)
         email_group = self.email_group_get(ctxt, email_group_id)
         name = data.get('name')
-        if email_group.name == name:
-            pass
-        else:
+        if email_group.name != name:
             self._check_email_group_name(ctxt, name)
         emails = data.get('emails')
         self._check_email_repeat(emails)
