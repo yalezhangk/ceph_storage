@@ -273,7 +273,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
 
     def cluster_update_display_name(self, ctxt, id, name):
         cluster = objects.Cluster.get_by_id(ctxt, id)
-        self._check_cluster_display_name(ctxt, name)
+        if cluster.display_name != name:
+            self._check_cluster_display_name(ctxt, name)
         begin_action = self.begin_action(
                 ctxt, resource_type=Resource.CLUSTER,
                 action=Action.UPDATE, before_obj=cluster)
