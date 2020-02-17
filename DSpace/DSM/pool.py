@@ -437,7 +437,8 @@ class PoolHandler(AdminBaseHandler):
 
     def pool_update_display_name(self, ctxt, id, name):
         pool = objects.Pool.get_by_id(ctxt, id)
-        self._check_pool_display_name(ctxt, name)
+        if pool.display_name != name:
+            self._check_pool_display_name(ctxt, name)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.UPDATE, before_obj=pool)
