@@ -247,9 +247,14 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         if ConfigKey.CEPH_VERSION_NAME not in data:
             data[ConfigKey.CEPH_VERSION_NAME] = CephVersion.T2STOR
         for key, value in six.iteritems(data):
-            sysconf = objects.SysConfig(
-                ctxt, key=key, value=value,
-                value_type=s_fields.ConfigType.STRING)
+            if key == "enable_cephx":
+                sysconf = objects.SysConfig(
+                    ctxt, key=key, value=value,
+                    value_type=s_fields.ConfigType.BOOL)
+            else:
+                sysconf = objects.SysConfig(
+                    ctxt, key=key, value=value,
+                    value_type=s_fields.ConfigType.STRING)
             sysconf.create()
         cluster_id = cluster.id
         self.init_alert_rule(ctxt, cluster_id)
