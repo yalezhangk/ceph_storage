@@ -79,11 +79,19 @@ class VolumeClientGroupHandler(AdminBaseHandler):
         name = client_group.get("name")
         volume_client_group = objects.VolumeClientGroup.get_by_id(ctxt, id)
         if volume_client_group.name != name:
+            self._check_volume_client_group_name(ctxt, name)
             logger.info("update client group from %s to %s",
                         volume_client_group.name, name)
             volume_client_group.name = name
             volume_client_group.save()
         return volume_client_group
+
+    def _check_volume_client_group_name(self, ctxt, name):
+        filters = {"name": name}
+        client_group = objects.VolumeClientGroup.get_all(ctxt, filters=filters)
+        if client_group:
+            logger.error("client_group duplicate: %s", name)
+            raise exception.VolumeClientExists(VolumeClient=name)
 
     def _client_group_update_direct(self, ctxt, client_group_id,
                                     update_add_clients,
