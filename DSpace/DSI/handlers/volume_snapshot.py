@@ -12,6 +12,8 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
+from DSpace.exception import InvalidInput
+from DSpace.i18n import _
 
 logger = logging.getLogger(__name__)
 
@@ -407,6 +409,9 @@ class VolumeSnapshotActionHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         volume_snapshot_data = data.get('volume_snapshot')
+        display_name = data.get('display_name')
+        if not display_name:
+            raise InvalidInput(_("Volume name cannot be empty"))
         action = data.get('action')
         client = self.get_admin_client(ctxt)
         map_action = {

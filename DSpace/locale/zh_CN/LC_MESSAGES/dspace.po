@@ -1415,3 +1415,6 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
+msgid "Volume name cannot be empty"
+msgstr "名称不能为空"
