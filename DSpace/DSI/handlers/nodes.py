@@ -29,7 +29,7 @@ create_node_schema = {
         "node": {
             "type": "object",
             "properties": {
-                "hostname": {"type": "string", "format": "hostname"},
+                "hostname": {"type": "string"},
                 "ip_address": {"type": "string", "format": "ipv4"},
                 "password": {"type": ["string", "null"]},
                 "gateway_ip": {"type": "string", "format": "ipv4"},
