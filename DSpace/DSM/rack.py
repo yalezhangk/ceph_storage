@@ -58,7 +58,8 @@ class RackHandler(AdminBaseHandler):
 
     def rack_update_name(self, ctxt, id, name):
         rack = objects.Rack.get_by_id(ctxt, id)
-        self._check_rack_by_name(ctxt, name)
+        if rack.name != name:
+            self._check_rack_by_name(ctxt, name)
         begin_action = self.begin_action(ctxt, Resource.RACK,
                                          Action.UPDATE, rack)
         rack.name = name
