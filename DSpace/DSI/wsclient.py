@@ -32,6 +32,9 @@ class WebSocketClientManager(BaseClientManager):
 
     def get_client(self):
         ws_ip = self.context.ws_ip
+        # TODO fix ws_ip is None
+        if not ws_ip:
+            return
         if ws_ip not in self.clients:
             endpoint = "{}:{}".format(ws_ip, CONF.websocket_port)
             logger.info("init ws endpoint: %s", endpoint)
