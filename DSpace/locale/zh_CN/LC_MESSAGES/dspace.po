@@ -541,38 +541,38 @@ msgid "alert center"
 msgstr "告警中心"
 
 msgid "Cluster capacity usage is above {}, (current value is: {})"
-msgstr "集群容量使用率超过了{}, 当前值是{}"
+msgstr "集群容量使用率 > {}, 当前值是{}"
 
 msgid "hostname:{} CPU usage is above {} (current value is: {})"
-msgstr "节点{}：CPU使用率超过了{}，当前值是{}"
+msgstr "{}: CPU使用率 > {}，当前值是{}"
 
 msgid "hostname:{} Memory usage is above {} (current value is: {})"
-msgstr "节点{}：内存使用率超过了{}，当前值是{}"
+msgstr "{}: 内存使用率 > {}，当前值是{}"
 
 msgid "hostname:{} Sys disk usage is above {} (current value is: {})"
-msgstr "节点{}：系统盘使用率超过了{}，当前值是{}"
+msgstr "{}: 系统盘使用率 > {}，当前值是{}"
 
 msgid ""
 "hostname: {}, drive_letter: {} Disk usage is above {} (current value is {})"
-msgstr "节点{}：物理盘({})使用率超过了{}，当前值是{}"
+msgstr "{}: 物理盘({})使用率 > {}，当前值是{}"
 
 msgid "pool_name: {}, Pool capacity usage is above {} (current value is: {})"
-msgstr "存储池{}：容量使用率超过了{}，当前值是{}"
+msgstr "存储池{}: 容量使用率使用 > {}，当前值是{}"
 
 msgid ""
 "hostname: {}, osd_name: {}, Osd capacity usage is above {} (current value "
 "is: {})"
-msgstr "节点{}：硬盘({})容量使用率超过了{}，当前值是{}"
+msgstr "{}: 硬盘({})容量使用率 > {}，当前值是{}"
 
 msgid ""
 "hostname: {}, network_name: {}, transmit bandwidth usage is above {} "
 "(current value is: {})"
-msgstr "节点{}：网卡({})发送带宽使用率超过了{}，当前值是{}"
+msgstr "{}: 网卡({})发送带宽使用率 > {}，当前值是{}"
 
 msgid ""
 "hostname: {}, network_name: {}, receive bandwidth usage is above {} (current "
 "value is: {})"
-msgstr "节点{}：网卡({})接收带宽使用率超过了{}，当前值是{}"
+msgstr "{}: 网卡({})接收带宽使用率 > {}，当前值是{}"
 
 msgid "alert_rule upda param not exist"
 msgstr "告警规则要更新的字段参数不存在"
@@ -701,13 +701,13 @@ msgid "current disk:{} partition has used, can not del"
 msgstr "当前磁盘 {} 分区使用中，无法删除"
 
 msgid "node %s: disk %s offline"
-msgstr "服务器%s: 物理盘 %s 下线"
+msgstr "%s: 物理盘 %s 下线"
 
 msgid "disk %s plug partition different"
 msgstr "新插入物理盘 %s 与原物理盘分区不匹配"
 
 msgid "node %s: disk %s online"
-msgstr "服务器%s: 物理盘 %s 上线"
+msgstr "%s: 物理盘 %s 上线"
 
 msgid "email_group name already exists!"
 msgstr "通知列表名称已存在"
@@ -1112,16 +1112,16 @@ msgid "There must be at least one rgw in router"
 msgstr "对象路由中至少需要存在一个对象网关"
 
 msgid "Node {}: service {} status is active"
-msgstr "节点{}: 服务{}已恢复健康"
+msgstr "{}: 服务{}已恢复健康"
 
 msgid "Node {}: service {} status is ERROR"
-msgstr "节点{}: 服务{}状态错误"
+msgstr "{}: 服务{}状态错误"
 
 msgid "Node {}: service {} status is inactive"
-msgstr "节点{}: 服务{}已停止"
+msgstr "{}: 服务{}已停止"
 
 msgid "Node {}：service {} status is down, trying to restart"
-msgstr "节点{}: 服务{}已停止，尝试进行重启"
+msgstr "{}: 服务{}已停止，尝试进行重启"
 
 msgid "sys_config"
 msgstr "系统配置"

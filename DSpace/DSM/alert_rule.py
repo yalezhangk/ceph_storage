@@ -110,7 +110,7 @@ class AlertLogHelper(object):
 
     @property
     def trigger_value(self):
-        return '{:.2%}'.format(float(self.rule.trigger_value))
+        return '{:.0%}'.format(float(self.rule.trigger_value))
 
     @property
     def level(self):
