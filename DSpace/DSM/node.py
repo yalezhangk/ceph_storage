@@ -11,7 +11,6 @@ from oslo_log import log as logging
 
 from DSpace import exception as exc
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -255,9 +254,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
 
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
 
     def node_update_rack(self, ctxt, node_id, rack_id):
         node = objects.Node.get_by_id(ctxt, node_id, expected_attrs=['osds'])
@@ -617,8 +614,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         # send ws message
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _remove_mon_services(self, ctxt, node):
@@ -657,8 +653,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         # send ws message
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _storage_install(self, ctxt, node):
@@ -685,8 +680,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         # send ws message
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _storage_uninstall(self, ctxt, node):
@@ -712,8 +706,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         # send ws message
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _mds_install(self, ctxt, node):
@@ -746,8 +739,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         # send ws message
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _rgw_uninstall(self, ctxt, node):
@@ -773,8 +765,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         # send ws message
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _bgw_install(self, ctxt, node):
@@ -796,10 +787,9 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             op_status = "SET_ROLE_BGW_ERROR"
             status = 'fail'
             err_msg = str(e)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _bgw_uninstall(self, ctxt, node):
@@ -821,10 +811,9 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             op_status = "UNSET_ROLE_BGW_ERROR"
             status = 'fail'
             err_msg = str(e)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
         self.finish_action(begin_action, node.id, node.hostname,
                            node, status, err_msg=err_msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return status
 
     def _notify_dsa_update(self, ctxt, node):
@@ -874,8 +863,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             logger.error("Update dsa node info failed: %s", e)
 
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
+        self.send_websocket(ctxt, node, op_status, msg)
 
     def node_roles_set(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
@@ -962,10 +950,9 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             logger.error("Update dsa node info failed: %s", e)
 
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, node, op_status, msg)
         self.finish_action(begin_action, node.id, node.hostname,
                            node, node.status, err_msg=err_msg)
+        self.send_websocket(ctxt, node, op_status, msg)
         return node
 
     @synchronized('node-create', blocking=True)

@@ -11,6 +11,7 @@ from tornado.escape import json_decode
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.DSI.wsclient import WebSocketClientManager
@@ -267,7 +268,7 @@ class OsdListHandler(ClusterAPIHandler):
                     self.api_log_exception("create osd", e)
                     err_ms = str(e)
                     wb_client = WebSocketClientManager(
-                        context=ctxt).get_client()
+                        context=ctxt).get_client(CONF.my_ip)
                     wb_client.send_message(
                         ctxt, data, "CREATE_ERROR", err_ms,
                         resource_type='Osd')
@@ -275,7 +276,7 @@ class OsdListHandler(ClusterAPIHandler):
                     self.api_log_exception("create osd", e)
                     err_ms = str(e)
                     wb_client = WebSocketClientManager(
-                        context=ctxt).get_client()
+                        context=ctxt).get_client(CONF.my_ip)
                     wb_client.send_message(
                         ctxt, data, "CREATE_ERROR", err_ms,
                         resource_type='Osd')

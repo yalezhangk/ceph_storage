@@ -2,7 +2,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects.fields import AllActionType as Action
@@ -187,9 +186,8 @@ class CephConfigHandler(AdminBaseHandler):
             op_status = "SET_CONFIG_ERROR"
             status = 'fail'
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, cephconf, op_status, msg,
-                               resource_type="CephConfig")
+        self.send_websocket(ctxt, cephconf, op_status, msg,
+                            resource_type="CephConfig")
         self.finish_action(begin_action, None, Resource.CEPH_CONFIG,
                            after_obj=cephconf, status=status)
 

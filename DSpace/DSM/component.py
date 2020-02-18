@@ -2,7 +2,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -205,8 +204,7 @@ class ComponentHandler(AdminBaseHandler):
         self.finish_action(
             begin_action, radosgw.id, radosgw.display_name, radosgw,
             status=status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, radosgw, op_status, msg)
+        self.send_websocket(ctxt, radosgw, op_status, msg)
 
     def _rgw_start(self, ctxt, radosgw_id):
         radosgw = objects.Radosgw.get_by_id(ctxt, radosgw_id)
@@ -262,8 +260,7 @@ class ComponentHandler(AdminBaseHandler):
         self.finish_action(
             begin_action, radosgw.id, radosgw.display_name, radosgw,
             status=status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, radosgw, op_status, msg)
+        self.send_websocket(ctxt, radosgw, op_status, msg)
 
     def _rgw_stop(self, ctxt, radosgw_id):
         radosgw = objects.Radosgw.get_by_id(ctxt, radosgw_id)

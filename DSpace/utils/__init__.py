@@ -112,3 +112,15 @@ def run_loop():
             time.sleep(_ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
         exit(0)
+
+
+def no_exception(fun):
+    @six.wraps(fun)
+    def _wrapper(*args, **kwargs):
+        try:
+            r = fun(*args, **kwargs)
+        except Exception as e:
+            logger.warning("%s call error: %s", fun, e)
+            r = None
+        return r
+    return _wrapper

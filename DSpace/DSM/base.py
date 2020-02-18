@@ -41,9 +41,9 @@ class AdminBaseMixin(object):
         self._executor = futures.ThreadPoolExecutor(
             max_workers=CONF.task_workers)
 
-    def send_websocket(self, ctxt, service, wb_op_status, alert_msg):
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, service, wb_op_status, alert_msg)
+    def send_websocket(self, ctxt, obj, op_type, msg, resource_type=None):
+        wb = WebSocketClientManager(context=ctxt)
+        wb.send_message(ctxt, obj, op_type, msg, resource_type)
 
     def send_service_alert(self, ctxt, service, alert_type, resource_name,
                            alert_level, alert_msg, wb_op_status):

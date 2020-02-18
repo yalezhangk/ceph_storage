@@ -6,7 +6,6 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace import taskflows
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -152,9 +151,8 @@ class OsdHandler(AdminBaseHandler):
         res_name = osd.osd_name if osd.osd_id else osd.disk.name
         self.finish_action(begin_action, osd.id, res_name,
                            osd, osd.status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
         self._osds_update_size(ctxt, [osd])
-        wb_client.send_message(ctxt, osd, op_status, msg)
+        self.send_websocket(ctxt, osd, op_status, msg)
 
     def _update_disk_status(self, disk):
         update_value = {
@@ -345,8 +343,7 @@ class OsdHandler(AdminBaseHandler):
 
         self.finish_action(begin_action, osd.id, res_name,
                            osd, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, osd, op_status, msg)
+        self.send_websocket(ctxt, osd, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
 
     def osd_delete(self, ctxt, osd_id):
@@ -443,8 +440,7 @@ class OsdHandler(AdminBaseHandler):
             self.finish_action(begin_action, osd.id, osd.osd_name,
                                after_obj=osd, status=action_sta,
                                err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, osd, op_status, msg)
+        self.send_websocket(ctxt, osd, op_status, msg)
         return osd
 
     def _osd_replace_prepare_check(self, ctxt, osd):
@@ -530,8 +526,7 @@ class OsdHandler(AdminBaseHandler):
         self.finish_action(begin_action, disk.id, disk.name, after_obj=disk,
                            status=acction_sta)
         # send websocket
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, op_status, msg)
+        self.send_websocket(ctxt, disk, op_status, msg)
 
     def osd_accelerate_disk_replace_prepare(self, ctxt, disk_id):
         disk = objects.Disk.get_by_id(
@@ -576,8 +571,7 @@ class OsdHandler(AdminBaseHandler):
             msg = _("osd.{} replace error").format(osd.osd_id)
             op_status = 'OSD_REPLACE_ERROR'
             err_msg = str(e)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, osd, op_status, msg)
+        self.send_websocket(ctxt, osd, op_status, msg)
         if begin_action:
             self.finish_action(
                 begin_action, osd.id, osd.osd_name, osd,
@@ -609,8 +603,6 @@ class OsdHandler(AdminBaseHandler):
         partitions = client.disk_partitions_create(
             ctxt, node=disk.node, disk=disk, values=values)
 
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-
         disk_partitions = objects.DiskPartitionList.get_all(
             ctxt, filters={'disk_id': disk.id})
 
@@ -620,7 +612,7 @@ class OsdHandler(AdminBaseHandler):
             logger.error(msg)
             self.finish_action(begin_action, disk.id, disk.name,
                                disk, status='fail', err_msg=msg)
-            wb_client.send_message(ctxt, disk, op_status, msg)
+            self.send_websocket(ctxt, disk, op_status, msg)
             return
 
         for disk_part in disk_partitions:
@@ -647,7 +639,7 @@ class OsdHandler(AdminBaseHandler):
         msg = _("accelerate disk {} replace success").format(disk.name)
         self.finish_action(begin_action, disk.id, disk.name, disk,
                            status='success')
-        wb_client.send_message(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
+        self.send_websocket(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
 
     def osd_accelerate_disk_replace(self, ctxt, disk_id):
         self.check_mon_host(ctxt)

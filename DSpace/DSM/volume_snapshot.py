@@ -4,7 +4,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -104,8 +103,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         self.finish_action(begin_action, snap.id, snap.display_name,
                            snap, status, err_msg=err_msg)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, snap, op_status, msg)
+        self.send_websocket(ctxt, snap, op_status, msg)
 
     def volume_snapshot_get(self, ctxt, volume_snapshot_id,
                             expected_attrs=None):
@@ -154,8 +152,7 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             err_msg = str(e)
         self.finish_action(begin_action, snap.id, snap.display_name,
                            snap, status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, snap, op_status, msg)
+        self.send_websocket(ctxt, snap, op_status, msg)
 
     def _check_del_snap(self, ctxt, volume_snapshot_id):
         self.check_mon_host(ctxt)

@@ -95,8 +95,8 @@ class WebSocketHelper(AlertNotifyHelper):
         logger.info('Websockethelper will handle msg:%s', re_msg)
         ctxt, msg = re_msg['ctxt'], re_msg['msg']
         resource_obj = re_msg['resource_obj']
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, resource_obj, 'ALERT', msg)
+        wb = WebSocketClientManager(context=ctxt)
+        wb.send_message(ctxt, resource_obj, 'ALERT', msg)
 
 
 class AlertLogHelper(object):
