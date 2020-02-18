@@ -1826,7 +1826,7 @@ def _volume_gateway_get(context, ap_gateway_id, session=None):
     result = result.filter_by(id=ap_gateway_id).first()
 
     if not result:
-        raise exception.VolumeGatewayNotFound(ap_gateway_id=ap_gateway_id)
+        raise exception.VolumeGatewayNotFound(gateway_id=ap_gateway_id)
 
     return result
 

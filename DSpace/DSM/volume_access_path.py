@@ -8,6 +8,7 @@ from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.node import NodeTask
+from DSpace.utils.coordination import synchronized
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             raise e
         return access_path
 
+    @synchronized("volume_gateway-{id}")
     def volume_access_path_unmount_gw(self, ctxt, id, data):
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])

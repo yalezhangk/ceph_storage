@@ -66,8 +66,7 @@ def create_target(iqn):
     """
     logger.info("trying to create target %s", iqn)
     if iqn in current_targets():
-        logger.error('iscsi-target %s already exists', iqn)
-        raise exc.IscsiTargetExists(iqn=iqn)
+        logger.warning('iscsi-target %s already exists, ignore create', iqn)
     else:
         try:
             Target(FabricModule("iscsi"), wwn=iqn)
