@@ -471,6 +471,8 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         mon_nodes = objects.NodeList.get_all(
             ctxt, filters={"role_monitor": True}
         )
+        enable_cephx = objects.sysconfig.sys_config_get(
+            ctxt, key=ConfigKey.ENABLE_CEPHX)
         mon_host = ",".join(
             [str(n.public_ip) for n in mon_nodes]
         )
@@ -488,11 +490,31 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             {"group": "global", "key": "mon_initial_members",
              "value": mon_initial_members}
         ]
+        if enable_cephx:
+            configs.extend([
+                {"group": "global", "key": "auth_cluster_required", "value":
+                 "cephx"},
+                {"group": "global", "key": "auth_service_required", "value":
+                 "cephx"},
+                {"group": "global", "key": "auth_client_required", "value":
+                 "cephx"}
+            ])
+        else:
+            configs.extend([
+                {"group": "global", "key": "auth_cluster_required", "value":
+                 "none"},
+                {"group": "global", "key": "auth_service_required", "value":
+                 "none"},
+                {"group": "global", "key": "auth_client_required", "value":
+                 "none"}
+            ])
         nodes = mon_nodes + osd_nodes
         for n in nodes:
             task = NodeTask(ctxt, n)
             for config in configs:
                 task.ceph_config_update(ctxt, config)
+            if enable_cephx:
+                task.init_admin_key()
         if not mon_nodes:
             tool = CephTask(ctxt)
             tool.clear_config()
