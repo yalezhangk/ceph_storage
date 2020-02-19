@@ -9,7 +9,6 @@ from oslo_utils import timeutils
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -181,8 +180,7 @@ class RadosgwHandler(RadosgwMixin):
             msg = _("create error: {}").format(radosgw.display_name)
             op_status = 'CREATE_ERROR'
             err_msg = str(e)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, radosgw, op_status, msg)
+        self.send_websocket(ctxt, radosgw, op_status, msg)
         self.finish_action(begin_action, radosgw.id,
                            radosgw.display_name,
                            radosgw, radosgw.status, err_msg=err_msg)
@@ -253,8 +251,7 @@ class RadosgwHandler(RadosgwMixin):
             op_status = "DELETE_ERROR"
         logger.info("radosgw_delete, got radosgw: %s, radosgw name: %s",
                     radosgw, radosgw.name)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, radosgw, op_status, msg)
+        self.send_websocket(ctxt, radosgw, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, radosgw.id, radosgw.display_name,
                            radosgw, status, err_msg=err_msg)

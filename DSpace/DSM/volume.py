@@ -4,7 +4,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -132,8 +131,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            volume, status, err_msg=err_msg)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, op_status, msg)
+        self.send_websocket(ctxt, volume, op_status, msg)
 
     def volume_update(self, ctxt, volume_id, data):
         logger.debug('volume begin update display_name')
@@ -208,8 +206,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            volume, status, err_msg=err_msg)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, op_status, msg)
+        self.send_websocket(ctxt, volume, op_status, msg)
 
     def volume_extend(self, ctxt, volume_id, data):
         # 扩容
@@ -268,8 +265,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            volume, status, err_msg=err_msg)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, op_status, msg)
+        self.send_websocket(ctxt, volume, op_status, msg)
 
     def volume_shrink(self, ctxt, volume_id, data):
         # 缩容
@@ -353,8 +349,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            volume, status, err_msg=err_msg)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, op_status, msg)
+        self.send_websocket(ctxt, volume, op_status, msg)
 
     def volume_unlink(self, ctxt, volume_id):
         volume = objects.Volume.get_by_id(ctxt, volume_id, joined_load=True)
@@ -404,8 +399,7 @@ class VolumeHandler(AdminBaseHandler):
         self.finish_action(begin_action, volume.id, volume.display_name,
                            volume, status, err_msg=err_msg)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, volume, op_status, msg)
+        self.send_websocket(ctxt, volume, op_status, msg)
 
     def _volume_create_from_snapshot(self, ctxt, verify_data, begin_action):
         p_pool_name = verify_data['p_pool_name']
@@ -440,8 +434,7 @@ class VolumeHandler(AdminBaseHandler):
                            new_volume.display_name,
                            new_volume, status, err_msg=err_msg)
         # send msg
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, new_volume, op_status, msg)
+        self.send_websocket(ctxt, new_volume, op_status, msg)
 
     def _verify_clone_data(self, ctxt, snapshot_id, data):
         self.check_mon_host(ctxt)

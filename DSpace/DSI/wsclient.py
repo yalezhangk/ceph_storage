@@ -10,6 +10,7 @@ from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.service import BaseClientManager
 from DSpace.service import RPCClient
+from DSpace.utils import no_exception
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +30,16 @@ class WebSocketClientManager(BaseClientManager):
     service_name = "websocket"
     client_cls = WebSocketClient
     clients = {}
+    _ws_ips = None
 
-    def get_client(self):
-        ws_ip = self.context.ws_ip
-        # TODO fix ws_ip is None
-        if not ws_ip:
-            return
+    def ws_ips(self, ctxt):
+        if not self._ws_ips:
+            admin_nodes = objects.NodeList.get_all(
+                ctxt, filters={'role_admin': 1, 'cluster_id': '*'})
+            self._ws_ips = [str(n.ip_address) for n in admin_nodes]
+        return self._ws_ips
+
+    def get_client(self, ws_ip):
         if ws_ip not in self.clients:
             endpoint = "{}:{}".format(ws_ip, CONF.websocket_port)
             logger.info("init ws endpoint: %s", endpoint)
@@ -42,6 +47,17 @@ class WebSocketClientManager(BaseClientManager):
                                      async_support=self.async_support)
             self.clients[ws_ip] = client
         return self.clients[ws_ip]
+
+    @no_exception
+    def send_message(self, ctxt, obj, op_type, msg, resource_type=None):
+        ws_ip = ctxt.ws_ip
+        if ws_ip:
+            client = self.get_client(ws_ip)
+            client.send_message(ctxt, obj, op_type, msg, resource_type)
+            return
+        for ws_ip in self.ws_ips(ctxt):
+            client = self.get_client(ws_ip)
+            client.send_message(ctxt, obj, op_type, msg, resource_type)
 
 
 if __name__ == '__main__':

@@ -3,7 +3,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -127,10 +126,9 @@ class DiskHandler(AdminBaseHandler):
         }, save_all=True)
         # send ws message
         disk.accelerate_type = values['partition_role']
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, op_status, msg)
         self.finish_action(begin_action, disk.id, disk.name,
                            disk, action_status)
+        self.send_websocket(ctxt, disk, op_status, msg)
 
     def disk_partitions_create(self, ctxt, disk_id, values):
         ceph_version = objects.sysconfig.sys_config_get(
@@ -199,8 +197,7 @@ class DiskHandler(AdminBaseHandler):
         self.finish_action(begin_action, disk.id, disk.name,
                            disk, status)
         # send ws message
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, op_status, msg)
+        self.send_websocket(ctxt, disk, op_status, msg)
 
     def disk_partitions_remove(self, ctxt, disk_id, values):
         disk = objects.Disk.get_by_id(
@@ -303,8 +300,7 @@ class DiskHandler(AdminBaseHandler):
             return
         # send websocket
         msg = (_('node %s: disk %s offline') % (disk.node.hostname, disk.name))
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, 'DISK_OFFLINE', msg)
+        self.send_websocket(ctxt, disk, 'DISK_OFFLINE', msg)
         # create alert log
         alert_rules = objects.AlertRuleList.get_all(
             ctxt,
@@ -402,8 +398,7 @@ class DiskHandler(AdminBaseHandler):
             if len(partitions) != disk.partition_num:
                 msg = _('disk %s plug partition different') % disk.name
                 logger.error(msg)
-                wb_client = WebSocketClientManager(context=ctxt).get_client()
-                wb_client.send_message(ctxt, disk, 'DISK_ONLINE_ERROR', msg)
+                self.send_websocket(ctxt, disk, 'DISK_ONLINE_ERROR', msg)
                 disk.status = s_fields.DiskStatus.ERROR
                 return
             disk_partitions = []
@@ -414,10 +409,7 @@ class DiskHandler(AdminBaseHandler):
                 if not disk_partition:
                     msg = _('disk %s plug partition different') % disk.name
                     logger.error(msg)
-                    wb_client = WebSocketClientManager(
-                        context=ctxt).get_client()
-                    wb_client.send_message(
-                        ctxt, disk, 'DISK_ONLINE_ERROR', msg)
+                    self.send_websocket(ctxt, disk, 'DISK_ONLINE_ERROR', msg)
                     disk.status = s_fields.DiskStatus.ERROR
                     return
                 disk_partition.name = partition.get('name')
@@ -488,8 +480,7 @@ class DiskHandler(AdminBaseHandler):
                 logger.error("Disk role type error")
         # send websocket
         msg = (_('node %s: disk %s online') % (disk.node.hostname, disk.name))
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, disk, 'DISK_ONLINE', msg)
+        self.send_websocket(ctxt, disk, 'DISK_ONLINE', msg)
         # create alert log
         alert_rules = objects.AlertRuleList.get_all(
             ctxt,

@@ -3,7 +3,6 @@ from oslo_log import log as logging
 
 from DSpace import exception as exc
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.alert_rule import AlertRuleInitMixin
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
@@ -298,7 +297,6 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def _cluster_delete(self, ctxt, cluster, src_cluster_id, clean_ceph=False,
                         begin_action=None):
         logger.info("trying to delete cluster-%s", cluster.id)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
         try:
             pro_rules = self.get_cluster_prome_rules(cluster.id)
             logger.info('will remove pro_rules:%s,cluster_id:%s',
@@ -336,7 +334,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                            err_msg=err_msg)
         ctxt.cluster_id = src_cluster_id
         logger.debug("delete cluster %s finish: %s", cluster.id, msg)
-        wb_client.send_message(ctxt, cluster, action, msg)
+        self.send_websocket(ctxt, cluster, action, msg)
 
     def _cluster_delete_check(self, ctxt, cluster, clean_ceph):
         if cluster.is_admin:
@@ -597,14 +595,13 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         self.finish_action(begin_action, cluster_id, cluster.display_name,
                            after_obj=data_balance)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
         if action == 'on':
             msg = _("Cluster balance enabled")
             ws_action = "CLUSTER_BALANCE_ENABLE"
         else:
             msg = _("Cluster balance disable")
             ws_action = "CLUSTER_BALANCE_DISABLE"
-        wb_client.send_message(ctxt, cluster, ws_action, msg)
+        self.send_websocket(ctxt, cluster, ws_action, msg)
         return data_balance
 
     def cluster_pause(self, ctxt, enable=True):
@@ -636,8 +633,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             err_msg = str(e)
         self.finish_action(begin_action, ctxt.cluster_id, cluster.display_name,
                            after_obj=cluster, status=status, err_msg=err_msg)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, cluster, action, msg)
+        self.send_websocket(ctxt, cluster, action, msg)
 
     def cluster_status(self, ctxt):
         logger.info("get cluster status")

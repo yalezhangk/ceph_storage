@@ -5,7 +5,6 @@ from oslo_log import log as logging
 
 from DSpace import exception
 from DSpace import objects
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -156,8 +155,7 @@ class PoolHandler(AdminBaseHandler):
         pool.pool_id = db_pool_id
         pool.status = status
         pool.save()
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, op_status, msg)
+        self.send_websocket(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
                            after_obj=pool, status=status, err_msg=err_msg)
@@ -238,8 +236,7 @@ class PoolHandler(AdminBaseHandler):
         pool.save()
         if pool.status != s_fields.PoolStatus.ERROR:
             pool.destroy()
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, op_status, msg)
+        self.send_websocket(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
                            after_obj=pool, status=status, err_msg=err_msg)
@@ -312,8 +309,7 @@ class PoolHandler(AdminBaseHandler):
             pool.status = status
             pool.save()
             op_status = "INCREASE_DISK_ERROR"
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, op_status, msg)
+        self.send_websocket(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
                            after_obj=pool, status=status, err_msg=err_msg)
@@ -369,8 +365,7 @@ class PoolHandler(AdminBaseHandler):
             pool.status = status
             pool.save()
             op_status = "DECREASE_DISK_ERROR"
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, op_status, msg)
+        self.send_websocket(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
                            after_obj=pool, status=status, err_msg=err_msg)
@@ -488,8 +483,7 @@ class PoolHandler(AdminBaseHandler):
             pool.status = status
             pool.save()
             err_msg = str(e)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, pool, op_status, msg)
+        self.send_websocket(ctxt, pool, op_status, msg)
         self.finish_action(begin_action, resource_id=pool.id,
                            resource_name=pool.display_name,
                            after_obj=pool, status=status, err_msg=err_msg)

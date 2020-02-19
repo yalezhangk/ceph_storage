@@ -8,7 +8,6 @@ from oslo_utils import timeutils
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
-from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.DSM.radosgw import RadosgwMixin
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
@@ -180,8 +179,7 @@ class RadosgwRouterHandler(RadosgwMixin):
             msg = _("create error: {}").format(rgw_router.name)
             op_status = 'CREATE_ERROR'
             err_msg = str(e)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, rgw_router, op_status, msg)
+        self.send_websocket(ctxt, rgw_router, op_status, msg)
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
                            rgw_router, rgw_router.status, err_msg=err_msg)
 
@@ -245,8 +243,7 @@ class RadosgwRouterHandler(RadosgwMixin):
             op_status = "DELETE_ERROR"
         logger.info("radosgw delete, got radosgw router: %s, name: %s",
                     rgw_router, rgw_router.name)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, rgw_router, op_status, msg)
+        self.send_websocket(ctxt, rgw_router, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
                            rgw_router, status, err_msg=err_msg)
@@ -324,8 +321,7 @@ class RadosgwRouterHandler(RadosgwMixin):
             op_status = "UPDATE_ERROR"
         logger.info("radosgw update, got radosgw router: %s, name: %s",
                     rgw_router, rgw_router.name)
-        wb_client = WebSocketClientManager(context=ctxt).get_client()
-        wb_client.send_message(ctxt, rgw_router, op_status, msg)
+        self.send_websocket(ctxt, rgw_router, op_status, msg)
         logger.debug("send websocket msg: %s", msg)
         self.finish_action(begin_action, rgw_router.id, rgw_router.name,
                            rgw_router, status, err_msg=err_msg)
