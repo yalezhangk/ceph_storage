@@ -89,7 +89,7 @@ class CronHandler(AdminBaseHandler):
             try:
                 self._osd_slow_requests_get()
             except Exception as e:
-                logger.exception("Osd slow request set Exception: %s", e)
+                logger.warning("Osd slow request set Exception: %s", e)
             time.sleep(CONF.slow_request_get_time_interval)
 
     def _osd_tree_cron(self):
@@ -106,7 +106,7 @@ class CronHandler(AdminBaseHandler):
                 time.sleep(CONF.osd_check_interval * 2)
                 continue
             except Exception as e:
-                logger.exception("Osd check cron exception: %s", e)
+                logger.warning("Osd check cron exception: %s", e)
             time.sleep(CONF.osd_check_interval)
 
     def _restart_osd(self, context, osd):
