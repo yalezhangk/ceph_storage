@@ -760,7 +760,8 @@ class AlertRuleInitMixin(object):
                 'trigger_period': '1440',
                 'data_source': 'prometheus',
                 'query_grammar':
-                    "irate(node_cpu_seconds_total{{mode='idle'}}[{avg_time}])"
+                    "1 - (avg by (hostname,cluster_id) (irate("
+                    "node_cpu_seconds_total{{mode='idle'}}[{avg_time}])))"
             },
             {
                 'resource_type': 'node',
