@@ -6,6 +6,7 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.taskflows.node import NodeTask
 from DSpace.utils.coordination import synchronized
@@ -68,11 +69,13 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         if volume_access_path.volume_gateways:
             logger.error("access path %s has mounted gateway, can't delete",
                          volume_access_path.name)
-            raise exception.AccessPathDeleteError(reason="has mounted gateway")
+            raise exception.AccessPathDeleteError(
+                reason=_("has mounted gateway"))
         if volume_access_path.volume_client_groups:
             logger.error("access path %s has volume mappings, can't delete",
                          volume_access_path.name)
-            raise exception.AccessPathDeleteError(reason="has volume mappings")
+            raise exception.AccessPathDeleteError(
+                reason=_("has volume mappings"))
         volume_access_path.destroy()
         return volume_access_path
 
@@ -136,7 +139,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             logger.error("access path %s has no more gateway, can't unmount",
                          access_path.name)
             raise exception.AccessPathUnmountBgwError(
-                reason="no more gateway to delete")
+                reason=_("no more gateway to delete"))
         gateway_ids = [i.id for i in volume_gateways]
         logger.debug("access_path.volume_gateways: %s",
                      access_path.volume_gateways)
@@ -146,7 +149,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             logger.error("access path %s has volume mappings, can't unmount "
                          "bgw", access_path.name)
             raise exception.AccessPathUnmountBgwError(
-                reason="has volume mappings attached")
+                reason=_("has volume mappings attached"))
         for gateway_id in gateway_ids:
             ap_gateway = objects.VolumeGateway.get_by_id(ctxt, gateway_id)
             if ap_gateway.node_id == node_id:
