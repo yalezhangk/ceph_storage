@@ -367,10 +367,13 @@ class AllResourceType(BaseStorEnum):
     NETWORK_INTERFACE = 'network_interface'
     ACCELERATE_DISK = 'accelerate_disk'
     LICENSE = 'license'
+    CLIENT_GROUP = 'client_group'
+    ACCESS_PATH = 'access_path'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
-           NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE)
+           NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
+           ACCESS_PATH)
 
 
 class AllActionType(BaseStorEnum):
@@ -419,6 +422,17 @@ class AllActionType(BaseStorEnum):
     ACC_DISK_REBUILD = 'disk_rebuild'  # 重建加速盘
     UPLOAD_LICENSE = 'upload_license'
     DOWNLOAD_LICENSE = 'download_license'
+    CLIENT_GROUP_UPDATE_NAME = 'client_group_update_name'
+    CLIENT_GROUP_UPDATE_CLIENT = 'client_group_update_client'
+    CLIENT_GROUP_UPDATE_CHAP = 'client_group_update_chap'
+    ACCESS_PATH_MOUNT_GW = 'access_path_mount_gw'
+    ACCESS_PATH_UNMOUNT_GW = 'access_path_unmount_gw'
+    ACCESS_PATH_CREATE_MAPPING = 'access_path_create_mapping'
+    ACCESS_PATH_REMOVE_MAPPING = 'access_path_remove_mapping'
+    ACCESS_PATH_UPDATE_CHAP = 'access_path_update_chap'
+    ACCESS_PATH_ADD_VOLUME = 'access_path_add_volume'
+    ACCESS_PATH_REMOVE_VOLUME = 'access_path_remove_volume'
+    ACCESS_PATH_UPDATE_CLIENT_GROUP = 'access_path_update_client_group'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
@@ -428,7 +442,12 @@ class AllActionType(BaseStorEnum):
            DATA_BALANCE_ON, DATA_BALANCE_OFF, MON_RESTART, MGR_RESTART,
            OSD_RESTART, RGW_START, RGW_STOP, POOL_UNDO, RGW_ROUTER_ADD,
            RGW_ROUTER_REMOVE, ACC_DISK_CLEAN, OSD_CLEAN, ACC_DISK_REBUILD,
-           UPLOAD_LICENSE, DOWNLOAD_LICENSE)
+           UPLOAD_LICENSE, DOWNLOAD_LICENSE, CLIENT_GROUP_UPDATE_NAME,
+           CLIENT_GROUP_UPDATE_CLIENT, CLIENT_GROUP_UPDATE_CHAP,
+           ACCESS_PATH_MOUNT_GW, ACCESS_PATH_UNMOUNT_GW,
+           ACCESS_PATH_CREATE_MAPPING, ACCESS_PATH_REMOVE_MAPPING,
+           ACCESS_PATH_UPDATE_CHAP, ACCESS_PATH_ADD_VOLUME,
+           ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -540,8 +559,23 @@ class ResourceAction(object):
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.ACC_DISK_CLEAN, AllActionType.ACC_DISK_REBUILD],
             AllResourceType.LICENSE:
-                [AllActionType.UPLOAD_LICENSE, AllActionType.DOWNLOAD_LICENSE]
-
+                [AllActionType.UPLOAD_LICENSE, AllActionType.DOWNLOAD_LICENSE],
+            AllResourceType.CLIENT_GROUP:
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.UPDATE, AllActionType.CLIENT_GROUP_UPDATE_NAME,
+                 AllActionType.CLIENT_GROUP_UPDATE_CLIENT,
+                 AllActionType.CLIENT_GROUP_UPDATE_CHAP],
+            AllResourceType.ACCESS_PATH:
+                [AllActionType.CREATE, AllActionType.DELETE,
+                 AllActionType.UPDATE,
+                 AllActionType.ACCESS_PATH_MOUNT_GW,
+                 AllActionType.ACCESS_PATH_UNMOUNT_GW,
+                 AllActionType.ACCESS_PATH_CREATE_MAPPING,
+                 AllActionType.ACCESS_PATH_REMOVE_MAPPING,
+                 AllActionType.ACCESS_PATH_UPDATE_CHAP,
+                 AllActionType.ACCESS_PATH_ADD_VOLUME,
+                 AllActionType.ACCESS_PATH_REMOVE_VOLUME,
+                 AllActionType.ACCESS_PATH_UPDATE_CLIENT_GROUP]
         }
         return relation
 

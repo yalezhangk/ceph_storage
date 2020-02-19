@@ -490,7 +490,7 @@ msgid "volume_access_path: {} is already exists!"
 msgstr "卷访问路径：{} 已存在"
 
 msgid "no username or password input"
-msgstr ""
+msgstr "没有username或password参数"
 
 msgid "username or password too short"
 msgstr "用户名或密码太短"
@@ -499,37 +499,37 @@ msgid "username or password too long"
 msgstr "用户名或密码太长"
 
 msgid "no access_path input"
-msgstr ""
+msgstr "没有access_path参数"
 
 msgid "name or type not found"
 msgstr "名称或类型未找到"
 
 msgid "no node_id input"
-msgstr ""
+msgstr "没有node_id参数"
 
 msgid "no chap_enable input"
-msgstr ""
+msgstr "没有chap_enable参数"
 
 msgid "no client_group_id input"
-msgstr ""
+msgstr "没有client_group_id参数"
 
 msgid "no volume_ids input"
-msgstr ""
+msgstr "没有volume_ids参数"
 
 msgid "iqn: {} is not allowed!"
-msgstr ""
+msgstr "不合法的iqn：{}"
 
 msgid "no mutual_username or  mutual_password input"
-msgstr ""
+msgstr "没有mutual_username或mutual_password参数"
 
 msgid "mutual_username or mutual_passwordtoo short"
-msgstr ""
+msgstr "用户名或密码太短"
 
 msgid "mutual_username or mutual_passwordtoo long"
-msgstr ""
+msgstr "用户名或密码太长"
 
 msgid "no mutual_chap_enable input"
-msgstr ""
+msgstr "没有mutual_chap_enable参数"
 
 msgid "alert_group name already exists!"
 msgstr "告警通知名称已存在"
