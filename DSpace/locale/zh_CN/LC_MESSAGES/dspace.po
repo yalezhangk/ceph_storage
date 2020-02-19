@@ -1198,6 +1198,18 @@ msgstr "块存储卷克隆成功：%s"
 msgid "volume clone error: %s"
 msgstr "块存储卷克隆失败：%s"
 
+msgid "has mounted gateway"
+msgstr "还存在已挂载的网关服务器"
+
+msgid "has volume mappings"
+msgstr "还有已存在的映射"
+
+msgid "no more gateway to delete"
+msgstr "没有更多的网关服务器需要移除"
+
+msgid "has volume mappings attached"
+msgstr "还存在与之关联的映射"
+
 msgid "client group has attached mappings"
 msgstr "该客户端组已经存在映射"
 
