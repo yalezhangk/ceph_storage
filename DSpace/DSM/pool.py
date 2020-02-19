@@ -403,12 +403,13 @@ class PoolHandler(AdminBaseHandler):
             ctxt, fault_domain, pool_osd_ids)
         dec_domain = self._get_osd_fault_domains(ctxt, fault_domain, osd_ids)
         if dec_domain >= rep_size:
-            logger.error("can't remove osds more than pool's rep size: %s",
-                         rep_size)
+            logger.warning("can't remove osds more than pool's rep size: %s",
+                           rep_size)
             raise exception.InvalidInput(
                 _("can't remove osds more than pool's rep size"))
         if dec_domain >= pool_avail_domain:
-            logger.error("can't remove osds more than pool's available domain")
+            logger.warning("can't remove osds more than pool's available "
+                           "domain")
             raise exception.InvalidInput(
                 reason=_("can't remove osds more than pool's available domain")
             )
