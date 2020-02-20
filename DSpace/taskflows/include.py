@@ -945,7 +945,7 @@ class InclusionNodesCheck(NodesCheck):
             "ctxt": self.ctxt,
             "info_names": ["ceph_version", 'hostname', 'ceph_package',
                            "firewall", "containers", "ports", "selinux",
-                           "network", 'ceph_service'],
+                           "network", 'ceph_service', 'ssh_local'],
             "prefix": "info-",
             'task_info': {}
         })
