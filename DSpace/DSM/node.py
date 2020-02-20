@@ -169,9 +169,15 @@ class NodeMixin(object):
                 "The block gateway role has been installed."))
 
     def _bgw_uninstall_check(self, ctxt, node):
+        logger.debug("check node %s bgw uninstall", node.hostname)
         if not node.role_block_gateway:
             raise exc.InvalidInput(_(
                 "The block gateway role has not yet been installed"))
+        filters = {"node_id": node.id}
+        node_bgws = objects.VolumeGatewayList.get_count(ctxt, filters=filters)
+        if node_bgws:
+            raise exc.InvalidInput(_(
+                "Node %s has block gateways!") % node.hostname)
 
 
 class NodeHandler(AdminBaseHandler, NodeMixin):
@@ -212,6 +218,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
 
     def _node_delete(self, ctxt, node, begin_action):
         node_task = NodeTask(ctxt, node)
+        tcmu_task = TcmuTask(ctxt, node)
         try:
             if node.role_storage:
                 if self._storage_uninstall(ctxt, node) != 'success':
@@ -225,7 +232,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             if node.role_block_gateway:
                 if self._bgw_uninstall(ctxt, node) != 'success':
                     raise exc.NodeRolesUpdateError(node=node.hostname)
-                node_task.tcmu_remove_image()
+                tcmu_task.tcmu_remove_image()
 
             node_task.ceph_package_uninstall()
             node_task.chrony_uninstall()
@@ -287,9 +294,12 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         if node.role_storage:
             has_roles = True
             self._storage_uninstall_check(ctxt, node)
-        if node.role_storage:
+        if node.role_block_gateway:
             has_roles = True
-            self._storage_uninstall_check(ctxt, node)
+            self._bgw_uninstall_check(ctxt, node)
+        if node.role_object_gateway:
+            has_roles = True
+            self._rgw_uninstall_check(ctxt, node)
         if has_roles:
             self.check_agent_available(ctxt, node)
             self._check_roles_tasking(ctxt)
@@ -378,7 +388,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         elif tab == "network":
             prometheus.nodes_get_network_metrics(need_nodes)
         else:
-            logger.warn("invalid tab: %s", tab)
+            logger.warning("invalid tab: %s", tab)
 
         return nodes
 
@@ -798,6 +808,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             ctxt, Resource.NODE, Action.SET_ROLES, node)
         try:
             node_task = TcmuTask(ctxt, node)
+            node_task.bgw_clear_all(ctxt)
             node_task.tcmu_uninstall()
             node.role_block_gateway = False
             node.save()

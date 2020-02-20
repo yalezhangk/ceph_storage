@@ -1616,7 +1616,7 @@ def _volume_access_path_load_attr(ctxt, vap, session, expected_attrs=None):
         vol_id = mapping.volume_id
         if cg_id not in cg_ids:
             cg_ids.append(cg_id)
-        if vol_id not in vol_ids:
+        if vol_id and vol_id not in vol_ids:
             vol_ids.append(vol_id)
     if 'volume_gateways' in expected_attrs:
         vap.volume_gateways = [vgw for vgw in vap._volume_gateways
@@ -1906,6 +1906,19 @@ def volume_gateways_update(context, values_list):
             volume_gateways_ref.append(volume_gateway_ref)
 
         return volume_gateways_ref
+
+
+@require_context
+def volume_gateway_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _volume_gateway_get_query(context, session)
+        query = process_filters(models.Radosgw)(query, filters)
+        return query.count()
 
 
 ###############################

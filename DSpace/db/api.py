@@ -410,7 +410,6 @@ def volume_access_path_remove_gateway(context, access_path_id,
     return IMPL.volume_access_path_remove_gateway(
         context, access_path_id, volume_gateway_id)
 
-
 ###############
 
 
@@ -455,6 +454,10 @@ def volume_gateways_update(context, values_list):
     Raises NotFound if a volume does not exist.
     """
     return IMPL.volume_gateways_update(context, values_list)
+
+
+def volume_gateway_get_count(context, filters):
+    return IMPL.volume_gateway_get_count(context, filters=filters)
 
 
 ###############

@@ -15,7 +15,7 @@ class VolumeMapping(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'volume_id': fields.IntegerField(),
+        'volume_id': fields.IntegerField(nullable=True),
         'volume_access_path_id': fields.IntegerField(),
         'volume_client_group_id': fields.IntegerField(),
         'cluster_id': fields.UUIDField(nullable=True),

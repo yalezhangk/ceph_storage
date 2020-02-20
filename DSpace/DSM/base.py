@@ -309,7 +309,7 @@ class AdminBaseHandler(AdminBaseMixin):
         services = objects.ServiceList.get_count(ctxt, filters=filters)
         if services / mon_host <= 0.5:
             logger.warning('cluster {} has no enough active mon host'.format(
-                self.cluster_id))
+                ctxt.cluster_id))
             raise exc.ClusterNotHealth()
 
     def check_service_status(self, ctxt, service):

@@ -87,8 +87,7 @@ def delete_target(iqn):
         return None
     if iqn not in current_targets():
         # Ignore non-exist iscsi target
-        logger.error('iscsi-target %s not found', iqn)
-        raise exc.IscsiTargetNotFound(iqn=iqn)
+        logger.warning('iscsi-target %s not found', iqn)
     else:
         Target(FabricModule('iscsi'), wwn=iqn).delete()
     logger.info('delete target %s success', iqn)
@@ -164,8 +163,7 @@ def create_acl(iqn_target, iqn_initiator):
     tpg = _get_single_tpg(iqn_target)
 
     if iqn_initiator in current_acls(iqn_target):
-        logger.error('acl with iqn %s already exists' % iqn_target)
-        raise exc.IscsiAclExists(iqn=iqn_initiator)
+        logger.warning('acl with iqn %s already exists' % iqn_target)
     else:
         try:
             tpg.node_acl(iqn_initiator, mode='create')
@@ -521,9 +519,11 @@ def _save_backups(savefile):
             raise exc.IscsiTargetError(action="create backup file")
 
 
-# TODO clear all target
-def clear_config():
-    pass
+def clear_all():
+    for iqn in current_targets():
+        delete_target(iqn)
+    for bs in current_user_backstores():
+        delete_user_backstore(bs["name"])
 
 
 def restore_target(from_file=DEFAULT_SAVE_FILE):

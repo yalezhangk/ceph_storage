@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import time
 
 from DSpace import exception as exc
 from DSpace.DSA.base import AgentBaseHandler
@@ -10,6 +11,29 @@ logger = logging.getLogger(__name__)
 
 
 class IscsiHandler(AgentBaseHandler):
+    def __init__(self, *args, **kwargs):
+        super(IscsiHandler, self).__init__(*args, **kwargs)
+        container_name = "athena_tcmu_runner"
+
+        # try restore iscsi target config
+        retry_interval = 5
+        retry_times = 0
+        while retry_times < 3:
+            try:
+                status = self.docker_servcie_status(self.ctxt, container_name)
+                logger.debug("tcmu container status: %s", status)
+                if status == "running" and self.node.role_block_gateway:
+                    logger.info("trying to restore iscsi config")
+                    iscsi.restore_target()
+                    break
+                else:
+                    logger.warning("tcmu is not running, try again")
+                    retry_times += 1
+                    time.sleep(retry_interval)
+                    retry_interval *= 2
+            except Exception as e:
+                logger.exception("restore iscsi config error: %s", e)
+
     def mount_bgw(self, context, access_path, node):
         logger.debug("will create iscsi target for access_path: %s",
                      access_path.name)
@@ -138,3 +162,7 @@ class IscsiHandler(AgentBaseHandler):
                     mutual_password)
             else:
                 iscsi.set_acl_mutual_chap(iqn_target, iqn_initiator, "", "")
+
+    def bgw_clear_all(self, ctxt):
+        logger.info("clear all block gateway configs")
+        iscsi.clear_all()

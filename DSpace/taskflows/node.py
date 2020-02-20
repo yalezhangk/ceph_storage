@@ -477,6 +477,10 @@ class NodeTask(object):
             ctxt, access_path, volume_clients, mutual_chap_enable,
             mutual_username, mutual_password)
 
+    def bgw_clear_all(self, ctxt):
+        agent = self.get_agent()
+        agent.bgw_clear_all(ctxt)
+
     def dspace_agent_install(self):
         wf = lf.Flow('DSpace Agent Install')
         wf.add(InstallDocker('Install Docker'))
