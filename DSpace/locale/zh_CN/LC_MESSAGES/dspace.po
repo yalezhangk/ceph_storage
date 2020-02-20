@@ -782,7 +782,10 @@ msgid "The block gateway role has been installed."
 msgstr "对象网关角色已被安装"
 
 msgid "The block gateway role has not yet been installed"
-msgstr "对象网关角色还未安装"
+msgstr "块存储网关角色还未安装"
+
+msgid "Node %s has block gateways!"
+msgstr "节点%s还存在块存储网关"
 
 msgid "node remove success: {}"
 msgstr "节点 {} 移除成功"

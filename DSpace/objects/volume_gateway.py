@@ -62,3 +62,8 @@ class VolumeGatewayList(base.ObjectListBase, base.StorObject):
             context, cls(context),
             objects.VolumeGateway,
             volume_gateways)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.volume_gateway_get_count(context, filters)
+        return count

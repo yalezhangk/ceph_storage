@@ -109,7 +109,8 @@ class VolumeClientGroupHandler(AdminBaseHandler):
 
     def _check_volume_client_group_name(self, ctxt, name):
         filters = {"name": name}
-        client_group = objects.VolumeClientGroup.get_all(ctxt, filters=filters)
+        client_group = objects.VolumeClientGroupList.get_all(
+            ctxt, filters=filters)
         if client_group:
             logger.error("client_group duplicate: %s", name)
             raise exception.VolumeClientExists(VolumeClient=name)
