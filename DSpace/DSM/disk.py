@@ -622,8 +622,10 @@ class DiskHandler(AdminBaseHandler):
             ctxt, expected_attrs=['node', 'disk'])
         if metrics is None:
             return None
-        osd_maps = {osd.node.hostname + '-' + osd.disk.name: osd
-                    for osd in osds}
+        osd_maps = {}
+        for osd in osds:
+            if osd.node.hostname and osd.disk.name:
+                osd_maps[osd.node.hostname + '-' + osd.disk.name] = osd
         metrics.sort(key=lambda x: x['value'], reverse=True)
         disks = []
         for metric in metrics:
