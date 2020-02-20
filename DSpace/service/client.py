@@ -125,7 +125,7 @@ class RPCClient(object):
                 version="v1.0"
             ))
         except grpc.RpcError as e:
-            logger.exception("rpc connect error: %s", e)
+            logger.warning("rpc connect error: %s", e)
             raise exception.RPCConnectError()
         res = json.loads(response.value)
         # check redirect
