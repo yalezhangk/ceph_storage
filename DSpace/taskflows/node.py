@@ -32,6 +32,7 @@ from DSpace.utils import template
 from DSpace.utils import validator
 from DSpace.utils.cluster_config import CEPH_CONFIG_DIR
 from DSpace.utils.cluster_config import CEPH_LIB_DIR
+from DSpace.utils.cluster_config import CEPH_SYSTEMD_DIRS
 from DSpace.utils.cluster_config import UDEV_DIR
 from DSpace.utils.cluster_config import get_full_ceph_version
 
@@ -620,8 +621,10 @@ class NodeTask(object):
         result |= sys_tool.check_package('rados')
         result |= sys_tool.check_package('rgw')
         file_tool = FileTool(ssh)
-        result |= file_tool.exist('/etc/ceph')
-        result |= file_tool.exist('/var/lib/ceph')
+        result |= file_tool.exist(CEPH_CONFIG_DIR)
+        result |= file_tool.exist(CEPH_LIB_DIR)
+        for i in CEPH_SYSTEMD_DIRS:
+            result |= file_tool.exist(i)
         return result
 
     def probe_node_services(self):

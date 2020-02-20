@@ -5,6 +5,12 @@ from DSpace.i18n import _
 CEPH_CONFIG_DIR = "/etc/ceph/"
 CEPH_CONFIG_PATH = path.join(CEPH_CONFIG_DIR, "ceph.conf")
 CEPH_LIB_DIR = "/var/lib/ceph/"
+CEPH_SYSTEMD_DIRS = [
+    "/etc/systemd/system/ceph-mds.target.wants",
+    "/etc/systemd/system/ceph-mgr.target.wants",
+    "/etc/systemd/system/ceph-radosgw.target.wants",
+    "/etc/systemd/system/ceph.target.wants"
+]
 
 SUPPORT_CEPH_VERSION = [{
     "name": "luminous",
