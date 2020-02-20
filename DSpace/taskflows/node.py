@@ -1447,6 +1447,11 @@ class NodesCheck(object):
                 res.append({"port": port, "status": True})
         return res
 
+    def _check_ssh_local(self, data):
+        if not data['check']:
+            data['msg'] = _("ssh to localhost failed")
+        return data
+
     def _check_network(self, node, networks):
         res = {}
         ips = {}
@@ -1590,6 +1595,7 @@ class NodesCheck(object):
         res['check_hostname'] = self._check_hostname(info['hostname'])
         res['check_firewall'] = self._check_firewall(info.get("firewall"))
         res['check_container'] = self._check_container(info.get("containers"))
+        res['check_ssh_local'] = self._check_ssh_local(info.get("ssh_local"))
         res['check_SELinux'] = not info.get("selinux")
         res['check_athena_port'] = self._check_athena_port(info.get("ports"))
         res.update(self._check_network(info['node'], info['network']))
@@ -1638,7 +1644,7 @@ class NodesCheck(object):
             "ctxt": self.ctxt,
             "info_names": ["ceph_version", 'hostname', 'ceph_package',
                            "firewall", "containers", "ports", "selinux",
-                           "network"],
+                           "network", "ssh_local"],
             "prefix": "info-",
             'task_info': {}
         })

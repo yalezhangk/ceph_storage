@@ -576,6 +576,21 @@ def all_container():
     return containers
 
 
+def check_ssh_local():
+    cmd = ("ssh localhost -o UserKnownHostsFile=/dev/null "
+           "-o StrictHostKeyChecking=no -o PasswordAuthentication=no "
+           "-o LogLevel=quiet echo hello")
+    rc, out, stderr = run_command(cmd.split(' '))
+    if "hello" in out:
+        return {
+            "check": True,
+        }
+    else:
+        return {
+            "check": False,
+        }
+
+
 def check(args):
     response = {}
     if args.ceph_version:
@@ -596,6 +611,8 @@ def check(args):
         response["containers"] = all_container()
     if args.ceph_service:
         response["ceph_service"] = collect_ceph_services()
+    if args.ssh_local:
+        response["ssh_local"] = check_ssh_local()
     return response
 
 
@@ -635,6 +652,8 @@ def main():
                         help='get containers')
     parser.add_argument('--ceph_service', action='store_true',
                         help='get ceph service')
+    parser.add_argument('--ssh_local', action='store_true',
+                        help='check ssh to local')
     args = parser.parse_args()
     action = args.action
     if action == "collect_nodes":

@@ -1365,6 +1365,9 @@ msgstr "安装源中的Ceph版本还未被支持"
 msgid "Repository not found Ceph"
 msgstr "安装源中未找到Ceph"
 
+msgid "ssh to localhost failed"
+msgstr "SSH到localhost失败"
+
 msgid "cluster ip not found"
 msgstr "集群网络ip未找到"
 
