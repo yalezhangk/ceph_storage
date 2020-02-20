@@ -16,7 +16,6 @@ from DSpace.DSI.auth import AuthRegistry
 from DSpace.DSI.session import get_session
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
-from DSpace.utils.user_token import UserToken
 
 logger = logging.getLogger(__name__)
 
@@ -63,16 +62,14 @@ class BaseAPIHandler(RequestHandler):
         self.set_status(400)
         self.write({"error": msg})
 
-    def validate_auth(self):
-        self.auth.validate(self)
-
     def get_context(self):
         if self.ctxt:
             return self.ctxt
-        self.validate_auth()
-        user_id = self.current_user.id
-        ctxt = RequestContext(user_id=user_id, is_admin=False,
+        ctxt = RequestContext(user_id="anonymous", is_admin=False,
                               ws_ip=CONF.my_ip)
+        self.auth.validate(ctxt, self)
+        user_id = self.current_user.id
+        ctxt.user_id = user_id
         logger.debug("Context: %s", ctxt.to_dict())
         client_ip = (self.request.headers.get("X-Real-IP") or
                      self.request.headers.get("X-Forwarded-For") or
@@ -82,7 +79,8 @@ class BaseAPIHandler(RequestHandler):
         if cluster_id:
             objects.Cluster.get_by_id(ctxt, cluster_id)
         ctxt.cluster_id = cluster_id
-        return ctxt
+        self.ctxt = ctxt
+        return self.ctxt
 
     def get_paginated_args(self):
         sort_key = self.get_query_argument('sort_key', default=None)
@@ -109,17 +107,6 @@ class BaseAPIHandler(RequestHandler):
         else:
             raise exception.InvalidInput(
                 reason=_("get_metrics_history_args: start and end required"))
-
-    def get_current_user(self):
-        access_token = self.get_query_argument('access_token', default=None)
-        if access_token:
-            logger.info('get access_token from URL, is:%s', access_token)
-            user_token = UserToken()
-            resu, user_id = user_token.certify_token(access_token)
-            if resu:
-                return user_id
-        logger.debug("User: %s", self.session['user_id'])
-        return self.session['user_id']
 
     def write_error(self, status_code, **kwargs):
         """Override to implement custom error pages.

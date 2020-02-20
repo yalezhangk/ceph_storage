@@ -48,7 +48,7 @@ class DBAuth(AuthBackend):
         logger.info("session user_id: %s", user_id)
         return user_id
 
-    def validate(self, handler):
+    def validate(self, ctxt, handler):
         if not self._exist_session(handler):
             raise NotAuthorized
         user = objects.User(id=handler.session['user_id'],

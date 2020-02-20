@@ -7,6 +7,7 @@ from oslo_config import cfg
 from requests.models import PreparedRequest
 from tornado import gen
 
+from DSpace import exception
 from DSpace import objects
 from DSpace.context import RequestContext
 from DSpace.DSI.auth import AuthBackend
@@ -89,23 +90,37 @@ class TencentTicket(AuthBackend):
         logger.info("tencent validate ticket: %s", ticket)
         return self.tgt_validate(ticket)
 
-    def validate(self, handler):
+    def _get_user_by_name(self, ctxt, username):
+        users = objects.UserList.get_all(ctxt, filters={"name": username})
+        if users:
+            return users[0]
+        raise exception.UserNotFound(user_id=username)
+
+    def validate(self, ctxt, handler):
         if not self._exist_session(handler):
             raise NotAuthorized
         data = self._validate_session(handler)
-        user = objects.User(id=-1, name=data['user_name'])
+        user = self._get_user_by_name(ctxt, data['user_name'])
         handler.current_user = user
 
 
 class UserLoginHandler(BaseAPIHandler):
     def get_context(self):
-        if self.ctxt:
-            return self.ctxt
-        ctxt = RequestContext(user_id='any', is_admin=False)
-        logger.debug("Context: %s", ctxt.to_dict())
-        return ctxt
+        if not self.ctxt:
+            self.ctxt = RequestContext(user_id="anonymous", is_admin=False)
+            logger.debug("Context: %s", self.ctxt.to_dict())
+        return self.ctxt
 
-    def st_validate(self, ticket, service):
+    def _get_or_create_user(self, ctxt, username):
+        users = objects.UserList.get_all(ctxt, filters={"name": username})
+        if users:
+            user = users[0]
+        else:
+            user = objects.User(ctxt, name=username)
+            user.create()
+        return user
+
+    def _validate_st(self, ctxt, ticket, service):
         params = {
             'ticket': ticket,
             'service': service,
@@ -117,19 +132,18 @@ class UserLoginHandler(BaseAPIHandler):
         if r.status_code != 200:
             raise NotAuthorized
         res = r.json()
-        return res['data']
-
-    def _validate_st(self, ticket, service):
-        data = self.st_validate(ticket, service)
+        data = res['data']
+        self._get_or_create_user(ctxt, data['user_name'])
         self.session['username'] = data['user_name']
         self.session['ticket'] = data['ticket']
 
     def get(self):
+        ctxt = self.get_context()
         ticket = self.get_argument("tstack_ticket", None)
         logger.info("tencent login st: %s", ticket)
         if ticket:
             service = self.session['service']
-            self._validate_st(ticket, service)
+            self._validate_st(ctxt, ticket, service)
             callback = self.session['callback']
             if callback:
                 self.redirect(callback)
