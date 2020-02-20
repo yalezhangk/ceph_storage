@@ -93,7 +93,10 @@ class SysConfigHandler(AdminBaseHandler):
         gateway_cidr = sysinfos.get('gateway_cidr')
         enable_cephx = sysinfos.get('enable_cephx')
         if gateway_cidr:
-            self._gateway_check(ctxt)
+            old_gateway = objects.sysconfig.sys_config_get(
+                    ctxt, "gateway_cidr")
+            if old_gateway != gateway_cidr:
+                self._gateway_check(ctxt)
         if enable_cephx is not None:
             self._enable_cephx_check(ctxt, enable_cephx)
         cluster_cidr = sysinfos.get('cluster_cidr')
@@ -117,11 +120,18 @@ class SysConfigHandler(AdminBaseHandler):
             objects.sysconfig.sys_config_set(ctxt, 'cluster_name',
                                              cluster_name)
         if admin_cidr:
-            objects.sysconfig.sys_config_set(ctxt, 'admin_cidr',
-                                             admin_cidr)
+            old_admin = objects.sysconfig.sys_config_get(
+                    ctxt, "admin_cidr")
+            if old_admin != admin_cidr:
+                objects.sysconfig.sys_config_set(ctxt, 'admin_cidr',
+                                                 admin_cidr)
         if public_cidr:
-            objects.sysconfig.sys_config_set(ctxt, 'public_cidr',
-                                             public_cidr)
+            old_public = objects.sysconfig.sys_config_get(
+                    ctxt, "public_cidr")
+            if old_public != public_cidr:
+                objects.sysconfig.sys_config_set(
+                        ctxt, 'public_cidr', public_cidr)
+
         if cluster_cidr:
             objects.sysconfig.sys_config_set(ctxt, 'cluster_cidr',
                                              cluster_cidr)
