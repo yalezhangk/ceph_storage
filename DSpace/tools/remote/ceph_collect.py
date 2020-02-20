@@ -35,6 +35,12 @@ ALLOWED_FAULT_DOMAIN = ['root', 'rack', 'datacenter', 'host', 'osd']
 PKGS = ['ceph-common', 'ceph-base', 'ceph-mgr', 'ceph-osd', 'python-cephfs',
         'ceph-selinux', 'ceph-mds', 'libcephfs2', 'ceph-mon', 'librbd1',
         'librados2']
+CEPH_SYSTEMD_DIRS = [
+    "/etc/systemd/system/ceph-mds.target.wants",
+    "/etc/systemd/system/ceph-mgr.target.wants",
+    "/etc/systemd/system/ceph-radosgw.target.wants",
+    "/etc/systemd/system/ceph.target.wants"
+]
 
 
 def _bytes2str(string):
@@ -430,6 +436,9 @@ def ceph_is_installed():
         return True
     if os.path.isdir("/etc/ceph/"):
         return True
+    for i in CEPH_SYSTEMD_DIRS:
+        if os.path.isdir(i):
+            return True
     return False
 
 
