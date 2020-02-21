@@ -237,11 +237,9 @@ class ServiceManager(AdminBaseMixin):
             dsa_helper = ContainerHelper(
                 ctxt, dsa, self.container_namespace + "_dsa", dsa.status, node)
             self.append("base", dsa_helper)
-        logger.info("Add all dsa to manager: %s", self._services)
 
     def loop(self):
         while True:
-            logger.debug("Service manager check loop: %s", self._services)
             for role in list(self._services.keys()):
                 service_list = self._services[role]
                 for service_id in list(service_list.keys()):
@@ -283,6 +281,9 @@ class ServiceManager(AdminBaseMixin):
         return True
 
     def _check(self, role, helper):
+        logger.debug("Check service status, name: %s, id: %s, status: %s, "
+                     "last_status: %s", helper.obj_name, helper.id,
+                     helper.status, helper.last_status)
         if (not self._check_node(role, helper) or
                 not self._check_time_interval(helper)):
             return
