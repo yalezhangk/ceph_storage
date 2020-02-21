@@ -67,10 +67,9 @@ class EmailHelper(AlertNotifyHelper):
 
     def _per_send_alert_email(self, rule, msg, mail_conf, receivers):
         for receiver in receivers:
-            subject_conf = {
-                'smtp_subject': _('alert notify: {}').format(
-                    alert_rule_translation.get(rule.type))}
-            content_conf = {'smtp_content': msg}
+            subject_conf = _('alert notify: {}').format(
+                alert_rule_translation.get(rule.type))
+            content_conf = msg
             mail_conf.update({'smtp_name': _('alert center'),
                               'smtp_to_email': receiver})
             logger.info('begin send email, to_email=%s', receiver)

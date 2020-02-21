@@ -483,6 +483,9 @@ msgstr "邮件服务未传入数据"
 msgid "smtp could not be found."
 msgstr "参数 'smtp' 未找到"
 
+msgid "SMTP service is configured correctly"
+msgstr "SMTP服务配置正确"
+
 msgid "New password not allow equal to old password"
 msgstr "新密码不能与旧密码相同"
 
