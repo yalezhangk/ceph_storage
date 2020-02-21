@@ -27,27 +27,27 @@ class LogFileHandler(AdminBaseHandler):
             if not node.role_monitor:
                 logger.info('current node is not mon storage, '
                             'has not mon log files')
-                return []
+                return None
         elif service_type == LogType.OSD:
             if not node.role_storage:
                 logger.info('current node is not storage rule, '
                             'has not osd log files')
-                return []
+                return None
         elif service_type == LogType.RGW:
             if not node.role_object_gateway:
                 logger.info('current node is not object_gateway rule, '
                             'has not rgw log files')
-                return []
+                return None
         elif service_type == LogType.MDS:
             if not node.role_monitor:
                 logger.info('current node is not mon storage, '
                             'has not mds log files')
-                return []
+                return None
         elif service_type == LogType.MGR:
             if not node.role_monitor:
                 logger.info('current node is not mon storage, '
                             'has not mgr log files')
-                return []
+                return None
         else:
             raise exception.InvalidInput(reason=_(
                 'current sys log type: {} not exist').format(service_type))
