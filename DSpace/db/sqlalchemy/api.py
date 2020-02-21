@@ -2758,6 +2758,34 @@ def disk_get_by_slot(context, slot, node_id, **kwargs):
 
 
 @require_context
+def disk_get_by_name(context, name, node_id, **kwargs):
+    expected_attrs = kwargs.pop("expected_attrs", None)
+    session = get_session()
+    with session.begin():
+        disk = _disk_get_query(
+            context, session,
+        ).filter_by(name=name, node_id=node_id).first()
+        if not disk:
+            return None
+        _disk_load_attr(context, disk, expected_attrs, session)
+        return disk
+
+
+@require_context
+def disk_get_by_guid(context, guid, node_id, **kwargs):
+    expected_attrs = kwargs.pop("expected_attrs", None)
+    session = get_session()
+    with session.begin():
+        disk = _disk_get_query(
+            context, session,
+        ).filter_by(guid=guid, node_id=node_id).first()
+        if not disk:
+            return None
+        _disk_load_attr(context, disk, expected_attrs, session)
+        return disk
+
+
+@require_context
 def disk_get_all(context, marker=None, limit=None, sort_keys=None,
                  sort_dirs=None, filters=None, offset=None,
                  expected_attrs=None):

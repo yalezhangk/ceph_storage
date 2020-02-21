@@ -1,4 +1,4 @@
-ACTION=="add", SUBSYSTEM=="scsi_device", \
+ACTION=="add", SUBSYSTEM=="block", \
   RUN+="/usr/bin/dspace-disk hotplug disk online %k --dsa_asok {{ socket_file }}"
-ACTION=="remove", SUBSYSTEM=="scsi_device", \
+ACTION=="remove", SUBSYSTEM=="block", \
   RUN+="/usr/bin/dspace-disk hotplug disk offline %k --dsa_asok {{ socket_file }}"

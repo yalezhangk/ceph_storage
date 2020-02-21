@@ -23,6 +23,9 @@ class Disk(base.StorPersistentObject, base.StorObject,
         'rotate_speed': fields.IntegerField(nullable=True),
         'slot': fields.StringField(nullable=True),
         'model': fields.StringField(nullable=True),
+        'serial': fields.StringField(nullable=True),
+        'wwid': fields.StringField(nullable=True),
+        'guid': fields.StringField(nullable=True),
         'vendor': fields.IntegerField(nullable=True),
         'support_led': fields.BooleanField(default=False),
         'led': fields.StringField(nullable=True),
@@ -76,6 +79,30 @@ class Disk(base.StorPersistentObject, base.StorObject,
     def get_by_slot(cls, context, slot, node_id, expected_attrs=None):
         db_disk = db.disk_get_by_slot(
             context, slot, node_id, expected_attrs=expected_attrs)
+        if not db_disk:
+            return None
+        kwargs = {}
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
+        return cls._from_db_object(context, cls(context), db_disk, **kwargs)
+
+    @classmethod
+    def get_by_name(cls, context, name, node_id, expected_attrs=None):
+        db_disk = db.disk_get_by_name(
+            context, name, node_id, expected_attrs=expected_attrs)
+        if not db_disk:
+            return None
+        kwargs = {}
+        if expected_attrs:
+            kwargs['expected_attrs'] = expected_attrs
+        return cls._from_db_object(context, cls(context), db_disk, **kwargs)
+
+    @classmethod
+    def get_by_guid(cls, context, guid, node_id, expected_attrs=None):
+        if not guid:
+            return None
+        db_disk = db.disk_get_by_name(
+            context, guid, node_id, expected_attrs=expected_attrs)
         if not db_disk:
             return None
         kwargs = {}

@@ -54,11 +54,11 @@ class SocketDomainHandler(AgentBaseHandler):
                 resource_type = data.get('resource_type')
                 if resource_type == 'disk':
                     op = data.get('op')
-                    slot = data.get('slot')
+                    disk = data.get('disk')
                     if op == 'online':
-                        self.disk_online(slot=slot)
+                        self.disk_online(disk=disk)
                     elif op == 'offline':
-                        self.disk_offline(slot=slot)
+                        self.disk_offline(disk=disk)
                     else:
                         logger.info("Not support op: %s", op)
                 elif resource_type == 'network':
@@ -75,15 +75,19 @@ class SocketDomainHandler(AgentBaseHandler):
             except Exception as e:
                 logger.exception("Failed execute op: %s", e)
 
-    def disk_offline(self, slot):
-        logger.info("disk remove, slot: %s", slot)
-        self.admin.disk_offline(self.ctxt, slot, self.node.id)
+    def disk_offline(self, disk):
+        logger.info("disk remove, name: %s", disk)
+        self.admin.disk_offline(self.ctxt, disk, self.node.id)
 
-    def disk_online(self, slot):
-        logger.info("disk add, slot: %s", slot)
+    def disk_online(self, disk):
+        logger.info("disk add, name: %s", disk)
         executor = self._get_executor()
         disk_tool = DiskTool(executor)
-        disk_info = disk_tool.get_disk_info_by_slot(slot)
+        disk_info = disk_tool.get_disk_info(disk)
+
+        ssh_executor = self._get_ssh_executor()
+        disk_tool = DiskTool(ssh_executor)
+        disk_tool.update_udev_info(disk_info.get('name'), disk_info)
         self.admin.disk_online(self.ctxt, disk_info, self.node.id)
 
     def network_remove(self, net):

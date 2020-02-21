@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import six
+
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
 from DSpace.objects import fields as s_fields
@@ -81,11 +83,12 @@ class DiskHandler(AgentBaseHandler):
         try:
             disk_tool.partitions_clear(disk.name)
             disk_tool.partitions_create(disk.name, partitions)
+            guid = disk_tool.get_disk_guid(disk.name)
             logger.debug("Partitions: {}".format(partitions))
-            return partitions
+            return guid, partitions
         except exception.StorException as e:
             logger.error("Create partitions error: {}".format(e))
-            return []
+            return None, []
 
     def disk_partitions_remove(self, ctxt, node, name):
         logger.debug('Remove cache disk partitions: %s', name)
@@ -102,4 +105,9 @@ class DiskHandler(AgentBaseHandler):
         executor = self._get_executor()
         disk_tool = DiskTool(executor)
         disks = disk_tool.all()
+
+        ssh_executor = self._get_ssh_executor()
+        disk_tool = DiskTool(ssh_executor)
+        for name, data in six.iteritems(disks):
+            disk_tool.update_udev_info(name, data)
         return disks

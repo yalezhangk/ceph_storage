@@ -88,9 +88,9 @@ class DiskHandler(AdminBaseHandler):
     def _disk_partitions_create(self, ctxt, node, disk, values,
                                 begin_action=None):
         client = self.agent_manager.get_client(node_id=disk.node_id)
-        partitions = client.disk_partitions_create(ctxt, node=node, disk=disk,
-                                                   values=values)
-        if partitions:
+        guid, partitions = client.disk_partitions_create(
+            ctxt, node=node, disk=disk, values=values)
+        if len(partitions) and guid:
             partitions_old = objects.DiskPartitionList.get_all(
                 ctxt, filters={'disk_id': disk.id})
             if partitions_old:
@@ -102,6 +102,7 @@ class DiskHandler(AdminBaseHandler):
             else:
                 disk.partition_num = values['partition_num']
             disk.role = values['role']
+            disk.guid = guid
             for part in partitions:
                 partition = objects.DiskPartition(
                     ctxt, name=part.get('name'), size=part.get('size'),
@@ -199,6 +200,16 @@ class DiskHandler(AdminBaseHandler):
         # send ws message
         self.send_websocket(ctxt, disk, op_status, msg)
 
+    def disk_can_operation(self, ctxt, disk):
+        if disk.status not in disk.can_operation_status:
+            return False
+        partitions = objects.DiskPartitionList.get_all(
+            ctxt, filters={'disk_id': disk.id})
+        for part in partitions:
+            if part.status == s_fields.DiskStatus.INUSE:
+                return False
+        return True
+
     def disk_partitions_remove(self, ctxt, disk_id, values):
         disk = objects.Disk.get_by_id(
             ctxt, disk_id, expected_attrs=['partition_used'])
@@ -207,7 +218,7 @@ class DiskHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 reason=_('current disk:{} partition has used, '
                          'can not del').format(disk.name))
-        if not disk.can_operation():
+        if not self.disk_can_operation(ctxt, disk):
             raise exception.InvalidInput(_("Disk status not available"))
         node = objects.Node.get_by_id(ctxt, disk.node_id)
         begin_action = self.begin_action(
@@ -243,32 +254,6 @@ class DiskHandler(AdminBaseHandler):
         return objects.DiskPartitionList.get_count(
             ctxt, filters=filters)
 
-    def disk_partitions_reporter(self, ctxt, partitions, disk):
-        all_partition_objs = objects.DiskPartitionList.get_all(
-            ctxt, filters={'disk_id': disk.id})
-        all_partitions = {
-            partition.name: partition for partition in all_partition_objs
-        }
-        for name, data in six.iteritems(partitions):
-            if name in all_partitions:
-                partition = all_partitions.pop(name)
-                partition.size = data.get('size')
-                partition.save()
-            else:
-                partition = objects.DiskPartition(
-                    ctxt,
-                    name=name,
-                    size=data.get('size'),
-                    status=s_fields.DiskStatus.AVAILABLE,
-                    type=data.get('type', s_fields.DiskType.HDD),
-                    node_id=disk.node_id,
-                    disk_id=disk.id,
-                )
-                partition.create()
-        for name, partition in six.iteritems(all_partitions):
-            logger.warning("Remove partition %s", name)
-            partition.destroy()
-
     def _osd_get_by_accelerate_partition(self,
                                          ctxt,
                                          partition,
@@ -290,13 +275,13 @@ class DiskHandler(AdminBaseHandler):
         else:
             return None
 
-    def disk_offline(self, ctxt, slot, node_id):
-        logger.info("recieve disk offline on %s: %s", node_id, slot)
-        disk = objects.Disk.get_by_slot(
-            ctxt, slot, node_id,
+    def disk_offline(self, ctxt, disk_name, node_id):
+        logger.info("recieve disk offline on %s: %s", node_id, disk_name)
+        disk = objects.Disk.get_by_name(
+            ctxt, disk_name, node_id,
             expected_attrs=['node', 'partition_used', 'partitions'])
         if not disk:
-            logger.info('No disk found, slot: %s', slot)
+            logger.info('No disk found, name: %s', disk_name)
             return
         # send websocket
         msg = (_('node %s: disk %s offline') % (disk.node.hostname, disk.name))
@@ -325,109 +310,106 @@ class DiskHandler(AdminBaseHandler):
                 alert_log.create()
                 logger.info('alert %s happen: %s', alert_log.resource_type,
                             alert_log.alert_value)
-        if disk.role == s_fields.DiskRole.ACCELERATE:
-            if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
-                logger.info("%s in replacing task, do nothing", disk.name)
-            else:
-                for partition in disk.partitions:
-                    osd = self._osd_get_by_accelerate_partition(
-                        ctxt, partition, expected_attrs=['node'])
-                    if (osd and
-                            (osd.status not in
-                             s_fields.OsdStatus.REPLACE_STATUS)):
-                        logger.info('accelerate disk has osd.%s, set offline',
-                                    osd.osd_id)
-                        task = NodeTask(ctxt, osd.node)
-                        task.ceph_osd_offline(osd, umount=False)
-                        osd.status = s_fields.OsdStatus.OFFLINE
-                        osd.save()
-                    partition.name = None
-                    partition.save()
-                disk.status = s_fields.DiskStatus.ERROR
-        elif disk.role == s_fields.DiskRole.DATA:
-            if disk.status == s_fields.DiskStatus.REPLACING:
-                logger.info("disk pull out")
-            else:
-                osds = objects.OsdList.get_all(
-                    ctxt,
-                    filters={'disk_id': disk.id},
-                    expected_attrs=['node'])
-                if len(osds):
-                    # stop osd
-                    osd = osds[0]
-                    logger.info('disk has osd.%s, set offline', osd.osd_id)
-                    task = NodeTask(ctxt, osd.node)
-                    task.ceph_osd_offline(osd, umount=True)
-                logger.info('disk %s pull out, mark it error', disk.name)
-                disk.status = s_fields.DiskStatus.ERROR
-        else:
-            logger.error("Disk role type error")
         disk.name = None
         disk.save()
-
-    def _disk_add_new(self, ctxt, disk_info, node_id):
-        logger.info("Create node_id %s disk %s: %s",
-                    node_id, disk_info.get('name'), disk_info)
-        if len(disk_info.get('partitions')):
-            logger.info("disk %s has partitions, set status to unavailable",
-                        disk_info.get('name'))
-            status = s_fields.DiskStatus.UNAVAILABLE
-        else:
-            status = s_fields.DiskStatus.AVAILABLE
-
-        disk = objects.Disk(
-            ctxt,
-            name=disk_info.get('name'),
-            status=status,
-            type=disk_info.get('type'),
-            size=disk_info.get('size'),
-            slot=disk_info.get('slot'),
-            node_id=node_id,
-            partition_num=len(disk_info.get('partitions')),
-            role=s_fields.DiskRole.DATA
-        )
-        disk.create()
-
-    def _disk_update_accelerate(self, ctxt, disk, disk_info, node_id):
-        logger.info('update accelerate disk: %s', disk.name)
         if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
             logger.info("%s in replacing task, do nothing", disk.name)
+            return
+        if disk.role == s_fields.DiskRole.ACCELERATE:
+            for partition in disk.partitions:
+                osd = self._osd_get_by_accelerate_partition(
+                    ctxt, partition, expected_attrs=['node'])
+                if (osd and
+                        (osd.status not in
+                         s_fields.OsdStatus.REPLACE_STATUS)):
+                    logger.info('accelerate disk has osd.%s, set offline',
+                                osd.osd_id)
+                    task = NodeTask(ctxt, osd.node)
+                    task.ceph_osd_offline(osd, umount=False)
+                    osd.status = s_fields.OsdStatus.OFFLINE
+                    osd.save()
+                partition.status = s_fields.DiskStatus.ERROR
+                partition.save()
+            disk.status = s_fields.DiskStatus.ERROR
+            disk.save()
+        elif disk.role == s_fields.DiskRole.DATA:
+            osds = objects.OsdList.get_all(
+                ctxt,
+                filters={'disk_id': disk.id},
+                expected_attrs=['node'])
+            if len(osds):
+                # stop osd
+                osd = osds[0]
+                logger.info('disk has osd.%s, set offline', osd.osd_id)
+                task = NodeTask(ctxt, osd.node)
+                task.ceph_osd_offline(osd, umount=True)
+                disk.status = s_fields.DiskStatus.ERROR
+                disk.save()
+            else:
+                logger.info('disk %s not used, remove it', disk.name)
+                disk.destroy()
+            logger.info('disk %s pull out, mark it error', disk.name)
+        else:
+            logger.error("Disk role type error")
+
+    def _disk_add_new(self, ctxt, data, node_id):
+        partitions = data.get('partitions')
+        name = data.get('name')
+        logger.info("Create node_id %s disk %s: %s",
+                    node_id, name, data)
+        if data.get('is_sys_dev'):
+            status = s_fields.DiskStatus.INUSE
+            role = s_fields.DiskRole.SYSTEM
+        elif len(partitions) or data.get('mounted'):
+            status = s_fields.DiskStatus.UNAVAILABLE
+            role = s_fields.DiskRole.DATA
+        else:
+            status = s_fields.DiskStatus.AVAILABLE
+            role = s_fields.DiskRole.DATA
+        disk = objects.Disk(
+            ctxt,
+            name=name,
+            status=status,
+            type=data.get('type', s_fields.DiskType.HDD),
+            size=data.get('size'),
+            rotate_speed=data.get('rotate_speed'),
+            slot=data.get('slot'),
+            serial=data.get('serial'),
+            wwid=data.get('wwid'),
+            guid=data.get('guid'),
+            node_id=node_id,
+            partition_num=len(partitions),
+            role=role
+        )
+        disk.create()
+        return disk
+
+    def _disk_update_accelerate(self, ctxt, disk,
+                                disk_info, node_id, init=False):
+        disk_name = disk_info.get('name')
+        logger.info('update accelerate disk: %s', disk_name)
+        if disk.status in s_fields.DiskStatus.REPLACE_STATUS:
+            logger.info("%s in replacing task, do nothing", disk_name)
         else:
             # check disk part table
-            partitions = disk_info.get('partitions')
-            if len(partitions) != disk.partition_num:
-                msg = _('disk %s plug partition different') % disk.name
-                logger.error(msg)
-                self.send_websocket(ctxt, disk, 'DISK_ONLINE_ERROR', msg)
-                disk.status = s_fields.DiskStatus.ERROR
-                return
-            disk_partitions = []
-            for partition in partitions:
-                disk_partition = objects.DiskPartition.get_by_uuid(
-                    ctxt, partition.get('uuid'), disk.node_id,
-                    expected_attrs=['node', 'disk'])
-                if not disk_partition:
-                    msg = _('disk %s plug partition different') % disk.name
-                    logger.error(msg)
-                    self.send_websocket(ctxt, disk, 'DISK_ONLINE_ERROR', msg)
-                    disk.status = s_fields.DiskStatus.ERROR
-                    return
-                disk_partition.name = partition.get('name')
-                disk_partition.save()
-                disk_partitions.append(disk_partition)
-
-            # update disk partition info
-            disk_status = s_fields.DiskStatus.AVAILABLE
-            for disk_partition in disk_partitions:
+            partitions_obj = objects.DiskPartitionList.get_all(
+                ctxt, filters={'disk_id': disk.id})
+            parts_with_uuid = {
+                part.uuid: part for part in partitions_obj
+            }
+            new_partitions = disk_info.get('partitions')
+            disk_status = s_fields.DiskStatus.INUSE
+            for new_part in new_partitions:
+                if new_part.get('uuid') not in parts_with_uuid:
+                    continue
+                part = parts_with_uuid.pop(new_part.get('uuid'))
                 osd = self._osd_get_by_accelerate_partition(
-                    ctxt, disk_partition, expected_attrs=['node'])
+                    ctxt, part, expected_attrs=['node'])
                 if not osd:
-                    disk_partition.status = s_fields.DiskStatus.AVAILABLE
-                elif osd.status in s_fields.OsdStatus.REPLACE_STATUS:
-                    logger.info('osd.%s is replacing, do not restart',
-                                osd.osd_id)
-                    disk_partition.status = s_fields.DiskStatus.INUSE
-                    disk_status = s_fields.DiskStatus.INUSE
+                    part.status = s_fields.DiskStatus.AVAILABLE
+                    disk_status = s_fields.DiskStatus.AVAILABLE
+                elif osd.status in s_fields.OsdStatus.REPLACE_STATUS or init:
+                    part.status = s_fields.DiskStatus.INUSE
                 else:
                     logger.info('accelerate disk has osd.%s, restarting',
                                 osd.osd_id)
@@ -435,10 +417,19 @@ class DiskHandler(AdminBaseHandler):
                     task.ceph_osd_restart(osd)
                     osd.status = s_fields.OsdStatus.ACTIVE
                     osd.save()
-                    disk_partition.status = s_fields.DiskStatus.INUSE
-                    disk_status = s_fields.DiskStatus.INUSE
-                disk_partition.save()
+                    part.status = s_fields.DiskStatus.INUSE
+                part.name = new_part.get('name')
+                part.save()
             disk.status = disk_status
+            for uuid, part in six.iteritems(parts_with_uuid):
+                logger.error("disk partition uuid %s not found", uuid)
+                osd = self._osd_get_by_accelerate_partition(ctxt, part)
+                if osd:
+                    part.status = s_fields.DiskStatus.INUSE
+                else:
+                    part.status = s_fields.DiskStatus.ERROR
+                part.save()
+                disk.status = s_fields.DiskStatus.ERROR
         disk.type = s_fields.DiskType.SSD
         disk.save()
 
@@ -461,16 +452,22 @@ class DiskHandler(AdminBaseHandler):
 
     def disk_online(self, ctxt, disk_info, node_id):
         logger.info("recieve disk online on %s: %s", node_id, disk_info)
-        disk = objects.Disk.get_by_slot(
-            ctxt, disk_info.get('slot'), node_id,
+        disk = objects.Disk.get_by_guid(
+            ctxt, disk_info.get('guid'), node_id,
             expected_attrs=['node', 'partition_used', 'partitions'])
 
         if not disk:
-            self._disk_add_new(ctxt, disk_info, node_id)
+            disk = self._disk_add_new(ctxt, disk_info, node_id)
+            disk = objects.Disk.get_by_id(
+                ctxt, disk.id, expected_attrs=['partition_used', 'node',
+                                               'partitions'])
         else:
             disk.name = disk_info.get('name')
+            disk.slot = disk_info.get('slot')
+            disk.wwid = disk_info.get('wwid')
+            disk.serial = disk_info.get('serial')
             disk.type = disk_info.get('type')
-            disk.size = disk_info.get('size')
+            disk.size = int(disk_info.get('size'))
             disk.save()
             if disk.role == s_fields.DiskRole.ACCELERATE:
                 self._disk_update_accelerate(ctxt, disk, disk_info, node_id)
@@ -507,98 +504,71 @@ class DiskHandler(AdminBaseHandler):
                             alert_log.alert_value)
 
     def disk_reporter(self, ctxt, disks, node_id):
+        logger.info("get disks report: %s", disks)
         all_disk_objs = objects.DiskList.get_all(
             ctxt, filters={'node_id': node_id},
             expected_attrs=['partition_used']
         )
-        all_disks = {
-            disk.slot: disk for disk in all_disk_objs
+        disks_with_guid = {
+            disk.guid: disk for disk in all_disk_objs if disk.guid
         }
-        for slot, data in six.iteritems(disks):
+        disks_without_guid = [
+            disk for disk in all_disk_objs if not disk.guid
+        ]
+        for name, data in six.iteritems(disks):
             logger.info("Check node_id %s disk %s: %s",
-                        node_id, data.get('name'), data)
+                        node_id, name, data)
             partitions = data.get("partitions")
-            if slot in all_disks:
-                disk = all_disks.pop(slot)
-                if disk.status == s_fields.DiskStatus.REPLACING:
-                    continue
-                osds = objects.OsdList.get_all(
-                    ctxt, filters={'disk_id': disk.id})
-                osd_disk = False
-                if osds:
-                    osd_disk = True
-
+            if data.get("guid") in disks_with_guid:
+                disk = disks_with_guid.pop(data.get('guid'))
+                disk.name = name
+                disk.slot = data.get('slot')
+                disk.wwid = data.get('wwid')
+                disk.serial = data.get('serial')
                 disk.size = int(data.get('size'))
-                disk.partition_num = len(partitions)
-                if disk.partition_num:
-                    for k, v in six.iteritems(partitions):
-                        part = objects.DiskPartitionList.get_all(
-                            ctxt, filters={'name': k, 'node_id': node_id})
-                        if not part:
-                            continue
-                        if part[0].role in [s_fields.DiskPartitionRole.CACHE,
-                                            s_fields.DiskPartitionRole.DB,
-                                            s_fields.DiskPartitionRole.JOURNAL,
-                                            s_fields.DiskPartitionRole.WAL]:
-                            if disk.partition_used < disk.partition_num:
-                                disk.status = s_fields.DiskStatus.AVAILABLE
-                            else:
-                                disk.status = s_fields.DiskStatus.INUSE
-                        elif osd_disk:
-                            disk.status = s_fields.DiskStatus.INUSE
-                            parts = objects.DiskPartitionList.get_all(
-                                ctxt, filters={'disk_id': osds[0].disk_id})
-                            for part in parts:
-                                part.status = s_fields.DiskStatus.INUSE
-                                part.role = s_fields.DiskPartitionRole.DATA
-                                part.save()
-                        elif data.get('is_sys_dev'):
-                            disk.status = s_fields.DiskStatus.INUSE
-                        else:
-                            disk.status = s_fields.DiskStatus.UNAVAILABLE
-                elif data.get('mounted'):
-                    disk.status = s_fields.DiskStatus.UNAVAILABLE
-                else:
-                    disk.status = s_fields.DiskStatus.AVAILABLE
-                disk.name = data.get('name')
-                disk.size = data.get('size')
                 disk.save()
-                logger.info("Update node_id %s disk %s: %s",
-                            node_id, slot, data)
-            else:
-                if data.get('is_sys_dev'):
-                    status = s_fields.DiskStatus.INUSE
-                    role = s_fields.DiskRole.SYSTEM
-                elif len(partitions) or data.get('mounted'):
-                    status = s_fields.DiskStatus.UNAVAILABLE
-                    role = s_fields.DiskRole.DATA
+                # disk check
+                if disk.role == s_fields.DiskRole.DATA:
+                    self._disk_update_data(
+                        ctxt, disk, data, node_id)
+                    # check osd disk part uuid
+                elif disk.role == s_fields.DiskRole.ACCELERATE:
+                    # check ACCELERATE partition
+                    self._disk_update_accelerate(
+                        ctxt, disk, data, node_id, init=True)
                 else:
-                    status = s_fields.DiskStatus.AVAILABLE
-                    role = s_fields.DiskRole.DATA
+                    logger.debug("disk %s is system disk", disk.name)
+                    disk.status = s_fields.DiskStatus.INUSE
+                    disk.save()
+                logger.info("Update node_id %s disk %s: %s",
+                            node_id, name, data)
+            else:
+                disk = self._disk_add_new(ctxt, data, node_id)
 
-                disk = objects.Disk(
-                    ctxt,
-                    name=data.get('name'),
-                    status=status,
-                    type=data.get('type', s_fields.DiskType.HDD),
-                    size=data.get('size'),
-                    rotate_speed=data.get('rotate_speed'),
-                    slot=data.get('slot'),
-                    node_id=node_id,
-                    partition_num=len(partitions),
-                    role=role
-                )
-                disk.create()
-                logger.info("Create node_id %s disk %s: %s",
-                            node_id, data.get('name'), data)
-            # TODO slot has no disk
-            self.disk_partitions_reporter(ctxt, partitions, disk)
-        for slot, disk in six.iteritems(all_disks):
-            logger.warning("slot %s disk %s not found, mark it error",
-                           slot, disk.name)
-            disk.name = None
-            status = s_fields.DiskStatus.ERROR
-            disk.save()
+        for guid, disk in six.iteritems(disks_with_guid):
+            osds = objects.OsdList.get_all(
+                ctxt, filters={'disk_id': disk.id})
+            if osds:
+                disk.status = s_fields.DiskStatus.ERROR
+                disk.save()
+            elif disk.role == s_fields.DiskRole.ACCELERATE:
+                partitions = objects.DiskPartitionList.get_all(
+                    ctxt, filters={'disk_id': disk.id})
+                for part in partitions:
+                    osd = self._osd_get_by_accelerate_partition(ctxt, part)
+                    if osd:
+                        part.status = s_fields.DiskStatus.INUSE
+                    else:
+                        part.status = s_fields.DiskStatus.ERROR
+                    part.save()
+                disk.status = s_fields.DiskStatus.ERROR
+                disk.save()
+            else:
+                disk.destroy()
+        # remove none guid disk
+        for disk in disks_without_guid:
+            logger.info("Remove none guid disk %s", disk.id)
+            disk.destroy()
 
     def disk_get_all_available(self, ctxt, filters=None, expected_attrs=None):
         filters['status'] = s_fields.DiskStatus.AVAILABLE

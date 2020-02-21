@@ -678,6 +678,16 @@ def disk_get_by_slot(context, slot, node_id, expected_attrs=None):
         context, slot, node_id, expected_attrs=expected_attrs)
 
 
+def disk_get_by_name(context, name, node_id, expected_attrs=None):
+    return IMPL.disk_get_by_name(
+        context, name, node_id, expected_attrs=expected_attrs)
+
+
+def disk_get_by_guid(context, guid, node_id, expected_attrs=None):
+    return IMPL.disk_get_by_guid(
+        context, guid, node_id, expected_attrs=expected_attrs)
+
+
 def disk_get_all(context, filters, marker, limit,
                  offset, sort_keys, sort_dirs,
                  expected_attrs=None):
