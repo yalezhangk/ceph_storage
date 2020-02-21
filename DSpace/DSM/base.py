@@ -121,10 +121,9 @@ class AdminBaseMixin(object):
     def _per_send_alert_email(self, alert_rule, alert_msg,
                               mail_conf, to_emails):
         for to_email in to_emails:
-            subject_conf = {
-                'smtp_subject': _('alert notify: {}').format(
-                    alert_rule_translation.get(alert_rule.type))}
-            content_conf = {'smtp_content': mail_template(alert_msg=alert_msg)}
+            subject_conf = _('alert notify: {}').format(
+                alert_rule_translation.get(alert_rule.type))
+            content_conf = mail_template(alert_msg=alert_msg)
             mail_conf.update({'smtp_name': _('alert center'),
                               'smtp_to_email': to_email})
             logger.info('begin send email, to_email=%s', to_email)
