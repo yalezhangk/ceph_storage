@@ -7,7 +7,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.i18n import _
-from DSpace.objects import fields as s_fields
+from DSpace.objects.fields import LogfileType as LogType
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
@@ -23,21 +23,34 @@ class LogFileHandler(AdminBaseHandler):
         # 1 参数校验，node/osd是否存在
         logger.debug('begin get log_file list')
         node = objects.Node.get_by_id(ctxt, node_id)
-        if not node:
-            raise exception.NodeNotFound(node_id=node_id)
-        if service_type == s_fields.LogfileType.MON:
+        if service_type == LogType.MON:
             if not node.role_monitor:
                 logger.info('current node is not mon storage, '
                             'has not mon log files')
                 return []
-        elif service_type == s_fields.LogfileType.OSD:
+        elif service_type == LogType.OSD:
             if not node.role_storage:
                 logger.info('current node is not storage rule, '
                             'has not osd log files')
                 return []
+        elif service_type == LogType.RGW:
+            if not node.role_object_gateway:
+                logger.info('current node is not object_gateway rule, '
+                            'has not rgw log files')
+                return []
+        elif service_type == LogType.MDS:
+            if not node.role_monitor:
+                logger.info('current node is not mon storage, '
+                            'has not mds log files')
+                return []
+        elif service_type == LogType.MGR:
+            if not node.role_monitor:
+                logger.info('current node is not mon storage, '
+                            'has not mgr log files')
+                return []
         else:
-            raise exception.InvalidInput(reason=_('service_type must is mon '
-                                                  'or osd'))
+            raise exception.InvalidInput(reason=_(
+                'current sys log type: {} not exist').format(service_type))
         # 2 agent获取日志文件元数据
         client = self.agent_manager.get_client(node.id)
         metadata = client.get_logfile_metadata(

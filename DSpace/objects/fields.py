@@ -333,7 +333,10 @@ class OsdDiskTypeField(BaseEnumField):
 class LogfileType(BaseStorEnum):
     MON = 'mon'
     OSD = 'osd'
-    ALL = (MON, OSD)
+    RGW = 'rgw'
+    MDS = 'mds'
+    MGR = 'mgr'
+    ALL = (MON, OSD, RGW, MDS, MGR)
 
 
 class LogfileTypeField(BaseEnumField):

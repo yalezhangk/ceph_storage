@@ -8,11 +8,13 @@ from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
 
 logger = logging.getLogger(__name__)
+CEPH_LOG_DIR = '/var/log/ceph/'
 
 
 class LogFile(ToolBase):
     def get_logfile_metadata(self, service_type):
-        cmd = 'stat -t /var/log/ceph/*{}*'.format(service_type)
+        file_dir = '{}*{}*'.format(CEPH_LOG_DIR, service_type)
+        cmd = 'stat -t {}'.format(file_dir)
         code, out, err = self.run_command(cmd)
         if code:
             logger.error('get_log_file_metadata error,out:%s', out)
@@ -25,7 +27,7 @@ class LogFile(ToolBase):
             file_info = one_file.strip().split(' ')
             per_file['file_name'] = file_info[0].split('/')[-1]
             per_file['file_size'] = file_info[1]
-            per_file['directory'] = '/var/log/ceph/'
+            per_file['directory'] = CEPH_LOG_DIR
             log_info_list.append(per_file)
         return log_info_list
 
