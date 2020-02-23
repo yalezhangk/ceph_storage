@@ -709,9 +709,6 @@ msgstr "当前磁盘 {} 分区使用中，无法删除"
 msgid "node %s: disk %s offline"
 msgstr "%s: 物理盘 %s 下线"
 
-msgid "disk %s plug partition different"
-msgstr "新插入物理盘 %s 与原物理盘分区不匹配"
-
 msgid "node %s: disk %s online"
 msgstr "%s: 物理盘 %s 上线"
 
@@ -943,16 +940,19 @@ msgstr "osd.{} 清理成功"
 msgid "osd.{} replace prepare error"
 msgstr "osd.{} 清理失败"
 
+msgid "Only scsi type disk support replace"
+msgstr "只有scsi类型磁盘支持换盘"
+
 msgid "accelerate disk %s is replacing, please wait"
 msgstr "加速盘%s正在换盘中, 请稍等"
 
 msgid "In the operation osd can not replace disk"
 msgstr "操作中的osd不能进行换盘"
 
-msgid "accelerate disk {} osd clean error"
+msgid "accelerate disk {} clean error"
 msgstr "加速盘 {} 清理错误"
 
-msgid "accelerate disk {} osd clean success"
+msgid "accelerate disk {} clean success"
 msgstr "加速盘 {} 清理成功"
 
 msgid "disk role should be accelerate"
@@ -970,11 +970,17 @@ msgstr "osd.{}重建失败"
 msgid "Osd status should be REPLACE_PREPARED"
 msgstr "osd 未清理完成"
 
+msgid "Disk slot is inconsistent"
+msgstr "磁盘槽位号不一致"
+
 msgid "create disk {} partitions failed"
 msgstr "物理盘 {} 创建分区失败"
 
 msgid "accelerate disk {} replace success"
 msgstr "加速盘 {} 换盘成功"
+
+msgid "Disk is old, please insert new disk"
+msgstr "磁盘为旧盘, 请插入新盘"
 
 msgid "accelerate disk has no partitions"
 msgstr "加速盘上没有分区"
@@ -1439,4 +1445,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-

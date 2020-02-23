@@ -137,6 +137,9 @@ class Disk(BASE, StorBase):
     slot = Column(String(32))  # 插槽
     model = Column(String(32))
     vendor = Column(String(32))
+    serial = Column(String(64))
+    wwid = Column(String(64))
+    guid = Column(String(36))
     support_led = Column(Boolean, default=False)
     led = Column(String(3), default='off')
     has_patrol = Column(Boolean, default=False)

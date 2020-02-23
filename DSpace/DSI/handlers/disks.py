@@ -56,6 +56,18 @@ update_disk_schema = {
             }
         }, {
             "if": {
+                "properties": {"action": {"const": "disk_replace"}}
+            },
+            "then": {
+                "properties": {"disk": {
+                    "type": "object",
+                    "properties": {"new_disk_id": {"type": "number"}},
+                    "required": ["new_disk_id"],
+                    "additionalProperties": False
+                }}
+            }
+        }, {
+            "if": {
                 "properties": {"action": {"const": "partition_create"}}
             },
             "then": {
@@ -300,7 +312,8 @@ class DiskActionHandler(ClusterAPIHandler):
                                                           disk_id=disk_id)
 
     def _disk_replace(self, ctxt, client, disk_id, values):
-        return client.osd_accelerate_disk_replace(ctxt, disk_id=disk_id)
+        return client.osd_accelerate_disk_replace(
+            ctxt, disk_id=disk_id, new_disk_id=values.get("new_disk_id"))
 
     @gen.coroutine
     def post(self, disk_id):

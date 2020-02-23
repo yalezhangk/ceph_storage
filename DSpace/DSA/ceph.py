@@ -68,12 +68,15 @@ class CephHandler(AgentBaseHandler):
         if osd.journal_partition_id:
             kwargs['journal_partition'] = osd.journal_partition.name
 
-        client = self._get_ssh_executor()
-        ceph_tool = CephTool(client)
-        self._data_clear(client, osd.disk.name)
+        ssh_client = self._get_ssh_executor()
+        ceph_tool = CephTool(ssh_client)
+        self._data_clear(ssh_client, osd.disk.name)
         ceph_tool.osd_zap(osd.disk.name)
         ceph_tool.disk_prepare(**kwargs)
-        return True
+        client = self._get_executor()
+        disk_tool = DiskTool(client)
+        guid = disk_tool.get_disk_guid(osd.disk.name)
+        return guid
 
     @synchronized("ceph-config-{osd.id}")
     def ceph_active_disk(self, context, osd):
@@ -198,9 +201,9 @@ class CephHandler(AgentBaseHandler):
         logger.info("ceph osd create: %s, disk(%s)",
                     osd.osd_name, osd.disk.name)
         self.ceph_config_set(context, configs)
-        self.ceph_prepare_disk(context, osd)
+        guid = self.ceph_prepare_disk(context, osd)
         self.ceph_active_disk(context, osd)
-        return osd
+        return guid
 
     def ceph_services_restart(self, ctxt, types, service):
         client = self._get_ssh_executor()

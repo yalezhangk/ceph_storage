@@ -47,6 +47,14 @@ create_osd_schema = {
     "anyOf": [{"required": ["osd"]}, {"required": ["osds"]}]
 }
 
+update_osd_schema = {
+    "type": "object",
+    "properties": {
+        "new_disk_id": {"type": "integer"}
+    },
+    "required": ["new_disk_id"],
+}
+
 
 @URLRegistry.register(r"/osds/")
 class OsdListHandler(ClusterAPIHandler):
@@ -437,8 +445,12 @@ class OsdDiskReplaceHandler(ClusterAPIHandler):
           description: successful operation
         """
         ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=update_osd_schema,
+                 format_checker=draft7_format_checker)
+        new_disk_id = data.get("new_disk_id")
         client = self.get_admin_client(ctxt)
-        osd = yield client.osd_disk_replace(ctxt, osd_id)
+        osd = yield client.osd_disk_replace(ctxt, osd_id, new_disk_id)
         self.write(objects.json_encode({
             "osd": osd
         }))

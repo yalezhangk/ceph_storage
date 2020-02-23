@@ -128,7 +128,9 @@ class OsdDiskPrepare(Task, NodeAgentMixin):
         logger.info("%s disk prepare task", osd.osd_name)
         self.prepare_task(ctxt, tf)
         agent = self._get_agent(ctxt, osd.node)
-        agent.ceph_prepare_disk(ctxt, osd)
+        guid = agent.ceph_prepare_disk(ctxt, osd)
+        osd.disk.guid = guid
+        osd.disk.save()
         self.finish_task()
 
 

@@ -306,8 +306,8 @@ class NodeTask(object):
         logger.debug("recreate %s(osd.%s)", osd.id, osd.osd_id)
         agent = self.get_agent()
         configs = self._osd_configs(osd)
-        osd = agent.ceph_osd_create(self.ctxt, osd, configs)
-        return osd
+        guid = agent.ceph_osd_create(self.ctxt, osd, configs)
+        return guid
 
     def ceph_osd_clean(self, osd):
         logger.info("clean %s(osd.%s) for replace disk", osd.id, osd.osd_id)
@@ -872,7 +872,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
         logger.debug("wait agent ready to work")
         retry_times = 0
         while True:
-            if retry_times == 30:
+            if retry_times == 120:
                 logger.error("dsa cann't connect in 30 seconds")
                 raise exc.InvalidInput("dsa connect error")
             try:
