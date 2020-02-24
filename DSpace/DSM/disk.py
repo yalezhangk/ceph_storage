@@ -154,12 +154,12 @@ class DiskHandler(AdminBaseHandler):
         disk = objects.Disk.get_by_id(
                 ctxt, disk_id,
                 expected_attrs=['partition_used', 'node'])
-        if not disk.can_operation():
+        if disk.status != s_fields.DiskStatus.AVAILABLE:
             raise exception.InvalidInput(_("Disk status not available"))
         disk.conditional_update({
             "status": s_fields.DiskStatus.PROCESSING
         }, expected_values={
-            "status": disk.can_operation_status
+            "status": s_fields.DiskStatus.AVAILABLE
         })
         begin_action = self.begin_action(
             ctxt, Resource.ACCELERATE_DISK, Action.CREATE, disk)

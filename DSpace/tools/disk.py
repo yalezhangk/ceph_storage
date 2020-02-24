@@ -7,6 +7,7 @@ import uuid
 from DSpace.exception import RunCommandError
 from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
+from DSpace.utils import retry
 from DSpace.utils.ptype import PTYPE
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ class DiskTool(ToolBase):
             "vender": udev_info.get("ID_VENDOR"),
         })
 
+    @retry(RunCommandError, interval=0.2, retries=5)
     def get_partition_uuid(self, part):
         disk_part = self._wapper("/dev/%s" % part)
         cmd = ["blkid", disk_part, "-o", "udev"]
