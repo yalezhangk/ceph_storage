@@ -576,3 +576,35 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                            resource_name=access_path.name,
                            after_obj=access_path)
         return access_path
+
+    def volume_access_path_get_mappings(self, ctxt, id):
+        access_path_mappings = []
+        expected_attrs = ['volume_client_groups']
+        access_path = objects.VolumeAccessPath.get_by_id(
+            ctxt, id, expected_attrs=expected_attrs)
+        client_group_ids = [i.id for i in access_path.volume_client_groups]
+        for client_group_id in client_group_ids:
+            access_path_mapping = {}
+            client_group = objects.VolumeClientGroup.get_by_id(
+                ctxt, client_group_id)
+            volumes = []
+            vol_ids = []
+            access_path.volume_client_groups = None
+            access_path_mapping["access_path"] = access_path
+            access_path_mapping["client_group"] = client_group
+            volume_mappings = objects.VolumeMappingList.get_all(
+                ctxt, filters={"volume_access_path_id": access_path.id,
+                               "volume_client_group_id": client_group_id})
+            volume_ids = [i.volume_id for i in volume_mappings]
+            for vol_id in volume_ids:
+                if vol_id not in vol_ids:
+                    vol_ids.append(vol_id)
+            logger.debug("client_group_id: %s, vol_id: %s", client_group_id,
+                         vol_ids)
+            for vol_id in vol_ids:
+                volume = objects.Volume.get_by_id(ctxt, vol_id)
+                volumes.append(volume)
+            access_path_mapping["volumes"] = volumes
+            logger.debug("access_path_mapping: %s", access_path_mapping)
+            access_path_mappings.append(access_path_mapping)
+        return access_path_mappings
