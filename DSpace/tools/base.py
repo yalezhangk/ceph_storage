@@ -157,6 +157,8 @@ class ToolBase(object):
         host_prefix = self.executor.host_prefix
         if not host_prefix:
             return path
+        if path == os.path.sep:
+            return host_prefix
         if path[0] == os.path.sep:
             path = path[1:]
         return os.path.join(host_prefix, path)
