@@ -845,6 +845,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
         volumes = [
             (config_dir, config_dir_container),
             (log_dir, log_dir_container),
+            (dsa_lib_dir, "/etc/target/"),
             ("/", "/host"),
             ("/var/run", "/host/var/run"),
             ("/sys", "/sys"),

@@ -324,7 +324,7 @@ def remove_acl_mapped_lun(iqn_target, iqn_initiator, disk_name):
         for ml in acl.mapped_luns:
             if ml.mapped_lun == disk_mapped_lun_id:
                 ml.delete()
-        save_config()
+    save_config()
 
 
 def current_attached_luns(iqn):

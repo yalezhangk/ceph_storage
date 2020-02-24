@@ -315,7 +315,7 @@ class VolumeAccessPathListHandler(ClusterAPIHandler, CheckVolumeAccessPath):
 @URLRegistry.register(r"/volume_access_paths/([0-9]*)/")
 class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
     @gen.coroutine
-    def get(self, voluem_access_path_id):
+    def get(self, volume_access_path_id):
         """
         ---
         tags:
@@ -348,7 +348,7 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         expected_attrs = ['volume_gateways', 'volume_client_groups',
                           'nodes', 'volumes', 'volume_clients']
         volume_access_path = yield client.volume_access_path_get(
-            ctxt, voluem_access_path_id, expected_attrs=expected_attrs)
+            ctxt, volume_access_path_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode({
             "volume_access_path": volume_access_path
         }))
@@ -458,6 +458,47 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         logger.info("delete access path success")
         self.write(objects.json_encode({
             "volume_access_path": volume_access_path
+        }))
+
+
+@URLRegistry.register(r"/volume_access_paths/([0-9]*)/mappings/")
+class VolumeAccessPathMappingsHandler(ClusterAPIHandler,
+                                      CheckVolumeAccessPath):
+    @gen.coroutine
+    def get(self, volume_access_path_id):
+        """
+        ---
+        tags:
+        - volume_access_path_mappings
+        summary: Detail of the access_path_mappings
+        description: Return detail infomation of access_path_mappings by id
+        operationId: volume_access_path.api.volumeAccessPathMappingDetail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: VolumeAccessPath's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        access_path_mappings = yield client.volume_access_path_get_mappings(
+            ctxt, volume_access_path_id)
+        self.write(objects.json_encode({
+            "access_path_mappings": access_path_mappings
         }))
 
 
