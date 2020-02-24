@@ -635,7 +635,7 @@ class OsdHandler(AdminBaseHandler):
         client = self.agent_manager.get_client(node_id=new_disk.node.id)
 
         guid, partitions = client.disk_partitions_create(
-            ctxt, node=disk.node, disk=new_disk, values=values)
+            ctxt, node=new_disk.node, disk=new_disk, values=values)
 
         if len(partitions) == disk.partition_num and guid:
             partitions_old = objects.DiskPartitionList.get_all(
@@ -659,7 +659,7 @@ class OsdHandler(AdminBaseHandler):
             new_disk.guid = guid
             new_disk.save()
         else:
-            msg = _("create disk {} partitions failed").format(disk.name)
+            msg = _("create disk {} partitions failed").format(new_disk.name)
             op_status = "DISK_CREATE_PART_ERROR"
             logger.error(msg)
             self.finish_action(begin_action, new_disk.id, new_disk.name,
@@ -681,11 +681,11 @@ class OsdHandler(AdminBaseHandler):
             new_disk.status = s_fields.DiskStatus.INUSE
         new_disk.save()
         disk.destroy()
-        logger.info("accelerate disk %s replace finish", disk.name)
-        msg = _("accelerate disk {} replace success").format(disk.name)
-        self.finish_action(begin_action, disk.id, disk.name, disk,
+        logger.info("accelerate disk %s replace finish", new_disk.name)
+        msg = _("accelerate disk {} replace success").format(new_disk.name)
+        self.finish_action(begin_action, new_disk.id, new_disk.name, new_disk,
                            status='success')
-        self.send_websocket(ctxt, disk, "DISK_REPLACE_SUCCESS", msg)
+        self.send_websocket(ctxt, new_disk, "DISK_REPLACE_SUCCESS", msg)
 
     def osd_accelerate_disk_replace(self, ctxt, disk_id, new_disk_id):
         self.check_mon_host(ctxt)

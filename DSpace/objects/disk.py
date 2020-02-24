@@ -101,7 +101,7 @@ class Disk(base.StorPersistentObject, base.StorObject,
     def get_by_guid(cls, context, guid, node_id, expected_attrs=None):
         if not guid:
             return None
-        db_disk = db.disk_get_by_name(
+        db_disk = db.disk_get_by_guid(
             context, guid, node_id, expected_attrs=expected_attrs)
         if not db_disk:
             return None
