@@ -78,12 +78,16 @@ class CephTool(ToolBase):
                 return True
         return False
 
-    def module_enable(self, module, public_ip=None, mgr_dspace_port=None):
-        # TODO: set mgr/dspace/server_addr
-        # config-key set ip时，是全局的，如已设置，待下一台mgr节点，启用dspace插件时，
-        # 会从集群全局配置中获取server_addr，该ip为第一台节点的ip, 导致设置失败
-        # 会报地址已被占用，待后期解决完善，暂时只设置port
-
+    def module_enable(self, module, hostname, public_ip, mgr_dspace_port):
+        # set addr
+        addr_key = 'mgr/dspace/{}/server_addr'.format(hostname)
+        cmd_addr = ['ceph', 'config-key', 'set', addr_key, public_ip]
+        rc, stdout, stderr = self.run_command(cmd_addr, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd_addr, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        logger.info('set ceph config-key success, key:{},value:{}'.format(
+            addr_key, public_ip))
         # set port
         cmd_port = ['ceph', 'config-key', 'set', 'mgr/dspace/server_port',
                     mgr_dspace_port]
@@ -91,6 +95,8 @@ class CephTool(ToolBase):
         if rc:
             raise RunCommandError(cmd=cmd_port, return_code=rc,
                                   stdout=stdout, stderr=stderr)
+        logger.info('set ceph config-key success, key:{}, value:{}'.format(
+            'mgr/dspace/server_port', mgr_dspace_port))
         # module enable dspace
         cmd = ["ceph", "mgr", "module", "enable", module]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
