@@ -118,6 +118,9 @@ global_opts = [
     cfg.StrOpt('auth_backend',
                default="DBAuth",
                help='auth_backent'),
+    cfg.IntOpt('rados_timeout',
+               default=30,
+               help='Ceph Rados client timeout'),
 ]
 
 etcd_opts = [

@@ -11,6 +11,7 @@ import six
 
 from DSpace import exception as exc
 from DSpace import objects
+from DSpace.common.config import CONF
 from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import FaultDomain
 from DSpace.tools.base import Executor
@@ -105,8 +106,8 @@ class CephTask(object):
             f.write(ceph_config_str)
 
     def get_ceph_df(self):
-        with RADOSClient(self.rados_args(), timeout='2') as rados_client:
-            return rados_client.get_ceph_df()
+        with RADOSClient(self.rados_args(), timeout='2') as client:
+            return client.get_ceph_df()
 
     def pool_add_osd(self):
         pass
@@ -120,35 +121,39 @@ class CephTask(object):
     """
     Get all osds in a ceph cluster
     """
+
     def get_osds(self):
         pass
 
     """
     Get osd capacity
     """
+
     def get_osd_df(self):
-        with RADOSClient(self.rados_args(), timeout='2') as rados_client:
-            return rados_client.get_osd_df()
+        with RADOSClient(self.rados_args(), timeout='2') as client:
+            return client.get_osd_df()
 
     """
     Get all osds in a pool
     """
+
     def get_pool_osds(self, pool_name):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            osds = rados_client.get_osds_by_pool(pool_name)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            osds = client.get_osds_by_pool(pool_name)
             return osds
 
     """
     Get all osds in a host
     """
+
     def get_host_osds(self, host_name):
         pass
 
-    def _crush_rule_create(self, rados_client, crush_content):
+    def _crush_rule_create(self, client, crush_content):
         logger.info("rule create: %s", json.dumps(crush_content))
         rule_name = crush_content.get('crush_rule_name')
         default_root_name = crush_content.get('root_name')
-        rados_client.root_add(default_root_name)
+        client.root_add(default_root_name)
         fault_domain = crush_content.get('fault_domain')
         datacenters = crush_content.get('datacenters')
         racks = crush_content.get('racks')
@@ -157,20 +162,20 @@ class CephTask(object):
         # add datacenter
         if fault_domain == FaultDomain.DATACENTER:
             for name, dc in six.iteritems(datacenters):
-                rados_client.datacenter_add(dc['crush_name'])
-                rados_client.datacenter_move_to_root(
+                client.datacenter_add(dc['crush_name'])
+                client.datacenter_move_to_root(
                     dc['crush_name'], default_root_name)
                 dc_racks = [racks.get(rack_id)
                             for rack_id in dc['racks']]
                 for rack in dc_racks:
-                    rados_client.rack_add(rack['crush_name'])
-                    rados_client.rack_move_to_datacenter(
+                    client.rack_add(rack['crush_name'])
+                    client.rack_move_to_datacenter(
                         rack['crush_name'], dc['crush_name'])
         # move rack to root
         if fault_domain == FaultDomain.RACK:
             for name, rack in six.iteritems(crush_content.get('racks')):
-                rados_client.rack_add(rack['crush_name'])
-                rados_client.rack_move_to_root(
+                client.rack_add(rack['crush_name'])
+                client.rack_move_to_root(
                     rack['crush_name'], default_root_name)
         # add host
         if fault_domain in [FaultDomain.DATACENTER, FaultDomain.RACK]:
@@ -178,27 +183,27 @@ class CephTask(object):
                 rack_hosts = [hosts.get(name)
                               for name in rack['hosts']]
                 for host in rack_hosts:
-                    rados_client.host_add(host['crush_name'])
-                    rados_client.host_move_to_rack(
+                    client.host_add(host['crush_name'])
+                    client.host_move_to_rack(
                         host['crush_name'], rack['crush_name'])
         # move host to root
         if fault_domain == FaultDomain.HOST:
             for name, host in six.iteritems(crush_content.get('hosts')):
-                rados_client.host_add(host['crush_name'])
-                rados_client.rack_move_to_root(
+                client.host_add(host['crush_name'])
+                client.rack_move_to_root(
                     host['crush_name'], default_root_name)
         # add osd
         for name, host in six.iteritems(hosts):
             host_osds = [osds.get(osd_id) for osd_id in host['osds']]
             for osd in host_osds:
-                rados_client.osd_add(osd['id'], osd['size'],
-                                     host['crush_name'])
+                client.osd_add(osd['id'], osd['size'],
+                               host['crush_name'])
 
-        rados_client.rule_add(rule_name, default_root_name, fault_domain)
+        client.rule_add(rule_name, default_root_name, fault_domain)
 
     def pool_create(self, pool, can_specified_rep, crush_content):
         logger.debug("pool_data: %s", json.dumps(crush_content))
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             # 1. Create bucket: host, rack, [datacenter], root
             # 2. Move osd to host, move host to rack...
             # 3. Get current crushmap
@@ -212,42 +217,42 @@ class CephTask(object):
             osd_num = len(crush_content.get('osds'))
             pool_rep_size = rep_size if can_specified_rep else None
 
-            if pool_name in rados_client.pool_list():
+            if pool_name in client.pool_list():
                 logger.error("pool %s alread exists", pool_name)
                 raise exc.PoolExists(pool=pool_name)
 
             pg_num = self._cal_pg_num(osd_num, rep_size)
             logger.info('creating pool pg_num: %s', pg_num)
-            self._crush_rule_create(rados_client, crush_content)
+            self._crush_rule_create(client, crush_content)
 
-            rados_client.pool_create(pool_name=pool_name,
-                                     pool_type=pool_type,
-                                     rule_name=rule_name,
-                                     pg_num=pg_num,
-                                     pgp_num=pg_num,
-                                     rep_size=pool_rep_size)
-            rados_client.set_pool_application(pool_name, "rbd")
+            client.pool_create(pool_name=pool_name,
+                               pool_type=pool_type,
+                               rule_name=rule_name,
+                               pg_num=pg_num,
+                               pgp_num=pg_num,
+                               rep_size=pool_rep_size)
+            client.set_pool_application(pool_name, "rbd")
             if not can_specified_rep:
-                rados_client.pool_set_replica_size(
+                client.pool_set_replica_size(
                     pool_name=pool_name, rep_size=rep_size)
             if pool_role == 'gateway':
                 pg_num = 32
                 for pool in self.rgw_pools:
-                    rados_client.pool_create(pool_name=pool,
-                                             pool_type=pool_type,
-                                             rule_name=rule_name,
-                                             pg_num=pg_num,
-                                             pgp_num=pg_num,
-                                             rep_size=pool_rep_size)
-                    rados_client.set_pool_application(pool, "rgw")
+                    client.pool_create(pool_name=pool,
+                                       pool_type=pool_type,
+                                       rule_name=rule_name,
+                                       pg_num=pg_num,
+                                       pgp_num=pg_num,
+                                       rep_size=pool_rep_size)
+                    client.set_pool_application(pool, "rgw")
                     if not can_specified_rep:
-                        rados_client.pool_set_replica_size(
+                        client.pool_set_replica_size(
                             pool_name=pool, rep_size=rep_size)
 
-            return rados_client.get_pool_stats(pool_name).get('pool_id')
+            return client.get_pool_stats(pool_name).get('pool_id')
 
     def config_set(self, cluster_temp_configs):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             for config in cluster_temp_configs:
                 service = config['service']
                 osd_list = None
@@ -255,14 +260,14 @@ class CephTask(object):
                     osd_id = service.split('.')[1]
                     if osd_id == '*':
                         osd_list = objects.OsdList.get_all(self.ctxt)
-                rados_client.config_set(service,
-                                        config['key'],
-                                        config['value'],
-                                        osd_list)
+                client.config_set(service,
+                                  config['key'],
+                                  config['value'],
+                                  osd_list)
 
     def rule_get(self, rule_name):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            rule_detail = rados_client.rule_get(rule_name)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            rule_detail = client.rule_get(rule_name)
             return rule_detail
 
     def _cal_pg_num(self, osd_num, rep_size=3):
@@ -314,16 +319,16 @@ class CephTask(object):
         logger.debug("pool_delete, pool_data: %s", pool)
         pool_name = pool.pool_name
         pool_role = pool.role
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            rados_client.pool_delete(pool_name)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            client.pool_delete(pool_name)
             if pool_role == 'gateway':
                 for pool in self.rgw_pools:
-                    rados_client.pool_delete(pool)
+                    client.pool_delete(pool)
 
     def crush_delete(self, crush_content):
         logger.debug("crush_delete, data: %s", crush_content)
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            self._crush_rule_delete(rados_client, crush_content)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            self._crush_rule_delete(client, crush_content)
 
     def _crush_rule_update(self, client, crush_content):
         logger.info("crush rule useless delete: %s", json.dumps(crush_content))
@@ -565,7 +570,7 @@ class CephTask(object):
         logger.info("crush_content: %s", crush_content)
         root_name = crush_content.get('root_name')
         pool_name = pool.pool_name
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             if not client.pool_exists(pool_name):
                 logger.warning("pool %s not exists", pool_name)
                 return
@@ -587,17 +592,17 @@ class CephTask(object):
 
     def pool_del_disk(self, pool, crush_content):
         logger.info("crush_content: %s", crush_content)
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             self._crush_rule_update(client, crush_content)
 
     def cluster_info(self):
-        with RADOSClient(self.rados_args(), timeout='1') as rados_client:
-            return rados_client.get_cluster_info()
+        with RADOSClient(self.rados_args(), timeout='1') as client:
+            return client.get_cluster_info()
 
     def update_pool(self, pool):
         rep_size = pool.replicate_size
         pool_name = pool.pool_name
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             if not client.pool_exists(pool_name):
                 raise exc.PoolNameNotFound(pool=pool_name)
             client.pool_set_replica_size(pool_name=pool_name,
@@ -613,7 +618,7 @@ class CephTask(object):
         rule_name = crush_content.get('crush_rule_name')
         fault_domain = crush_content.get('fault_domain')
         root_name = crush_content.get('root_name')
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             self._crush_rule_update(client, crush_content)
             tmp_rule_name = "{}-new".format(rule_name)
             client.rule_rename(rule_name, tmp_rule_name)
@@ -765,28 +770,28 @@ class CephTask(object):
                 rbd_client.rbd_resize(v_name, size)
 
     def osd_new(self, osd_fsid):
-        with RADOSClient(self.rados_args()) as rados_client:
-            return rados_client.osd_new(osd_fsid)
+        with RADOSClient(self.rados_args()) as client:
+            return client.osd_new(osd_fsid)
 
     def osd_remove_from_cluster(self, osd_name):
-        with RADOSClient(self.rados_args()) as rados_client:
-            rados_client.osd_down(osd_name)
-            rados_client.osd_out(osd_name)
-            rados_client.osd_crush_rm(osd_name)
-            rados_client.osd_rm(osd_name)
-            rados_client.auth_del(osd_name)
+        with RADOSClient(self.rados_args()) as client:
+            client.osd_down(osd_name)
+            client.osd_out(osd_name)
+            client.osd_crush_rm(osd_name)
+            client.osd_rm(osd_name)
+            client.auth_del(osd_name)
 
     def auth_get_key(self, entity):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.auth_get_key(entity)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.auth_get_key(entity)
 
     def get_pools(self):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.get_pools()
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.get_pools()
 
     def get_pool_info(self, pool_name="rbd", keyword="size"):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.get_pool_info(pool_name, keyword)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.get_pool_info(pool_name, keyword)
 
     def _crush_tree_parse(self, nodes, root_name):
         datacenters = {}
@@ -833,7 +838,7 @@ class CephTask(object):
         }
 
     def get_crush_rule_info(self, rule_name="replicated_rule"):
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             rule_info = client.get_crush_rule_info(rule_name)
             root_name = None
             fault_domain = None
@@ -857,20 +862,20 @@ class CephTask(object):
             return crush_rule_info
 
     def get_bucket_info(self, bucket):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.bucket_get(bucket)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.bucket_get(bucket)
 
     def ceph_data_balance(self, action=None, mode=None):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.set_data_balance(action=action, mode=mode)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.set_data_balance(action=action, mode=mode)
 
     def balancer_status(self):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.balancer_status()
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.balancer_status()
 
     def is_module_enable(self, module_name):
         logger.info("get balancer module status")
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             res = client.mgr_module_ls()
             if module_name not in res["enabled_modules"]:
                 return False
@@ -900,7 +905,7 @@ class CephTask(object):
 
     def cluster_pause(self, enable=True):
         logger.info("cluster pause enable=%s", enable)
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             if enable:
                 client.osd_pause()
                 if self._is_paush_in_ceph(client):
@@ -916,7 +921,7 @@ class CephTask(object):
 
     def cluster_is_pause(self):
         logger.info("cluster is pause")
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             if self._is_paush_in_ceph(client):
                 logger.info("cluster is pause")
                 return True
@@ -925,7 +930,7 @@ class CephTask(object):
 
     def cluster_status(self):
         logger.info("cluster status")
-        with RADOSClient(self.rados_args(), timeout='5') as client:
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             res = {
                 "created": True,
                 "pause": self._is_paush_in_ceph(client),
@@ -935,33 +940,33 @@ class CephTask(object):
             return res
 
     def mark_osds_out(self, osd_names):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.osd_out(osd_names)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.osd_out(osd_names)
 
     def osds_add_noout(self, osd_names):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.osds_add_noout(osd_names)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.osds_add_noout(osd_names)
 
     def osds_rm_noout(self, osd_names):
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.osds_rm_noout(osd_names)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.osds_rm_noout(osd_names)
 
     def get_osd_tree(self):
         logger.info("Get osd tree info")
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.get_osd_tree()
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.get_osd_tree()
 
     def get_osd_stat(self):
         logger.info("Get ceph osd stat")
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.get_osd_stat()
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.get_osd_stat()
 
     def ceph_status_check(self):
         logger.debug("Check ceph cluster status")
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.status()
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.status()
 
     def osd_metadata(self, osd_id):
         logger.debug("get osd metadata")
-        with RADOSClient(self.rados_args(), timeout='5') as rados_client:
-            return rados_client.osd_metadata(osd_id)
+        with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
+            return client.osd_metadata(osd_id)
