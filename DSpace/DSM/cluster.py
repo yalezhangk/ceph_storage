@@ -557,10 +557,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             logger.error("cluster has no mon role or can't connect to mon.")
         return data_balance
 
-    def cluster_data_balance_set(self, ctxt, data_balance):
-        self.check_mon_host(ctxt)
-        action = data_balance.get("action")
-        mode = data_balance.get("mode")
+    def _data_balancer_set(self, ctxt, action_log, action, mode):
 
         data_balance = {
             "active": False,
@@ -581,20 +578,37 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             data_balance["mode"] = res.get("mode")
         else:
             logger.error("cluster has no mon role or can't connect to mon.")
-        action_map = {
-            'on': Action.DATA_BALANCE_ON,
-            'off': Action.DATA_BALANCE_OFF
-        }
-        begin_action = self.begin_action(
-            ctxt, Resource.CLUSTER, action_map[action])
         objects.sysconfig.sys_config_set(
             ctxt, "data_balance", data_balance.get("active"), "bool")
         objects.sysconfig.sys_config_set(
             ctxt, "data_balance_mode", data_balance.get("mode"), "string")
+
+    def cluster_data_balance_set(self, ctxt, data_balance):
+        self.check_mon_host(ctxt)
+        action = data_balance.get("action")
+        mode = data_balance.get("mode")
+        action_map = {
+            'on': Action.DATA_BALANCE_ON,
+            'off': Action.DATA_BALANCE_OFF
+        }
+        action_log = self.begin_action(
+            ctxt, Resource.CLUSTER, action_map[action])
+        try:
+            self._data_balancer_set(ctxt, action_log, action, mode)
+            log_err = None
+            log_status = 'success'
+        except Exception as e:
+            logger.exception(e)
+            log_status = 'failed'
+            if action == 'on':
+                log_err = _("Cluster balance enable failed: %s") % str(e)
+            else:
+                log_err = _("Cluster balance disable failed: %s") % str(e)
         cluster_id = ctxt.cluster_id
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
-        self.finish_action(begin_action, cluster_id, cluster.display_name,
-                           after_obj=data_balance)
+        self.finish_action(action_log, cluster_id, cluster.display_name,
+                           after_obj=data_balance, status=log_status,
+                           err_msg=log_err)
         if action == 'on':
             msg = _("Cluster balance enabled")
             ws_action = "CLUSTER_BALANCE_ENABLE"
