@@ -615,6 +615,7 @@ class RADOSClient(object):
     def __init__(self, ceph_conf, timeout=None):
         self.client = rados.Rados(conf=ceph_conf)
         if timeout:
+            timeout = str(timeout)
             self.client.conf_set('rados_osd_op_timeout', timeout)
             self.client.conf_set('rados_mon_op_timeout', timeout)
             self.client.conf_set('client_mount_timeout', timeout)
