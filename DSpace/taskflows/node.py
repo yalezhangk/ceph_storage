@@ -465,10 +465,10 @@ class NodeTask(object):
             ctxt, self.node, access_path, volume_client, volumes)
 
     def bgw_change_client_group(self, ctxt, access_path, volumes,
-                                volume_clients, new_volume_clients):
+                                volume_clients, new_client_group):
         agent = self.get_agent()
         agent.bgw_change_client_group(ctxt, access_path, volumes,
-                                      volume_clients, new_volume_clients)
+                                      volume_clients, new_client_group)
 
     def bgw_set_mutual_chap(self, ctxt, access_path, volume_clients,
                             mutual_chap_enable, mutual_username,

@@ -239,18 +239,28 @@ def create_user_backstore(pool_name, disk_name, disk_size, osd_op_timeout=30,
         raise exc.IscsiTargetError(action="create backstore")
 
 
-def delete_user_backstore(disk_name):
+def _delete_free_backstore(so):
     attached_luns = []
+    for lun in so.attached_luns:
+        attached_luns.append(lun)
+    if not attached_luns:
+        logger.error("will delete free backstore: %s", so)
+        so.delete()
+        save_config()
+
+
+def delete_user_backstore(disk_name):
     so = get_user_backstore(disk_name)
     if not so:
         logger.debug('user backstore %s not found, maybe delete it already',
                      disk_name)
     else:
-        for lun in so.attached_luns:
-            attached_luns.append(lun)
-        if not attached_luns:
-            so.delete()
-            save_config()
+        _delete_free_backstore(so)
+
+
+def delete_free_backstore():
+    for so in RTSRoot().storage_objects:
+        _delete_free_backstore(so)
 
 
 def get_user_backstore(disk_name):
@@ -310,6 +320,7 @@ def remove_acl_mapped_lun(iqn_target, iqn_initiator, disk_name):
     if not acl:
         logger.error('acl %s not found', iqn_initiator)
         raise exc.IscsiAclNotFound(iqn_initiator=iqn_initiator)
+    logger.debug("acl.mapped_luns: %s", list(acl.mapped_luns))
     acl_mapped_luns = current_mapped_luns(iqn_target, iqn_initiator)
     disk_mapped_lun_id = None
     for acl_ml in acl_mapped_luns:
@@ -324,6 +335,12 @@ def remove_acl_mapped_lun(iqn_target, iqn_initiator, disk_name):
         for ml in acl.mapped_luns:
             if ml.mapped_lun == disk_mapped_lun_id:
                 ml.delete()
+    # If acl no mapped_lun, delete acl and user backstore
+    if not list(acl.mapped_luns):
+        logger.error("will remove acl: %s, and user backstore: %s",
+                     iqn_initiator, disk_name)
+        delete_acl(iqn_target, iqn_initiator)
+        delete_user_backstore(disk_name)
     save_config()
 
 
@@ -384,7 +401,6 @@ def mutual_chap_enable(iqn_target, mutual_username, mutual_password):
     """
     Set mutual chap for all acls in a iscsi target
     """
-    set_tpg_attributes(iqn_target, "authentication", 1)
     tpg = _get_single_tpg(iqn_target)
     for acl in tpg.node_acls:
         acl.chap_mutual_userid = mutual_username
@@ -400,7 +416,6 @@ def set_acl_mutual_chap(iqn_target, iqn_initiator, mutual_username,
     """
     logger.debug("%s: trying to set mutual chap for acl: %s",
                  iqn_target, iqn_initiator)
-    set_tpg_attributes(iqn_target, "authentication", 1)
     acl = get_acl(iqn_target, iqn_initiator)
     if not acl:
         logger.error("can't find the specified acl: %s", iqn_initiator)
