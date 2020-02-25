@@ -47,12 +47,9 @@ class Disk(base.StorPersistentObject, base.StorObject,
     OPTIONAL_FIELDS = ('node', 'partition_used', 'metrics', 'partitions',
                        'accelerate_type')
 
-    def can_operation(self):
-        return self.status == s_field.DiskStatus.AVAILABLE
-
     @property
     def can_operation_status(self):
-        return [s_field.DiskStatus.AVAILABLE]
+        return [s_field.DiskStatus.AVAILABLE, s_field.DiskStatus.ERROR]
 
     def create(self):
         if self.obj_attr_is_set('id'):
