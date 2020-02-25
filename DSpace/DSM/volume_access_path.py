@@ -249,6 +249,13 @@ class VolumeAccessPathHandler(AdminBaseHandler):
 
     def _create_mapping(self, ctxt, node_ids, access_path,
                         volume_client, volumes):
+        volume_client_group = objects.VolumeClientGroup.get_by_id(
+            ctxt, volume_client.volume_client_group_id)
+        mutual_chap_enable = volume_client_group.chap_enable
+        mutual_username = volume_client_group.chap_username
+        mutual_password = volume_client_group.chap_password
+        logger.debug("volume_client_group: %s", volume_client_group)
+
         for node_id in node_ids:
             try:
                 node = objects.Node.get_by_id(ctxt, node_id)
@@ -257,6 +264,9 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                              node.hostname)
                 task.bgw_create_mapping(
                     ctxt, access_path, volume_client, volumes)
+                task.bgw_set_mutual_chap(ctxt, access_path, [volume_client],
+                                         mutual_chap_enable, mutual_username,
+                                         mutual_password)
                 logger.debug("create mapping for node: %s success",
                              node.hostname)
             except exception.StorException as e:
@@ -280,7 +290,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         for mapping in mapping_list:
             client_group_id = mapping.get('client_group_id')
             client_group = objects.VolumeClientGroup.get_by_id(
-                ctxt, client_group_id)
+                ctxt, client_group_id, expected_attrs=["volume_clients"])
             if not client_group:
                 logger.error("volume client group not found, id: %s",
                              client_group_id)
@@ -312,8 +322,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                     volume_client_group_id=client_group_id,
                     cluster_id=ctxt.cluster_id)
                 volume_mapping.create()
-            volume_clients = objects.VolumeClientList.get_all(
-                ctxt, filters={'volume_client_group_id': client_group_id})
+            volume_clients = client_group.volume_clients
             for volume_client in volume_clients:
                 self._create_mapping(ctxt, gateway_node_ids, access_path,
                                      volume_client, volumes)
@@ -521,14 +530,14 @@ class VolumeAccessPathHandler(AdminBaseHandler):
 
     def _volume_access_path_change_client_group(self, ctxt, access_path,
                                                 volumes, volume_clients,
-                                                new_volume_clients):
+                                                new_client_group):
         nodes = access_path.nodes
         for node in nodes:
             try:
                 task = NodeTask(ctxt, node)
                 task.bgw_change_client_group(
                     ctxt, access_path, volumes, volume_clients,
-                    new_volume_clients)
+                    new_client_group)
             except exception.StorException as e:
                 logger.error("volume_access_path %s change client group"
                              "error: %s", access_path.name, e)
@@ -567,7 +576,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             volumes.append(volume)
         self._volume_access_path_change_client_group(
             ctxt, access_path, volumes, client_group.volume_clients,
-            new_client_group.volume_clients)
+            new_client_group)
         for mapping_id in volume_mapping_ids:
             volume_mapping = objects.VolumeMapping.get_by_id(ctxt, mapping_id)
             volume_mapping.volume_client_group_id = new_client_group_id

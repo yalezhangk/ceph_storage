@@ -47,6 +47,7 @@ class IscsiHandler(AgentBaseHandler):
                      access_path.name)
         iqn_target = access_path.iqn
         iscsi.delete_target(iqn_target)
+        iscsi.delete_free_backstore()
 
     def _update_chap(self, iqn_target, chap_enable, username, password):
         if chap_enable:
@@ -133,22 +134,39 @@ class IscsiHandler(AgentBaseHandler):
                                         vol.volume_name)
 
     def bgw_change_client_group(self, context, access_path, volumes,
-                                volume_clients, new_volume_clients):
+                                volume_clients, new_client_group):
         iqn_target = access_path.iqn
+        mutual_chap_enable = new_client_group.chap_enable
+        mutual_username = new_client_group.chap_username
+        mutual_password = new_client_group.chap_password
         for volume_client in volume_clients:
             iqn_initiator = volume_client['iqn']
             iscsi.delete_acl(iqn_target, iqn_initiator)
             logger.debug("iscsi target %s, delete acl %s",
                          iqn_target, iqn_initiator)
-        for volume_client in new_volume_clients:
+        for volume_client in new_client_group.volume_clients:
             iqn_initiator = volume_client['iqn']
             iscsi.create_acl(iqn_target, iqn_initiator)
             logger.debug("iscsi target %s, create acl %s",
                          iqn_target, iqn_initiator)
             for vol in volumes:
                 self._create_acl_mapped_lun(iqn_target, iqn_initiator, vol)
+            self._update_mutual_chap(
+                iqn_target, iqn_initiator, mutual_chap_enable,
+                mutual_username, mutual_password)
         self._update_chap(iqn_target, access_path.chap_enable,
                           access_path.chap_username, access_path.chap_password)
+
+    def _update_mutual_chap(self, iqn_target, iqn_initiator,
+                            mutual_chap_enable, mutual_username,
+                            mutual_password):
+        if mutual_chap_enable:
+            iscsi.set_acl_mutual_chap(
+                iqn_target, iqn_initiator, mutual_username,
+                mutual_password)
+        else:
+            iscsi.set_acl_mutual_chap(
+                iqn_target, iqn_initiator, "", "")
 
     def bgw_set_mutual_chap(self, ctxt, access_path, volume_clients,
                             mutual_chap_enable, mutual_username,
@@ -156,12 +174,9 @@ class IscsiHandler(AgentBaseHandler):
         iqn_target = access_path.iqn
         for volume_client in volume_clients:
             iqn_initiator = volume_client.iqn
-            if mutual_chap_enable:
-                iscsi.set_acl_mutual_chap(
-                    iqn_target, iqn_initiator, mutual_username,
-                    mutual_password)
-            else:
-                iscsi.set_acl_mutual_chap(iqn_target, iqn_initiator, "", "")
+            self._update_mutual_chap(
+                iqn_target, iqn_initiator, mutual_chap_enable,
+                mutual_username, mutual_password)
 
     def bgw_clear_all(self, ctxt):
         logger.info("clear all block gateway configs")
