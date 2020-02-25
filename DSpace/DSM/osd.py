@@ -145,7 +145,7 @@ class OsdHandler(AdminBaseHandler):
             res_name = osd.osd_name if osd.osd_id else osd.disk.name
             logger.info("%s create error", res_name)
             err_msg = str(e)
-            msg = _("create {} error: {}").format(res_name, err_msg)
+            msg = _("create {} error").format(res_name)
             op_status = 'CREATE_ERROR'
 
         res_name = osd.osd_name if osd.osd_id else osd.disk.name
@@ -337,7 +337,7 @@ class OsdHandler(AdminBaseHandler):
             osd.status = status
             osd.save()
             err_msg = str(e)
-            msg = _("delete {} error: {}").format(res_name, err_msg)
+            msg = _("delete {} error").format(res_name)
             op_status = "DELETE_ERROR"
         logger.info("osd_delete, got osd: %s, osd id: %s", osd, osd.osd_id)
 

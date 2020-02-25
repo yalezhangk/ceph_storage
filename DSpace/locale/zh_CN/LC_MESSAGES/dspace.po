@@ -889,8 +889,8 @@ msgstr "创建硬盘成功：osd.{}"
 msgid "create error: osd.{} is offline"
 msgstr "创建硬盘失败：osd.{} 离线"
 
-msgid "create {} error: {}"
-msgstr "创建{}失败：{}"
+msgid "create {} error"
+msgstr "创建{}失败"
 
 msgid "Disk(%s) status not available"
 msgstr "磁盘(%s)状态不可用"
@@ -925,8 +925,8 @@ msgstr "最大硬盘数为 %s"
 msgid "delete {} success"
 msgstr "删除硬盘成功：{}"
 
-msgid "delete {} error: {}"
-msgstr "删除硬盘{}失败：{}"
+msgid "delete {} error"
+msgstr "删除硬盘{}失败"
 
 msgid "Only available and error osd can be delete"
 msgstr "只能删除可用与错误的硬盘"
