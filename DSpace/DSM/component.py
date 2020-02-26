@@ -163,9 +163,8 @@ class ComponentHandler(AdminBaseHandler):
             rgw = objects.Radosgw.get_by_id(ctxt, id)
             node_id = rgw.node_id
         else:
-            filters = {'role_monitor': True}
-            mon = objects.NodeList.get_all(ctxt, filters=filters)
-            node_id = int(mon[0].id)
+            # service: id is node_id
+            node_id = id
         node = objects.Node.get_by_id(ctxt, node_id)
         self.check_agent_available(ctxt, node)
         client = self.agent_manager.get_client(node_id)
