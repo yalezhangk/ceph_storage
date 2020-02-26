@@ -3,6 +3,7 @@
 import configparser
 import json
 import logging
+import os
 import time
 
 import six
@@ -445,6 +446,9 @@ class CephTool(ToolBase):
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
 
     def ceph_config_update(self, values):
+        config_dir = self._wapper('/etc/ceph/')
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir, mode=0o0755)
         path = self._wapper('/etc/ceph/ceph.conf')
         configer = configparser.ConfigParser()
         configer.read(path)
