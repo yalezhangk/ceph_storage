@@ -13,10 +13,16 @@ from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
 
 logger = logging.getLogger(__name__)
-CEPH_CONFS = json.load(open(CONF.ceph_confs_path, 'r'))
 
 
 class CephConfigHandler(AdminBaseHandler):
+    _default_confs = None
+
+    def get_default_ceph_confs(self):
+        if not self._default_confs:
+            self._default_confs = json.load(open(CONF.ceph_confs_path, 'r'))
+        return self._default_confs
+
     def ceph_config_get_all(
             self, ctxt, marker=None, limit=None, sort_keys=None,
             sort_dirs=None, filters=None, offset=None):
@@ -25,7 +31,8 @@ class CephConfigHandler(AdminBaseHandler):
         ceph_conf = objects.CephConfigList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
-        return ceph_conf, CEPH_CONFS
+        default_confs = self.get_default_ceph_confs()
+        return ceph_conf, default_confs
 
     def ceph_config_get_count(self, ctxt, filters=None):
         return objects.CephConfigList.get_count(
@@ -65,8 +72,9 @@ class CephConfigHandler(AdminBaseHandler):
         nodes = []
         temp_configs = []
         ceph_client = CephTask(ctxt)
+        default_confs = self.get_default_ceph_confs()
 
-        conf = CEPH_CONFS.get(values['key'])
+        conf = default_confs.get(values['key'])
 
         if group == 'global':
             if 'mon' in conf.get('owner'):
@@ -193,7 +201,8 @@ class CephConfigHandler(AdminBaseHandler):
                            after_obj=cephconf, status=status)
 
     def _config_check(self, group, key):
-        conf = CEPH_CONFS.get(key)
+        default_confs = self.get_default_ceph_confs()
+        conf = default_confs.get(key)
         if not conf:
             raise exc.InvalidInput(_("modify conf %s not support") % key)
         if group.startswith('osd') and 'osd' not in conf.get('owner'):
@@ -227,7 +236,8 @@ class CephConfigHandler(AdminBaseHandler):
         nodes = []
         temp_configs = []
         ceph_client = CephTask(ctxt)
-        default_conf = CEPH_CONFS.get(key)
+        default_confs = self.get_default_ceph_confs()
+        default_conf = default_confs.get(key)
         value = default_conf.get('default')
 
         filters = {
