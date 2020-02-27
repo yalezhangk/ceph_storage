@@ -13,7 +13,6 @@ from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.i18n import _
-from DSpace.utils import cluster_config
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +35,10 @@ update_ceph_config_schema = {
                     "properties": {
                         "group": {"type": "string"},
                         "key": {"type": "string"},
-                        "value": {"type": ["string", "integer", "boolean"]},
-                        "value_type": {"emum": ["int", "string", "bool"]}
+                        "value": {"type": ["string", "integer",
+                                           "boolean", "number"]},
+                        "value_type": {"emum": ["int", "string",
+                                                "bool", "float"]}
                     },
                     "required": ["group", "key", "value"],
                 }}
@@ -115,14 +116,53 @@ class CephConfigListHandler(ClusterAPIHandler):
             })
 
         client = self.get_admin_client(ctxt)
-        ceph_config = yield client.ceph_config_get_all(ctxt,
-                                                       filters=filters,
-                                                       **page_args)
+        ceph_config, revisable_config = yield client.ceph_config_get_all(
+            ctxt, filters=filters, **page_args)
         ceph_config_count = yield client.ceph_config_get_count(
             ctxt, filters=filters)
         self.write(objects.json_encode({
             "ceph_configs": ceph_config,
-            "total": ceph_config_count
+            "total": ceph_config_count,
+            "revisable_config": revisable_config,
+        }))
+
+
+@URLRegistry.register(r"/ceph_configs/([0-9]*)/")
+class CephConfigHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def delete(self, config_id):
+        """
+        ---
+        tags:
+        - ceph_config
+        summary: Delete the ceph config by id
+        description: delete ceph config by id
+        operationId: ceph_configs.api.deleteCephConfig
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: ceph_config's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        conf = yield client.ceph_config_remove(ctxt, config_id)
+        self.write(objects.json_encode({
+            "conf": conf
         }))
 
 
@@ -131,36 +171,16 @@ class CephConfigActionHandler(ClusterAPIHandler):
     def _ceph_config_set(self, ctxt, client, action, values):
         if action == 'update':
             required_args = ['group', 'key', 'value', 'value_type']
-        if action == 'reset':
-            required_args = ['group', 'key']
 
         for arg in required_args:
             if values.get(arg) is None:
                 raise exception.InvalidInput(
                     reason=_("Ceph config: missing required arguments!"))
 
-        detail = cluster_config.cluster_configs.get(values['key'])
-        if not detail:
-            raise exception.InvalidInput(
-                reason=_("{} do not support to modify").format(values['key'])
-            )
-        if action == 'update':
-            config_type = detail.get('type')
-            if values['value_type'] != config_type:
-                raise exception.InvalidInput(
-                    _("Type of config is error, it needs to be {}").format(
-                        cluster_config.type_translation.get(config_type))
-                )
-        if action == 'reset':
-            values.update({'value': detail.get('default')})
-
         return client.ceph_config_set(ctxt, values=values)
 
     def _ceph_config_update(self, ctxt, client, values):
         return self._ceph_config_set(ctxt, client, 'update', values)
-
-    def _ceph_config_reset(self, ctxt, client, values):
-        return self._ceph_config_set(ctxt, client, 'reset', values)
 
     @gen.coroutine
     def post(self):
@@ -225,7 +245,6 @@ class CephConfigActionHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         action_map = {
             "config_update": self._ceph_config_update,
-            "config_reset": self._ceph_config_reset,
         }
         fun_action = action_map.get(action)
         if fun_action is None:

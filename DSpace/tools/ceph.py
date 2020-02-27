@@ -457,6 +457,16 @@ class CephTool(ToolBase):
         configer.set(values['group'], values['key'], str(values['value']))
         configer.write(open(path, 'w'))
 
+    def ceph_config_remove(self, section, key):
+        path = self._wapper('/etc/ceph/ceph.conf')
+        configer = configparser.ConfigParser()
+        configer.read(path)
+        if not configer.has_section(section):
+            logger.info('ceph config has no section %s', section)
+            return
+        configer.remove_option(section, key)
+        configer.write(open(path, 'w'))
+
     def radosgw_admin_zone_set(self, values, file_path):
         cmd = ["radosgw-admin", "zone", "set", "--rgw-zone",
                json.loads(values)["name"], "<", file_path]

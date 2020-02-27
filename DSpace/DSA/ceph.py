@@ -372,6 +372,7 @@ class CephHandler(AgentBaseHandler):
         file_tool.rm("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
         return True
 
+    @synchronized("ceph-config-{self.node.id}")
     def ceph_config_update(self, ctxt, values):
         logger.debug('Update ceph config for this node')
         client = self._get_executor()
@@ -380,6 +381,18 @@ class CephHandler(AgentBaseHandler):
             ceph_tool.ceph_config_update(values)
         except exception.StorException as e:
             logger.error('Update ceph config error: {}'.format(e))
+            return False
+        return True
+
+    @synchronized("ceph-config-{self.node.id}")
+    def ceph_config_remove(self, ctxt, section, key):
+        logger.debug('Update ceph config for this node')
+        client = self._get_executor()
+        ceph_tool = CephTool(client)
+        try:
+            ceph_tool.ceph_config_remove(section, key)
+        except exception.StorException as e:
+            logger.error('Remove ceph config error: {}'.format(e))
             return False
         return True
 
