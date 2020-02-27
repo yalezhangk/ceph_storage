@@ -19,6 +19,7 @@ from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
 from DSpace.utils import retry
 from DSpace.utils.cluster_config import CEPH_CONFIG_PATH
+from DSpace.utils.cluster_config import CEPH_LIB_DIR
 from DSpace.utils.coordination import synchronized
 
 logger = logging.getLogger(__name__)
@@ -67,13 +68,18 @@ class CephHandler(AgentBaseHandler):
             kwargs['wal_partition'] = osd.wal_partition.name
         if osd.journal_partition_id:
             kwargs['journal_partition'] = osd.journal_partition.name
-
+        # mkdir
+        client = self._get_executor()
+        osd_dir = path.join(CEPH_LIB_DIR, 'osd')
+        file_tool = FileTool(client)
+        file_tool.mkdir(osd_dir)
+        file_tool.chown(osd_dir, "ceph", "ceph")
+        # prepare
         ssh_client = self._get_ssh_executor()
         ceph_tool = CephTool(ssh_client)
         self._data_clear(ssh_client, osd.disk.name)
         ceph_tool.osd_zap(osd.disk.name)
         ceph_tool.disk_prepare(**kwargs)
-        client = self._get_executor()
         disk_tool = DiskTool(client)
         guid = disk_tool.get_disk_guid(osd.disk.name)
         return guid
