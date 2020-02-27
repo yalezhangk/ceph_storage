@@ -769,6 +769,23 @@ class CephTask(object):
             with RBDProxy(rados_client, pool_name) as rbd_client:
                 rbd_client.rbd_resize(v_name, size)
 
+    def rbd_used_size(self, pool_name, rbd_name):
+        shell_client = Executor()
+        rbd_param = '{}/{}'.format(pool_name, rbd_name)
+        cmd = ['rbd', 'du', rbd_param, '-c', self.conf_file, '--format',
+               'json']
+        cmd.extend(self.enable_key_file_param())
+        rc, out, err = shell_client.run_command(cmd, timeout=5)
+        if rc:
+            raise exc.CephException(message=out)
+        out = json.loads(out)
+        image_and_snap = out['images']
+        used_size = None
+        for volume in image_and_snap:
+            if not volume.get('snapshot'):
+                used_size = volume.get('used_size')
+        return used_size
+
     def osd_new(self, osd_fsid):
         with RADOSClient(self.rados_args()) as client:
             return client.osd_new(osd_fsid)

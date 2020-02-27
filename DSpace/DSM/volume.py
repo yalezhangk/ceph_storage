@@ -27,8 +27,22 @@ class VolumeHandler(AdminBaseHandler):
         return objects.VolumeList.get_count(ctxt, filters=filters)
 
     def volume_get(self, ctxt, volume_id, expected_attrs=None):
-        return objects.Volume.get_by_id(ctxt, volume_id,
-                                        expected_attrs=expected_attrs)
+        volume = objects.Volume.get_by_id(ctxt, volume_id,
+                                          expected_attrs=expected_attrs)
+        if not volume:
+            return volume
+        pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        pool_name = pool.pool_name
+        v_name = volume.volume_name
+        try:
+            ceph_client = CephTask(ctxt)
+            used_size = ceph_client.rbd_used_size(pool_name, v_name)
+        except Exception as e:
+            used_size = None
+            logger.exception('get volume: %s used_size error,%s', v_name,
+                             str(e))
+        volume.used = used_size
+        return volume
 
     def _check_volume_size(self, ctxt, data):
         pool_id = data.get('pool_id')
