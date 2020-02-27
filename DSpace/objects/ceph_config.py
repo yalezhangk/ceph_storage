@@ -89,6 +89,8 @@ def ceph_config_get(ctxt, group, key, default=None):
         return int(obj.value)
     elif obj.value_type == s_fields.ConfigType.BOOL:
         return strutils.bool_from_string(obj.value)
+    elif obj.value_type == s_fields.ConfigType.FLOAT:
+        return float(obj.value)
     else:
         raise exception.Invalid(msg=_("Invalid config type"))
 

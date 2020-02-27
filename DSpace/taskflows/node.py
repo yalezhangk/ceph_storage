@@ -267,6 +267,12 @@ class NodeTask(object):
         res = agent.ceph_config_update(ctxt, values)
         return res
 
+    def ceph_config_remove(self, ctxt, conf):
+        logger.info("update ceph config")
+        agent = self.get_agent()
+        res = agent.ceph_config_remove(ctxt, conf.group, conf.key)
+        return res
+
     def ceph_mon_uninstall(self):
         # update ceph.conf
         logger.info("uninstall ceph mon")

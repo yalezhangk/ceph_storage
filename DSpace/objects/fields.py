@@ -160,6 +160,7 @@ class ConfigType(BaseStorEnum):
     STRING = 'string'
     INT = 'int'
     BOOL = 'bool'
+    FLOAT = 'float'
     DICT = 'dict'
     ALL = (STRING, INT, BOOL, DICT)
 

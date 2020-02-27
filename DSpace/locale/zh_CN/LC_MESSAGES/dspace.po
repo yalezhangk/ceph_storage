@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-21 11:14+0800\n"
+"POT-Creation-Date: 2020-02-27 00:42-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -390,12 +390,6 @@ msgstr "获取历史监控参数需要 'start' 和 'end'"
 msgid "Ceph config: missing required arguments!"
 msgstr "Ceph配置：缺少必要的参数"
 
-msgid "{} do not support to modify"
-msgstr "{} 不支持修改"
-
-msgid "Type of config is error, it needs to be {}"
-msgstr "配置类型错误，仅支持 {} 类型"
-
 msgid "Ceph config: action is none"
 msgstr "Ceph配置需要参数 'action'"
 
@@ -586,11 +580,23 @@ msgstr "告警规则要更新的字段参数不存在"
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
 
-msgid "Ceph config update failed"
-msgstr "Ceph配置修改失败"
+msgid "Ceph config %s update failed"
+msgstr "配置%s修改失败"
 
-msgid "Ceph config update successful"
-msgstr "Ceph配置修改成功"
+msgid "Ceph config %s update success"
+msgstr "配置%s修改成功"
+
+msgid "modify conf %s not support"
+msgstr "配置%s不支持修改"
+
+msgid "conf %s not in %s group"
+msgstr "配置%s不在%s组中"
+
+msgid "Ceph config %s remove success"
+msgstr "配置%s删除成功"
+
+msgid "Ceph config %s remove failed"
+msgstr "配置%s删除失败"
 
 msgid "Admin cluster exists"
 msgstr "管理节点已存在"
