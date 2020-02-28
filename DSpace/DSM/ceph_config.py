@@ -238,7 +238,7 @@ class CephConfigHandler(AdminBaseHandler):
         ceph_client = CephTask(ctxt)
         default_confs = self.get_default_ceph_confs()
         default_conf = default_confs.get(key)
-        value = default_conf.get('default')
+        value = str(default_conf.get('default'))
 
         filters = {
             "group": 'global',
