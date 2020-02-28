@@ -503,6 +503,33 @@ class DiskHandler(AdminBaseHandler):
                 logger.info('alert %s happen: %s', alert_log.resource_type,
                             alert_log.alert_value)
 
+    def disk_partitions_reporter(self, ctxt, partitions, disk):
+        partitions_objs = objects.DiskPartitionList.get_all(
+            ctxt, filters={'disk_id': disk.id})
+        parts_with_uuid = {
+            part.uuid: part for part in partitions_objs
+        }
+        for new_part in partitions:
+            if new_part.get('uuid') in parts_with_uuid:
+                part = parts_with_uuid.pop(new_part.get('uuid'))
+                part.name = new_part.get('name')
+                part.size = new_part.get('size')
+                part.save()
+            else:
+                part = objects.DiskPartition(
+                    ctxt,
+                    name=new_part.get('name'),
+                    size=new_part.get('size'),
+                    status=s_fields.DiskStatus.AVAILABLE,
+                    type=new_part.get('type', s_fields.DiskType.HDD),
+                    node_id=disk.node_id,
+                    disk_id=disk.id,
+                )
+                part.create()
+        for uuid, part in six.iteritems(parts_with_uuid):
+            logger.warning("Remove partition %s", part.name)
+            part.destroy()
+
     def disk_reporter(self, ctxt, disks, node_id):
         logger.info("get disks report: %s", disks)
         all_disk_objs = objects.DiskList.get_all(
@@ -544,6 +571,7 @@ class DiskHandler(AdminBaseHandler):
                             node_id, name, data)
             else:
                 disk = self._disk_add_new(ctxt, data, node_id)
+                self.disk_partitions_reporter(ctxt, partitions, disk)
 
         for guid, disk in six.iteritems(disks_with_guid):
             osds = objects.OsdList.get_all(
