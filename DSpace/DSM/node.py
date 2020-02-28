@@ -147,6 +147,10 @@ class NodeMixin(object):
         if node.role_object_gateway:
             raise exc.InvalidInput(_(
                 "The object gateway role has been installed."))
+        if not node.object_gateway_ip_address:
+            raise exc.InvalidInput(_(
+                "No object gateway network on this node."
+            ))
 
     def _rgw_uninstall_check(self, ctxt, node):
         logger.debug("check node %s rgw uninstall", node.hostname)
