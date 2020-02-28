@@ -288,31 +288,27 @@ class CephTask(object):
         logger.info("rule delete: %s", json.dumps(crush_content))
         rule_name = crush_content.get('crush_rule_name')
         root_name = crush_content.get('root_name')
-        fault_domain = crush_content.get('fault_domain')
-        datacenters = crush_content.get('datacenters')
-        racks = crush_content.get('racks')
-        hosts = crush_content.get('hosts')
-        osds = crush_content.get('osds')
         # delete rule
         client.rule_remove(rule_name)
         # remove osd and host
-        for name, host in six.iteritems(hosts):
-            host_osds = [osds.get(osd_name) for osd_name in host['osds']]
-            for osd in host_osds:
-                client.bucket_remove(osd['name'], ancestor=host['crush_name'])
-            client.bucket_remove(host['crush_name'])
-        logger.info("rule remove osd and host success")
-        # remove rack
-        if fault_domain in [FaultDomain.DATACENTER, FaultDomain.RACK]:
-            for name, rack in six.iteritems(racks):
-                client.bucket_remove(rack['crush_name'])
-        logger.info("rule remove rack success")
-        # remove datacenter
-        if fault_domain == FaultDomain.DATACENTER:
-            for name, dc in six.iteritems(datacenters):
-                client.bucket_remove(dc['crush_name'])
-        logger.info("rule remove datacenter success")
-        client.bucket_remove(root_name)
+        useless_queue = []
+        parent_queue = [root_name]
+        while len(parent_queue) > 0:
+            parent = parent_queue.pop(0)
+            logger.debug("parent is %s", parent)
+            useless_queue.append(parent)
+            items = client.bucket_get(parent)
+            logger.debug("items is %s", items)
+            if not items:
+                continue
+            for item in items:
+                if item.startswith("osd."):
+                    useless_queue.append(item)
+                else:
+                    parent_queue.append(item)
+        useless_queue.reverse()
+        for item in useless_queue:
+            client.bucket_remove(item)
         logger.info("rule remove rule success")
 
     def pool_delete(self, pool):
