@@ -710,6 +710,16 @@ def cluster_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+def cluster_get_count(context, filters=None):
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _cluster_get_query(context, session)
+        query = process_filters(models.Cluster)(query, filters)
+        return query.count()
+
+
+@require_context
 def node_status_get(context):
     session = get_session()
     filters = {}

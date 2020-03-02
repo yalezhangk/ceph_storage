@@ -42,6 +42,10 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             c.metrics.update({'capacity': capacity})
         return clusters
 
+    def cluster_get_count(self, ctxt, filters=None):
+        return objects.ClusterList.get_count(
+            ctxt, filters=filters)
+
     def ceph_cluster_info(self, ctxt):
         has_mon_host = self.has_monitor_host(ctxt)
         if not has_mon_host:
