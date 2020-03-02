@@ -76,3 +76,8 @@ class ClusterList(base.ObjectListBase, base.StorObject):
                                       sort_keys, sort_dirs)
         return base.obj_make_list(context, cls(context), objects.Cluster,
                                   clusters)
+
+    @classmethod
+    def get_count(cls, context, filters=None):
+        count = db.cluster_get_count(context, filters)
+        return count

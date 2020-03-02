@@ -71,13 +71,18 @@ class ClusterListHandler(BaseAPIHandler):
 
         """
         ctxt = self.get_context()
+        page_args = self.get_paginated_args()
         exact_filters = ['status']
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(ctxt)
-        clusters = yield client.cluster_get_all(ctxt, filters=filters)
+        clusters = yield client.cluster_get_all(ctxt,
+                                                filters=filters,
+                                                **page_args)
+        cluster_count = yield client.cluster_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
-            "clusters": clusters
+            "clusters": clusters,
+            "total": cluster_count
         }))
 
     @gen.coroutine

@@ -139,6 +139,10 @@ def cluster_get_all(context, filters, marker, limit,
         sort_dirs=sort_dirs, filters=filters, offset=offset)
 
 
+def cluster_get_count(context, filters):
+    return IMPL.cluster_get_count(context, filters=filters)
+
+
 def cluster_update(context, cluster_id, values):
     return IMPL.cluster_update(context, cluster_id, values)
 
