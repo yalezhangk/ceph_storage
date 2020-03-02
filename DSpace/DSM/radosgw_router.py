@@ -108,8 +108,11 @@ class RadosgwRouterHandler(RadosgwMixin):
 
         # check node
         nodes = data.get("nodes")
+        node0 = None
         for n in nodes:
             node = objects.Node.get_by_id(ctxt, n.get("node_id"))
+            if not node0:
+                node0 = node
             # check if node is role_object_gateway
             self.check_gateway_node(ctxt, node)
             # check if node is used by another router
@@ -122,7 +125,8 @@ class RadosgwRouterHandler(RadosgwMixin):
                     _("The node %s has radosgw router") % node.hostname)
 
         # Check if vip is used by another node
-        ssh_client = SSHExecutor()
+        ssh_client = SSHExecutor(hostname=str(node0.ip_address),
+                                 password=node0.password)
         sys_tool = SystemTool(ssh_client)
         if sys_tool.ping(virtual_ip):
             raise exception.InvalidInput(
@@ -134,10 +138,11 @@ class RadosgwRouterHandler(RadosgwMixin):
             rgw.router_id = rgw_router.id
             rgw.save()
 
-    def _wait_for_vip_ready(self, rgw_router):
+    def _wait_for_vip_ready(self, rgw_router, node0):
         logger.debug("Waiting for virtual IP to appear: %s",
                      rgw_router.virtual_ip)
-        ssh_client = SSHExecutor()
+        ssh_client = SSHExecutor(hostname=str(node0.ip_address),
+                                 password=node0.password)
         sys_tool = SystemTool(ssh_client)
         retry_times = 0
         while True:
@@ -158,13 +163,16 @@ class RadosgwRouterHandler(RadosgwMixin):
             rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router.id,
                                                          joined_load=True)
             node_list = data.get('nodes')
+            node0 = None
             for n in node_list:
                 node = objects.Node.get_by_id(ctxt, n['node_id'])
+                if not node0:
+                    node0 = node
                 node_task = NodeTask(ctxt, node)
                 node_task.rgw_router_install(rgw_router, n['net_id'])
                 self.notify_node_update(ctxt, node)
             if rgw_router.virtual_ip:
-                self._wait_for_vip_ready(rgw_router)
+                self._wait_for_vip_ready(rgw_router, node0)
             rgw_router.status = s_fields.RadosgwRouterStatus.ACTIVE
             rgw_router.save()
             logger.info("client.rgw.%s create success", rgw_router.name)
