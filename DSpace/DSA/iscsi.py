@@ -24,6 +24,7 @@ class IscsiHandler(AgentBaseHandler):
                 logger.debug("tcmu container status: %s", status)
                 if status == "running" and self.node.role_block_gateway:
                     logger.info("trying to restore iscsi config")
+                    iscsi.init_config()
                     iscsi.restore_target()
                     break
                 else:

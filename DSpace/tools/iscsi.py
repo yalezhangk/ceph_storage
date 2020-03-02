@@ -541,6 +541,13 @@ def clear_all():
         delete_user_backstore(bs["name"])
 
 
+def init_config(config_file=DEFAULT_SAVE_FILE):
+    if os.path.exists(config_file):
+        logger.info("%s already exists, ignore init config", config_file)
+        return
+    save_config()
+
+
 def restore_target(from_file=DEFAULT_SAVE_FILE):
     try:
         RTSRoot().restore_from_file(restore_file=from_file)
