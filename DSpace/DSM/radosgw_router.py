@@ -147,12 +147,12 @@ class RadosgwRouterHandler(RadosgwMixin):
         retry_times = 0
         while True:
             if retry_times == 30:
-                logger.error("dsa cann't connect in 30 seconds")
+                logger.error("VIP cann't connect in 30 seconds")
                 raise exception.IPConnectError(ip=rgw_router.virtual_ip)
             if sys_tool.ping(rgw_router.virtual_ip):
                 break
             logger.info("Virtual IP do not appear, will try connect"
-                        "after 1 second")
+                        "after 1 second, count=%s", retry_times)
             retry_times += 1
             time.sleep(1)
         logger.info("Virtual IP %s is ready", rgw_router.virtual_ip)
