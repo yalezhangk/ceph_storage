@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-02-27 00:42-0500\n"
+"POT-Creation-Date: 2020-02-28 17:06+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -528,9 +528,6 @@ msgstr "用户名或密码太长"
 msgid "no mutual_chap_enable input"
 msgstr "没有mutual_chap_enable参数"
 
-msgid "Volume name cannot be empty"
-msgstr "名称不能为空"
-
 msgid "alert_group name already exists!"
 msgstr "告警通知名称已存在"
 
@@ -633,6 +630,12 @@ msgstr "不合法的行为: %s"
 
 msgid "Invaild mode: %s"
 msgstr "无效的模式: %s"
+
+msgid "Cluster balance enable failed: %s"
+msgstr "集群数据均衡开启失败：%s"
+
+msgid "Cluster balance disable failed: %s"
+msgstr "集群数据均衡关闭失败：%s"
 
 msgid "Cluster balance enabled"
 msgstr "集群数据均衡开启"
@@ -777,6 +780,9 @@ msgstr "节点%s还有加速盘未删除"
 
 msgid "The object gateway role has been installed."
 msgstr "对象网关角色已被安装"
+
+msgid "No object gateway network on this node."
+msgstr "节点上没有对象存储网关网络。"
 
 msgid "The object gateway role has not yet been installed"
 msgstr "对象网关角色还未安装"
@@ -975,6 +981,9 @@ msgstr "osd.{}重建失败"
 
 msgid "Osd status should be REPLACE_PREPARED"
 msgstr "osd 未清理完成"
+
+msgid "Disk is old please insert new disk"
+msgstr "磁盘为旧盘, 请插入新盘"
 
 msgid "Disk slot is inconsistent"
 msgstr "磁盘槽位号不一致"
@@ -1451,3 +1460,4 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+

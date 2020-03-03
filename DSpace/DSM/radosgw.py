@@ -89,6 +89,10 @@ class RadosgwHandler(RadosgwMixin):
                 _("The port %s is used by another radosgw") % data['port'])
 
         # Check if ip address is gateway ip
+        if not node.object_gateway_ip_address:
+            raise exception.InvalidInput(_(
+                "No object gateway network on this node."
+            ))
         if (IPAddress(data['ip_address']) !=
                 IPAddress(node.object_gateway_ip_address)):
             raise exception.InvalidInput(
