@@ -402,10 +402,12 @@ class AlertQuery(object):
     def append_check(self, cluster_id, func):
         logger.info("AlertQuery append check %s", cluster_id)
         self._checks[cluster_id] = func
+        logger.info('appended_checks.keys:%s', self._checks.keys())
 
     def remove_check(self, cluster_id):
-        logger.info("AlertQuery remove check %s", cluster_id)
-        self._checks.pop(cluster_id)
+        logger.info("AlertQuery remove check (%s), _checks.keys:%s",
+                    cluster_id, self._checks.keys())
+        self._checks.pop(cluster_id, None)
 
     def send_alert(self, cluster_id, msg):
         notifys = self._watcher.get_notify(cluster_id)
@@ -425,6 +427,9 @@ class PrometheusQuery(AlertQuery):
         self.promql = promql
         self.prome_client = prome_client
         self.last_times = {}
+
+    def __repr__(self):
+        return 'PromeQue: {}'.format(self.id)
 
     @property
     def ctxt(self):
@@ -592,11 +597,12 @@ class AlertWatcher(object):
         logger.info("AlertWatcher append cluster_id(%s) notify_group %s",
                     cluster_id, notify_group)
         self._notifys[cluster_id] = notify_group
+        logger.info('appended_notifys.keys:%s', self._notifys.keys())
 
     def remove_notify(self, cluster_id):
         """Remove AlertNotifyGroup for a cluster"""
-        logger.info("AlertWatcher remove cluster_id(%s) notify_group %s",
-                    cluster_id)
+        logger.info("AlertWatcher remove notify_group (%s), _notifys.keys:%s",
+                    cluster_id, self._notifys.keys())
         self._notifys.pop(cluster_id, None)
 
     def get_notify(self, cluster_id):
