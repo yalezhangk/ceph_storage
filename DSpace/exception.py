@@ -586,3 +586,7 @@ class RestartServiceFailed(StorException):
 
 class UserorPasswordError(StorException):
     message = _("User or Password error")
+
+
+class RadosgwAdminException(StorException):
+    message = _("Radosgw Amdin operation error: %(reason)s")

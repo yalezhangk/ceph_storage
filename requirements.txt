@@ -26,3 +26,4 @@ retrying
 redis
 dbus-python
 docker
+rgwadmin
