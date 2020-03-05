@@ -590,3 +590,7 @@ class UserorPasswordError(StorException):
 
 class RadosgwAdminException(StorException):
     message = _("Radosgw Amdin operation error: %(reason)s")
+
+
+class S3ClientError(StorException):
+    message = _("S3 Client Error")
