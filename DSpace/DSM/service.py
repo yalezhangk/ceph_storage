@@ -108,8 +108,9 @@ class ServiceHelper(AdminBaseMixin):
             return False
         # TODO: add other status
         if not self.if_service_alert(ctxt=self.ctxt, node=self.node):
-            logger.info("Node %s or cluster %s is deleting or creating, "
-                        "ignore", self.node.hostname, self.ctxt.cluster_id)
+            logger.info("Node %s(id %s) or cluster %s is deleting or "
+                        "creating, ignore", self.node.hostname, self.node.id,
+                        self.ctxt.cluster_id)
             return False
         return True
 
@@ -179,12 +180,12 @@ class SystemdHelper(ServiceHelper):
             client.systemd_service_restart(self.ctxt, self.service_name)
             if (client.systemd_service_status(self.ctxt, self.service_name) ==
                     "active"):
-                logger.info("%s on node %s has been restarted",
-                            self.obj_name, self.node.hostname)
+                logger.info("%s on node %s(id %s) has been restarted",
+                            self.obj_name, self.node.hostname, self.node.id)
                 return
         except exception.StorException as e:
-            logger.warning("Restart %s on node %s failed: %s",
-                           self.obj_name, self.node.hostname, e)
+            logger.warning("Restart %s on node %s(id %s) failed: %s",
+                           self.obj_name, self.node.hostname, self.node.id, e)
         raise exception.RestartServiceFailed(service=self.obj_name)
 
 
@@ -203,12 +204,12 @@ class ContainerHelper(ServiceHelper):
             client.docker_service_restart(self.ctxt, self.service_name)
             if (client.docker_servcie_status(self.ctxt, self.service_name) ==
                     "running"):
-                logger.info("%s on node %s has been restarted",
-                            self.obj_name, self.node.hostname)
+                logger.info("%s on node %s(id %s) has been restarted",
+                            self.obj_name, self.node.hostname, self.node.id)
                 return
         except exception.StorException as e:
-            logger.warning("Restart %s on node %s failed: %s",
-                           self.obj_name, self.node.hostname, e)
+            logger.warning("Restart %s on node %s(id %s) failed: %s",
+                           self.obj_name, self.node.hostname, self.node.id, e)
         raise exception.RestartServiceFailed(service=self.obj_name)
 
     def _do_ssh_restart(self):
@@ -218,12 +219,12 @@ class ContainerHelper(ServiceHelper):
         try:
             docker_tool.restart(self.service_name)
             if docker_tool.status(self.service_name):
-                logger.info("%s on node %s has been restarted",
-                            self.obj_name, self.node.hostname)
+                logger.info("%s on node %s(id %s) has been restarted",
+                            self.obj_name, self.node.hostname, self.node.id)
                 return
         except exception.StorException as e:
-            logger.warning("Restart %s on node %s failed: %s",
-                           self.obj_name, self.node.hostname, e)
+            logger.warning("Restart %s on node %s(id %s) failed: %s",
+                           self.obj_name, self.node.hostname, self.node.id, e)
         raise exception.RestartServiceFailed(service=self.obj_name)
 
 
@@ -262,8 +263,9 @@ class ServiceManager(AdminBaseMixin):
             return False
         if (helper.last_update_interval().total_seconds() >
                 CONF.service_max_interval):
-            logger.warning("Service %s on node %s is timeout, mark it to "
-                           "inactive", helper.obj_name, helper.node.hostname)
+            logger.warning("Service %s on node %s(id %s) is timeout, "
+                           "mark it to inactive", helper.obj_name,
+                           helper.node.hostname, helper.node.id)
             helper.status = helper.status_field.INACTIVE
             helper.is_timeout = True
             if helper.obj_name != "DSA":
@@ -280,8 +282,10 @@ class ServiceManager(AdminBaseMixin):
             return False
         # check node status
         if helper.node.status in [s_fields.NodeStatus.DELETING]:
-            logger.warning("Node %s status is %s, ignore service update",
-                           helper.node.hostname, helper.node.status)
+            logger.warning("Node %s(id %s) status is %s, "
+                           "ignore service update",
+                           helper.node.hostname, helper.node.id,
+                           helper.node.status)
             return False
         if not self.if_service_alert(helper.ctxt):
             logger.warning("Cluster %s is deleting, ignore service update",
@@ -393,7 +397,8 @@ class ServiceHandler(AdminBaseHandler):
         logger.info("service update from node(%s): %s", node_id, services)
         node = objects.Node.get_by_id(ctxt, node_id)
         services = json.loads(services)
-        logger.info('Update service status for node %s', node_id)
+        logger.info('Update service status for node %s(id %s)',
+                    node.hostname, node_id)
         for role, sers in six.iteritems(services):
             for s in sers:
                 name = s.get('name')
@@ -435,7 +440,8 @@ class ServiceHandler(AdminBaseHandler):
         return True
 
     def service_infos_get(self, ctxt, node):
-        logger.info("Get uncertain service for node %s", node.hostname)
+        logger.info("Get uncertain service for node %s(id %s)",
+                    node.hostname, node.id)
         services = {}
         filters = {'node_id': node.id}
         if node.role_object_gateway:
