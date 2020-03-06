@@ -180,6 +180,7 @@ class BaseAPIHandler(AnonymousHandler):
         return cluster_id
 
     def get_support_filters(self, exact_filters=None, fuzzy_filters=None):
+        exact_filters = exact_filters or []
         fuzzy_filters = fuzzy_filters or []
         filters = {}
         for e in exact_filters:

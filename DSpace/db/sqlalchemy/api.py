@@ -4743,6 +4743,121 @@ def router_service_update(context, router_service_id, values):
 ########################
 
 
+def _object_policy_get_query(context, session=None):
+    return model_query(
+        context, models.ObjectPolicy, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _object_policy_get(context, object_policy_id, session=None):
+    result = _object_policy_get_query(context, session)
+    result = result.filter_by(id=object_policy_id).first()
+
+    if not result:
+        raise exception.ObjectPolicyNotFound(object_policy_id=object_policy_id)
+
+    return result
+
+
+@require_context
+def object_policy_create(context, values):
+    object_policy_ref = models.ObjectPolicy()
+    object_policy_ref.update(values)
+    session = get_session()
+    with session.begin():
+        object_policy_ref.save(session)
+    return object_policy_ref
+
+
+@require_context
+def object_policy_destroy(context, object_policy_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.ObjectPolicy, session=session). \
+            filter_by(id=object_policy_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _object_policy_load_attr(ctxt, object_policy, expected_attrs=None,
+                             session=None):
+    expected_attrs = expected_attrs or []
+    if 'index_pool' in expected_attrs:
+        object_policy.index_pool = object_policy._index_pool
+    if 'data_pool' in expected_attrs:
+        object_policy.data_pool = object_policy._data_pool
+    if 'buckets' in expected_attrs:
+        pass
+        # object_policy.buckets = [bucket for bucket in object_policy._buckets
+        #                          if not bucket.deleted]
+
+
+@require_context
+def object_policy_get(context, object_policy_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        object_policy = _object_policy_get(context, object_policy_id, session)
+        _object_policy_load_attr(context, object_policy, expected_attrs,
+                                 session)
+    return object_policy
+
+
+@require_context
+def object_policy_get_all(context, marker=None, limit=None, sort_keys=None,
+                          sort_dirs=None, filters=None, offset=None,
+                          expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.ObjectPolicy, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        object_policies = query.all()
+        for object_policy in object_policies:
+            _object_policy_load_attr(context, object_policy, expected_attrs,
+                                     session)
+        return object_policies
+
+
+@require_context
+def object_policy_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _object_policy_get_query(context, session)
+        query = process_filters(models.ObjectPolicy)(query, filters)
+        return query.count()
+
+
+@require_context
+def object_policy_update(context, object_policy_id, values):
+    session = get_session()
+    with session.begin():
+        query = _object_policy_get_query(context, session)
+        result = query.filter_by(id=object_policy_id).update(values)
+        if not result:
+            raise exception.ObjectPolicyNotFound(
+                object_policy_id=object_policy_id)
+
+
+########################
+
+
 PAGINATION_HELPERS = {
     models.Node: (_node_get_query, process_filters(models.Node), _node_get),
     models.Volume: (_volume_get_query, process_filters(models.Volume),
@@ -4838,6 +4953,9 @@ PAGINATION_HELPERS = {
     models.RouterService: (_router_service_get_query,
                            process_filters(models.RouterService),
                            _router_service_get),
+    models.ObjectPolicy: (_object_policy_get_query,
+                          process_filters(models.ObjectPolicy),
+                          _object_policy_get),
 }
 
 

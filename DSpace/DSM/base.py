@@ -326,3 +326,12 @@ class AdminBaseHandler(AdminBaseMixin):
     def notify_node_update(self, ctxt, node):
         client = self.agent_manager.get_client(node.id)
         client.node_update_infos(ctxt, node)
+
+    def get_first_mon_node(self, ctxt):
+        mon_nodes = objects.NodeList.get_all(
+            ctxt, filters={'role_monitor': True})
+        if not mon_nodes:
+            logger.warning('cluster {} no monitor role'.format(
+                ctxt.cluster_id))
+            raise exc.ClusterNoMonitorRole()
+        return mon_nodes[0]

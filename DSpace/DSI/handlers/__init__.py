@@ -67,6 +67,7 @@ def register_all():
     __import__('DSpace.DSI.handlers.metrics')
     __import__('DSpace.DSI.handlers.networks')
     __import__('DSpace.DSI.handlers.nodes')
+    __import__('DSpace.DSI.handlers.object_policy')
     __import__('DSpace.DSI.handlers.osds')
     __import__('DSpace.DSI.handlers.pools')
     __import__('DSpace.DSI.handlers.probe')
