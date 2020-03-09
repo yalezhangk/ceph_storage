@@ -378,6 +378,9 @@ msgstr "重新启动服务 %(service)s 失败"
 msgid "User or Password error"
 msgstr "账户或密码错误"
 
+msgid "Radosgw Amdin operation error: %(reason)s"
+msgstr "对象存储网关管理员操作错误：%(reason)s"
+
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
 
@@ -1413,6 +1416,12 @@ msgstr "需要参数 'admin_ip', 'cluster_ip', 'public_ip'"
 msgid "osd id must int type"
 msgstr "osd id 必须为数字"
 
+msgid "Placement options cannot be empty!"
+msgstr "对象策略配置选项不能为空！"
+
+msgid "Option %s is not supported!"
+msgstr "配置选项%s不支持!"
+
 msgid "old style configuration can use only dictionary or memcached backends"
 msgstr "旧样式的配置只能使用字典或缓存后端"
 
@@ -1460,4 +1469,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-

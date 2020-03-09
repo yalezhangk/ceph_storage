@@ -15,6 +15,7 @@ from DSpace.tools.ceph_config import CephConfigTool
 from DSpace.tools.disk import DiskTool as DiskTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
+from DSpace.tools.radosgw_admin import RadosgwAdminCMD
 from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
 from DSpace.utils import retry
@@ -438,8 +439,8 @@ class CephHandler(AgentBaseHandler):
         file_tool = FileTool(client)
         zone_file_path = "/etc/ceph/radosgw_zone.json"
         file_tool.write(zone_file_path, zone_params)
-        ceph_tool = CephTool(client)
-        ceph_tool.radosgw_admin_zone_set(zone_params, zone_file_path)
+        radosgw_admin = RadosgwAdminCMD(client)
+        radosgw_admin.radosgw_admin_zone_set(zone_params, zone_file_path)
 
         # Enable and start ceph-radosgw service
         service_tool = ServiceTool(client)
