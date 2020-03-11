@@ -415,7 +415,7 @@ class AlertQuery(object):
             notifys.notify(msg)
 
     def get_check(self, cluster_id):
-        return self._checks[cluster_id]
+        return self._checks.get(cluster_id)
 
 
 class PrometheusQuery(AlertQuery):
@@ -447,7 +447,7 @@ class PrometheusQuery(AlertQuery):
             for resu in results:
                 cluster_id = resu['metric']['cluster_id']
                 check_fun = self.get_check(cluster_id)
-                msg = check_fun(resu)
+                msg = check_fun(resu) if check_fun else None
                 if msg:
                     logger.info('promql: %s, handled msg: %s', self.promql,
                                 msg)
