@@ -16,6 +16,7 @@ from DSpace.DSM.email_group import EmailGroupHandler
 from DSpace.DSM.license import LicenseHandler
 from DSpace.DSM.log_file import LogFileHandler
 from DSpace.DSM.mail import MailHandler
+from DSpace.DSM.metrics import MetricsHandler
 from DSpace.DSM.network import NetworkHandler
 from DSpace.DSM.node import NodeHandler
 from DSpace.DSM.osd import OsdHandler
@@ -54,6 +55,7 @@ class AdminHandler(ActionLogHandler,
                    LicenseHandler,
                    LogFileHandler,
                    MailHandler,
+                   MetricsHandler,
                    NetworkHandler,
                    NodeHandler,
                    OsdHandler,
