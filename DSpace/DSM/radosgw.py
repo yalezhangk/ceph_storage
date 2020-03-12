@@ -127,6 +127,7 @@ class RadosgwHandler(RadosgwMixin):
             "rgw_frontends": "civetweb port={}:{}".format(radosgw.ip_address,
                                                           radosgw.port),
             "rgw_zone": zone.name,
+            "rgw_enable_usage_log": "true",
             # "rgw_zonegroup": zone.zonegroup,
             # "rgw_realm": zone.realm,
         }
