@@ -625,3 +625,86 @@ class RouterService(BASE, StorBase):
     counter = Column(BigInteger, default=0)
     _radosgw_routers = relationship("RadosgwRouter",
                                     backref="_router_services")
+
+
+class ObjectPolicy(BASE, StorBase):
+    __tablename__ = "object_policies"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), index=True)
+    description = Column(String(255))
+    default = Column(Boolean, default=False)  # 默认策略
+    index_pool_id = Column(Integer, ForeignKey('pools.id'))
+    data_pool_id = Column(Integer, ForeignKey('pools.id'))
+    compression = Column(String(36))  # 压缩，为空，不启用；可选值：snappy/zlib/zstd
+    index_type = Column(Integer, default=0)  # 0表示普通索引池，1表示indexless
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _index_pool = relationship("Pool", foreign_keys=[index_pool_id],
+                               backref=backref("_index_policies"))
+    _data_pool = relationship("Pool", foreign_keys=[data_pool_id],
+                              backref=backref("_data_policies"))
+    _buckets = relationship('ObjectBucket', backref="_object_policy")
+
+
+class ObjectUser(BASE, StorBase):
+    __tablename__ = 'object_users'
+
+    id = Column(Integer, primary_key=True)
+    uid = Column(String(32))
+    email = Column(String(32))
+    display_name = Column(String(64), index=True)
+    status = Column(String(32))
+    suspended = Column(Boolean, default=False)
+    op_mask = Column(String(32))
+    max_bucket = Column(BigInteger())
+    bucket_quota_max_size = Column(BigInteger())
+    bucket_quota_max_objects = Column(BigInteger())
+    user_quota_max_size = Column(BigInteger())
+    user_quota_max_objects = Column(BigInteger())
+    description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _buckets = relationship('ObjectBucket', backref="_object_user")
+    _access_keys = relationship('ObjectAccessKey', backref="_object_user")
+
+
+class ObjectAccessKey(BASE, StorBase):
+    __tablename__ = 'object_access_keys'
+
+    id = Column(Integer, primary_key=True)
+    obj_user_id = Column(Integer, ForeignKey('object_users.id'))
+    access_key = Column(String(64))
+    secret_key = Column(String(64))
+    type = Column(String(32))
+    description = Column(String(255))
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+
+
+class ObjectBucket(BASE, StorBase):
+    __tablename__ = 'object_buckets'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), index=True)
+    status = Column(String(64))
+    policy_id = Column(Integer, ForeignKey('object_policies.id'))
+    owner_id = Column(Integer, ForeignKey('object_users.id'))
+    shards = Column(Integer)  # 分片数
+    versioned = Column(Boolean)
+    owner_permission = Column(String(32))
+    auth_user_permission = Column(String(32))
+    all_user_permission = Column(String(32))
+    quota_mar_size = Column(BigInteger())
+    quota_mar_objects = Column(BigInteger())
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    _lifecycles = relationship('LifeCycle', backref="_object_bucket")
+
+
+class LifeCycle(BASE, StorBase):
+    __tablename__ = "object_lifecycles"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), index=True)
+    enabled = Column(Boolean, default=True)  # 默认启用
+    target = Column(String(128))  # 规则目标:整个bucket(null)或者对象前缀('obj')
+    policy = Column(String(1024))  # 策略：json格式，目前只有del,时间点或时间段
+    cluster_id = Column(String(36), ForeignKey('clusters.id'))
+    bucket_id = Column(Integer, ForeignKey('object_buckets.id'))
