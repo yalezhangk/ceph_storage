@@ -1,11 +1,10 @@
-import uuid
-
 import six
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
+from DSpace import context
 from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
@@ -14,10 +13,36 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.objects.fields import ConfigKey
+from DSpace.objects.fields import ObjectStoreStatus
+from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.node import NodeTask
-from DSpace.utils import template
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_REALM = "realm1"
+DEFAULT_ZONEGROUP = "zonegroup1"
+DEFAULT_ZONE = "zone1"
+
+rgw_pools = ['.rgw.root',
+             DEFAULT_ZONE + '.rgw.meta']
+
+POOL_SETS = {
+    "domain_root": "{}.rgw.meta:root",
+    "control_pool": "{}.rgw.meta:control",
+    "gc_pool": "{}.rgw.meta:log_gc",
+    "lc_pool": "{}.rgw.meta:log_lc",
+    "log_pool": "{}.rgw.meta:log",
+    "intent_log_pool": "{}.rgw.meta:log_intent",
+    "usage_log_pool": "{}.rgw.meta:log_usage",
+    "reshard_pool": "{}.rgw.meta:log_reshard",
+    "user_keys_pool": "{}.rgw.meta:users.keys",
+    "user_email_pool": "{}.rgw.meta:users.email",
+    "user_swift_pool": "{}.rgw.meta:users.swift",
+    "user_uid_pool": "{}.rgw.meta:users.uid",
+}
+ZONE_FILE_PATH = "/etc/ceph/radosgw_zone.json"
 
 
 class RadosgwMixin(AdminBaseHandler):
@@ -37,6 +62,14 @@ class RadosgwMixin(AdminBaseHandler):
         if IPAddress(ip) not in IPNetwork(gateway_cidr):
             raise exception.InvalidInput(
                 _("The ip address %s is not in gateway_cidr") % ip)
+
+    def _check_object_store_status(self, ctxt):
+        status = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.OBJECT_STORE_INIT)
+        if status in [ObjectStoreStatus.ACTIVE,
+                      ObjectStoreStatus.INITIALIZING]:
+            return True
+        return False
 
 
 class RadosgwHandler(RadosgwMixin):
@@ -73,6 +106,13 @@ class RadosgwHandler(RadosgwMixin):
         self.check_gateway_node(ctxt, node)
         # check mon is ready
         self.check_mon_host(ctxt)
+
+        # Check if object store is initialized.
+        object_status = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.OBJECT_STORE_INIT)
+        if object_status != ObjectStoreStatus.ACTIVE:
+            raise exception.Invalid(
+                _("Object store has not been initialized!"))
 
         # Check if name is used
         rgw_db = objects.RadosgwList.get_all(
@@ -126,10 +166,10 @@ class RadosgwHandler(RadosgwMixin):
             "log_file": "/var/log/ceph/ceph-rgw-{}.log".format(radosgw.name),
             "rgw_frontends": "civetweb port={}:{}".format(radosgw.ip_address,
                                                           radosgw.port),
-            "rgw_zone": zone.name,
+            "rgw_zone": DEFAULT_ZONE,
+            "rgw_zonegroup": DEFAULT_ZONEGROUP,
+            "rgw_realm": DEFAULT_REALM,
             "rgw_enable_usage_log": "true",
-            # "rgw_zonegroup": zone.zonegroup,
-            # "rgw_realm": zone.realm,
         }
         for k, v in six.iteritems(radosgw_configs):
             ceph_cfg = objects.CephConfig(
@@ -138,37 +178,17 @@ class RadosgwHandler(RadosgwMixin):
             )
             ceph_cfg.create()
 
-    def _get_zone_params(self, ctxt, data):
-        # TODO create zonegroup and realm
-        zone_name = data.get('zone')
-        if not zone_name:
-            zone_name = "default"
+    def _get_zone_params(self, ctxt):
         zones = objects.RadosgwZoneList.get_all(
-            ctxt, filters={'name': zone_name})
-        if not zones:
-            logger.info("Create zone %s", zone_name)
-            zone = objects.RadosgwZone(
-                ctxt, name=zone_name, zone_id=str(uuid.uuid4()),
-                zonegroup="default", realm="default",
-                cluster_id=ctxt.cluster_id
-            )
-            zone.create()
-        else:
-            zone = zones[0]
+            ctxt, filters={'name': DEFAULT_ZONE})
+        zone = zones[0]
         logger.debug("Zone object info: %s", zone)
+        return zone
 
-        pools = objects.PoolList.get_all(ctxt, filters={"role": "gateway"})
-        pool = pools[0]
-        tpl = template.get('radosgw_zone.json.j2')
-        zone_params = tpl.render(zone_id=zone.zone_id,
-                                 zone_name=zone.name,
-                                 data_pool=pool.pool_name)
-        return zone_params, zone
-
-    def _radosgw_create(self, ctxt, node, radosgw, begin_action, zone_params):
+    def _radosgw_create(self, ctxt, node, radosgw, begin_action):
         try:
             task = NodeTask(ctxt, node)
-            radosgw = task.ceph_rgw_install(radosgw, zone_params)
+            radosgw = task.ceph_rgw_install(radosgw)
             radosgw.status = s_fields.RadosgwStatus.ACTIVE
             radosgw.save()
             node.save()
@@ -200,7 +220,7 @@ class RadosgwHandler(RadosgwMixin):
                                                  data['port'], node.hostname)
         begin_action = self.begin_action(ctxt, Resource.RADOSGW, Action.CREATE)
 
-        zone_params, zone = self._get_zone_params(ctxt, data)
+        zone = self._get_zone_params(ctxt)
 
         radosgw = objects.Radosgw(
             ctxt, name=radosgw_name,
@@ -219,7 +239,7 @@ class RadosgwHandler(RadosgwMixin):
 
         # apply async
         self.task_submit(self._radosgw_create, ctxt, node, radosgw,
-                         begin_action, zone_params)
+                         begin_action)
         logger.debug("Radosgw create task apply.")
         return radosgw
 
@@ -290,3 +310,143 @@ class RadosgwHandler(RadosgwMixin):
         radosgw.save()
         self.task_submit(self._radosgw_delete, ctxt, radosgw, begin_action)
         return radosgw
+
+    def object_store_init_get(self, ctxt):
+        status = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.OBJECT_STORE_INIT)
+        if not status:
+            status = "inactive"
+        return status
+
+    def _create_meta_pools(self, ctxt, index_pool, ceph_task):
+        ceph_version = objects.sysconfig.sys_config_get(
+            ctxt, 'ceph_version_name')
+        if ceph_version == s_fields.CephVersion.T2STOR:
+            logger.info("ceph version is: %s, can specified replicate"
+                        " size while creating pool", ceph_version)
+            # can specified replicate size
+            specified_rep = True
+        else:
+            logger.info("ceph version is: %s, can't specified replicate"
+                        " size while creating pool", ceph_version)
+            specified_rep = False
+
+        crush_rule = objects.CrushRule.get_by_id(
+            ctxt, index_pool.crush_rule_id)
+        # Remove object meta pools if exists
+        pools = objects.PoolList.get_all(
+            ctxt, filters={"role": s_fields.PoolRole.OBJECT_META})
+        for p in pools:
+            ceph_task.pool_delete(p)
+            p.destroy()
+        # Create object meta pools
+        for pool_name in rgw_pools:
+            pool = objects.Pool(
+                ctxt,
+                cluster_id=ctxt.cluster_id,
+                status=s_fields.PoolStatus.CREATING,
+                pool_name=pool_name,
+                display_name=pool_name,
+                type=index_pool.type,
+                role=s_fields.PoolRole.OBJECT_META,
+                data_chunk_num=index_pool.data_chunk_num,
+                coding_chunk_num=index_pool.coding_chunk_num,
+                osd_num=index_pool.osd_num,
+                speed_type=index_pool.speed_type,
+                replicate_size=index_pool.replicate_size,
+                failure_domain_type=index_pool.failure_domain_type)
+            pool.create()
+            ceph_task.pool_create(pool, specified_rep,
+                                  crush_rule.content)
+            pool.status = s_fields.PoolStatus.ACTIVE
+            pool.save()
+
+    def _initialize_zone(self, ctxt, client):
+        zone = client.rgw_zone_init(ctxt, DEFAULT_REALM, DEFAULT_ZONEGROUP,
+                                    DEFAULT_ZONE, ZONE_FILE_PATH, POOL_SETS)
+        zones = objects.RadosgwZoneList.get_all(ctxt)
+        for z in zones:
+            z.destroy()
+        zone_db = objects.RadosgwZone(
+            ctxt, name=DEFAULT_ZONE, zone_id=zone["id"],
+            zonegroup=DEFAULT_ZONEGROUP, realm=DEFAULT_REALM,
+            cluster_id=ctxt.cluster_id
+        )
+        zone_db.create()
+        client.placement_remove(ctxt, "default-placement")
+        client.period_update(ctxt=ctxt)
+
+    def _system_user_create(self, ctxt, client):
+        user = client.user_create_cmd(
+            ctxt, "t2stor", display_name="T2stor User", access_key="portal",
+            secret_key="portal")
+        user = client.caps_add(ctxt, user["user_id"],
+                               "users=*;usage=*;buckets=*;metadata=*")
+        client.period_update(ctxt=ctxt)
+        # TODO: create user in db
+        # db_user = objects.ObjectUser()
+        # db_user.create()
+
+    def _object_store_init(self, ctxt, index_pool, begin_action):
+        ceph_task = CephTask(ctxt)
+        try:
+            # Create meta pools
+            self._create_meta_pools(ctxt, index_pool, ceph_task)
+            # Set zonegroup、zone and t2stor user
+            nodes = objects.NodeList.get_all(ctxt,
+                                             filters={"role_monitor": True})
+            mon_node = nodes[0]
+            client = context.agent_manager.get_client(node_id=mon_node.id)
+            self._initialize_zone(ctxt, client)
+            self._system_user_create(ctxt, client)
+            status = s_fields.ObjectStoreStatus.ACTIVE
+            msg = _("Initialize object store successfully.")
+            op_status = "INIT_SUCCESS"
+            err_msg = None
+        except exception.StorException as e:
+            logger.exception("create pool error: %s", e)
+            err_msg = str(e)
+            status = s_fields.ObjectStoreStatus.ERROR
+            msg = _("Initialize object store failed!")
+            op_status = "INIT_ERROR"
+
+        objects.sysconfig.sys_config_set(
+            ctxt, ConfigKey.OBJECT_STORE_INIT, status, "string")
+        self.send_websocket(ctxt, {}, op_status, msg,
+                            resource_type="ObjectStore")
+        self.finish_action(
+            begin_action, resource_id=index_pool.id,
+            resource_name=index_pool.display_name,
+            after_obj=index_pool, status=status, err_msg=err_msg)
+
+    def object_store_init_check(self, ctxt, index_pool):
+        # check mon is ready
+        self.check_mon_host(ctxt)
+        # check object store init status
+        if self._check_object_store_status(ctxt):
+            raise exception.Invalid(_("Object store has been initialized!"))
+        # check pool status
+        if index_pool.status not in [s_fields.PoolStatus.ACTIVE,
+                                     s_fields.PoolStatus.WARNING]:
+            raise exception.Invalid(_("Pool status must be active or warning"))
+        # check role of the pool
+        if index_pool.role != s_fields.PoolRole.INDEX:
+            raise exception.Invalid(
+                _("Pool %s is not index pool!") % index_pool.display_name)
+
+    def object_store_init(self, ctxt, index_pool_id):
+        logger.info("Init radosgw for cluster %s", ctxt.cluster_id)
+        index_pool = objects.Pool.get_by_id(ctxt, index_pool_id)
+        self.object_store_init_check(ctxt, index_pool)
+        begin_action = self.begin_action(
+            ctxt, resource_type=s_fields.AllResourceType.OBJECT_STORE,
+            action=s_fields.AllActionType.OBJECT_STORE_INITIALIZE)
+
+        objects.sysconfig.sys_config_set(
+            ctxt, ConfigKey.OBJECT_STORE_INIT, ObjectStoreStatus.INITIALIZING,
+            "string")
+        objects.sysconfig.sys_config_set(ctxt, ConfigKey.OBJECT_META_POOL,
+                                         index_pool_id, "int")
+        self.task_submit(self._object_store_init, ctxt, index_pool,
+                         begin_action)
+        return ObjectStoreStatus.INITIALIZING

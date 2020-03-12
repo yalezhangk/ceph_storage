@@ -47,6 +47,13 @@ class PoolHandler(AdminBaseHandler):
                         pool.status = s_fields.PoolStatus.WARNING
                 pool.save()
 
+    def _filter_by_role(self, pools):
+        ps = []
+        for pool in pools:
+            if pool.role != s_fields.PoolRole.OBJECT_META:
+                ps.append(pool)
+        return ps
+
     def pool_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                      sort_dirs=None, filters=None, offset=None,
                      expected_attrs=None, tab=None):
@@ -54,6 +61,8 @@ class PoolHandler(AdminBaseHandler):
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+
+        pools = self._filter_by_role(pools)
 
         if tab == 'default':
             for pool in pools:
@@ -124,7 +133,7 @@ class PoolHandler(AdminBaseHandler):
 
             ceph_version = objects.sysconfig.sys_config_get(
                 ctxt, 'ceph_version_name')
-            if (ceph_version == s_fields.CephVersion.T2STOR):
+            if ceph_version == s_fields.CephVersion.T2STOR:
                 logger.info("ceph version is: %s, can specified replicate"
                             " size while creating pool", ceph_version)
                 # can specified replicate size
@@ -169,11 +178,6 @@ class PoolHandler(AdminBaseHandler):
 
     def pool_create(self, ctxt, data):
         self.check_mon_host(ctxt)
-        if data['role'] == "gateway":
-            filters = {"role": "gateway"}
-            pools = objects.PoolList.get_all(ctxt, filters=filters)
-            if pools:
-                raise exception.InvalidInput(_("Object index pool exists"))
         uid = str(uuid.uuid4())
         pool_display_name = data.get("name")
         self._check_pool_display_name(ctxt, pool_display_name)
@@ -248,12 +252,18 @@ class PoolHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Pool %s is in processing, "
                                            "please wait") % pool.display_name)
 
+        pool_id = objects.sysconfig.sys_config_get(
+            ctxt, s_fields.ConfigKey.OBJECT_META_POOL)
+        if pool_id == pool.id:
+            raise exception.Invalid(_("Pool %s is used by object store!")
+                                    % pool.display_name)
+
     def pool_delete(self, ctxt, pool_id):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
         self._check_pool_status(ctxt, pool)
-        if pool['role'] == "gateway":
+        if pool['role'] == s_fields.PoolRole.INDEX:
             rgw_db = objects.RadosgwList.get_all(ctxt)
             if rgw_db:
                 raise exception.InvalidInput(

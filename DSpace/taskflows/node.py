@@ -371,7 +371,7 @@ class NodeTask(object):
         agent = self.get_agent()
         agent.ceph_rgw_package_uninstall(self.ctxt)
 
-    def ceph_rgw_install(self, radosgw, zone_params):
+    def ceph_rgw_install(self, radosgw):
         enable_cephx = objects.sysconfig.sys_config_get(
             self.ctxt, key=ConfigKey.ENABLE_CEPHX
         )
@@ -387,7 +387,7 @@ class NodeTask(object):
 
         logger.debug("Radosgw %s create on node %s",
                      radosgw.name, radosgw.node_id)
-        radosgw = agent.ceph_rgw_create(self.ctxt, radosgw, zone_params)
+        radosgw = agent.ceph_rgw_create(self.ctxt, radosgw)
         return radosgw
 
     def ceph_rgw_uninstall(self, radosgw):
