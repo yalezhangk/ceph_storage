@@ -12,6 +12,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
+from DSpace.context import get_context
 from DSpace.DSI.auth import AuthRegistry
 from DSpace.DSI.session import get_session
 from DSpace.DSM.client import AdminClientManager
@@ -20,93 +21,23 @@ from DSpace.i18n import _
 logger = logging.getLogger(__name__)
 
 
-class BaseAPIHandler(RequestHandler):
-    ctxt = None
-    dsm_client = None
-    auth = None
+class AnonymousHandler(RequestHandler):
 
-    def initialize(self):
-        session_cls = get_session()
-        self.session = session_cls(self)
-        self._setup_auth()
-
-    def _setup_auth(self):
-        if not self.auth:
-            registry = AuthRegistry()
-            self.auth = registry.auth_cls()
-
-    def prepare(self):
-        if self.request.method != "OPTIONS":
-            self.ctxt = self.get_context()
-        logger.info("uri(%s), method(%s), body(%s)",
-                    self.request.uri, self.request.method, self.request.body)
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        origin = self.request.headers.get('Origin')
-        if not origin:
-            return
-        self.set_header("Access-Control-Allow-Origin", origin)
-        self.set_header("Access-Control-Allow-Credentials", "true")
-        self.set_header("Access-Control-Allow-Headers",
-                        "x-requested-with, Content-Type, X-Cluster-Id, "
-                        "x-access-module")
-        self.set_header('Access-Control-Allow-Methods',
-                        'POST, GET, OPTIONS, PUT, DELETE')
-
-    def options(self, *args, **kwargs):
-        self.set_status(204)
-        self.finish()
+    def get_context(self):
+        return get_context()
 
     def bad_request(self, msg):
         self.set_status(400)
         self.write({"error": msg})
 
-    def get_context(self):
-        if self.ctxt:
-            return self.ctxt
-        ctxt = RequestContext(user_id="anonymous", is_admin=False,
-                              ws_ip=CONF.my_ip)
-        self.auth.validate(ctxt, self)
-        user_id = self.current_user.id
-        ctxt.user_id = user_id
-        logger.debug("Context: %s", ctxt.to_dict())
-        client_ip = (self.request.headers.get("X-Real-IP") or
-                     self.request.headers.get("X-Forwarded-For") or
-                     self.request.remote_ip)
-        ctxt.client_ip = client_ip
-        cluster_id = self.get_cluster_id()
-        if cluster_id:
-            objects.Cluster.get_by_id(ctxt, cluster_id)
-        ctxt.cluster_id = cluster_id
-        self.ctxt = ctxt
-        return self.ctxt
-
-    def get_paginated_args(self):
-        sort_key = self.get_query_argument('sort_key', default=None)
-        sort_dir = self.get_query_argument('sort_dir', default=None)
-        limit = self.get_query_argument('limit', default=None) or None
-        offset = self.get_query_argument('offset', default=None) or None
-        marker = self.get_query_argument('marker', default=None) or None
-        return {
-            "marker": marker,
-            "limit": limit,
-            "sort_keys": [sort_key] if sort_key else None,
-            "sort_dirs": [sort_dir] if sort_dir else None,
-            "offset": offset
-        }
-
-    def get_metrics_history_args(self):
-        start = self.get_query_argument('start', default=None)
-        end = self.get_query_argument('end', default=None)
-        if start and end:
-            return {
-                'start': start,
-                'end': end,
-            }
-        else:
-            raise exception.InvalidInput(
-                reason=_("get_metrics_history_args: start and end required"))
+    def get_admin_client(self, ctxt):
+        if not hasattr(context, 'dsm_client'):
+            dsm_client = AdminClientManager(
+                ctxt,
+                async_support=True
+            ).get_client()
+            setattr(context, 'dsm_client', dsm_client)
+        return getattr(context, 'dsm_client')
 
     def write_error(self, status_code, **kwargs):
         """Override to implement custom error pages.
@@ -158,14 +89,89 @@ class BaseAPIHandler(RequestHandler):
                 return
         logger.exception("%s raise exception: %s", self.request.uri, e)
 
-    def get_admin_client(self, ctxt):
-        if not hasattr(context, 'dsm_client'):
-            dsm_client = AdminClientManager(
-                ctxt,
-                async_support=True
-            ).get_client()
-            setattr(context, 'dsm_client', dsm_client)
-        return getattr(context, 'dsm_client')
+
+class BaseAPIHandler(AnonymousHandler):
+    ctxt = None
+    auth = None
+
+    def initialize(self):
+        session_cls = get_session()
+        self.session = session_cls(self)
+        self._setup_auth()
+
+    def _setup_auth(self):
+        if not self.auth:
+            registry = AuthRegistry()
+            self.auth = registry.auth_cls()
+
+    def prepare(self):
+        if self.request.method != "OPTIONS":
+            self.ctxt = self.get_context()
+        logger.info("uri(%s), method(%s), body(%s)",
+                    self.request.uri, self.request.method, self.request.body)
+
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+        origin = self.request.headers.get('Origin')
+        if not origin:
+            return
+        self.set_header("Access-Control-Allow-Origin", origin)
+        self.set_header("Access-Control-Allow-Credentials", "true")
+        self.set_header("Access-Control-Allow-Headers",
+                        "x-requested-with, Content-Type, X-Cluster-Id, "
+                        "x-access-module")
+        self.set_header('Access-Control-Allow-Methods',
+                        'POST, GET, OPTIONS, PUT, DELETE')
+
+    def options(self, *args, **kwargs):
+        self.set_status(204)
+        self.finish()
+
+    def get_context(self):
+        if self.ctxt:
+            return self.ctxt
+        ctxt = RequestContext(user_id="anonymous", is_admin=False,
+                              ws_ip=CONF.my_ip)
+        self.auth.validate(ctxt, self)
+        user_id = self.current_user.id
+        ctxt.user_id = user_id
+        logger.debug("Context: %s", ctxt.to_dict())
+        client_ip = (self.request.headers.get("X-Real-IP") or
+                     self.request.headers.get("X-Forwarded-For") or
+                     self.request.remote_ip)
+        ctxt.client_ip = client_ip
+        cluster_id = self.get_cluster_id()
+        if cluster_id:
+            objects.Cluster.get_by_id(ctxt, cluster_id)
+        ctxt.cluster_id = cluster_id
+        self.ctxt = ctxt
+        return self.ctxt
+
+    def get_paginated_args(self):
+        sort_key = self.get_query_argument('sort_key', default=None)
+        sort_dir = self.get_query_argument('sort_dir', default=None)
+        limit = self.get_query_argument('limit', default=None) or None
+        offset = self.get_query_argument('offset', default=None) or None
+        marker = self.get_query_argument('marker', default=None) or None
+        return {
+            "marker": marker,
+            "limit": limit,
+            "sort_keys": [sort_key] if sort_key else None,
+            "sort_dirs": [sort_dir] if sort_dir else None,
+            "offset": offset
+        }
+
+    def get_metrics_history_args(self):
+        start = self.get_query_argument('start', default=None)
+        end = self.get_query_argument('end', default=None)
+        if start and end:
+            return {
+                'start': start,
+                'end': end,
+            }
+        else:
+            raise exception.InvalidInput(
+                reason=_("get_metrics_history_args: start and end required"))
 
     def get_cluster_id(self):
         cluster_id = self.get_query_argument('cluster_id', default=None)
