@@ -13,6 +13,7 @@ class MetricsHandler(AdminBaseHandler):
     metrics = None
 
     def __init__(self, *args, **kwargs):
+        super(MetricsHandler, self).__init__(*args, **kwargs)
         self._setup_metrics()
 
     def _setup_metrics(self):
