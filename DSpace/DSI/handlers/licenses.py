@@ -105,30 +105,33 @@ class DownloadlicenseHandler(BaseAPIHandler, AdminBaseHandler):
         ctxt = self.get_context()
         file_name = self.get_argument('file_name')
         cluster_id = self.get_argument('cluster_id', None)
-        if not cluster_id:
-            raise InvalidInput(_('cluster_id is required'))
-        ctxt.cluster_id = cluster_id
-        begin_action = self.begin_action(
-            ctxt, Resource.LICENSE, Action.DOWNLOAD_LICENSE)
+        begin_action = None
+        if cluster_id:
+            ctxt.cluster_id = cluster_id
+            begin_action = self.begin_action(
+                ctxt, Resource.LICENSE, Action.DOWNLOAD_LICENSE)
         if file_name == 'certificate.pem':
             file = {file_name: CA_FILE_PATH}
         elif file_name == 'private-key.pem':
             file = {file_name: PRIVATE_FILE}
         else:
             err_msg = _('file_name not exist')
-            self.finish_action(begin_action, None, file_name,
-                               status='fail', err_msg=err_msg)
+            if begin_action:
+                self.finish_action(begin_action, None, file_name,
+                                   status='fail', err_msg=err_msg)
             raise InvalidInput(reason=err_msg)
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
                         'attachment; filename={}'.format(file_name))
         if not os.path.exists(file[file_name]):
             err_msg = _('file not yet generate or file path is error')
-            self.finish_action(begin_action, None, file_name,
-                               status='fail', err_msg=err_msg)
+            if begin_action:
+                self.finish_action(begin_action, None, file_name,
+                                   status='fail', err_msg=err_msg)
             raise InvalidInput(reason=err_msg)
         with open(file[file_name], 'r') as f:
             file_content = f.read()
             self.write(file_content)
-        self.finish_action(begin_action, None, file_name, status='success')
+        if begin_action:
+            self.finish_action(begin_action, None, file_name, status='success')
         self.finish()
