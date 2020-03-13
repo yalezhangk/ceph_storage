@@ -25,6 +25,8 @@ class ServiceHandler(AgentBaseHandler):
 
     def systemd_service_restart(self, ctxt, name):
         logger.debug("Restart systemd service: %s", name)
+        if not name.endswith('.service'):
+            name += '.service'
         client = self._get_executor()
         service_tool = ServiceTool(client)
         service_tool.reset_failed(name)
@@ -32,6 +34,8 @@ class ServiceHandler(AgentBaseHandler):
 
     def systemd_service_status(self, ctxt, name):
         logger.debug("Get systemd service status: %s", name)
+        if not name.endswith('.service'):
+            name += '.service'
         client = self._get_executor()
         service_tool = ServiceTool(client)
         return service_tool.status(name)
