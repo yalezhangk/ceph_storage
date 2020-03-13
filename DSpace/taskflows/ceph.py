@@ -14,6 +14,7 @@ from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import FaultDomain
+from DSpace.objects.fields import PoolRole
 from DSpace.tools.base import Executor
 from DSpace.tools.ceph import RADOSClient
 from DSpace.tools.ceph import RBDProxy
@@ -23,11 +24,6 @@ logger = logging.getLogger(__name__)
 
 class CephTask(object):
     ctxt = None
-
-    rgw_pools = ['.rgw.root',
-                 'default.rgw.meta',
-                 'default.rgw.buckets.index',
-                 'default.rgw.buckets.non-ec']
 
     def __init__(self, ctxt):
         self.ctxt = ctxt
@@ -231,23 +227,13 @@ class CephTask(object):
                                pg_num=pg_num,
                                pgp_num=pg_num,
                                rep_size=pool_rep_size)
-            client.set_pool_application(pool_name, "rbd")
+            if pool_role == PoolRole.INDEX:
+                client.set_pool_application(pool_name, "rgw")
+            else:
+                client.set_pool_application(pool_name, "rbd")
             if not can_specified_rep:
                 client.pool_set_replica_size(
                     pool_name=pool_name, rep_size=rep_size)
-            if pool_role == 'gateway':
-                pg_num = 32
-                for pool in self.rgw_pools:
-                    client.pool_create(pool_name=pool,
-                                       pool_type=pool_type,
-                                       rule_name=rule_name,
-                                       pg_num=pg_num,
-                                       pgp_num=pg_num,
-                                       rep_size=pool_rep_size)
-                    client.set_pool_application(pool, "rgw")
-                    if not can_specified_rep:
-                        client.pool_set_replica_size(
-                            pool_name=pool, rep_size=rep_size)
 
             return client.get_pool_stats(pool_name).get('pool_id')
 
@@ -314,12 +300,8 @@ class CephTask(object):
     def pool_delete(self, pool):
         logger.debug("pool_delete, pool_data: %s", pool)
         pool_name = pool.pool_name
-        pool_role = pool.role
         with RADOSClient(self.rados_args(), CONF.rados_timeout) as client:
             client.pool_delete(pool_name)
-            if pool_role == 'gateway':
-                for pool in self.rgw_pools:
-                    client.pool_delete(pool)
 
     def crush_delete(self, crush_content):
         logger.debug("crush_delete, data: %s", crush_content)

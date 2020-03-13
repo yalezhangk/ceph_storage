@@ -22,13 +22,48 @@ class RadosgwAdminCMD(ToolBase):
                                   stdout=stdout, stderr=stderr)
         return stdout
 
-    def radosgw_admin_zone_set(self, values, file_path):
-        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone",
-               json.loads(values)["name"], "<", file_path]
-        self._run_radosgw_admin(cmd)
+    def zone_set(self, zone, file_path):
+        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone", zone, "<",
+               file_path]
+        cmd_res = self._run_radosgw_admin(cmd)
+        return json.loads(cmd_res)
 
-    def radosgw_admin_zone_get(self, zone):
-        cmd = ["radosgw-admin", "zone", "set", "--rgw-zone", zone]
+    def zone_get(self, zone="default"):
+        cmd = ["radosgw-admin", "zone", "get", "--rgw-zone", zone]
+        cmd_res = self._run_radosgw_admin(cmd)
+        return json.loads(cmd_res)
+
+    def realm_create(self, realm, default=False):
+        cmd = ["radosgw-admin", "realm", "create", "--rgw-realm", realm]
+        if default:
+            cmd += ["--default"]
+        cmd_res = self._run_radosgw_admin(cmd)
+        return json.loads(cmd_res)
+
+    def zonegourp_create(self, zonegroup, realm, master=False, default=False):
+        cmd = ["radosgw-admin", "zonegroup", "create", "--rgw-zonegroup",
+               zonegroup, "--rgw-realm", realm]
+        if master:
+            cmd += ["--master"]
+        if default:
+            cmd += ["--default"]
+        cmd_res = self._run_radosgw_admin(cmd)
+        return json.loads(cmd_res)
+
+    def zone_create(self, zone, zonegroup, realm, master=False, default=False):
+        cmd = ["radosgw-admin", "zone", "create", "--rgw-zone", zone,
+               "--rgw-zonegroup", zonegroup, "--rgw-realm", realm]
+        if master:
+            cmd += ["--master"]
+        if default:
+            cmd += ["--default"]
+        cmd_res = self._run_radosgw_admin(cmd)
+        return json.loads(cmd_res)
+
+    def period_update(self, commit=True):
+        cmd = ["radosgw-admin", "period", "update"]
+        if commit:
+            cmd += ["--commit"]
         cmd_res = self._run_radosgw_admin(cmd)
         return json.loads(cmd_res)
 
@@ -36,11 +71,11 @@ class RadosgwAdminCMD(ToolBase):
                     secret_key=None):
         logger.info("Create user using radosgw-admin for %s", name)
         cmd = ["radosgw-admin", "user", "create", "--uid", name]
-        if not display_name:
+        if display_name:
             cmd = cmd + ["--display-name", display_name]
-        if not access_key:
+        if access_key:
             cmd = cmd + ["--access-key", access_key]
-        if not secret_key:
+        if secret_key:
             cmd = cmd + ["--secret-key", secret_key]
         cmd_res = self._run_radosgw_admin(cmd)
         return json.loads(cmd_res)
@@ -78,7 +113,7 @@ class RadosgwAdminCMD(ToolBase):
         logger.info("Add caps to user %s, caps: %s", username, caps)
         self._caps_check(caps)
         cmd = ["radosgw-admin", "user", "caps", "add", "--uid", username,
-               "--caps", caps]
+               "--caps", "'{}'".format(caps)]
         cmd_res = self._run_radosgw_admin(cmd)
         return json.loads(cmd_res)
 
@@ -91,8 +126,8 @@ class RadosgwAdminCMD(ToolBase):
         """
         logger.info("Remove caps to user %s, caps: %s", username, caps)
         self._caps_check(caps)
-        cmd = ["radosgw-admin", "user", "caps", "add", "--uid", username,
-               "--caps", caps]
+        cmd = ["radosgw-admin", "user", "caps", "rm", "--uid", username,
+               "--caps", "'{}'".format(caps)]
         cmd_res = self._run_radosgw_admin(cmd)
         return json.loads(cmd_res)
 
@@ -134,7 +169,7 @@ class RadosgwAdminCMD(ToolBase):
         cmd = ["radosgw-admin", "zone", "placement", "add", "--placement-id",
                name, "--index-pool", index_pool, "--data-pool", data_pool,
                "--data-extra-pool", data_pool, "--placement-index-type",
-               index_type]
+               str(index_type)]
         if compression:
             cmd += ["--compression", compression]
         self._run_radosgw_admin(cmd)
@@ -172,7 +207,7 @@ class RadosgwAdminCMD(ToolBase):
                "--placement-id", name]
         index_type = options.get("index_type")
         if index_type:
-            cmd += ["--index-type", index_type]
+            cmd += ["--index-type", str(index_type)]
         compression = options.get("compression")
         if compression:
             cmd += ["--compression", compression]

@@ -40,6 +40,17 @@ create_radosgw_schema = {
     "required": ["radosgw"]
 }
 
+object_store_init_schema = {
+    "type": "object",
+    "properties": {
+        "object_store_init": {
+            "type": "integer",
+        },
+    },
+    "additionalProperties": False,
+    "required": ["object_store_init"]
+}
+
 
 @URLRegistry.register(r"/radosgws/")
 class RadosgwListHandler(ClusterAPIHandler):
@@ -222,4 +233,81 @@ class RadosgwInfoHandler(ClusterAPIHandler):
                 "rgw_min_port": CONF.rgw_min_port,
                 "rgw_max_port": CONF.rgw_max_port
             }
+        }))
+
+
+@URLRegistry.register(r"/radosgws/init/")
+class RadosgwInitHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """Get object store init infos
+
+        ---
+        tags:
+        - radosgw
+        summary: Get object store init infos
+        description: Get object store init infos
+        operationId: radosgws.api.getObjectStoreInit
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        status = yield client.object_store_init_get(ctxt)
+        self.write(objects.json_encode({
+            "object_store_status": status
+        }))
+
+    @gen.coroutine
+    def post(self):
+        """Initailize object store.
+
+        ---
+        tags:
+        - radosgw
+        summary: Set object store init infos
+        description: Set object store init infos
+        operationId: radosgws.api.setObjectStoreInit
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: body
+          name: object_store_init
+          description: Created osd object
+          required: false
+          schema:
+            type: object
+            properties:
+                object_store_init:
+                  type: integer
+                  format: int32
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=object_store_init_schema,
+                 format_checker=draft7_format_checker)
+        index_pool_id = data.get("object_store_init")
+        client = self.get_admin_client(ctxt)
+        status = yield client.object_store_init(ctxt, index_pool_id)
+        self.write(objects.json_encode({
+            "object_store_status": status
         }))

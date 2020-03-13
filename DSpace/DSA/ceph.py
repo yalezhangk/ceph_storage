@@ -15,7 +15,6 @@ from DSpace.tools.ceph_config import CephConfigTool
 from DSpace.tools.disk import DiskTool as DiskTool
 from DSpace.tools.file import File as FileTool
 from DSpace.tools.package import Package as PackageTool
-from DSpace.tools.radosgw_admin import RadosgwAdminCMD
 from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
 from DSpace.utils import retry
@@ -396,72 +395,6 @@ class CephHandler(AgentBaseHandler):
             logger.error('Remove ceph config error: {}'.format(e))
             return False
         return True
-
-    def ceph_rgw_package_install(self, context):
-        logger.info('Install ceph-radosgw package')
-        client = self._get_ssh_executor()
-        # Install package
-        package_tool = PackageTool(client)
-        package_tool.install_rgw()
-        return True
-
-    def ceph_rgw_package_uninstall(self, context):
-        logger.info('Uninstall ceph-radosgw package')
-        client = self._get_ssh_executor()
-        # Uninstall package
-        package_tool = PackageTool(client)
-        package_tool.uninstall_rgw()
-        return True
-
-    def _check_radosgw_status(self, client, radosgw):
-        logger.info("Check radosgw service status")
-        service_tool = ServiceTool(client)
-        status = service_tool.status(
-            "ceph-radosgw@rgw.{}".format(radosgw.name))
-        if not status:
-            raise exception.StorException(
-                message='Radosgw service start failed')
-
-    def create_rgw_keyring(self, ctxt, radosgw):
-        client = self._get_ssh_executor()
-        file_tool = FileTool(client)
-        ceph_tool = CephTool(client)
-        rgw_data_dir = "/var/lib/ceph/radosgw/ceph-rgw.{}".format(radosgw.name)
-        file_tool.mkdir(rgw_data_dir)
-        ceph_tool.create_rgw_keyring(radosgw.name, rgw_data_dir)
-        file_tool.chown(rgw_data_dir, user='ceph', group='ceph')
-
-    def ceph_rgw_create(self, ctxt, radosgw, zone_params):
-        logger.info('Create ceph-radosgw service')
-        client = self._get_ssh_executor()
-
-        # Set zone params
-        file_tool = FileTool(client)
-        zone_file_path = "/etc/ceph/radosgw_zone.json"
-        file_tool.write(zone_file_path, zone_params)
-        radosgw_admin = RadosgwAdminCMD(client)
-        radosgw_admin.radosgw_admin_zone_set(zone_params, zone_file_path)
-
-        # Enable and start ceph-radosgw service
-        service_tool = ServiceTool(client)
-        service_tool.enable("ceph-radosgw@rgw.{}".format(radosgw.name))
-        service_tool.start("ceph-radosgw@rgw.{}".format(radosgw.name))
-
-        self._check_radosgw_status(client, radosgw)
-        return radosgw
-
-    def ceph_rgw_destroy(self, ctxt, radosgw):
-        logger.info('Destroy ceph-radosgw service')
-        client = self._get_ssh_executor()
-
-        # Stop and disable ceph-radosgw service
-        service_tool = ServiceTool(client)
-        service_tool.stop("ceph-radosgw@rgw.{}".format(radosgw.name))
-        service_tool.disable("ceph-radosgw@rgw.{}".format(radosgw.name))
-
-        logger.info("Radosgw %s destroy success",
-                    radosgw.name)
-        return radosgw
 
     def get_osds_status(self, ctxt, osds):
         logger.debug("Check osd status")

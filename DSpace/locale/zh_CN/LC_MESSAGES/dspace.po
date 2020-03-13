@@ -384,6 +384,9 @@ msgstr "对象存储网关管理员操作错误：%(reason)s"
 msgid "S3 Client Error"
 msgstr "S3 Client 执行失败"
 
+msgid "S3 Client Error"
+msgstr "S3客户端错误"
+
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
 
@@ -1010,7 +1013,7 @@ msgid "create pool error: {}"
 msgstr "创建存储池失败：{}"
 
 msgid "Object index pool exists"
-msgstr "对象索引池已存在"
+msgstr "元数据池已存在"
 
 msgid "delete pool success: {}"
 msgstr "删除存储池成功：{}"
@@ -1020,6 +1023,9 @@ msgstr "删除存储池失败：{}"
 
 msgid "Pool %s is in processing, please wait"
 msgstr "存储池%s正在操作中, 请稍等"
+
+msgid "Pool %s is used by object store!"
+msgstr "存储池 %s 已被对象存储使用!"
 
 msgid "Please remove the Object storage gateway first"
 msgstr "请先移除对象存储网关"
@@ -1066,6 +1072,9 @@ msgstr "节点 %s 的角色不是对象存储网关"
 msgid "The ip address %s is not in gateway_cidr"
 msgstr "此IP地址 %s 不在对象存储网关地址范围内"
 
+msgid "Object store has not been initialized!"
+msgstr "对象存储功能尚未初始化！"
+
 msgid "The name %s is used by another radosgw"
 msgstr "名称 %s 已被其他对象存储网关使用"
 
@@ -1079,10 +1088,10 @@ msgid "The port %s is used"
 msgstr "端口 %s 已被占用"
 
 msgid "Need to create index pool before radosgw"
-msgstr "需要在创建对象存储网关之前创建索引池"
+msgstr "需要在创建对象存储网关之前创建元数据池"
 
 msgid "Index pool must be active, degraded, warning or recovering"
-msgstr "对象索引池状态必须为健康、警告、降级中或者恢复中"
+msgstr "元数据池状态必须为健康、警告、降级中或者恢复中"
 
 msgid "create radosgw success: {}"
 msgstr "创建对象存储网关成功：{}"
@@ -1101,6 +1110,21 @@ msgstr "只能删除健康、已停止与错误状态的对象存储网关"
 
 msgid "Must remove radosgw router before radosgw"
 msgstr "必须在删除对象存储网关前删除对象路由"
+
+msgid "Initialize object store successfully."
+msgstr "对象存储功能初始化成功。"
+
+msgid "Initialize object store failed!"
+msgstr "对象存储功能初始化失败！"
+
+msgid "Object store has been initialized!"
+msgstr "对象存储功能已经初始化！"
+
+msgid "Pool status must be active or warning"
+msgstr "存储池状态必须为健康或告警"
+
+msgid "Pool %s is not index pool!"
+msgstr "存储池 %s 不是元数据池"
 
 msgid "The radosgw %s has router"
 msgstr "对象存储网关 %s 已经绑定路由"

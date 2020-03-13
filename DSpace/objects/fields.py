@@ -373,11 +373,12 @@ class AllResourceType(BaseStorEnum):
     LICENSE = 'license'
     CLIENT_GROUP = 'client_group'
     ACCESS_PATH = 'access_path'
+    OBJECT_STORE = 'object_store'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
            NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
-           ACCESS_PATH)
+           ACCESS_PATH, OBJECT_STORE)
 
 
 class AllActionType(BaseStorEnum):
@@ -437,6 +438,7 @@ class AllActionType(BaseStorEnum):
     ACCESS_PATH_ADD_VOLUME = 'access_path_add_volume'
     ACCESS_PATH_REMOVE_VOLUME = 'access_path_remove_volume'
     ACCESS_PATH_UPDATE_CLIENT_GROUP = 'access_path_update_client_group'
+    OBJECT_STORE_INITIALIZE = 'object_store_initialize'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
@@ -451,7 +453,8 @@ class AllActionType(BaseStorEnum):
            ACCESS_PATH_MOUNT_GW, ACCESS_PATH_UNMOUNT_GW,
            ACCESS_PATH_CREATE_MAPPING, ACCESS_PATH_REMOVE_MAPPING,
            ACCESS_PATH_UPDATE_CHAP, ACCESS_PATH_ADD_VOLUME,
-           ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP)
+           ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP,
+           OBJECT_STORE_INITIALIZE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -685,9 +688,35 @@ class ConfigKey(BaseStorEnum):
     OS_DISTRO = 'os_distro'
     CEPH_VERSION_NAME = "ceph_version_name"
     DISABLE_LICENSE = 'disable_license'
+    OBJECT_STORE_INIT = 'object_store_init'
+    OBJECT_META_POOL = 'object_meta_pool'
 
 
 class DSMStatus(BaseStorEnum):
     INIT = "init"
     ACTIVE = "active"
     BACKUP = "backup"
+
+
+class ObjectStoreStatus(BaseStorEnum):
+    INITIALIZING = "initializing"
+    ACTIVE = 'active'
+    ERROR = 'error'
+
+    ALL = (INITIALIZING, ACTIVE, ERROR)
+
+
+class ObjectStoreStatusField(BaseEnumField):
+    AUTO_TYPE = ObjectStoreStatus()
+
+
+class PoolRole(BaseStorEnum):
+    INDEX = "index"
+    DATA = "data"
+    OBJECT_META = "object_meta"
+
+    ALL = (INDEX, DATA, OBJECT_META)
+
+
+class PoolRoleField(BaseEnumField):
+    AUTO_TYPE = PoolRole()
