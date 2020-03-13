@@ -685,6 +685,7 @@ class ObjectBucket(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(64), index=True)
     status = Column(String(64))
+    bucket_id = Column(Integer)
     policy_id = Column(Integer, ForeignKey('object_policies.id'))
     owner_id = Column(Integer, ForeignKey('object_users.id'))
     shards = Column(Integer)  # 分片数

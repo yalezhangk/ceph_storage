@@ -80,6 +80,7 @@ def define_tables(meta):
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(64), index=True),
         Column('status', String(64)),
+        Column('bucket_id', Integer),
         Column('policy_id', Integer, ForeignKey('object_policies.id')),
         Column('owner_id', Integer, ForeignKey('object_users.id')),
         Column('shards', Integer),
