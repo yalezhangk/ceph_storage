@@ -148,7 +148,8 @@ class RadosgwHandler(RadosgwMixin):
                 _("The port %s is used") % data['port'])
 
         # check pool
-        pools = objects.PoolList.get_all(ctxt, filters={"role": "gateway"})
+        pools = objects.PoolList.get_all(
+            ctxt, filters={"role": s_fields.PoolRole.INDEX})
         if not pools:
             raise exception.InvalidInput(
                 _("Need to create index pool before radosgw"))
