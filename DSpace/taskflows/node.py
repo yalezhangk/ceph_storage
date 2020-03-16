@@ -902,6 +902,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ctxt, ConfigKey.ADMIN_PORT)
         agent_port = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.AGENT_PORT)
+        ssh_port = CONF.ssh_port
         dsa_lib_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSA_LIB_DIR)
         socket_file = objects.sysconfig.sys_config_get(
@@ -916,6 +917,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             admin_ip_address=str(admin_ip_address),
             admin_port=admin_port,
             agent_port=agent_port,
+            ssh_port=ssh_port,
             node_id=node.id,
             cluster_id=node.cluster_id,
             dsa_lib_dir=dsa_lib_dir,
