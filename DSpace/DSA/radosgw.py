@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class RadosgwHandler(AgentBaseHandler):
+
     def ceph_rgw_package_install(self, context):
         logger.info('Install ceph-radosgw package')
         client = self._get_ssh_executor()
@@ -122,3 +123,26 @@ class RadosgwHandler(AgentBaseHandler):
         ssh_client = self._get_ssh_executor()
         rgwcmd = RadosgwAdminCMD(ssh_client)
         rgwcmd.period_update(commit=commit)
+
+    def create_object_policy(self, ctxt, name, index_pool_name, data_pool_name,
+                             compression):
+        ssh_client = self._get_ssh_executor()
+        rgw_cmd = RadosgwAdminCMD(ssh_client)
+        rgw_cmd.placement_create(name, index_pool_name, data_pool_name,
+                                 compression=compression)
+
+    def set_default_object_policy(self, ctxt, name):
+        rgw_cmd = RadosgwAdminCMD(self._get_ssh_executor())
+        rgw_cmd.placement_set_default(name)
+
+    def delete_object_policy(self, ctxt, name):
+        rgw_cmd = RadosgwAdminCMD(self._get_ssh_executor())
+        rgw_cmd.placement_remove(name)
+
+    def modify_object_policy(self, ctxt, name, options):
+        """
+        :param options: {"index_type": 0, "compression": "zlib"}
+        :return:
+        """
+        rgw_cmd = RadosgwAdminCMD(self._get_ssh_executor())
+        rgw_cmd.placement_modify(name, options)

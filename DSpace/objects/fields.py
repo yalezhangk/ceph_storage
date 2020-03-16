@@ -374,11 +374,12 @@ class AllResourceType(BaseStorEnum):
     CLIENT_GROUP = 'client_group'
     ACCESS_PATH = 'access_path'
     OBJECT_STORE = 'object_store'
+    OBJECT_POLICY = 'object_policy'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
            NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
-           ACCESS_PATH, OBJECT_STORE)
+           ACCESS_PATH, OBJECT_STORE, ACCESS_PATH, OBJECT_POLICY)
 
 
 class AllActionType(BaseStorEnum):
@@ -439,6 +440,8 @@ class AllActionType(BaseStorEnum):
     ACCESS_PATH_REMOVE_VOLUME = 'access_path_remove_volume'
     ACCESS_PATH_UPDATE_CLIENT_GROUP = 'access_path_update_client_group'
     OBJECT_STORE_INITIALIZE = 'object_store_initialize'
+    SET_DEFAULT = 'set_default'
+    SET_COMPRESSION = 'set_compression'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
@@ -454,7 +457,7 @@ class AllActionType(BaseStorEnum):
            ACCESS_PATH_CREATE_MAPPING, ACCESS_PATH_REMOVE_MAPPING,
            ACCESS_PATH_UPDATE_CHAP, ACCESS_PATH_ADD_VOLUME,
            ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP,
-           OBJECT_STORE_INITIALIZE)
+           OBJECT_STORE_INITIALIZE, SET_DEFAULT, SET_COMPRESSION)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -582,7 +585,11 @@ class ResourceAction(object):
                  AllActionType.ACCESS_PATH_UPDATE_CHAP,
                  AllActionType.ACCESS_PATH_ADD_VOLUME,
                  AllActionType.ACCESS_PATH_REMOVE_VOLUME,
-                 AllActionType.ACCESS_PATH_UPDATE_CLIENT_GROUP]
+                 AllActionType.ACCESS_PATH_UPDATE_CLIENT_GROUP],
+            AllResourceType.OBJECT_POLICY:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.SET_DEFAULT,
+                 AllActionType.SET_COMPRESSION]
         }
         return relation
 
@@ -720,3 +727,12 @@ class PoolRole(BaseStorEnum):
 
 class PoolRoleField(BaseEnumField):
     AUTO_TYPE = PoolRole()
+
+
+class CompressionAlgorithm(BaseStorEnum):
+    # 压缩算法
+    NULL = None
+    SNAPPY = 'snappy'
+    ZLIB = 'zlib'
+    ZSTD = 'zstd'
+    ALL = (NULL, SNAPPY, ZLIB, ZSTD)

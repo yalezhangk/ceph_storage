@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-13 11:21+0800\n"
+"POT-Creation-Date: 2020-03-16 10:25+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -104,6 +104,9 @@ msgstr "分区 %(disk_part_id)s 未找到"
 
 msgid "Service %(service_id)s could not be found."
 msgstr "服务 %(service_id)s 未找到"
+
+msgid "ObjectPolicy %(object_policy_id)s could not be found."
+msgstr "对象策略 %(object_policy_id)s 未找到"
 
 msgid "Cluster ID could not be found."
 msgstr "集群未找到"
@@ -382,7 +385,13 @@ msgid "Radosgw Amdin operation error: %(reason)s"
 msgstr "对象存储网关管理员操作错误：%(reason)s"
 
 msgid "S3 Client Error"
-msgstr "S3 Client 执行失败"
+msgstr "S3客户端错误"
+
+msgid "compression_algorithm: %(compression)s not found"
+msgstr "压缩算法：%(compression)s 不存在"
+
+msgid "ObjectPolicy Action %(action)s must in 'default, compression'"
+msgstr "对象策略操作 %(action)s 只支持 'default, compression' "
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -898,6 +907,45 @@ msgstr "请先清理集群"
 msgid "Please Import First"
 msgstr "请先导入集群"
 
+msgid "object_policy name %s already exists!"
+msgstr "对象策略：%s 已存在"
+
+msgid "pool: %s is not index_pool"
+msgstr "存储池 %s 不是元数据池"
+
+msgid "pool: %s is not data_pool"
+msgstr "存储池 %s 不是数据池"
+
+msgid "there are %s buckets using this policy"
+msgstr "有%s个存储桶正在使用该对象策略"
+
+msgid "create object_policy success: %s"
+msgstr "创建对象策略成功：%s"
+
+msgid "create object_policy error: %s"
+msgstr "创建对象策略失败：%s"
+
+msgid "delete object_policy success: %s"
+msgstr "删除对象策略成功：%s"
+
+msgid "delete object_policy error: %s"
+msgstr "删除对象策略失败：%s"
+
+msgid "is already default object_policy"
+msgstr "已是缺省策略"
+
+msgid "set default object_policy success: %s"
+msgstr "设置缺省策略成功：%s"
+
+msgid "set default object_policy error: %s"
+msgstr "设置缺省策略失败：%s"
+
+msgid "set compression object_policy success: %s"
+msgstr "对象策略设置数据压缩成功：%s"
+
+msgid "set compression object_policy error: %s"
+msgstr "对象策略设置数据压缩失败：%s"
+
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
 
@@ -1008,9 +1056,6 @@ msgstr "创建存储池成功：{}"
 
 msgid "create pool error: {}"
 msgstr "创建存储池失败：{}"
-
-msgid "Object index pool exists"
-msgstr "元数据池已存在"
 
 msgid "delete pool success: {}"
 msgstr "删除存储池成功：{}"
@@ -1490,3 +1535,4 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+

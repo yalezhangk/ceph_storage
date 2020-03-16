@@ -162,7 +162,7 @@ class RadosgwAdminCMD(ToolBase):
         # create placement in zonegroup
         logger.info("Create placement %s: index-pool %s, data-pool %s, "
                     "index-type %s, compression %s", name, index_pool,
-                    data_pool, index_type, compression)
+                    data_pool, str(index_type), compression)
         cmd = ["radosgw-admin", "zonegroup", "placement", "add",
                "--placement-id", name]
         self._run_radosgw_admin(cmd)

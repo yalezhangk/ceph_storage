@@ -1215,6 +1215,38 @@ def router_service_update(context, router_service_id, values):
 ###############
 
 
+def object_policy_create(context, values):
+    return IMPL.object_policy_create(context, values)
+
+
+def object_policy_destroy(context, object_policy_id):
+    return IMPL.object_policy_destroy(context, object_policy_id)
+
+
+def object_policy_get(context, object_policy_id, expected_attrs=None):
+    return IMPL.object_policy_get(context, object_policy_id,
+                                  expected_attrs=expected_attrs)
+
+
+def object_policy_get_all(context, filters, marker, limit,
+                          offset, sort_keys, sort_dirs, expected_attrs=None):
+    return IMPL.object_policy_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def object_policy_get_count(context, filters):
+    return IMPL.object_policy_get_count(context, filters=filters)
+
+
+def object_policy_update(context, object_policy_id, values):
+    return IMPL.object_policy_update(context, object_policy_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

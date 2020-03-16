@@ -200,6 +200,10 @@ class ServiceNotFound(NotFound):
     message = _("Service %(service_id)s could not be found.")
 
 
+class ObjectPolicyNotFound(NotFound):
+    message = _("ObjectPolicy %(object_policy_id)s could not be found.")
+
+
 class ClusterIDNotFound(NotFound):
     code = 400
     message = _("Cluster ID could not be found.")
@@ -594,3 +598,12 @@ class RadosgwAdminException(StorException):
 
 class S3ClientError(StorException):
     message = _("S3 Client Error")
+
+
+class CompressionAlgorithmNotFound(NotFound):
+    message = _('compression_algorithm: %(compression)s not found')
+
+
+class ObjectPolicyActionNotFound(NotFound):
+    message = _("ObjectPolicy Action %(action)s must in "
+                "'default, compression'")
