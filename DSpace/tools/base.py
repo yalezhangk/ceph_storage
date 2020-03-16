@@ -49,16 +49,16 @@ class SSHExecutor(Executor):
     ssh = None
     host_prefix = None
 
-    def __init__(self, hostname=None, port=22, user='root', password=None,
-                 pkey=None, timeout=5):
+    def __init__(self, hostname=None, port=CONF.ssh_port, user='root',
+                 password=None, pkey=None, timeout=5):
         """Command executor"""
         super(SSHExecutor, self).__init__()
         self.connect(hostname=hostname, port=port, user=user,
                      password=password, pkey=pkey, timeout=timeout)
         self.host_prefix = None
 
-    def connect(self, hostname=None, port=22, user='root', password=None,
-                pkey=None, timeout=None):
+    def connect(self, hostname=None, port=CONF.ssh_port, user='root',
+                password=None, pkey=None, timeout=None):
         """connect remote host
 
         :param hostname: the host to connect
