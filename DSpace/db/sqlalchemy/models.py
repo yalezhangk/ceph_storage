@@ -696,10 +696,10 @@ class ObjectBucket(BASE, StorBase):
     quota_mar_size = Column(BigInteger())
     quota_mar_objects = Column(BigInteger())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
-    _lifecycles = relationship('LifeCycle', backref="_object_bucket")
+    _lifecycles = relationship('ObjectLifecycle', backref="_object_bucket")
 
 
-class LifeCycle(BASE, StorBase):
+class ObjectLifecycle(BASE, StorBase):
     __tablename__ = "object_lifecycles"
 
     id = Column(Integer, primary_key=True)

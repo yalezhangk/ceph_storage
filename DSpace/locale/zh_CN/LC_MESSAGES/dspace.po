@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-16 10:25+0800\n"
+"POT-Creation-Date: 2020-03-17 15:33+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -392,6 +392,18 @@ msgstr "压缩算法：%(compression)s 不存在"
 
 msgid "ObjectPolicy Action %(action)s must in 'default, compression'"
 msgstr "对象策略操作 %(action)s 只支持 'default, compression' "
+
+msgid "ObjectUser %(object_user_id)s could not be found."
+msgstr "对象用户 %(object_user_id)s 未找到"
+
+msgid "ObjectAccessKey %(object_access_key_id)s could not be found."
+msgstr "用户秘钥对 %(object_access_key_id)s 未找到"
+
+msgid "ObjectBucket %(object_bucket_id)s could not be found."
+msgstr "存储桶 %(object_bucket_id)s 未找到"
+
+msgid "ObjectLifecycle %(object_lifecycle_id)s could not be found."
+msgstr "生命周期 %(object_lifecycle_id)s 未找到"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -1535,4 +1547,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
