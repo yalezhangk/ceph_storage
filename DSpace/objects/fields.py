@@ -379,7 +379,7 @@ class AllResourceType(BaseStorEnum):
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
            NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
-           ACCESS_PATH, OBJECT_STORE, ACCESS_PATH, OBJECT_POLICY)
+           ACCESS_PATH, OBJECT_STORE, OBJECT_POLICY)
 
 
 class AllActionType(BaseStorEnum):
@@ -589,7 +589,9 @@ class ResourceAction(object):
             AllResourceType.OBJECT_POLICY:
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.SET_DEFAULT,
-                 AllActionType.SET_COMPRESSION]
+                 AllActionType.SET_COMPRESSION],
+            AllResourceType.OBJECT_STORE:
+                [AllActionType.OBJECT_STORE_INITIALIZE]
         }
         return relation
 
