@@ -100,7 +100,7 @@ class DiskTool(ToolBase):
             disk_mounts = self._get_disk_mounts()
         path = self._wapper("/sys/class/block/%s" % disk_name)
         dirs = os.listdir(path)
-        if 'stat' not in dirs:
+        if 'stat' not in dirs or 'device' not in dirs:
             return None
         guid = self.get_disk_guid(disk_name)
         size = open(os.path.join(path, 'size')).read().strip()
@@ -149,8 +149,6 @@ class DiskTool(ToolBase):
         path = self._wapper("/sys/class/block/")
         disk_mounts = self._get_disk_mounts()
         for block in os.listdir(path):
-            if block[-1].isdigit() and not block.startswith('nvme'):
-                continue
             disk_info = self.get_disk_info(block, disk_mounts=disk_mounts)
             if disk_info:
                 res[block] = disk_info
