@@ -607,3 +607,19 @@ class CompressionAlgorithmNotFound(NotFound):
 class ObjectPolicyActionNotFound(NotFound):
     message = _("ObjectPolicy Action %(action)s must in "
                 "'default, compression'")
+
+
+class ObjectUserNotFound(NotFound):
+    message = _("ObjectUser %(object_user_id)s could not be found.")
+
+
+class ObjectAccessKeyNotFound(NotFound):
+    message = _("ObjectAccessKey %(object_access_key_id)s could not be found.")
+
+
+class ObjectBucketNotFound(NotFound):
+    message = _("ObjectBucket %(object_bucket_id)s could not be found.")
+
+
+class ObjectLifecycleNotFound(NotFound):
+    message = _("ObjectLifecycle %(object_lifecycle_id)s could not be found.")

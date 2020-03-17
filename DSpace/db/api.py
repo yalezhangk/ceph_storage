@@ -1247,6 +1247,134 @@ def object_policy_update(context, object_policy_id, values):
 ###############
 
 
+def object_user_create(context, values):
+    return IMPL.object_user_create(context, values)
+
+
+def object_user_destroy(context, object_user_id):
+    return IMPL.object_user_destroy(context, object_user_id)
+
+
+def object_user_get(context, object_user_id, expected_attrs=None):
+    return IMPL.object_user_get(context, object_user_id,
+                                expected_attrs=expected_attrs)
+
+
+def object_user_get_all(context, filters, marker, limit, offset, sort_keys,
+                        sort_dirs, expected_attrs=None):
+    return IMPL.object_user_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def object_user_get_count(context, filters):
+    return IMPL.object_user_get_count(context, filters=filters)
+
+
+def object_user_update(context, object_user_id, values):
+    return IMPL.object_user_update(context, object_user_id, values)
+
+
+###############
+
+
+def object_access_key_create(context, values):
+    return IMPL.object_access_key_create(context, values)
+
+
+def object_access_key_destroy(context, object_user_id):
+    return IMPL.object_access_key_destroy(context, object_user_id)
+
+
+def object_access_key_get(context, object_user_id, expected_attrs=None):
+    return IMPL.object_access_key_get(context, object_user_id,
+                                      expected_attrs=expected_attrs)
+
+
+def object_access_key_get_all(context, filters, marker, limit, offset,
+                              sort_keys, sort_dirs, expected_attrs=None):
+    return IMPL.object_access_key_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def object_access_key_get_count(context, filters):
+    return IMPL.object_access_key_get_count(context, filters=filters)
+
+
+def object_access_key_update(context, object_user_id, values):
+    return IMPL.object_access_key_update(context, object_user_id, values)
+
+
+###############
+
+
+def object_bucket_create(context, values):
+    return IMPL.object_bucket_create(context, values)
+
+
+def object_bucket_destroy(context, object_user_id):
+    return IMPL.object_bucket_destroy(context, object_user_id)
+
+
+def object_bucket_get(context, object_user_id, expected_attrs=None):
+    return IMPL.object_bucket_get(context, object_user_id,
+                                  expected_attrs=expected_attrs)
+
+
+def object_bucket_get_all(context, filters, marker, limit, offset,
+                          sort_keys, sort_dirs, expected_attrs=None):
+    return IMPL.object_bucket_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def object_bucket_get_count(context, filters):
+    return IMPL.object_bucket_get_count(context, filters=filters)
+
+
+def object_bucket_update(context, object_user_id, values):
+    return IMPL.object_bucket_update(context, object_user_id, values)
+
+
+###############
+
+
+def object_lifecycle_create(context, values):
+    return IMPL.object_lifecycle_create(context, values)
+
+
+def object_lifecycle_destroy(context, object_lifecycle_id):
+    return IMPL.object_lifecycle_destroy(context, object_lifecycle_id)
+
+
+def object_lifecycle_get(context, object_lifecycle_id, expected_attrs=None):
+    return IMPL.object_lifecycle_get(context, object_lifecycle_id,
+                                     expected_attrs=expected_attrs)
+
+
+def object_lifecycle_get_all(context, filters, marker, limit, offset,
+                             sort_keys, sort_dirs, expected_attrs=None):
+    return IMPL.object_lifecycle_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def object_lifecycle_get_count(context, filters):
+    return IMPL.object_lifecycle_get_count(context, filters=filters)
+
+
+def object_lifecycle_update(context, object_lifecycle_id, values):
+    return IMPL.object_lifecycle_update(context, object_lifecycle_id, values)
+
+
+###############
+
+
 def resource_exists(context, model, resource_id):
     return IMPL.resource_exists(context, model, resource_id)
 

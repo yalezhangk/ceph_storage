@@ -4792,9 +4792,8 @@ def _object_policy_load_attr(ctxt, object_policy, expected_attrs=None,
     if 'data_pool' in expected_attrs:
         object_policy.data_pool = object_policy._data_pool
     if 'buckets' in expected_attrs:
-        pass
-        # object_policy.buckets = [bucket for bucket in object_policy._buckets
-        #                          if not bucket.deleted]
+        object_policy.buckets = [bucket for bucket in object_policy._buckets
+                                 if not bucket.deleted]
 
 
 @require_context
@@ -4853,6 +4852,452 @@ def object_policy_update(context, object_policy_id, values):
         if not result:
             raise exception.ObjectPolicyNotFound(
                 object_policy_id=object_policy_id)
+
+
+########################
+
+
+def _object_user_get_query(context, session=None):
+    return model_query(
+        context, models.ObjectUser, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _object_user_get(context, object_user_id, session=None):
+    result = _object_user_get_query(context, session)
+    result = result.filter_by(id=object_user_id).first()
+
+    if not result:
+        raise exception.ObjectUserNotFound(object_user_id=object_user_id)
+
+    return result
+
+
+@require_context
+def object_user_create(context, values):
+    object_policy_ref = models.ObjectUser()
+    object_policy_ref.update(values)
+    session = get_session()
+    with session.begin():
+        object_policy_ref.save(session)
+    return object_policy_ref
+
+
+@require_context
+def object_user_destroy(context, object_user_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.ObjectUser, session=session). \
+            filter_by(id=object_user_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _object_user_load_attr(ctxt, object_user, expected_attrs=None,
+                           session=None):
+    expected_attrs = expected_attrs or []
+    if 'buckets' in expected_attrs:
+        object_user.buckets = [bucket for bucket in object_user._buckets
+                               if not bucket.deleted]
+    if 'access_keys' in expected_attrs:
+        object_user.access_keys = ([access_key for access_key in
+                                    object_user._access_keys if not
+                                    access_key.deleted])
+
+
+@require_context
+def object_user_get(context, object_policy_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        object_policy = _object_user_get(context, object_policy_id, session)
+        _object_user_load_attr(context, object_policy, expected_attrs,
+                               session)
+    return object_policy
+
+
+@require_context
+def object_user_get_all(context, marker=None, limit=None, sort_keys=None,
+                        sort_dirs=None, filters=None, offset=None,
+                        expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.ObjectUser, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        object_policies = query.all()
+        for object_policy in object_policies:
+            _object_user_load_attr(context, object_policy, expected_attrs,
+                                   session)
+        return object_policies
+
+
+@require_context
+def object_user_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _object_user_get_query(context, session)
+        query = process_filters(models.ObjectUser)(query, filters)
+        return query.count()
+
+
+@require_context
+def object_user_update(context, object_policy_id, values):
+    session = get_session()
+    with session.begin():
+        query = _object_user_get_query(context, session)
+        result = query.filter_by(id=object_policy_id).update(values)
+        if not result:
+            raise exception.ObjectUserNotFound(
+                object_user_id=object_policy_id)
+
+
+########################
+
+
+def _object_access_key_get_query(context, session=None):
+    return model_query(
+        context, models.ObjectAccessKey, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _object_access_key_get(context, object_user_id, session=None):
+    result = _object_access_key_get_query(context, session)
+    result = result.filter_by(id=object_user_id).first()
+
+    if not result:
+        raise exception.ObjectAccessKeyNotFound(
+            object_access_key_id=object_user_id)
+
+    return result
+
+
+@require_context
+def object_access_key_create(context, values):
+    object_policy_ref = models.ObjectAccessKey()
+    object_policy_ref.update(values)
+    session = get_session()
+    with session.begin():
+        object_policy_ref.save(session)
+    return object_policy_ref
+
+
+@require_context
+def object_access_key_destroy(context, object_user_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.ObjectAccessKey, session=session). \
+            filter_by(id=object_user_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _object_access_key_load_attr(ctxt, object_access_key, expected_attrs=None,
+                                 session=None):
+    expected_attrs = expected_attrs or []
+    if 'obj_user' in expected_attrs:
+        object_access_key.obj_user = object_access_key._object_user
+
+
+@require_context
+def object_access_key_get(context, object_policy_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        object_policy = _object_access_key_get(context, object_policy_id,
+                                               session)
+        _object_access_key_load_attr(context, object_policy, expected_attrs,
+                                     session)
+    return object_policy
+
+
+@require_context
+def object_access_key_get_all(context, marker=None, limit=None, sort_keys=None,
+                              sort_dirs=None, filters=None, offset=None,
+                              expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.ObjectAccessKey, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        object_policies = query.all()
+        for object_policy in object_policies:
+            _object_access_key_load_attr(context, object_policy,
+                                         expected_attrs, session)
+        return object_policies
+
+
+@require_context
+def object_access_key_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _object_access_key_get_query(context, session)
+        query = process_filters(models.ObjectAccessKey)(query, filters)
+        return query.count()
+
+
+@require_context
+def object_access_key_update(context, object_policy_id, values):
+    session = get_session()
+    with session.begin():
+        query = _object_access_key_get_query(context, session)
+        result = query.filter_by(id=object_policy_id).update(values)
+        if not result:
+            raise exception.ObjectAccessKeyNotFound(
+                object_access_key_id=object_policy_id)
+
+
+########################
+
+
+def _object_bucket_get_query(context, session=None):
+    return model_query(
+        context, models.ObjectBucket, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _object_bucket_get(context, object_user_id, session=None):
+    result = _object_bucket_get_query(context, session)
+    result = result.filter_by(id=object_user_id).first()
+
+    if not result:
+        raise exception.ObjectBucketNotFound(
+            object_bucket_id=object_user_id)
+
+    return result
+
+
+@require_context
+def object_bucket_create(context, values):
+    object_policy_ref = models.ObjectBucket()
+    object_policy_ref.update(values)
+    session = get_session()
+    with session.begin():
+        object_policy_ref.save(session)
+    return object_policy_ref
+
+
+@require_context
+def object_bucket_destroy(context, object_user_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.ObjectBucket, session=session). \
+            filter_by(id=object_user_id). \
+            update(updated_values)
+    del updated_values['updated_at']
+    return updated_values
+
+
+def _object_bucket_load_attr(ctxt, object_bucket, expected_attrs=None,
+                             session=None):
+    expected_attrs = expected_attrs or []
+    if 'own_user' in expected_attrs:
+        object_bucket.own_user = object_bucket._object_user
+    if 'lifecycles' in expected_attrs:
+        object_bucket.lifecycles = ([lifecycle for lifecycle in
+                                     object_bucket._lifecycles if
+                                     not lifecycle.deleted])
+
+
+@require_context
+def object_bucket_get(context, object_policy_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        object_policy = _object_bucket_get(context, object_policy_id,
+                                           session)
+        _object_bucket_load_attr(context, object_policy, expected_attrs,
+                                 session)
+    return object_policy
+
+
+@require_context
+def object_bucket_get_all(context, marker=None, limit=None, sort_keys=None,
+                          sort_dirs=None, filters=None, offset=None,
+                          expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.ObjectBucket, marker, limit,
+            sort_keys, sort_dirs, filters,
+            offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        object_policies = query.all()
+        for object_policy in object_policies:
+            _object_bucket_load_attr(context, object_policy,
+                                     expected_attrs, session)
+        return object_policies
+
+
+@require_context
+def object_bucket_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _object_bucket_get_query(context, session)
+        query = process_filters(models.ObjectBucket)(query, filters)
+        return query.count()
+
+
+@require_context
+def object_bucket_update(context, object_policy_id, values):
+    session = get_session()
+    with session.begin():
+        query = _object_bucket_get_query(context, session)
+        result = query.filter_by(id=object_policy_id).update(values)
+        if not result:
+            raise exception.ObjectBucketNotFound(
+                object_bucket_id=object_policy_id)
+
+
+########################
+
+
+def _object_lifecycle_get_query(context, session=None):
+    return model_query(
+        context, models.ObjectLifecycle, session=session
+    ).filter_by(cluster_id=context.cluster_id)
+
+
+def _object_lifecycle_get(context, object_lifecycle_id, session=None):
+    result = _object_lifecycle_get_query(context, session)
+    result = result.filter_by(id=object_lifecycle_id).first()
+
+    if not result:
+        raise exception.ObjectLifecycleNotFound(
+            object_lifecycle_id=object_lifecycle_id)
+
+
+def object_lifecycle_create(context, values):
+    object_lifecycle_ref = models.ObjectLifecycle()
+    object_lifecycle_ref.update(values)
+    session = get_session()
+    with session.begin():
+        object_lifecycle_ref.save(session)
+    return object_lifecycle_ref
+
+
+@require_context
+def object_lifecycle_destroy(context, object_lifecycle_id):
+    session = get_session()
+    now = timeutils.utcnow()
+    with session.begin():
+        updated_values = {'deleted': True,
+                          'deleted_at': now,
+                          'updated_at': literal_column('updated_at')}
+        model_query(context, models.ObjectLifecycle, session=session). \
+            filter_by(id=object_lifecycle_id). \
+            update(updated_values)
+        del updated_values['updated_at']
+        return updated_values
+
+
+def _object_lifecycle_load_attr(ctxt, object_lifecycle, expected_attrs=None,
+                                session=None):
+    expected_attrs = expected_attrs or []
+    if 'bucket' in expected_attrs:
+        object_lifecycle.bucket = object_lifecycle._object_bucket
+
+
+@require_context
+def object_lifecycle_get(context, object_lifecycle_id, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        object_lifecycle = _object_lifecycle_get(
+            context, object_lifecycle_id, session)
+        _object_lifecycle_load_attr(context, object_lifecycle, expected_attrs,
+                                    session)
+    return object_lifecycle
+
+
+@require_context
+def object_lifecycle_get_all(context, marker=None, limit=None, sort_keys=None,
+                             sort_dirs=None, filters=None, offset=None,
+                             expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    session = get_session()
+    with session.begin():
+        # Generate the query
+        query = _generate_paginate_query(
+            context, session, models.ObjectLifecycle, marker, limit,
+            sort_keys, sort_dirs, filters, offset)
+        # No clusters would match, return empty list
+        if query is None:
+            return []
+        object_lifecycles = query.all()
+        for object_lifecycle in object_lifecycles:
+            _object_lifecycle_load_attr(context, object_lifecycle,
+                                        expected_attrs, session)
+        return object_lifecycles
+
+
+@require_context
+def object_lifecycle_get_count(context, filters=None):
+    session = get_session()
+    filters = filters or {}
+    if "cluster_id" not in filters.keys():
+        filters['cluster_id'] = context.cluster_id
+    with session.begin():
+        # Generate the query
+        query = _object_lifecycle_get_query(context, session)
+        query = process_filters(models.ObjectLifecycle)(query, filters)
+        return query.count()
+
+
+def object_lifecycle_update(context, object_lifecycle_id, values):
+    session = get_session()
+    with session.begin():
+        query = _object_lifecycle_get_query(context, session)
+        result = query.filter_by(id=object_lifecycle_id).update(values)
+        if not result:
+            raise exception.ObjectLifecycleNotFound(
+                object_lifecycle_id=object_lifecycle_id)
 
 
 ########################
@@ -4956,6 +5401,19 @@ PAGINATION_HELPERS = {
     models.ObjectPolicy: (_object_policy_get_query,
                           process_filters(models.ObjectPolicy),
                           _object_policy_get),
+    models.ObjectUser: (_object_user_get_query,
+                        process_filters(models.ObjectUser),
+                        _object_user_get),
+    models.ObjectAccessKey: (_object_access_key_get_query,
+                             process_filters(models.ObjectAccessKey),
+                             _object_access_key_get),
+    models.ObjectBucket: (_object_bucket_get_query,
+                          process_filters(models.ObjectBucket),
+                          _object_bucket_get),
+    models.ObjectLifecycle: (_object_lifecycle_get_query,
+                             process_filters(models.ObjectLifecycle),
+                             _object_lifecycle_get),
+
 }
 
 
