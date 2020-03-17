@@ -88,8 +88,8 @@ def define_tables(meta):
         Column('owner_permission', String(32)),
         Column('auth_user_permission', String(32)),
         Column('all_user_permission', String(32)),
-        Column('quota_mar_size', BigInteger),
-        Column('quota_mar_objects', BigInteger),
+        Column('quota_max_size', BigInteger),
+        Column('quota_max_objects', BigInteger),
         Column('cluster_id', String(36), ForeignKey('clusters.id')),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
