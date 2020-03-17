@@ -693,8 +693,8 @@ class ObjectBucket(BASE, StorBase):
     owner_permission = Column(String(32))
     auth_user_permission = Column(String(32))
     all_user_permission = Column(String(32))
-    quota_mar_size = Column(BigInteger())
-    quota_mar_objects = Column(BigInteger())
+    quota_max_size = Column(BigInteger())
+    quota_max_objects = Column(BigInteger())
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     _lifecycles = relationship('ObjectLifecycle', backref="_object_bucket")
 
