@@ -84,11 +84,11 @@ class SocketDomainHandler(AgentBaseHandler):
         executor = self._get_executor()
         disk_tool = DiskTool(executor)
         disk_info = disk_tool.get_disk_info(disk)
-
-        ssh_executor = self._get_ssh_executor()
-        disk_tool = DiskTool(ssh_executor)
-        disk_tool.update_udev_info(disk_info.get('name'), disk_info)
-        self.admin.disk_online(self.ctxt, disk_info, self.node.id)
+        if disk_info:
+            ssh_executor = self._get_ssh_executor()
+            disk_tool = DiskTool(ssh_executor)
+            disk_tool.update_udev_info(disk_info.get('name'), disk_info)
+            self.admin.disk_online(self.ctxt, disk_info, self.node.id)
 
     def network_remove(self, net):
         # TODO remove interface op
