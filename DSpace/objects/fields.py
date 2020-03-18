@@ -375,11 +375,12 @@ class AllResourceType(BaseStorEnum):
     ACCESS_PATH = 'access_path'
     OBJECT_STORE = 'object_store'
     OBJECT_POLICY = 'object_policy'
+    OBJECT_USER = 'object_user'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
            NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
-           ACCESS_PATH, OBJECT_STORE, OBJECT_POLICY)
+           ACCESS_PATH, OBJECT_STORE, ACCESS_PATH, OBJECT_POLICY, OBJECT_USER)
 
 
 class AllActionType(BaseStorEnum):
@@ -738,3 +739,14 @@ class CompressionAlgorithm(BaseStorEnum):
     ZLIB = 'zlib'
     ZSTD = 'zstd'
     ALL = (NULL, SNAPPY, ZLIB, ZSTD)
+
+
+class ObjectUserStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVE = 'active'
+    DELETING = 'deleting'
+    ERROR = 'error'
+    SUSPENDED = 'suspended'
+
+    ALL = (CREATING, ACTIVE, DELETING, SUSPENDED,
+           ERROR)

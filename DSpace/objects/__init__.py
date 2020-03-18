@@ -30,6 +30,8 @@ def register_all():
     __import__('DSpace.objects.object_policy')
     __import__('DSpace.objects.object_user')
     __import__('DSpace.objects.osd')
+    __import__('DSpace.objects.object_user')
+    __import__('DSpace.objects.object_access_key')
     __import__('DSpace.objects.pool')
     __import__('DSpace.objects.radosgw')
     __import__('DSpace.objects.radosgw_router')

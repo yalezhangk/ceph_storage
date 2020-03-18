@@ -384,9 +384,33 @@ class RadosgwHandler(RadosgwMixin):
         user = client.caps_add(ctxt, user["user_id"],
                                "users=*;usage=*;buckets=*;metadata=*")
         client.period_update(ctxt=ctxt)
-        # TODO: create user in db
-        # db_user = objects.ObjectUser()
-        # db_user.create()
+        admin_user = {
+            "uid": user['user_id'],
+            "display_name": user['display_name'],
+            "email": user['email'],
+            "suspended": user['suspended'],
+            "status": "active",
+            "max_buckets": user['max_buckets'],
+            "op_mask": user['op_mask'],
+            "bucket_quota_max_size": user['bucket_quota']['max_size'],
+            "bucket_quota_max_objects": user['bucket_quota']['max_objects'],
+            "user_quota_max_size": user['user_quota']['max_size'],
+            "user_quota_max_objects": user['user_quota']['max_objects'],
+            "is_admin": 1,
+            "cluster_id": ctxt.cluster_id,
+            "capabilities": "users=*;usage=*;buckets=*;metadata=*"
+        }
+        object_user = objects.ObjectUser(ctxt, **admin_user)
+        object_user.create()
+        user_access = {
+            "obj_user_id": object_user.id,
+            "access_key": user['keys'][0]['access_key'],
+            "secret_key": user['keys'][0]['secret_key'],
+            "type": "s3",
+            "cluster_id": ctxt.cluster_id
+        }
+        object_access_key = objects.ObjectAccessKey(ctxt, **user_access)
+        object_access_key.create()
 
     def _object_store_init(self, ctxt, index_pool, begin_action):
         ceph_task = CephTask(ctxt)

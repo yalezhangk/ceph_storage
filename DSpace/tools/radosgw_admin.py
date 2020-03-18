@@ -67,18 +67,17 @@ class RadosgwAdminCMD(ToolBase):
         cmd_res = self._run_radosgw_admin(cmd)
         return json.loads(cmd_res)
 
-    def user_create(self, name, display_name=None, access_key=None,
-                    secret_key=None):
-        logger.info("Create user using radosgw-admin for %s", name)
-        cmd = ["radosgw-admin", "user", "create", "--uid", name]
-        if display_name:
-            cmd = cmd + ["--display-name", display_name]
-        if access_key:
-            cmd = cmd + ["--access-key", access_key]
-        if secret_key:
-            cmd = cmd + ["--secret-key", secret_key]
-        cmd_res = self._run_radosgw_admin(cmd)
-        return json.loads(cmd_res)
+    def user_create_cmd(self, ctxt, name, display_name, access_key,
+                        secret_key, email=None, max_buckets=None):
+        logger.info("Create user: name %s, display_name %s, access_key %s, "
+                    "secret_key %s", name, display_name, access_key, secret_key
+                    )
+        ssh_client = self._get_ssh_executor()
+        rgwcmd = RadosgwAdminCMD(ssh_client)
+        user = rgwcmd.user_create(
+            name, display_name=display_name, access_key=access_key,
+            secret_key=secret_key, email=email, max_buckets=max_buckets)
+        return user
 
     def user_info(self, name):
         logger.info("Get user info using radosgw-admin for %s", name)

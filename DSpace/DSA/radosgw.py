@@ -99,8 +99,8 @@ class RadosgwHandler(AgentBaseHandler):
         rgwcmd = RadosgwAdminCMD(ssh_client)
         rgwcmd.placement_remove(name)
 
-    def user_create_cmd(self, ctxt, name, display_name, access_key,
-                        secret_key):
+    def user_create_cmd(self, ctxt, name, display_name, access_key=None,
+                        secret_key=None, email=None, max_buckets=None):
         logger.info("Create user: name %s, display_name %s, access_key %s, "
                     "secret_key %s", name, display_name, access_key, secret_key
                     )
@@ -108,8 +108,13 @@ class RadosgwHandler(AgentBaseHandler):
         rgwcmd = RadosgwAdminCMD(ssh_client)
         user = rgwcmd.user_create(
             name, display_name=display_name, access_key=access_key,
-            secret_key=secret_key)
+            secret_key=secret_key, email=email, max_buckets=max_buckets)
         return user
+
+    def set_op_mask(self, ctxt, username, op_mask):
+        ssh_client = self._get_ssh_executor()
+        rgwcmd = RadosgwAdminCMD(ssh_client)
+        rgwcmd.set_op_mask(username, op_mask)
 
     def caps_add(self, ctxt, user, caps):
         logger.info("Add caps %s to user %s", caps, user)

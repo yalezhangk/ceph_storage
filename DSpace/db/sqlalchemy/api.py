@@ -4739,7 +4739,6 @@ def router_service_update(context, router_service_id, values):
         if not result:
             raise exception.ServiceNotFound(service_id=router_service_id)
 
-
 ########################
 
 
@@ -4752,10 +4751,8 @@ def _object_policy_get_query(context, session=None):
 def _object_policy_get(context, object_policy_id, session=None):
     result = _object_policy_get_query(context, session)
     result = result.filter_by(id=object_policy_id).first()
-
     if not result:
         raise exception.ObjectPolicyNotFound(object_policy_id=object_policy_id)
-
     return result
 
 
@@ -4856,7 +4853,6 @@ def object_policy_update(context, object_policy_id, values):
 
 ########################
 
-
 def _object_user_get_query(context, session=None):
     return model_query(
         context, models.ObjectUser, session=session
@@ -4866,21 +4862,19 @@ def _object_user_get_query(context, session=None):
 def _object_user_get(context, object_user_id, session=None):
     result = _object_user_get_query(context, session)
     result = result.filter_by(id=object_user_id).first()
-
     if not result:
         raise exception.ObjectUserNotFound(object_user_id=object_user_id)
-
     return result
 
 
 @require_context
 def object_user_create(context, values):
-    object_policy_ref = models.ObjectUser()
-    object_policy_ref.update(values)
+    object_user_ref = models.ObjectUser()
+    object_user_ref.update(values)
     session = get_session()
     with session.begin():
-        object_policy_ref.save(session)
-    return object_policy_ref
+        object_user_ref.save(session)
+    return object_user_ref
 
 
 @require_context
@@ -4898,26 +4892,12 @@ def object_user_destroy(context, object_user_id):
     return updated_values
 
 
-def _object_user_load_attr(ctxt, object_user, expected_attrs=None,
-                           session=None):
-    expected_attrs = expected_attrs or []
-    if 'buckets' in expected_attrs:
-        object_user.buckets = [bucket for bucket in object_user._buckets
-                               if not bucket.deleted]
-    if 'access_keys' in expected_attrs:
-        object_user.access_keys = ([access_key for access_key in
-                                    object_user._access_keys if not
-                                    access_key.deleted])
-
-
 @require_context
-def object_user_get(context, object_policy_id, expected_attrs=None):
+def object_user_get(context, object_user_id, expected_attrs=None):
     session = get_session()
     with session.begin():
-        object_policy = _object_user_get(context, object_policy_id, session)
-        _object_user_load_attr(context, object_policy, expected_attrs,
-                               session)
-    return object_policy
+        object_user = _object_user_get(context, object_user_id, session)
+    return object_user
 
 
 @require_context
@@ -4937,11 +4917,8 @@ def object_user_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        object_policies = query.all()
-        for object_policy in object_policies:
-            _object_user_load_attr(context, object_policy, expected_attrs,
-                                   session)
-        return object_policies
+        object_users = query.all()
+        return object_users
 
 
 @require_context
@@ -4958,18 +4935,17 @@ def object_user_get_count(context, filters=None):
 
 
 @require_context
-def object_user_update(context, object_policy_id, values):
+def object_user_update(context, object_user_id, values):
     session = get_session()
     with session.begin():
         query = _object_user_get_query(context, session)
-        result = query.filter_by(id=object_policy_id).update(values)
+        result = query.filter_by(id=object_user_id).update(values)
         if not result:
             raise exception.ObjectUserNotFound(
-                object_user_id=object_policy_id)
+                object_user_id=object_user_id)
 
 
 ########################
-
 
 def _object_access_key_get_query(context, session=None):
     return model_query(
@@ -4977,29 +4953,27 @@ def _object_access_key_get_query(context, session=None):
     ).filter_by(cluster_id=context.cluster_id)
 
 
-def _object_access_key_get(context, object_user_id, session=None):
+def _object_access_key_get(context, object_access_key_id, session=None):
     result = _object_access_key_get_query(context, session)
-    result = result.filter_by(id=object_user_id).first()
-
+    result = result.filter_by(id=object_access_key_id).first()
     if not result:
         raise exception.ObjectAccessKeyNotFound(
-            object_access_key_id=object_user_id)
-
+            object_access_key_id=object_access_key_id)
     return result
 
 
 @require_context
 def object_access_key_create(context, values):
-    object_policy_ref = models.ObjectAccessKey()
-    object_policy_ref.update(values)
+    object_access_key_ref = models.ObjectAccessKey()
+    object_access_key_ref.update(values)
     session = get_session()
     with session.begin():
-        object_policy_ref.save(session)
-    return object_policy_ref
+        object_access_key_ref.save(session)
+    return object_access_key_ref
 
 
 @require_context
-def object_access_key_destroy(context, object_user_id):
+def object_access_key_destroy(context, object_access_key_id):
     session = get_session()
     now = timeutils.utcnow()
     with session.begin():
@@ -5007,7 +4981,7 @@ def object_access_key_destroy(context, object_user_id):
                           'deleted_at': now,
                           'updated_at': literal_column('updated_at')}
         model_query(context, models.ObjectAccessKey, session=session). \
-            filter_by(id=object_user_id). \
+            filter_by(id=object_access_key_id). \
             update(updated_values)
     del updated_values['updated_at']
     return updated_values
@@ -5021,14 +4995,12 @@ def _object_access_key_load_attr(ctxt, object_access_key, expected_attrs=None,
 
 
 @require_context
-def object_access_key_get(context, object_policy_id, expected_attrs=None):
+def object_access_key_get(context, object_access_key_id, expected_attrs=None):
     session = get_session()
     with session.begin():
-        object_policy = _object_access_key_get(context, object_policy_id,
-                                               session)
-        _object_access_key_load_attr(context, object_policy, expected_attrs,
-                                     session)
-    return object_policy
+        object_access_key = _object_access_key_get(
+            context, object_access_key_id, session)
+    return object_access_key
 
 
 @require_context
@@ -5048,11 +5020,11 @@ def object_access_key_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        object_policies = query.all()
-        for object_policy in object_policies:
-            _object_access_key_load_attr(context, object_policy,
+        object_access_keys = query.all()
+        for object_access_key in object_access_keys:
+            _object_access_key_load_attr(context, object_access_key,
                                          expected_attrs, session)
-        return object_policies
+        return object_access_keys
 
 
 @require_context
@@ -5069,14 +5041,14 @@ def object_access_key_get_count(context, filters=None):
 
 
 @require_context
-def object_access_key_update(context, object_policy_id, values):
+def object_access_key_update(context, object_access_key_id, values):
     session = get_session()
     with session.begin():
         query = _object_access_key_get_query(context, session)
-        result = query.filter_by(id=object_policy_id).update(values)
+        result = query.filter_by(id=object_access_key_id).update(values)
         if not result:
             raise exception.ObjectAccessKeyNotFound(
-                object_access_key_id=object_policy_id)
+                object_access_key_id=object_access_key_id)
 
 
 ########################
@@ -5299,7 +5271,6 @@ def object_lifecycle_update(context, object_lifecycle_id, values):
             raise exception.ObjectLifecycleNotFound(
                 object_lifecycle_id=object_lifecycle_id)
 
-
 ########################
 
 
@@ -5413,7 +5384,6 @@ PAGINATION_HELPERS = {
     models.ObjectLifecycle: (_object_lifecycle_get_query,
                              process_filters(models.ObjectLifecycle),
                              _object_lifecycle_get),
-
 }
 
 
