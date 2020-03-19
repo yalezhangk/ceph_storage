@@ -20,6 +20,7 @@ from DSpace.DSM.metrics import MetricsHandler
 from DSpace.DSM.network import NetworkHandler
 from DSpace.DSM.node import NodeHandler
 from DSpace.DSM.object_policy import ObjectPolicyHandler
+from DSpace.DSM.object_user import ObjectUserHandler
 from DSpace.DSM.osd import OsdHandler
 from DSpace.DSM.pool import PoolHandler
 from DSpace.DSM.probe import ProbeHandler
@@ -60,6 +61,7 @@ class AdminHandler(ActionLogHandler,
                    NetworkHandler,
                    NodeHandler,
                    ObjectPolicyHandler,
+                   ObjectUserHandler,
                    OsdHandler,
                    PoolHandler,
                    ProbeHandler,
