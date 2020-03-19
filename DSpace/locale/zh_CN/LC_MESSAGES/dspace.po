@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-20 17:15+0800\n"
+"POT-Creation-Date: 2020-03-20 15:54+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -470,6 +470,9 @@ msgstr "节点网络历史监控需要参数 'net_name'"
 
 msgid "IP Range %s format error"
 msgstr "IP范围 %s 格式错误"
+
+msgid "missing query_argument bucket_id"
+msgstr "缺少参数：bucket_id"
 
 msgid "Osd type err"
 msgstr "硬盘类型错误"
@@ -942,6 +945,30 @@ msgstr "请先清理集群"
 
 msgid "Please Import First"
 msgstr "请先导入集群"
+
+msgid "bucket: %s status abnormal"
+msgstr "存储桶：%s 不可用"
+
+msgid "obj_user: %s status abnormal"
+msgstr "对象用户：%s 不可用"
+
+msgid "obj_user: %s has not available access_key"
+msgstr "对象用户: %s 没有可用的密钥对"
+
+msgid "has not available rgw"
+msgstr "没有可用的对象存储网关"
+
+msgid "object_lifecycle %s repeat"
+msgstr "规则名称: %s 重复"
+
+msgid "lifecycle target contains: %s"
+msgstr "生命周期的规则目标前缀存在包含关系：%s"
+
+msgid "set lifecycle success, bucket_name:%s"
+msgstr "设置生命周期成功，存储桶:%s"
+
+msgid "set lifecycle error, bucket_name:%s"
+msgstr "设置生命周期失败，存储桶:%s"
 
 msgid "object_policy name %s already exists!"
 msgstr "对象策略：%s 已存在"
