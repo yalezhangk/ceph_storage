@@ -4,6 +4,7 @@ from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -13,16 +14,17 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
     fields = {
         'id': fields.IntegerField(),
         'name': fields.StringField(),
-        'status': fields.StringField(),
-        'bucket_id': fields.IntegerField(),
+        'status': s_fields.BucketStatusField(nullable=True),
+        'bucket_id': fields.StringField(nullable=True),
         'policy_id': fields.IntegerField(),
         'owner_id': fields.IntegerField(),
         'shards': fields.IntegerField(),
         'versioned': fields.BooleanField(),
         'owner_permission': fields.StringField(),
         'auth_user_permission': fields.StringField(),
-        'quota_mar_size': fields.IntegerField(),
-        'quota_mar_objects': fields.IntegerField(),
+        'all_user_permission': fields.StringField(),
+        'quota_max_size': fields.IntegerField(),
+        'quota_max_objects': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
         'own_user': fields.ObjectField("ObjectUser", nullable=True),
         'lifecycles': fields.ListOfObjectsField("ObjectLifecycle",

@@ -335,3 +335,12 @@ class AdminBaseHandler(AdminBaseMixin):
                 ctxt.cluster_id))
             raise exc.ClusterNoMonitorRole()
         return mon_nodes[0]
+
+    def get_admin_user(self, ctxt):
+        admin = objects.ObjectUserList.get_all(
+                ctxt, filters={'uid': 't2stor'})[0]
+        access_keys = objects.ObjectAccessKeyList.get_all(
+                ctxt, filters={'obj_user_id': admin.id})[0]
+        access_key = access_keys.access_key
+        secret_access_key = access_keys.secret_key
+        return admin, access_key, secret_access_key

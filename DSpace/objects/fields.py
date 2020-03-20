@@ -69,6 +69,19 @@ class VolumeStatusField(BaseEnumField):
     AUTO_TYPE = VolumeStatus()
 
 
+class BucketStatus(BaseStorEnum):
+    CREATING = 'creating'
+    ACTIVE = 'active'
+    DELETING = 'deleting'
+    ERROR = 'error'
+
+    ALL = (CREATING, ACTIVE, DELETING, ERROR)
+
+
+class BucketStatusField(BaseEnumField):
+    AUTO_TYPE = BucketStatus()
+
+
 class NodeStatus(BaseStorEnum):
     CREATING = 'creating'
     ACTIVE = 'active'
@@ -376,11 +389,13 @@ class AllResourceType(BaseStorEnum):
     OBJECT_STORE = 'object_store'
     OBJECT_POLICY = 'object_policy'
     OBJECT_USER = 'object_user'
+    OBJECT_BUCKET = 'object_bucket'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
            NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
-           ACCESS_PATH, OBJECT_STORE, ACCESS_PATH, OBJECT_POLICY, OBJECT_USER)
+           ACCESS_PATH, OBJECT_STORE, ACCESS_PATH, OBJECT_POLICY,
+           OBJECT_USER, OBJECT_BUCKET)
 
 
 class AllActionType(BaseStorEnum):

@@ -5,6 +5,7 @@ from DSpace.DSM.action_log import ActionLogHandler
 from DSpace.DSM.alert_group import AlertGroupHandler
 from DSpace.DSM.alert_log import AlertLogHandler
 from DSpace.DSM.alert_rule import AlertRuleHandler
+from DSpace.DSM.bucket import BucketHandler
 from DSpace.DSM.ceph_config import CephConfigHandler
 from DSpace.DSM.cluster import ClusterHandler
 from DSpace.DSM.component import ComponentHandler
@@ -46,6 +47,7 @@ class AdminHandler(ActionLogHandler,
                    AlertGroupHandler,
                    AlertLogHandler,
                    AlertRuleHandler,
+                   BucketHandler,
                    CephConfigHandler,
                    ClusterHandler,
                    ComponentHandler,

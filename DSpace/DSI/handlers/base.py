@@ -79,7 +79,7 @@ class AnonymousHandler(RequestHandler):
         else:
             # log exception
             logger.exception("%s raise exception: %s", self.request.uri, e)
-            super(BaseAPIHandler, self)._handle_request_exception(e)
+            super(AnonymousHandler, self)._handle_request_exception(e)
 
     def api_log_exception(self, op, e):
         if isinstance(e, exception.StorException):

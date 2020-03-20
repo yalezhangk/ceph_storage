@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-19 18:16+0800\n"
+"POT-Creation-Date: 2020-03-20 17:15+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -600,6 +600,30 @@ msgstr "告警规则要更新的字段参数不存在"
 
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
+
+msgid "Object policy placement do not exists"
+msgstr "对象策略不存在"
+
+msgid "owner do not exists"
+msgstr "用户不存在"
+
+msgid "rgw service do not exists"
+msgstr "对象存储网关不存在"
+
+msgid "quota is not enough"
+msgstr "配额不足"
+
+msgid "bucket name %s already exists!"
+msgstr "存储桶：%s 已存在"
+
+msgid "bucket %s create success"
+msgstr "存储桶 %s 创建成功"
+
+msgid "bucket %s create error"
+msgstr "存储桶 %s 创建失败"
+
+msgid "Only available and error bucket can be delete"
+msgstr "只能删除可用与错误的存储桶"
 
 msgid "Ceph config %s update failed"
 msgstr "配置%s修改失败"

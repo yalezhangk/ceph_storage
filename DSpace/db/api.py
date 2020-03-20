@@ -1181,6 +1181,37 @@ def radosgw_router_get_count(context, filters):
 def radosgw_router_update(context, rgw_router_id, values):
     return IMPL.radosgw_router_update(context, rgw_router_id, values)
 
+###############
+
+
+def object_bucket_create(context, values):
+    return IMPL.object_bucket_create(context, values)
+
+
+def object_bucket_destroy(context, bucket_id):
+    return IMPL.object_bucket_destroy(context, bucket_id)
+
+
+def object_bucket_get(context, bucket_id, expected_attrs=None):
+    return IMPL.object_bucket_get(
+            context, bucket_id,
+            expected_attrs=expected_attrs)
+
+
+def object_bucket_get_all(context, filters, marker, limit,
+                          offset, sort_keys, sort_dirs, expected_attrs=None):
+    return IMPL.object_bucket_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def object_bucket_get_count(context, filters):
+    return IMPL.object_bucket_get_count(context, filters=filters)
+
+
+def object_bucket_update(context, bucket_id, values):
+    return IMPL.object_bucket_update(context, bucket_id, values)
 
 ###############
 
@@ -1303,38 +1334,6 @@ def object_access_key_update(context, object_access_key_id, values):
 
 
 ############
-
-def object_bucket_create(context, values):
-    return IMPL.object_bucket_create(context, values)
-
-
-def object_bucket_destroy(context, object_user_id):
-    return IMPL.object_bucket_destroy(context, object_user_id)
-
-
-def object_bucket_get(context, object_user_id, expected_attrs=None):
-    return IMPL.object_bucket_get(context, object_user_id,
-                                  expected_attrs=expected_attrs)
-
-
-def object_bucket_get_all(context, filters, marker, limit, offset,
-                          sort_keys, sort_dirs, expected_attrs=None):
-    return IMPL.object_bucket_get_all(
-        context, marker=marker, limit=limit, sort_keys=sort_keys,
-        sort_dirs=sort_dirs, filters=filters, offset=offset,
-        expected_attrs=expected_attrs)
-
-
-def object_bucket_get_count(context, filters):
-    return IMPL.object_bucket_get_count(context, filters=filters)
-
-
-def object_bucket_update(context, object_user_id, values):
-    return IMPL.object_bucket_update(context, object_user_id, values)
-
-
-###############
-
 
 def object_lifecycle_create(context, values):
     return IMPL.object_lifecycle_create(context, values)
