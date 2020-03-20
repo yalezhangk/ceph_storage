@@ -4739,6 +4739,7 @@ def router_service_update(context, router_service_id, values):
         if not result:
             raise exception.ServiceNotFound(service_id=router_service_id)
 
+
 ########################
 
 
@@ -5167,7 +5168,6 @@ def object_bucket_update(context, object_policy_id, values):
 
 
 ########################
-
 
 def _object_lifecycle_get_query(context, session=None):
     return model_query(

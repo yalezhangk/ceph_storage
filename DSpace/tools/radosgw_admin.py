@@ -343,29 +343,6 @@ class RadosgwAdmin(object):
             raise RadosgwAdminException(reason=e)
         return user_info.get("stats")
 
-    def get_user_capacity(self, uid):
-        user_quota = self.get_user_quota(uid)
-        try:
-            user_info = self.rgw.get_user(uid)
-            user_stats = self.rgw.get_user_quota(uid)
-        except RGWAdminException as e:
-            raise RadosgwAdminException(reason=e)
-        return {
-            "size": {
-                # check_on_raw is false, if true used is size_kb
-                "used": user_stats.get("size_kb_actual"),
-                "max": user_quota.get("max_size_kb")
-            },
-            "objects": {
-                "used": user_stats.get("num_objects"),
-                "max": user_quota.get("max_objects")
-            },
-            "buckets": {
-                "used": "",  # count from db
-                "max": user_info.get("max_buckets")
-            }
-        }
-
     def get_user_keys(self, uid, swift_keys=False):
         try:
             user_info = self.rgw.get_user(uid)
@@ -413,19 +390,36 @@ class RadosgwAdmin(object):
         except RGWAdminException as e:
             raise RadosgwAdminException(reason=e)
 
-    def get_bucket_capacity(self, bucket):
+    def count_user_buckets(self, uid):
         try:
-            bucket_info = self.rgw.get_bucket(bucket=bucket)
+            bucket_list = self.rgw.get_bucket(uid=uid)
+            count = len(bucket_list)
         except RGWAdminException as e:
             raise RadosgwAdminException(reason=e)
-        bucket_usage = bucket_info["usage"]
-        if not bucket_usage:
-            return {}
-        cap = {
-            "size": bucket_usage["rgw.main"]["size_kb_actual"],
-            "objects": bucket_usage["rgw.main"]["num_objects"]
+        return count
+
+    def get_user_capacity(self, uid):
+        user_quota = self.get_user_quota(uid)
+        try:
+            user_info = self.rgw.get_user(uid)
+            user_stats = self.rgw.get_user_quota(uid)
+        except RGWAdminException as e:
+            raise RadosgwAdminException(reason=e)
+        return {
+            "size": {
+                # check_on_raw is false, if true used is size_kb
+                "used": user_stats.get("size_kb_actual"),
+                "max": user_quota.get("max_size_kb")
+            },
+            "objects": {
+                "used": user_stats.get("num_objects"),
+                "max": user_quota.get("max_objects")
+            },
+            "buckets": {
+                "used": self.count_user_buckets(uid),
+                "max": user_info.get("max_buckets")
+            }
         }
-        return cap
 
     def bucket_owner_change(self, bucket, bucket_id, uid):
         """
