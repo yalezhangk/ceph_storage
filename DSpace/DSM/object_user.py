@@ -22,11 +22,23 @@ class ObjectUserMixin(AdminBaseHandler):
                 reason=_('object_user name %s already exists!') % name)
 
     def check_object_user_email_exist(self, ctxt, email):
+        if not email:
+            return
         exist_email = objects.ObjectUserList.get_all(
             ctxt, filters={'email': email})
         if exist_email:
             raise exception.InvalidInput(
                 reason=_('object_user email %s already exists!') % email)
+
+    def check_access_key_exist(self, ctxt, access_key):
+        if not access_key:
+            return
+        exist_access_key = objects.ObjectAccessKeyList.get_all(
+            ctxt, filters={'access_key': access_key})
+        if exist_access_key:
+            raise exception.InvalidInput(
+                reason=_('object_user access_key %s already exists!')
+                % access_key)
 
     def get_admin_user_info(self, ctxt):
         admin_user = objects.ObjectUserList.get_all(ctxt,
@@ -36,6 +48,17 @@ class ObjectUserMixin(AdminBaseHandler):
 
 class ObjectUserHandler(ObjectUserMixin):
 
+    def object_user_get_all(self, ctxt, marker=None, limit=None,
+                            sort_keys=None, sort_dirs=None, filters=None,
+                            offset=None, expected_attrs=None):
+        return objects.ObjectUserList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
+
+    def object_user_get_count(self, ctxt, filters=None):
+        return objects.ObjectUserList.get_count(ctxt, filters=filters)
+
     def object_user_create(self, ctxt, data):
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.OBJECT_USER,
@@ -43,11 +66,13 @@ class ObjectUserHandler(ObjectUserMixin):
         user_name = data.get('uid')
         logger.debug('object_user begin crate, name:%s' % user_name)
         self.check_object_user_name_exist(ctxt, user_name)
-        self.check_object_user_email_exist(ctxt, data['email'])
+        self.check_object_user_email_exist(ctxt, data.get('email'))
+        if len(data['keys']) != 0:
+            self.check_access_key_exist(ctxt, data['keys'][0]['access_key'])
         object_user = objects.ObjectUser(
             ctxt, cluster_id=ctxt.cluster_id,
             status=s_fields.ObjectUserStatus.CREATING,
-            uid=user_name, email=data['email'],
+            uid=user_name, email=data.get('email'),
             display_name=user_name, suspended=0,
             op_mask=data['op_mask'],
             max_buckets=data['max_buckets'],
@@ -84,14 +109,25 @@ class ObjectUserHandler(ObjectUserMixin):
         else:
             bucket_qutoa_enabled = True
         try:
+
             node = self.get_first_mon_node(ctxt)
             client = self.agent_manager.get_client(node_id=node.id)
-            user_info = client.user_create_cmd(ctxt, name=user_name,
-                                               display_name=user_name,
-                                               access_key=data['access_key'],
-                                               secret_key=data['secret_key'],
-                                               email=data['email'],
-                                               max_buckets=data['max_buckets'])
+            if len(data['keys']) == 0:
+                user_info = client.user_create_cmd(
+                    ctxt, name=user_name,
+                    display_name=user_name,
+                    access_key=None,
+                    secret_key=None,
+                    email=data.get('email'),
+                    max_buckets=data['max_buckets'])
+            else:
+                user_info = client.user_create_cmd(
+                    ctxt, name=user_name,
+                    display_name=user_name,
+                    access_key=data['keys'][0]['access_key'],
+                    secret_key=data['keys'][0]['secret_key'],
+                    email=data.get('email'),
+                    max_buckets=data['max_buckets'])
 
             rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
                                secret_key=admin_access_key.secret_key,
@@ -108,15 +144,9 @@ class ObjectUserHandler(ObjectUserMixin):
                 bucket_quota_max_size=data['bucket_quota_max_size'],
                 bucket_quota_max_objects=data['bucket_quota_max_objects']
             )
-
             client.set_op_mask(ctxt, username=user_name,
                                op_mask=data['op_mask'])
-            if data['access_key'] and data['secret_key']:
-                access_key = {
-                    'access_key': data['access_key'],
-                    'secret_key': data['secret_key']
-                }
-            else:
+            if len(data['keys']) == 0:
                 access_key = {
                     'obj_user_id': object_user.id,
                     'access_key': user_info['keys'][0]['access_key'],
@@ -125,9 +155,25 @@ class ObjectUserHandler(ObjectUserMixin):
                     'description': data['description'],
                     'cluster_id': ctxt.cluster_id
                 }
+                key = objects.ObjectAccessKey(ctxt, **access_key)
+                key.create()
+            else:
+                for i in range(len(data['keys'])):
+                    rgw.create_key(uid=user_name,
+                                   access_key=data['keys'][i]['access_key'],
+                                   secret_key=data['keys'][i]['secret_key'])
+                for i in range(len(data['keys'])):
+                    access_key = {
+                        'obj_user_id': object_user.id,
+                        'access_key': data['keys'][i]['access_key'],
+                        'secret_key': data['keys'][i]['secret_key'],
+                        'type': "s3",
+                        'description': data['description'],
+                        'cluster_id': ctxt.cluster_id
+                    }
+                    key = objects.ObjectAccessKey(ctxt, **access_key)
+                    key.create()
             status = s_fields.ObjectUserStatus.ACTIVE
-            key = objects.ObjectAccessKey(ctxt, **access_key)
-            key.create()
             msg = _("create {} success").format(user_name)
             op_status = 'CREATE_SUCCESS'
         except Exception as e:
@@ -139,4 +185,4 @@ class ObjectUserHandler(ObjectUserMixin):
         object_user.save()
         self.finish_action(begin_action, user_name,
                            'success', err_msg=None)
-        self.send_websocket(ctxt, user_name, op_status, msg)
+        self.send_websocket(ctxt, object_user, op_status, msg)

@@ -4739,7 +4739,6 @@ def router_service_update(context, router_service_id, values):
         if not result:
             raise exception.ServiceNotFound(service_id=router_service_id)
 
-
 ########################
 
 
@@ -4893,11 +4892,22 @@ def object_user_destroy(context, object_user_id):
     return updated_values
 
 
+def _object_user_load_attr(ctxt, object_user, expected_attrs=None,
+                           session=None):
+    expected_attrs = expected_attrs or []
+    if 'access_keys' in expected_attrs:
+        object_user.access_keys = [access_key for access_key in
+                                   object_user.access_keys
+                                   if not access_key.deleted]
+
+
 @require_context
 def object_user_get(context, object_user_id, expected_attrs=None):
     session = get_session()
     with session.begin():
         object_user = _object_user_get(context, object_user_id, session)
+        _object_user_load_attr(context, object_user, expected_attrs,
+                               session)
     return object_user
 
 
@@ -4919,6 +4929,9 @@ def object_user_get_all(context, marker=None, limit=None, sort_keys=None,
         if query is None:
             return []
         object_users = query.all()
+        for object_user in object_users:
+            _object_user_load_attr(context, object_user, expected_attrs,
+                                   session)
         return object_users
 
 
@@ -5000,7 +5013,7 @@ def object_access_key_get(context, object_access_key_id, expected_attrs=None):
     session = get_session()
     with session.begin():
         object_access_key = _object_access_key_get(
-            context, object_access_key_id, session)
+            context, object_access_key_id, expected_attrs, session)
     return object_access_key
 
 
@@ -5168,6 +5181,7 @@ def object_bucket_update(context, object_policy_id, values):
 
 
 ########################
+
 
 def _object_lifecycle_get_query(context, session=None):
     return model_query(
