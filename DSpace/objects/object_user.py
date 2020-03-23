@@ -14,7 +14,7 @@ class ObjectUser(base.StorPersistentObject, base.StorObject,
     fields = {
         'id': fields.IntegerField(),
         'uid': fields.StringField(),
-        'email': fields.StringField(),
+        'email': fields.StringField(nullable=True),
         'display_name': fields.StringField(),
         'status': s_fields.NodeStatusField(),
         'suspended': fields.BooleanField(),
@@ -27,9 +27,13 @@ class ObjectUser(base.StorPersistentObject, base.StorObject,
         'capabilities': fields.StringField(nullable=True),
         'cluster_id': fields.StringField(),
         'is_admin': fields.BooleanField(),
-        'description': fields.StringField(nullable=True)
+        'description': fields.StringField(nullable=True),
+        'access_keys': fields.ListOfObjectsField('ObjectAccessKey',
+                                                 nullable=True)
 
     }
+
+    OPTIONAL_FIELDS = ('access_keys')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -51,6 +55,17 @@ class ObjectUser(base.StorPersistentObject, base.StorObject,
         self.update(updated_values)
         self.obj_reset_changes(updated_values.keys())
 
+    @classmethod
+    def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
+        obj.metrics = {}
+        expected_attrs = expected_attrs or []
+        if 'access_keys' in expected_attrs:
+            access_keys = db_obj.get('access_keys', [])
+            obj.access_keys = [objects.ObjectAccessKey._from_db_object(
+                context, objects.ObjectAccessKey(context), access_key
+            ) for access_key in access_keys]
+        return super(ObjectUser, cls)._from_db_object(context, obj, db_obj)
+
 
 @base.StorObjectRegistry.register
 class ObjectUserList(base.ObjectListBase, base.StorObject):
@@ -60,11 +75,13 @@ class ObjectUserList(base.ObjectListBase, base.StorObject):
 
     @classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
-                offset=None, sort_keys=None, sort_dirs=None):
+                offset=None, sort_keys=None, sort_dirs=None,
+                expected_attrs=None):
         users = db.object_user_get_all(context, filters, marker, limit, offset,
-                                       sort_keys, sort_dirs)
+                                       sort_keys, sort_dirs,
+                                       expected_attrs=expected_attrs)
         return base.obj_make_list(context, cls(context), objects.ObjectUser,
-                                  users)
+                                  users, expected_attrs=expected_attrs)
 
     @classmethod
     def get_count(cls, context, filters=None):
