@@ -41,7 +41,7 @@ create_object_bucket_schema = {
                 "quota_max_size": {"type": "integer"},
                 "quota_max_objects": {"type": "integer"}
             },
-            "required": ["name", "owner_id", "policy_id"
+            "required": ["name", "owner_id", "policy_id",
                          "quota_max_size", "quota_max_objects"],
         },
     },
