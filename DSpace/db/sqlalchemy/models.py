@@ -708,6 +708,6 @@ class ObjectLifecycle(BASE, StorBase):
     name = Column(String(64), index=True)
     enabled = Column(Boolean, default=True)  # 默认启用
     target = Column(String(128))  # 规则目标:整个bucket(null)或者对象前缀('obj')
-    policy = Column(String(1024))  # 策略：json格式，目前只有del,时间点或时间段
+    policy = Column(JsonEncodedDict())  # 策略：json格式，目前只有del,时间点或时间段
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     bucket_id = Column(Integer, ForeignKey('object_buckets.id'))

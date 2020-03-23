@@ -4,6 +4,7 @@ from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects import fields as s_fields
 
 
 @base.StorObjectRegistry.register
@@ -15,7 +16,7 @@ class ObjectLifecycle(base.StorPersistentObject, base.StorObject,
         'name': fields.StringField(),
         'enabled': fields.BooleanField(),
         'target': fields.StringField(nullable=True),
-        'policy': fields.StringField(),
+        'policy': s_fields.DictOfNullableField(),
         'cluster_id': fields.UUIDField(),
         'bucket_id': fields.IntegerField(),
         'bucket': fields.ObjectField("ObjectBucket", nullable=True),

@@ -20,6 +20,7 @@ from DSpace.DSM.mail import MailHandler
 from DSpace.DSM.metrics import MetricsHandler
 from DSpace.DSM.network import NetworkHandler
 from DSpace.DSM.node import NodeHandler
+from DSpace.DSM.object_lifecycle import ObjectLifecycleHandler
 from DSpace.DSM.object_policy import ObjectPolicyHandler
 from DSpace.DSM.object_user import ObjectUserHandler
 from DSpace.DSM.osd import OsdHandler
@@ -62,6 +63,7 @@ class AdminHandler(ActionLogHandler,
                    MetricsHandler,
                    NetworkHandler,
                    NodeHandler,
+                   ObjectLifecycleHandler,
                    ObjectPolicyHandler,
                    ObjectUserHandler,
                    OsdHandler,

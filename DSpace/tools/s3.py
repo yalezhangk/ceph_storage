@@ -11,15 +11,25 @@ from DSpace.exception import S3ClientError
 logger = logging.getLogger(__name__)
 
 
-def exception_wapper(fun):
-    @functools.wraps(fun)
-    def _wapper(*args, **kwargs):
-        try:
-            fun(*args, **kwargs)
-        except ClientError as e:
-            logger.warning("S3 client error: %s", e)
-            raise S3ClientError(str(e))
-    return _wapper
+def exception_wapper(allowed_codes=None, ret=None):
+
+    if not isinstance(allowed_codes, list):
+        allowed_codes = [allowed_codes]
+
+    def _decorator(fun):
+        @functools.wraps(fun)
+        def _wapper(*args, **kwargs):
+            try:
+                return fun(*args, **kwargs)
+            except ClientError as e:
+                code = e.response["Error"]['Code']
+                if code in allowed_codes:
+                    return ret
+                else:
+                    logger.warning("S3 client error: %s", e)
+                    raise S3ClientError(str(e))
+        return _wapper
+    return _decorator
 
 
 class S3Client(object):
@@ -31,7 +41,7 @@ class S3Client(object):
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_access_key)
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_create(self, name, placement=None,
                       versioning=None, acls=None):
         kwargs = {}
@@ -57,14 +67,14 @@ class S3Client(object):
         else:
             return bucket.name
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_delete(self, bucket):
         bucket = self.bucket_get(bucket)
         for key in bucket.objects.all():
             key.delete()
         bucket.delete()
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_list(self):
         res = {}
         buckets = self.s3.buckets.all()
@@ -74,7 +84,7 @@ class S3Client(object):
             }
         return res
 
-    @exception_wapper
+    @exception_wapper('NoSuchLifecycleConfiguration')
     def bucket_lifecycle_get(self, bucket):
         bucket_name = self.bucket_get_name(bucket)
         bucket_lifecycle = self.s3.BucketLifecycleConfiguration(bucket_name)
@@ -91,7 +101,13 @@ class S3Client(object):
             rules.append(_rule)
         return rules
 
-    @exception_wapper
+    @exception_wapper()
+    def bucket_lifecycle_clear(self, bucket):
+        bucket_name = self.bucket_get_name(bucket)
+        bucket_lifecycle = self.s3.BucketLifecycleConfiguration(bucket_name)
+        bucket_lifecycle.delete()
+
+    @exception_wapper()
     def bucket_lifecycle_set(self, bucket, lifecycles):
         """Set Lifecycle
 
@@ -128,13 +144,13 @@ class S3Client(object):
             }
         )
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_acl_get(self, bucket):
         bucket_name = self.bucket_get_name(bucket)
         bucket_acl = self.s3.BucketAcl(bucket_name)
         return bucket_acl.grants
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_acl_set(self, bucket, acls):
         """Set bucket acl
 
@@ -210,7 +226,7 @@ class S3Client(object):
             },
         )
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_versioning_set(self, bucket, enabled=False):
         bucket_name = self.bucket_get_name(bucket)
         bucket_versioning = self.s3.BucketVersioning(bucket_name)
@@ -219,7 +235,7 @@ class S3Client(object):
         elif bucket_versioning.status == "Enabled":
             bucket_versioning.suspend()
 
-    @exception_wapper
+    @exception_wapper()
     def bucket_versioning_get(self, bucket):
         bucket_name = self.bucket_get_name(bucket)
         bucket_versioning = self.s3.BucketVersioning(bucket_name)
