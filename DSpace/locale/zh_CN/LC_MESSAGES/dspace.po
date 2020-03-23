@@ -245,6 +245,9 @@ msgstr "卷快照 %(volume_snapshot_id)s 未找到"
 msgid "Volume Action %(action)s must in'extend,shrink,rollback,unlink'"
 msgstr "卷操作 %(action)s 只支持 'extend'、'shrink'、'rollback'或'unlink'"
 
+msgid "ObjectBucket Action %(action)s must in'quota, owner'"
+msgstr "存储桶操作 %(action)s 只支持 'quota, owner' "
+
 msgid "Disk Action %(action)s do not support"
 msgstr "磁盘操作 %(action)s 不支持"
 
@@ -471,6 +474,12 @@ msgstr "节点网络历史监控需要参数 'net_name'"
 msgid "IP Range %s format error"
 msgstr "IP范围 %s 格式错误"
 
+msgid "this tab is not supported"
+msgstr "不支持此标签页"
+
+msgid "force supports only True and False"
+msgstr "force值仅支持 True 和 False"
+
 msgid "missing query_argument bucket_id"
 msgstr "缺少参数：bucket_id"
 
@@ -488,9 +497,6 @@ msgstr "osd_top应为数字"
 
 msgid "op_top not number"
 msgstr "op_top应为数字"
-
-msgid "this tab is not supported"
-msgstr "不支持此标签页"
 
 msgid "pool: name is none"
 msgstr "存储池需要参数 'name'"
@@ -625,8 +631,26 @@ msgstr "存储桶 %s 创建成功"
 msgid "bucket %s create error"
 msgstr "存储桶 %s 创建失败"
 
+msgid "bucket {} update quota success"
+msgstr "存储桶 {} 更新配额成功"
+
+msgid "bucket {} update quota error"
+msgstr "存储桶{} 更新配额错误"
+
 msgid "Only available and error bucket can be delete"
 msgstr "只能删除可用与错误的存储桶"
+
+msgid "delete bucket {} success"
+msgstr "删除存储桶 {} 成功"
+
+msgid "delete bucket {} error"
+msgstr "删除存储桶{} 失败"
+
+msgid "bucket {} update owner success"
+msgstr "存储桶 {} 更新用户成功"
+
+msgid "bucket {} update owner error"
+msgstr "存储桶 {} 更新用户失败"
 
 msgid "Ceph config %s update failed"
 msgstr "配置%s修改失败"
@@ -1622,3 +1646,4 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+

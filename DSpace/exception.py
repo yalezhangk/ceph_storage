@@ -405,6 +405,11 @@ class VolumeActionNotFound(NotFound):
                 "'extend,shrink,rollback,unlink'")
 
 
+class ObjectBucketActionNotFound(NotFound):
+    message = _("ObjectBucket Action %(action)s must in"
+                "'quota, owner'")
+
+
 class DiskActionNotFound(NotFound):
     message = _("Disk Action %(action)s do not support")
 

@@ -15,18 +15,6 @@ logger = logging.getLogger(__name__)
 
 class BucketHandler(AdminBaseHandler):
 
-    def object_bucket_get_all(
-            self, ctxt, marker=None, limit=None,
-            sort_keys=None, sort_dirs=None, filters=None,
-            offset=None, expected_attrs=None):
-        return objects.ObjectBucketList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=expected_attrs)
-
-    def object_bucket_get_count(self, ctxt, filters=None):
-        return objects.ObjectBucketList.get_count(ctxt, filters=filters)
-
     def _check_policy_exist(self, ctxt, data):
         policy = objects.ObjectPolicy.get_by_id(
                 ctxt, data['policy_id'])
@@ -97,7 +85,7 @@ class BucketHandler(AdminBaseHandler):
             begin_action = self.begin_action(ctxt, Resource.OBJECT_BUCKET,
                                              Action.CREATE)
             bucket = objects.ObjectBucket(ctxt, **bucket_datas)
-            bucket.status = s_fields.BucketStatus.ACTIVE
+            bucket.status = s_fields.BucketStatus.CREATING
             bucket.create()
             self.task_submit(self._object_bucket_create, ctxt, bucket,
                              placement, rgw, endpoint_url, access_key,
@@ -161,10 +149,11 @@ class BucketHandler(AdminBaseHandler):
             op_status = "CREATE_BUCKET_SUCCESS"
             if bucket.quota_max_size != 0 or bucket.quota_max_objects != 0:
                 rgw.rgw.set_bucket_quota(
-                        uid, name, bucket.quota_max_size,
-                        bucket.quota_max_objects, enabled=True)
+                        uid, name, bucket.quota_max_size * 1024**2,
+                        bucket.quota_max_objects * 1000, enabled=True)
             bucket_info = rgw.rgw.get_bucket(bucket=name)
             bucket.bucket_id = bucket_info['id']
+            bucket.status = s_fields.BucketStatus.ACTIVE
             bucket.save()
             rgw.bucket_owner_change(name, bucket_info['id'], uid)
             self.finish_action(begin_action, bucket.id, name,
@@ -176,42 +165,53 @@ class BucketHandler(AdminBaseHandler):
             op_status = "CREATE_BUCKET_ERROR"
             self.finish_action(begin_action, bucket.id, name,
                                bucket, 'error', err_msg=err_msg)
-        # send ws message
         self.send_websocket(ctxt, bucket, op_status, msg)
 
-    def bucket_multi_version():
-        # TODO: multi_version
-        pass
-
-    def bucekt_access_permission():
-        # TODO: access permission
-        pass
-
-    def bucket_quota_update():
-        # TODO:
-        pass
-
-    def object_bucket_get(self, ctxt, object_bucket_id, expected_attrs=None):
-        object_bucket = objects.ObjectPolicy.get_by_id(
-            ctxt, object_bucket_id, expected_attrs=expected_attrs)
-        return object_bucket
-
-    def object_bucket_update(self, ctxt, object_bucket_id, data):
-        logger.debug('object_bucket: %s begin update description',
-                     object_bucket_id)
-        bucket = objects.ObjectBucket.get_by_id(ctxt, object_bucket_id)
+    def bucket_update_quota(self, ctxt, bucket_id, data):
+        server = self._check_server_exist(ctxt)
+        logger.debug('bucket quota: %s update begin', bucket_id)
+        bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         begin_action = self.begin_action(
-            ctxt, Resource.OBJECT_BUCKET, Action.UPDATE, bucket)
-        bucket.save()
-        logger.info('object_bucket update success, new_description=%s')
-        self.finish_action(begin_action, object_bucket_id, bucket.name, bucket)
+            ctxt, Resource.OBJECT_BUCKET, Action.QUOTA_UPDATE, bucket)
+        self.task_submit(self._bucket_update_quota, ctxt, bucket, data,
+                         server, begin_action)
         return bucket
 
-    def object_bucket_delete(self, ctxt, bucket_id):
+    def _bucket_update_quota(self, ctxt, bucket, data, server,
+                             begin_action):
+        try:
+            quota_max_size = data['quota_max_size']
+            quota_max_objects = data['quota_max_objects']
+            name = bucket.name
+            users = objects.ObjectUser.get_by_id(ctxt, bucket.owner_id)
+            uid = users.uid
+            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            admin, access_key, secret_access_key = self.get_admin_user(ctxt)
+            rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+            rgw.rgw.set_bucket_quota(
+                    uid, name, quota_max_size * 1024**2,
+                    quota_max_objects * 1000, enabled=True)
+            bucket.quota_max_size = data['quota_max_size']
+            bucket.quota_max_objects = data['quota_max_objects']
+            bucket.save()
+            status = "SUCCESS"
+            op_status = "UPDATE_BUCKET_QUOTA_SUCCESS"
+            msg = _("bucket {} update quota success").format(name)
+            err_msg = None
+        except Exception as err:
+            logger.error("update bucket quota error: %s", err)
+            msg = _("bucket {} update quota error").format(name)
+            err_msg = str(err)
+            status = "ERROR"
+            op_status = "UPDATE_BUCKET_QUOTA_ERROR"
+        self.finish_action(self, begin_action, bucket.id, name, bucket,
+                           status, err_msg=err_msg)
+        self.send_websocket(ctxt, bucket, op_status, msg)
+
+    def object_bucket_delete(self, ctxt, bucket_id, force):
+        server = self._check_server_exist(ctxt)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         if bucket.status not in [s_fields.BucketStatus.ACTIVE,
-                                 s_fields.BucketStatus.CREATING,
-                                 s_fields.BucketStatus.DELETING,
                                  s_fields.BucketStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
                                            " bucket can be delete"))
@@ -219,15 +219,88 @@ class BucketHandler(AdminBaseHandler):
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET, Action.DELETE)
         bucket.status = s_fields.BucketStatus.DELETING
-        bucket.destroy()
+        bucket.save()
         self.task_submit(self._object_bucket_delete, ctxt, bucket,
-                         begin_action)
+                         server, force, begin_action)
         logger.info('object_bucket_delete task has begin, bucket_name: %s',
                     bucket.name)
+        return bucket
 
-    def _object_bucket_delete(self, ctxt, bucket, begin_action):
-        self.finish_action(self, begin_action, bucket.id, bucket.name, bucket,
-                           'success', err_msg=None)
-        # send ws message
-        # self.send_websocket(ctxt, bucket, op_status, msg)
+    def _object_bucket_delete(self, ctxt, bucket, server,
+                              force, begin_action):
+        try:
+            name = bucket.name
+            admin, access_key, secret_access_key = self.get_admin_user(ctxt)
+            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+            rgw.bucket_remove(name, force)
+            bucket.destroy()
+            status = "SUCCESS"
+            op_status = "DELETE_BUCKET_SUCCESS"
+            msg = _("delete bucket {} success").format(name)
+            err_msg = None
+        except Exception as err:
+            logger.error("delete bucket error: %s", err)
+            msg = _("delete bucket {} error").format(name)
+            err_msg = str(err)
+            status = "ERROR"
+            op_status = "DELETE_BUCKET_ERROR"
+        self.finish_action(self, begin_action, bucket.id, name, bucket,
+                           status, err_msg=err_msg)
+        self.send_websocket(ctxt, bucket, op_status, msg)
+
+    def bucket_get_all(self, ctxt, marker=None, limit=None,
+                       sort_keys=None, sort_dirs=None, filters=None,
+                       offset=None, expected_attrs=None):
+        return objects.ObjectBucketList.get_all(
+            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            expected_attrs=expected_attrs)
+
+    def bucket_get_count(self, ctxt, filters=None):
+        return objects.ObjectBucketList.get_count(ctxt, filters=filters)
+
+    def bucket_get(self, ctxt, bucket_id, expected_attrs):
+        bucket = objects.ObjectBucket.get_by_id(
+            ctxt, bucket_id, expected_attrs)
+        return bucket
+
+    def bucket_update_owner(self, ctxt, bucket_id, data):
+        server = self._check_server_exist(ctxt)
+        uid, max_buckets = self._check_user_exist(ctxt, data)
+        logger.debug('object_bucket owner: %s update begin',
+                     bucket_id)
+        bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+        begin_action = self.begin_action(
+            ctxt, Resource.OBJECT_BUCKET, Action.OWNER_UPDATE, bucket)
+        self.task_submit(self._bucket_update_owner, ctxt, bucket, data,
+                         server, uid, begin_action)
+        return bucket
+
+    def _bucket_update_owner(self, ctxt, bucket, data, server,
+                             uid, begin_action):
+        try:
+            name = bucket.name
+            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            admin, access_key, secret_access_key = self.get_admin_user(ctxt)
+            rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+            rgw.bucket_owner_change(name, bucket['bucket_id'], uid)
+            bucket.owner_id = data['owner_id']
+            bucket.save()
+            status = "SUCCESS"
+            op_status = "UPDATE_BUCKET_OWNER_SUCCESS"
+            msg = _("bucket {} update owner success").format(name)
+            err_msg = None
+        except Exception as err:
+            logger.error("bucket update owner error: %s", err)
+            msg = _("bucket {} update owner error").format(name)
+            err_msg = str(err)
+            status = "ERROR"
+            op_status = "UPDATE_BUCKET_OWNER_ERROR"
+        self.finish_action(begin_action, bucket.id, name, bucket,
+                           status, err_msg=err_msg)
+        self.send_websocket(ctxt, bucket, op_status, msg)
+
+    def bucket_mutil_version(self, ctxt, bucket_id):
+        # TODO
         pass
