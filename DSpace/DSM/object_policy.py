@@ -111,11 +111,11 @@ class ObjectPolicyHandler(ObjectPolicyMixin):
                 compression=extra_data['compression'])
             if set_default:
                 agent_client.set_default_object_policy(ctxt, name)
-                agent_client.period_update(ctxt)
                 policy.default = True
                 policy.save()
                 logger.info('the first object_policy created and set_default '
                             'success, name=%s', name)
+            agent_client.period_update(ctxt)
             logger.info('object_policy_create success, name=%s', name)
             op_status = "CREATE_SUCCESS"
             msg = _("create object_policy success: %s") % name
@@ -176,6 +176,7 @@ class ObjectPolicyHandler(ObjectPolicyMixin):
             # TODO: 改为 taskflow
             agent_client = self.agent_manager.get_client(node.id)
             agent_client.delete_object_policy(ctxt, name)
+            agent_client.period_update(ctxt)
             policy.destroy()
             logger.info('object_policy_delete success, name=%s', name)
             op_status = "DELETE_SUCCESS"
@@ -272,6 +273,7 @@ class ObjectPolicyHandler(ObjectPolicyMixin):
             agent_client = self.agent_manager.get_client(node.id)
             agent_client.modify_object_policy(
                 ctxt, name, {'compression': compression})
+            agent_client.period_update(ctxt)
             logger.info('object_policy set compression success, name=%s', name)
             op_status = "SET_COMPRESSION_SUCCESS"
             msg = _("set compression object_policy success: %s") % name
