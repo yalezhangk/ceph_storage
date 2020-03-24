@@ -65,6 +65,29 @@ modify_object_lifecycles_schema = {
     "required": ["object_lifecycle"],
 }
 
+lifecycles_update_execute_time_schema = {
+    "type": "object",
+    "properties": {
+        "object_lifecycle": {
+            "type": "object",
+            "properties": {
+                "start_on": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                },
+                "end_on": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                },
+            },
+            "required": ["start_on", "end_on"],
+        },
+    },
+    "required": ["object_lifecycle"],
+}
+
 
 @URLRegistry.register(r"/object_lifecycles/")
 class ObjectLifecycleListHandler(ClusterAPIHandler):
@@ -176,3 +199,30 @@ class ObjectLifecycleListHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "object_lifecycle": lifecycles
                                 }))
+
+
+@URLRegistry.register(r"/object_lifecycles/execute_time/")
+class ObjectLifecycleHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        execute_time = yield client.object_lifecycle_get_execute_time(ctxt)
+        self.write(objects.json_encode({
+            "execute_time": execute_time,
+        }))
+
+    @gen.coroutine
+    def put(self):
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = json_decode(self.request.body)
+        validate(data, schema=lifecycles_update_execute_time_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get("object_lifecycle")
+        lifecycles = yield client.object_lifecycle_update_execute_time(
+            ctxt, data)
+        self.write(objects.json_encode({
+            "object_lifecycle": lifecycles
+        }))

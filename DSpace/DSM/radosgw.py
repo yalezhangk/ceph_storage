@@ -9,6 +9,7 @@ from DSpace import exception
 from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.DSM.object_lifecycle import RGW_LIFECYCLE_TIME_KEY as KEY
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
@@ -412,6 +413,14 @@ class RadosgwHandler(RadosgwMixin):
         object_access_key = objects.ObjectAccessKey(ctxt, **user_access)
         object_access_key.create()
 
+    def _init_lifecycle_work_time(self, ctxt):
+        value, value_type = self.object_lifecycle_get_default_work_time(ctxt)
+        cephconf = objects.CephConfig(
+            ctxt, group='global', key=KEY, value=value,
+            value_type=value_type, cluster_id=ctxt.cluster_id)
+        cephconf.create()
+        logger.info('lifecycle default work time: %s set success in db', value)
+
     def _object_store_init(self, ctxt, index_pool, begin_action):
         ceph_task = CephTask(ctxt)
         try:
@@ -424,6 +433,7 @@ class RadosgwHandler(RadosgwMixin):
             client = context.agent_manager.get_client(node_id=mon_node.id)
             self._initialize_zone(ctxt, client)
             self._system_user_create(ctxt, client)
+            self._init_lifecycle_work_time(ctxt)
             status = s_fields.ObjectStoreStatus.ACTIVE
             msg = _("Initialize object store successfully.")
             op_status = "INIT_SUCCESS"

@@ -9,9 +9,11 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
 from DSpace.objects.fields import AllResourceType as Resource
+from DSpace.taskflows.node import NodeTask
 from DSpace.tools.s3 import S3Client
 
 logger = logging.getLogger(__name__)
+RGW_LIFECYCLE_TIME_KEY = 'rgw_lifecycle_work_time'
 
 
 class ObjectLifecycleMixin(AdminBaseHandler):
@@ -100,6 +102,13 @@ class ObjectLifecycleMixin(AdminBaseHandler):
         logger.info('modify_object_lifecycle_by_db success, bucket_name=%s',
                     bucket.name)
 
+    def object_lifecycle_get_default_work_time(self, ctxt):
+        default_confs = self.get_default_ceph_confs()
+        lifecycle = default_confs.get(RGW_LIFECYCLE_TIME_KEY)
+        value = lifecycle.get('default')
+        value_type = lifecycle.get('type')
+        return value, value_type
+
 
 class ObjectLifecycleHandler(ObjectLifecycleMixin):
 
@@ -166,3 +175,93 @@ class ObjectLifecycleHandler(ObjectLifecycleMixin):
         # send ws message
         self.send_websocket(ctxt, db_datas, op_status, msg,
                             resource_type=Resource.OBJECT_BUCKET)
+
+    def object_lifecycle_get_execute_time(self, ctxt):
+        value = objects.ceph_config.ceph_config_get(
+            ctxt, 'global', RGW_LIFECYCLE_TIME_KEY)
+        default_time, *others = self.object_lifecycle_get_default_work_time(
+            ctxt)
+        return value if value else default_time
+
+    def object_lifecycle_update_execute_time(self, ctxt, data):
+        start_on = data.get('start_on')
+        end_on = data.get('end_on')
+        if start_on == end_on:
+            raise exception.Invalid(_('start time must not equal end time '))
+        work_time = start_on + '-' + end_on
+        key = RGW_LIFECYCLE_TIME_KEY
+        old_time = objects.ceph_config.ceph_config_get(ctxt, 'global', key)
+        if work_time == old_time:
+            raise exception.Invalid(_('work time not change'))
+        ceph_lifecycle = objects.CephConfigList.get_all(
+            ctxt, filters={'group': 'global', 'key': key})
+        before_data = ceph_lifecycle[0] if ceph_lifecycle else None
+        begin_action = self.begin_action(
+            ctxt, Resource.OBJECT_LIFECYCLE, Action.UPDATE_WORK_TIME,
+            before_data)
+        if not before_data:
+            logger.info('lifecycle_update_execute_time, db ceph_config has '
+                        'not key: %s , will create', key)
+            cephconf = objects.CephConfig(
+                ctxt, group='global', key=key,
+                value=work_time,
+                value_type='string',
+                cluster_id=ctxt.cluster_id
+            )
+            cephconf.create()
+        else:
+            cephconf = before_data
+            cephconf.value = work_time
+            cephconf.save()
+        self.task_submit(self._object_lifecycle_update_execute_time, ctxt,
+                         cephconf, work_time, old_time, begin_action)
+        logger.debug('_object_lifecycle_update_execute_time task has begin, '
+                     'work_time: %s', work_time)
+        return cephconf
+
+    def _object_lifecycle_update_execute_time(self, ctxt, cephconf, work_time,
+                                              old_time, begin_action):
+        rgw_nodes = self._get_rgw_node(ctxt)
+        active_rgw = objects.RadosgwList.get_all(
+            ctxt, filters={'status': s_fields.RadosgwStatus.ACTIVE})
+        default_time, *others = self.object_lifecycle_get_default_work_time(
+            ctxt)
+        value = {
+            'group': 'global',
+            'key': RGW_LIFECYCLE_TIME_KEY,
+            'value': work_time,
+        }
+        try:
+            for node in rgw_nodes:
+                node_task = NodeTask(ctxt, node)
+                node_task.ceph_config_update(ctxt, value)
+            for rgw in active_rgw:
+                service_name = 'ceph-radosgw@rgw.{}'.format(rgw.name)
+                node = objects.Node.get_by_id(ctxt, rgw.node_id)
+                self.check_agent_available(ctxt, node)
+                agent_client = self.agent_manager.get_client(node.id)
+                agent_client.systemd_service_restart(ctxt, service_name)
+            logger.info('object_lifecycle_update_execute_time success, '
+                        'work_time: %s ', work_time)
+            op_status = "LIFECYCLE_UPDATE_WORK_TIME_SUCCESS"
+            msg = _("update lifecycle work_time success")
+            err_msg = None
+            status = 'success'
+        except Exception as e:
+            if old_time:
+                cephconf.value = old_time
+                cephconf.save()
+            else:
+                cephconf.value = default_time
+                cephconf.save()
+            logger.error('object_lifecycle_update_execute_time error, '
+                         'now work_time: %s ', old_time if old_time else
+                         default_time)
+            op_status = "LIFECYCLE_UPDATE_WORK_TIME_ERROR"
+            msg = _("update lifecycle work_time error")
+            err_msg = str(e)
+            status = 'fail'
+        self.finish_action(begin_action, cephconf.id, cephconf.value, cephconf,
+                           status, err_msg=err_msg)
+        # send ws message
+        self.send_websocket(ctxt, cephconf, op_status, msg)
