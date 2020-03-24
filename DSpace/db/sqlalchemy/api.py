@@ -4897,8 +4897,8 @@ def _object_user_load_attr(ctxt, object_user, expected_attrs=None,
     expected_attrs = expected_attrs or []
     if 'access_keys' in expected_attrs:
         object_user.access_keys = [access_key for access_key in
-                                   object_user.access_keys
-                                   if not access_key.deleted]
+                                   object_user._access_keys if not
+                                   access_key.deleted]
 
 
 @require_context
