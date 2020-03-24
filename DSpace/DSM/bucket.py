@@ -158,7 +158,7 @@ class BucketHandler(AdminBaseHandler):
             s3.bucket_create(name, placement=':' + placement,
                              acls=acls, versioning=bucket.versioned)
             msg = _("bucket %s create success") % name
-            op_status = "CREASE_BUCKET_SUCCESS"
+            op_status = "CREATE_BUCKET_SUCCESS"
             if bucket.quota_max_size != 0 or bucket.quota_max_objects != 0:
                 rgw.rgw.set_bucket_quota(
                         uid, name, bucket.quota_max_size,
@@ -173,7 +173,7 @@ class BucketHandler(AdminBaseHandler):
             logger.info("create bucket err info %s", err)
             err_msg = str(err)
             msg = _("bucket %s create error") % name
-            op_status = "CREASE_BUCKET_ERROR"
+            op_status = "CREATE_BUCKET_ERROR"
             self.finish_action(begin_action, bucket.id, name,
                                bucket, 'error', err_msg=err_msg)
         # send ws message
