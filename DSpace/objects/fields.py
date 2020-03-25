@@ -390,12 +390,13 @@ class AllResourceType(BaseStorEnum):
     OBJECT_POLICY = 'object_policy'
     OBJECT_USER = 'object_user'
     OBJECT_BUCKET = 'object_bucket'
+    OBJECT_LIFECYCLE = 'object_lifecycle'
     ALL = (ALERT_GROUP, ALERT_RULE, EMAIL_GROUP, OSD, NODE, POOL, CLUSTER,
            VOLUME, SNAPSHOT, ALERT_LOG, SMTP_SYSCONF, DISK, SYSCONFIG,
            DATACENTER, RACK, CEPH_CONFIG, RADOSGW, RADOSGW_ROUTER, SERVICE,
            NETWORK_INTERFACE, ACCELERATE_DISK, LICENSE, CLIENT_GROUP,
            ACCESS_PATH, OBJECT_STORE, OBJECT_POLICY, OBJECT_USER,
-           OBJECT_BUCKET)
+           OBJECT_BUCKET, OBJECT_LIFECYCLE)
 
 
 class AllActionType(BaseStorEnum):
@@ -459,6 +460,7 @@ class AllActionType(BaseStorEnum):
     SET_DEFAULT = 'set_default'
     SET_COMPRESSION = 'set_compression'
     SET_LIFECYCLE = 'set_lifecycle'
+    UPDATE_WORK_TIME = 'update_work_time'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,
@@ -475,7 +477,7 @@ class AllActionType(BaseStorEnum):
            ACCESS_PATH_UPDATE_CHAP, ACCESS_PATH_ADD_VOLUME,
            ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP,
            OBJECT_STORE_INITIALIZE, SET_DEFAULT, SET_COMPRESSION,
-           SET_LIFECYCLE)
+           SET_LIFECYCLE, UPDATE_WORK_TIME)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -588,11 +590,13 @@ class ResourceAction(object):
                  AllActionType.ACC_DISK_CLEAN, AllActionType.ACC_DISK_REBUILD],
             AllResourceType.LICENSE:
                 [AllActionType.UPLOAD_LICENSE, AllActionType.DOWNLOAD_LICENSE],
+
             AllResourceType.CLIENT_GROUP:
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.UPDATE, AllActionType.CLIENT_GROUP_UPDATE_NAME,
                  AllActionType.CLIENT_GROUP_UPDATE_CLIENT,
                  AllActionType.CLIENT_GROUP_UPDATE_CHAP],
+
             AllResourceType.ACCESS_PATH:
                 [AllActionType.CREATE, AllActionType.DELETE,
                  AllActionType.UPDATE,
@@ -604,14 +608,20 @@ class ResourceAction(object):
                  AllActionType.ACCESS_PATH_ADD_VOLUME,
                  AllActionType.ACCESS_PATH_REMOVE_VOLUME,
                  AllActionType.ACCESS_PATH_UPDATE_CLIENT_GROUP],
+
             AllResourceType.OBJECT_POLICY:
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.SET_DEFAULT,
                  AllActionType.SET_COMPRESSION],
+
             AllResourceType.OBJECT_STORE:
                 [AllActionType.OBJECT_STORE_INITIALIZE],
+
             AllResourceType.OBJECT_BUCKET:
-                [AllActionType.SET_LIFECYCLE]
+                [AllActionType.SET_LIFECYCLE],
+
+            AllResourceType.OBJECT_LIFECYCLE:
+                [AllActionType.UPDATE_WORK_TIME],
         }
         return relation
 

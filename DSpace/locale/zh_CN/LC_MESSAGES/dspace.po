@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-20 15:54+0800\n"
+"POT-Creation-Date: 2020-03-24 17:08+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -970,6 +970,18 @@ msgstr "设置生命周期成功，存储桶:%s"
 msgid "set lifecycle error, bucket_name:%s"
 msgstr "设置生命周期失败，存储桶:%s"
 
+msgid "start time must not equal end time "
+msgstr "开始时间不可等于结束时间"
+
+msgid "work time not change"
+msgstr "执行时间无变化"
+
+msgid "update lifecycle work_time success"
+msgstr "修改生命周期执行时间成功"
+
+msgid "update lifecycle work_time error"
+msgstr "修改生命周期执行时间失败"
+
 msgid "object_policy name %s already exists!"
 msgstr "对象策略：%s 已存在"
 
@@ -1014,6 +1026,9 @@ msgstr "对象用户：%s 已存在"
 
 msgid "object_user email %s already exists!"
 msgstr "对象用户邮箱：%s 已存在"
+
+msgid "object_user access_key %s already exists!"
+msgstr "用户密钥对：%s 已存在"
 
 msgid "create {} success"
 msgstr "对象用户{}创建成功"

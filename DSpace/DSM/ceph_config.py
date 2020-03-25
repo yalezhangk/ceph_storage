@@ -39,9 +39,9 @@ class CephConfigHandler(AdminBaseHandler):
             ctxt, filters=filters)
 
     def _get_rgw_node(self, ctxt):
-        rgw_nodes = objects.NodeList.get_all(
-            ctxt, filters={"role_object_gateway": True}
-        )
+        all_rgws = objects.RadosgwList.get_all(ctxt)
+        ids = set([rgw.node_id for rgw in all_rgws])
+        rgw_nodes = [objects.Node.get_by_id(ctxt, node_id) for node_id in ids]
         return rgw_nodes
 
     def _get_mon_node(self, ctxt):
@@ -87,6 +87,8 @@ class CephConfigHandler(AdminBaseHandler):
                 nodes += list(self._get_mon_node(ctxt))
             elif 'mgr' in conf.get('owner'):
                 nodes += list(self._get_mon_node(ctxt))
+            elif 'rgw' in conf.get('owner'):
+                nodes += list(self._get_rgw_node(ctxt))
 
             if 'osd' in conf.get('owner'):
                 nodes += list(self._get_osd_node(ctxt, osd_name='*'))
@@ -259,6 +261,12 @@ class CephConfigHandler(AdminBaseHandler):
                 nodes += list(self._get_osd_node(ctxt, osd_name='*'))
                 if not default_conf.get('need_restart'):
                     temp_configs += [{'service': 'osd.*',
+                                      'key': key,
+                                      'value': value}]
+            if 'rgw' in default_conf.get('owner'):
+                nodes += list(self._get_rgw_node(ctxt))
+                if not default_conf.get('need_restart'):
+                    temp_configs += [{'service': 'rgw.*',
                                       'key': key,
                                       'value': value}]
         elif group.startswith('osd'):
