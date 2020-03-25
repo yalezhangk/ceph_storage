@@ -175,3 +175,75 @@ class ObjectUserListHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "object_user": user
         }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/")
+class ObjectUserHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self, object_user_id):
+        """ObjectUser Detail
+
+        ---
+        tags:
+        - object_user
+        summary: Detail of the object_user
+        description: Return detail infomation of object_user by id
+        operationId: object_users.api.object_user_detail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: ObjectUser ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        expected_attrs = ['access_keys']
+        object_user = yield client.object_user_get(
+            ctxt, object_user_id, expected_attrs=expected_attrs)
+        self.write(objects.json_encode({"object_user": object_user}))
+
+    @gen.coroutine
+    def delete(self, object_user_id):
+        """Delete object_user
+
+        ---
+        tags:
+        - object_user
+        summary: delete object_user
+        produces:
+        - application/json
+        parameters:
+        - in: URL
+          name: id
+          description: object_user_id
+          required: true
+          schema:
+            type: int
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        force_delete = self.get_paginated_args()
+        object_user = yield client.object_user_delete(
+            ctxt, object_user_id, force_delete)
+        self.write(objects.json_encode({
+            "object_user": object_user
+        }))

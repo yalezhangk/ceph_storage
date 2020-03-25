@@ -1030,11 +1030,20 @@ msgstr "对象用户邮箱：%s 已存在"
 msgid "object_user access_key %s already exists!"
 msgstr "用户密钥对：%s 已存在"
 
+msgid "%s is already in use by bucket"
+msgstr "%s 已被存储桶使用"
+
 msgid "create {} success"
 msgstr "对象用户{}创建成功"
 
 msgid "create {} error"
 msgstr "对象用户{}创建失败"
+
+msgid "%s delete success"
+msgstr "删除%s成功"
+
+msgid "%s delete error"
+msgstr "删除%s失败"
 
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
