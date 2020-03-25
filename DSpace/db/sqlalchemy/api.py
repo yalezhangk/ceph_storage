@@ -5013,7 +5013,7 @@ def object_access_key_get(context, object_access_key_id, expected_attrs=None):
     session = get_session()
     with session.begin():
         object_access_key = _object_access_key_get(
-            context, object_access_key_id, expected_attrs, session)
+            context, object_access_key_id)
     return object_access_key
 
 

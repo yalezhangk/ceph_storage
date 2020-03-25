@@ -45,8 +45,29 @@ class ObjectUserMixin(AdminBaseHandler):
                                                     filters={"is_admin": 1})[0]
         return admin_user
 
+    def object_user_init(self, ctxt):
+        admin_user = self.get_admin_user_info(ctxt)
+        radosgw = objects.RadosgwList.get_all(
+            ctxt, filters={"status": "active"})[0]
+        admin_access_key = objects.ObjectAccessKeyList.get_all(
+            ctxt, filters={"obj_user_id": admin_user.id}
+        )[0]
+        return radosgw, admin_access_key
+
+    def check_object_user_del(self, ctxt, rgw, uid):
+        self.object_user_init(ctxt)
+        bucket = rgw.rgw.get_bucket(uid=uid)
+        if bucket:
+            raise exception.Invalid(
+                _('%s is already in use by bucket') % uid)
+
 
 class ObjectUserHandler(ObjectUserMixin):
+
+    def object_user_get(self, ctxt, object_user_id, expected_attrs=None):
+        object_user = objects.ObjectUser.get_by_id(
+            ctxt, object_user_id, expected_attrs=expected_attrs)
+        return object_user
 
     def object_user_get_all(self, ctxt, marker=None, limit=None,
                             sort_keys=None, sort_dirs=None, filters=None,
@@ -91,13 +112,7 @@ class ObjectUserHandler(ObjectUserMixin):
 
     def _object_user_create(self, ctxt, user_name, data,
                             begin_action, object_user):
-        admin_user = self.get_admin_user_info(ctxt)
-        radosgw = objects.RadosgwList.get_all(
-            ctxt, filters={"status": "active"})[0]
-        admin_access_key = objects.ObjectAccessKeyList.get_all(
-            ctxt, filters={"obj_user_id": admin_user.id}
-        )[0]
-
+        radosgw, admin_access_key = self.object_user_init(ctxt)
         if (data['user_quota_max_size'] == 0 and
                 data['user_quota_max_objects'] == 0):
             user_qutoa_enabled = False
@@ -186,3 +201,55 @@ class ObjectUserHandler(ObjectUserMixin):
         self.finish_action(begin_action, user_name,
                            'success', err_msg=None)
         self.send_websocket(ctxt, object_user, op_status, msg)
+
+    def object_user_delete(self, ctxt, object_user_id, force_delete):
+        user = objects.ObjectUser.get_by_id(
+            ctxt, object_user_id, expected_attrs=['access_keys'])
+        logger.debug('object_user begin delete: %s', user.uid)
+        radosgw, admin_access_key = self.object_user_init(ctxt)
+        rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                           secret_key=admin_access_key.secret_key,
+                           server=str(radosgw.ip_address) +
+                           ":" + str(radosgw.port)
+                           )
+        self.check_object_user_del(ctxt, rgw, uid=user.uid)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.DELETE)
+        user.status = s_fields.ObjectUserStatus.DELETING
+        user.save()
+        self.task_submit(self._object_user_delete, ctxt, user,
+                         force_delete, rgw, begin_action)
+        logger.info('object_user_delete task has begin, user_name: %s',
+                    user.uid)
+        return user
+
+    def _object_user_delete(self, ctxt, user, force_delete,
+                            rgw, begin_action):
+        access_key_ids = []
+        for access_key in user['access_keys']:
+            access_key_ids.append(access_key['id'])
+        user_name = user.uid
+        try:
+            rgw.rgw.remove_user(uid=user_name, purge_data=force_delete)
+            for i in access_key_ids:
+                key = objects.ObjectAccessKey.get_by_id(ctxt, str(i))
+                key.destroy()
+            user.destroy()
+            logger.info('object_user_delete success, name=%s', user_name)
+            op_status = "DELETE_SUCCESS"
+            msg = _("%s delete success") % user_name
+            err_msg = None
+            status = 'success'
+        except Exception as e:
+            logger.exception(
+                'object_user_delete error,name=%s,reason:%s',
+                user_name, str(e))
+            op_status = "DELETE_ERROR"
+            msg = _("%s delete error") % user_name
+            err_msg = str(e)
+            status = 'error'
+        user.save()
+        self.finish_action(begin_action, user.id, user.name, user,
+                           status, err_msg=err_msg)
+        self.send_websocket(ctxt, user, op_status, msg)
