@@ -73,9 +73,12 @@ class BucketStatus(BaseStorEnum):
     CREATING = 'creating'
     ACTIVE = 'active'
     DELETING = 'deleting'
+    DELETED = 'deleted'
     ERROR = 'error'
+    PROCESSING = 'processing'
 
-    ALL = (CREATING, ACTIVE, DELETING, ERROR)
+    ALL = (CREATING, ACTIVE, DELETING, DELETED, ERROR,
+           PROCESSING)
 
 
 class BucketStatusField(BaseEnumField):
@@ -445,6 +448,8 @@ class AllActionType(BaseStorEnum):
     ACC_DISK_REBUILD = 'disk_rebuild'  # 重建加速盘
     UPLOAD_LICENSE = 'upload_license'
     DOWNLOAD_LICENSE = 'download_license'
+    QUOTA_UPDATE = 'quota_update'  # 更新存储桶配额
+    OWNER_UPDATE = 'owner_update'  # 更新存储桶用户
     CLIENT_GROUP_UPDATE_NAME = 'client_group_update_name'
     CLIENT_GROUP_UPDATE_CLIENT = 'client_group_update_client'
     CLIENT_GROUP_UPDATE_CHAP = 'client_group_update_chap'
@@ -477,7 +482,7 @@ class AllActionType(BaseStorEnum):
            ACCESS_PATH_UPDATE_CHAP, ACCESS_PATH_ADD_VOLUME,
            ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP,
            OBJECT_STORE_INITIALIZE, SET_DEFAULT, SET_COMPRESSION,
-           SET_LIFECYCLE, UPDATE_WORK_TIME)
+           SET_LIFECYCLE, UPDATE_WORK_TIME, QUOTA_UPDATE, OWNER_UPDATE)
 
 
 class AllActionStatus(BaseStorEnum):

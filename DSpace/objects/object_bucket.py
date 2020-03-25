@@ -26,12 +26,13 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
         'quota_max_size': fields.IntegerField(),
         'quota_max_objects': fields.IntegerField(),
         'cluster_id': fields.UUIDField(),
-        'own_user': fields.ObjectField("ObjectUser", nullable=True),
+        'policy': fields.ObjectField("ObjectPolicy", nullable=True),
+        'owner': fields.ObjectField("ObjectUser", nullable=True),
         'lifecycles': fields.ListOfObjectsField("ObjectLifecycle",
                                                 nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('own_user', 'lifecycles')
+    OPTIONAL_FIELDS = ('owner', 'policy')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -57,17 +58,15 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         expected_attrs = expected_attrs or []
-        if 'own_user' in expected_attrs:
-            own_user = db_obj.get('own_user', None)
-            obj.own_user = objects.ObjectUser._from_db_object(
-                context, objects.ObjectUser(context), own_user)
+        if 'owner' in expected_attrs:
+            owner = db_obj.get('owner', None)
+            obj.owner = objects.ObjectUser._from_db_object(
+                context, objects.ObjectUser(context), owner)
 
-        if 'lifecycles' in expected_attrs:
-            lifecycles = db_obj.get('lifecycles', [])
-            obj.lifecycles = [objects.ObjectLifecycle._from_db_object(
-                context, objects.ObjectLifecycle(context), lifecycle
-            ) for lifecycle in lifecycles]
-
+        if 'policy' in expected_attrs:
+            policy = db_obj.get('policy', None)
+            obj.policy = objects.ObjectPolicy._from_db_object(
+                    context, objects.ObjectPolicy(context), policy)
         return super(ObjectBucket, cls)._from_db_object(context, obj, db_obj)
 
 

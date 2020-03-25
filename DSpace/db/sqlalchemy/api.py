@@ -5113,12 +5113,10 @@ def object_bucket_destroy(context, object_user_id):
 def _object_bucket_load_attr(ctxt, object_bucket, expected_attrs=None,
                              session=None):
     expected_attrs = expected_attrs or []
-    if 'own_user' in expected_attrs:
-        object_bucket.own_user = object_bucket._object_user
-    if 'lifecycles' in expected_attrs:
-        object_bucket.lifecycles = ([lifecycle for lifecycle in
-                                     object_bucket._lifecycles if
-                                     not lifecycle.deleted])
+    if 'owner' in expected_attrs:
+        object_bucket.owner = object_bucket._object_user
+    if 'policy' in expected_attrs:
+        object_bucket.policy = object_bucket._object_policy
 
 
 @require_context
@@ -5149,11 +5147,11 @@ def object_bucket_get_all(context, marker=None, limit=None, sort_keys=None,
         # No clusters would match, return empty list
         if query is None:
             return []
-        object_policies = query.all()
-        for object_policy in object_policies:
-            _object_bucket_load_attr(context, object_policy,
+        object_buckets = query.all()
+        for object_bucket in object_buckets:
+            _object_bucket_load_attr(context, object_bucket,
                                      expected_attrs, session)
-        return object_policies
+        return object_buckets
 
 
 @require_context
