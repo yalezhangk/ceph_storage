@@ -173,8 +173,7 @@ class ObjectLifecycleHandler(ObjectLifecycleMixin):
         self.finish_action(begin_action, bucket.id, bucket_name, bucket,
                            status, err_msg=err_msg)
         # send ws message
-        self.send_websocket(ctxt, db_datas, op_status, msg,
-                            resource_type=Resource.OBJECT_BUCKET)
+        self.send_websocket(ctxt, bucket, op_status, msg)
 
     def object_lifecycle_get_execute_time(self, ctxt):
         value = objects.ceph_config.ceph_config_get(
