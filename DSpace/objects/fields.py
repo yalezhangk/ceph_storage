@@ -784,3 +784,7 @@ class ObjectUserStatus(BaseStorEnum):
 
     ALL = (CREATING, ACTIVE, DELETING, SUSPENDED,
            ERROR)
+
+
+class ObjectUserStatusField(BaseEnumField):
+    AUTO_TYPE = ObjectUserStatus()
