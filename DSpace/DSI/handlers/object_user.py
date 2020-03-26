@@ -49,6 +49,21 @@ create_object_user_schema = {
     "required": ["object_user"],
 }
 
+update_object_user_schema = {
+    "type": "object",
+    "properties": {
+        "object_user": {
+            "type": "object",
+            "properties": {
+                "suspended": {
+                    "type": "boolean"},
+            },
+            "required": ["suspended"],
+        },
+    },
+    "required": ["object_user"],
+}
+
 
 @URLRegistry.register(r"/object_user/")
 class ObjectUserListHandler(ClusterAPIHandler):
@@ -244,6 +259,62 @@ class ObjectUserHandler(ClusterAPIHandler):
         force_delete = self.get_paginated_args()
         object_user = yield client.object_user_delete(
             ctxt, object_user_id, force_delete)
+        self.write(objects.json_encode({
+            "object_user": object_user
+        }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/action/")
+class ObjectUserActionHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, object_user_id):
+        """
+        ---
+        tags:
+        - object_user role
+        summary: Update object_user
+        description: update object_user suspended
+        operationId: object_user.api.updateObjectUser
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: object_user ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: node
+          description: updated object_user role
+          required: true
+          schema:
+            type: object
+            properties:
+              object_user:
+                type: object
+                properties:
+                  spspended:
+                    type: boolean
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=update_object_user_schema,
+                 format_checker=draft7_format_checker)
+        suspended = data.get('object_user')
+        client = self.get_admin_client(ctxt)
+        object_user = yield client.object_user_suspended_update(
+            ctxt, object_user_id, suspended)
         self.write(objects.json_encode({
             "object_user": object_user
         }))

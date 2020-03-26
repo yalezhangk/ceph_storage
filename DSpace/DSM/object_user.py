@@ -253,3 +253,46 @@ class ObjectUserHandler(ObjectUserMixin):
         self.finish_action(begin_action, user.id, user.name, user,
                            status, err_msg=err_msg)
         self.send_websocket(ctxt, user, op_status, msg)
+
+    def object_user_suspended_update(self, ctxt, object_user_id, data):
+        logger.info('object_user: %s begin update supended: %s',
+                    object_user_id, data['suspended'])
+        user = objects.ObjectUser.get_by_id(ctxt, object_user_id)
+        radosgw, admin_access_key = self.object_user_init(ctxt)
+        if data['suspended']:
+            suspended = 1
+            user.status = s_fields.ObjectUserStatus.SUSPENDED
+            begin_action = self.begin_action(
+                ctxt, resource_type=AllResourceType.OBJECT_USER,
+                action=AllActionType.SET_OBJECT_USER_DISABLE)
+        else:
+            suspended = 0
+            user.status = s_fields.ObjectUserStatus.ACTIVE
+            begin_action = self.begin_action(
+                ctxt, resource_type=AllResourceType.OBJECT_USER,
+                action=AllActionType.SET_OBJECT_USER_ENABLE)
+        try:
+            rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                               secret_key=admin_access_key.secret_key,
+                               server=str(radosgw.ip_address) +
+                               ":" + str(radosgw.port)
+                               )
+            rgw.rgw.modify_user(uid=user.uid, suspended=suspended)
+            user.suspended = suspended
+            user.save()
+            op_status = "UPDATE_SUCCESS"
+            msg = _("%s update success") % user.uid
+            err_msg = None
+            logger.info('object_user: %s begin update supended',
+                        object_user_id)
+        except Exception as e:
+            logger.exception(
+                'object_user update error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "UPDATE_ERROR"
+            msg = _("%s update error") % user.uid
+            err_msg = str(e)
+        self.send_websocket(ctxt, user, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           err_msg=err_msg)
+        return user
