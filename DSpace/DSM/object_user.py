@@ -45,7 +45,7 @@ class ObjectUserMixin(AdminBaseHandler):
                                                     filters={"is_admin": 1})[0]
         return admin_user
 
-    def object_user_init(self, ctxt):
+    def object_user_info_get(self, ctxt):
         admin_user = self.get_admin_user_info(ctxt)
         radosgw = objects.RadosgwList.get_all(
             ctxt, filters={"status": "active"})[0]
@@ -55,7 +55,7 @@ class ObjectUserMixin(AdminBaseHandler):
         return radosgw, admin_access_key
 
     def check_object_user_del(self, ctxt, rgw, uid):
-        self.object_user_init(ctxt)
+        self.object_user_info_get(ctxt)
         bucket = rgw.rgw.get_bucket(uid=uid)
         if bucket:
             raise exception.Invalid(
@@ -112,7 +112,7 @@ class ObjectUserHandler(ObjectUserMixin):
 
     def _object_user_create(self, ctxt, user_name, data,
                             begin_action, object_user):
-        radosgw, admin_access_key = self.object_user_init(ctxt)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
         if (data['user_quota_max_size'] == 0 and
                 data['user_quota_max_objects'] == 0):
             user_qutoa_enabled = False
@@ -124,7 +124,14 @@ class ObjectUserHandler(ObjectUserMixin):
         else:
             bucket_qutoa_enabled = True
         try:
-
+            data['bucket_quota_max_size'] = \
+                data['bucket_quota_max_size'] * 1024 ** 2
+            data['bucket_quota_max_objects'] = \
+                data['bucket_quota_max_objects'] * 1000
+            data['user_quota_max_size'] = \
+                data['user_quota_max_size'] * 1024 ** 2
+            data['user_quota_max_objects'] = \
+                data['user_quota_max_objects'] * 1000
             node = self.get_first_mon_node(ctxt)
             client = self.agent_manager.get_client(node_id=node.id)
             if len(data['keys']) == 0:
@@ -206,7 +213,7 @@ class ObjectUserHandler(ObjectUserMixin):
         user = objects.ObjectUser.get_by_id(
             ctxt, object_user_id, expected_attrs=['access_keys'])
         logger.debug('object_user begin delete: %s', user.uid)
-        radosgw, admin_access_key = self.object_user_init(ctxt)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
         rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
                            secret_key=admin_access_key.secret_key,
                            server=str(radosgw.ip_address) +
@@ -258,7 +265,7 @@ class ObjectUserHandler(ObjectUserMixin):
         logger.info('object_user: %s begin update supended: %s',
                     object_user_id, data['suspended'])
         user = objects.ObjectUser.get_by_id(ctxt, object_user_id)
-        radosgw, admin_access_key = self.object_user_init(ctxt)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
         if data['suspended']:
             suspended = 1
             user.status = s_fields.ObjectUserStatus.SUSPENDED
@@ -298,7 +305,7 @@ class ObjectUserHandler(ObjectUserMixin):
         return user
 
     def object_user_get_capacity(self, ctxt, object_user_id):
-        radosgw, admin_access_key = self.object_user_init(ctxt)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
         rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
                            secret_key=admin_access_key.secret_key,
                            server=str(radosgw.ip_address) +
@@ -308,3 +315,41 @@ class ObjectUserHandler(ObjectUserMixin):
             ctxt, object_user_id)
         capacity = rgw.get_user_capacity(uid=object_user.uid)
         return capacity
+
+    def object_user_key_create(self, ctxt, data, object_user_id):
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.CREATE_KEY)
+        user = objects.ObjectUser.get_by_id(ctxt, object_user_id)
+        self.check_access_key_exist(ctxt, access_key=data['access_key'])
+        logger.debug('object_user_key begin crate, name:%s' % user.uid)
+        try:
+            radosgw, admin_access_key = self.object_user_info_get(ctxt)
+            rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                               secret_key=admin_access_key.secret_key,
+                               server=str(radosgw.ip_address) +
+                               ":" + str(radosgw.port))
+            rgw.create_key(uid=user.uid, access_key=data['access_key'],
+                           secret_key=data['secret_key'])
+            key = objects.ObjectAccessKey(
+                obj_user_id=user.id,
+                access_key=data['access_key'],
+                secret_key=data['secret_key'],
+                type="s3",
+                cluster_id=ctxt.cluster_id
+            )
+            key.create()
+            op_status = "CREATE_SUCCESS"
+            msg = _("%s create key success") % user.uid
+            err_msg = None
+        except Exception as e:
+            logger.exception(
+                'object_user_key update error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "CREATE_ERROR"
+            msg = _("%s create key error") % user.uid
+            err_msg = str(e)
+        self.send_websocket(ctxt, user, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           err_msg=err_msg)
+        return user
