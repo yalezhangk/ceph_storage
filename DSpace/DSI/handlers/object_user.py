@@ -318,3 +318,44 @@ class ObjectUserActionHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "object_user": object_user
         }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/capacity/")
+class ObjectUserCapacityHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self, object_user_id):
+        """ObjectUser Capacity
+
+        ---
+        tags:
+        - object_user
+        summary: Capacity of the object_user
+        description: Return capacity infomation of object_user by id
+        operationId: object_users.api.object_user_capacity
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: ObjectUser ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        object_user = yield client.object_user_get_capacity(
+            ctxt, object_user_id)
+        self.write(objects.json_encode({"object_user": object_user}))
