@@ -466,6 +466,8 @@ class AllActionType(BaseStorEnum):
     SET_COMPRESSION = 'set_compression'
     SET_LIFECYCLE = 'set_lifecycle'
     UPDATE_WORK_TIME = 'update_work_time'
+    SET_OBJECT_USER_ENABLE = 'set_object_user_enable'
+    SET_OBJECT_USER_DISABLE = 'set_object_user_disable'
     ALL = (CREATE, DELETE, MODIFY_ALERT_RULES, MODIFY_EMAIL_GROUPS,
            OPEN_ALERT_RULE, CLOSE_ALERT_RULE, UPDATE, VOLUME_EXTEND,
            VOLUME_SHRINK, VOLUME_ROLLBACK, VOLUME_UNLINK, CLONE, SET_ROLES,

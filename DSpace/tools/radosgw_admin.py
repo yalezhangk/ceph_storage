@@ -406,8 +406,8 @@ class RadosgwAdmin(object):
     def get_user_capacity(self, uid):
         user_quota = self.get_user_quota(uid)
         try:
-            user_info = self.rgw.get_user(uid)
-            user_stats = self.rgw.get_user_quota(uid)
+            user_info = self.rgw.get_user(uid, stats=True)
+            user_stats = user_info.get("stats")
         except RGWAdminException as e:
             raise RadosgwAdminException(reason=e)
         return {
