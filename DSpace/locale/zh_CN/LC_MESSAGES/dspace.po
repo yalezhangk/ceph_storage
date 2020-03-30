@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-24 17:08+0800\n"
+"POT-Creation-Date: 2020-03-31 10:17+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -476,6 +476,9 @@ msgstr "IP范围 %s 格式错误"
 
 msgid "this tab is not supported"
 msgstr "不支持此标签页"
+
+msgid "The object_user_id ({}) is invalid"
+msgstr "用户Id ({}) 无效"
 
 msgid "force supports only True and False"
 msgstr "force值仅支持 True 和 False"
@@ -1661,4 +1664,3 @@ msgstr "硬盘状态异常"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
