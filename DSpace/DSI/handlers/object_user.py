@@ -64,6 +64,20 @@ update_object_user_schema = {
     "required": ["object_user"],
 }
 
+create_object_user_key_schema = {
+    "type": "object",
+    "properties": {
+        "object_user": {
+            "type": "object",
+            "properties": {
+                "access_key": {"type": "string"},
+                "secret_key": {"type": "string"}
+            }
+        },
+    },
+    "required": ["object_user"],
+}
+
 
 @URLRegistry.register(r"/object_user/")
 class ObjectUserListHandler(ClusterAPIHandler):
@@ -359,3 +373,49 @@ class ObjectUserCapacityHandler(ClusterAPIHandler):
         object_user = yield client.object_user_get_capacity(
             ctxt, object_user_id)
         self.write(objects.json_encode({"object_user": object_user}))
+
+
+@URLRegistry.register(r"/object_user/([0-9]*)/key/")
+class ObjectUserKeyHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def post(self, object_user_id):
+        """Create object_user_key
+
+        ---
+        tags:
+        - object_user_key
+        summary: Create object_user_key
+        description: Create object_user_key
+        operationId: object_users.api.create_object_user_key
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: object_user_key
+          description: Created object_user_key
+          required: true
+          schema:
+            type: object
+            properties:
+              access_key:
+                type: string
+                description: access_key
+              secret_key:
+                type: string
+                description: secret_key
+        responses:
+        "200":
+          description: successful operation
+        """
+
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=create_object_user_key_schema,
+                 format_checker=draft7_format_checker)
+        data = data.get("object_user")
+        client = self.get_admin_client(ctxt)
+        user = yield client.object_user_key_create(ctxt, data,
+                                                   object_user_id)
+        self.write(objects.json_encode({
+            "object_user": user
+        }))

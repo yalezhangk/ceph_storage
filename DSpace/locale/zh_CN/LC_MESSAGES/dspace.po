@@ -1078,6 +1078,12 @@ msgstr "修改%s成功"
 msgid "%s update error"
 msgstr "修改%s失败"
 
+msgid "%s create key success"
+msgstr "对象用户{}创建密钥对成功"
+
+msgid "%s create key error"
+msgstr "对象用户{}创建密钥对失败"
+
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
 
