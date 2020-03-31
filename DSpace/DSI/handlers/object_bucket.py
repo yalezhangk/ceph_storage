@@ -128,8 +128,17 @@ class BucketListHandler(ClusterAPIHandler):
         fuzzy_filters = ['name']
         filters = self.get_support_filters(fuzzy_filters)
         tab = self.get_query_argument('tab', default="default")
+        object_user_id = self.get_query_argument(
+                'object_user_id', default=None)
         if tab not in ["default"]:
             raise InvalidInput(_("this tab is not supported"))
+        if object_user_id is None:
+            pass
+        elif object_user_id.isdigit():
+            filters['owner_id'] = object_user_id
+        else:
+            raise InvalidInput(_(
+                "The object_user_id ({}) is invalid").format(object_user_id))
         buckets = yield client.bucket_get_all(
                 ctxt, expected_attrs=expected_attrs,
                 filters=filters, **page_args)
