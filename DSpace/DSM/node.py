@@ -119,6 +119,16 @@ class NodeMixin(object):
         if osd_num and mon_num == 1:
             raise exc.InvalidInput(_("Please remove osd first!"))
 
+    def _admin_install_check(self, ctxt, node):
+        logger.debug("check node %s admin install", node.hostname)
+        if node.role_admin:
+            raise exc.InvalidInput(_("The admin role has been installed."))
+
+    def _admin_uninstall_check(self, ctxt, node):
+        logger.debug("check node %s admin install", node.hostname)
+        if not node.role_admin:
+            raise exc.InvalidInput(_("The admin role not installed."))
+
     def _storage_install_check(self, ctxt, node):
         logger.debug("check node %s storage install", node.hostname)
         if node.role_storage:
@@ -782,6 +792,40 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         self.send_websocket(ctxt, node, op_status, msg)
         return status
 
+    def _admin_install(self, ctxt, node):
+        logger.info("admin install on node %s, ip:%s",
+                    node.id, node.ip_address)
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
+        node.role_admin = True
+        node.save()
+        status = 'success'
+        msg = _("node %s: set admin role success") % node.hostname
+        op_status = "SET_ROLE_ADMIN_SUCCESS"
+        err_msg = None
+        # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
+        self.send_websocket(ctxt, node, op_status, msg)
+        return status
+
+    def _admin_uninstall(self, ctxt, node):
+        logger.info("rgw uninstall on node %s, ip:%s",
+                    node.id, node.ip_address)
+        begin_action = self.begin_action(
+            ctxt, Resource.NODE, Action.SET_ROLES, node)
+        node.role_admin = False
+        node.save()
+        status = 'success'
+        msg = _("node %s: unset admin role success") % node.hostname
+        op_status = "UNSET_ROLE_ADMIN_SUCCESS"
+        err_msg = None
+        # send ws message
+        self.finish_action(begin_action, node.id, node.hostname,
+                           node, status, err_msg=err_msg)
+        self.send_websocket(ctxt, node, op_status, msg)
+        return status
+
     def _bgw_install(self, ctxt, node):
         logger.info("trying to install block gateway container")
         begin_action = self.begin_action(
@@ -839,12 +883,14 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
     def _node_roles_set(self, ctxt, node, i_roles, u_roles):
         install_role_map = {
             'monitor': self._mon_install,
+            'admin': self._admin_install,
             'storage': self._storage_install,
             'radosgw': self._rgw_install,
             'blockgw': self._bgw_install
         }
         uninstall_role_map = {
             'monitor': self._mon_uninstall,
+            'admin': self._admin_uninstall,
             'storage': self._storage_uninstall,
             'radosgw': self._rgw_uninstall,
             'blockgw': self._bgw_uninstall
@@ -893,12 +939,14 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             raise exc.InvalidInput(_("Can't not set and unset the same role"))
         install_check_role_map = {
             'monitor': self._mon_install_check,
+            'admin': self._admin_install_check,
             'storage': self._storage_install_check,
             'radosgw': self._rgw_install_check,
             'blockgw': self._bgw_install_check
         }
         uninstall_check_role_map = {
             'monitor': self._mon_uninstall_check,
+            'admin': self._admin_uninstall_check,
             'storage': self._storage_uninstall_check,
             'radosgw': self._rgw_uninstall_check,
             'blockgw': self._bgw_uninstall_check

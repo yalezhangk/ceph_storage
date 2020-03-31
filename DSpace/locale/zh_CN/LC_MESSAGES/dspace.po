@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-31 10:17+0800\n"
+"POT-Creation-Date: 2020-03-31 03:00-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -844,6 +844,12 @@ msgstr "主控角色还未安装"
 msgid "Please remove osd first!"
 msgstr "请先移除硬盘"
 
+msgid "The admin role has been installed."
+msgstr "管理角色已设置"
+
+msgid "The admin role not installed."
+msgstr "管理角色未设置"
+
 msgid "The storage role has been installed."
 msgstr "存储角色已被安装"
 
@@ -924,6 +930,12 @@ msgstr "节点%s: 移除对象存储网关角色成功"
 
 msgid "node %s: unset rgw role error"
 msgstr "节点%s: 移除对象存储网关角色失败"
+
+msgid "node %s: set admin role success"
+msgstr "节点%s: 添加管理角色成功"
+
+msgid "node %s: unset admin role success"
+msgstr "节点%s: 移除管理角色成功"
 
 msgid "node %s: set bgw role success"
 msgstr "节点%s: 添加块存储网关角色成功"
