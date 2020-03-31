@@ -349,8 +349,8 @@ class BucketHandler(AdminBaseHandler):
 
     def bucket_versioning_update(self, ctxt, bucket_id, data):
         server = self._check_server_exist(ctxt)
-        logger.debug('bucket multi version: %s update begin', bucket_id)
-        action = Action.UPDATE_VERSIONING_OPEN if data['version'] \
+        logger.debug('bucket versioning: %s update begin', bucket_id)
+        action = Action.UPDATE_VERSIONING_OPEN if data['versioned'] \
             else Action.UPDATE_VERSIONING_SUSPENDED
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         uid, max_buckets = self._check_user_exist(
@@ -365,7 +365,7 @@ class BucketHandler(AdminBaseHandler):
                                   server, begin_action):
         try:
             name = bucket.name
-            version_status = "open" if data['version'] else "suspended"
+            version_status = "open" if data['versioned'] else "suspended"
             endpoint_url = str(server.ip_address) + ':' + str(server.port)
             obj_user_id = bucket.owner_id
             access_key, secret_access_key = \
@@ -377,16 +377,16 @@ class BucketHandler(AdminBaseHandler):
             bucket.save()
             status = "SUCCESS"
             op_status = "OPEN_BUCKET_VERSIONING_SUCCESS" if \
-                data['version'] else "SUSPENDED_BUCKET_VERSIONING_SUCCESS"
+                data['versioned'] else "SUSPENDED_BUCKET_VERSIONING_SUCCESS"
             msg = _("bucket {} {} versioning success").format(
                     name, version_status)
             err_msg = None
         except Exception as err:
-            version_status = "open" if data['version'] else "suspended"
+            version_status = "open" if data['versioned'] else "suspended"
             logger.error("bucket update versioning error: %s", err)
             status = "ERROR"
             op_status = "OPEN_BUCKET_VERSIONING_ERROR" if \
-                data['version'] else "SUSPENDED_BUCKET_VERSIONING_ERROR"
+                data['versioned'] else "SUSPENDED_BUCKET_VERSIONING_ERROR"
             msg = _("bucket {} {} versioning error").format(
                     name, version_status)
             err_msg = str(err)
