@@ -32,7 +32,7 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
                                                 nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('owner', 'policy')
+    OPTIONAL_FIELDS = ('owner', 'policy', 'lifecycles')
 
     def create(self):
         if self.obj_attr_is_set('id'):
@@ -67,6 +67,13 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
             policy = db_obj.get('policy', None)
             obj.policy = objects.ObjectPolicy._from_db_object(
                     context, objects.ObjectPolicy(context), policy)
+
+        if 'lifecycles' in expected_attrs:
+            lifecycles = db_obj.get('lifecycles', [])
+            obj.lifecycles = [objects.ObjectLifecycle._from_db_object(
+                context, objects.ObjectLifecycle(context), lifecycle
+            ) for lifecycle in lifecycles]
+
         return super(ObjectBucket, cls)._from_db_object(context, obj, db_obj)
 
 

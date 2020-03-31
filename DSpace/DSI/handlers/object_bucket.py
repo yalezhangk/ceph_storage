@@ -124,7 +124,7 @@ class BucketListHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
-        expected_attrs = ['policy', 'owner']
+        expected_attrs = ['policy', 'owner', 'lifecycles']
         fuzzy_filters = ['name']
         filters = self.get_support_filters(fuzzy_filters)
         tab = self.get_query_argument('tab', default="default")
@@ -241,7 +241,7 @@ class BucketHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        expected_attrs = ['owner', 'policy']
+        expected_attrs = ['owner', 'policy', 'lifecycles']
         bucket = yield client.bucket_get(
             ctxt, bucket_id, expected_attrs=expected_attrs)
         self.write(objects.json_encode({"bucket": bucket}))

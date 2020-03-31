@@ -5117,6 +5117,8 @@ def _object_bucket_load_attr(ctxt, object_bucket, expected_attrs=None,
         object_bucket.owner = object_bucket._object_user
     if 'policy' in expected_attrs:
         object_bucket.policy = object_bucket._object_policy
+    if 'lifecycles' in expected_attrs:
+        object_bucket.lifecycles = object_bucket._lifecycles
 
 
 @require_context
