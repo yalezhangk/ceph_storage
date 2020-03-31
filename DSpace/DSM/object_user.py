@@ -353,3 +353,39 @@ class ObjectUserHandler(ObjectUserMixin):
         self.finish_action(begin_action, user.id, user.uid, user,
                            err_msg=err_msg)
         return user
+
+    def object_user_key_delete(self, ctxt, object_user_key_id):
+        key = objects.ObjectAccessKey.get_by_id(
+            ctxt, object_user_key_id)
+        user = objects.ObjectUser.get_by_id(
+            ctxt, key.obj_user_id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.DELETE_KEY)
+        logger.debug('object_user begin delete key: %s', user.uid)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
+        rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                           secret_key=admin_access_key.secret_key,
+                           server=str(radosgw.ip_address) +
+                           ":" + str(radosgw.port)
+                           )
+        try:
+            rgw.rgw.remove_key(access_key=key.access_key, uid=user.uid)
+            key.destroy()
+            logger.info('object_user_delete key success, name=%s', user.uid)
+            op_status = "DELETE_SUCCESS"
+            msg = _("%s delete key success") % user.uid
+            err_msg = None
+            status = 'success'
+        except Exception as e:
+            logger.exception(
+                'object_user_delete key error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "DELETE_ERROR"
+            msg = _("%s delete key error") % user.uid
+            err_msg = str(e)
+            status = 'error'
+        self.send_websocket(ctxt, user, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           status, err_msg=err_msg)
+        return key
