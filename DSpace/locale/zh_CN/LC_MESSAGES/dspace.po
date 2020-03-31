@@ -1106,10 +1106,10 @@ msgid "%s update error"
 msgstr "修改%s失败"
 
 msgid "%s create key success"
-msgstr "对象用户{}创建密钥对成功"
+msgstr "对象用户%s创建密钥对成功"
 
 msgid "%s create key error"
-msgstr "对象用户{}创建密钥对失败"
+msgstr "对象用户%s创建密钥对失败"
 
 msgid "%s delete key success"
 msgstr "%s删除密钥对成功"

@@ -332,6 +332,7 @@ class ObjectUserHandler(ObjectUserMixin):
             rgw.create_key(uid=user.uid, access_key=data['access_key'],
                            secret_key=data['secret_key'])
             key = objects.ObjectAccessKey(
+                ctxt,
                 obj_user_id=user.id,
                 access_key=data['access_key'],
                 secret_key=data['secret_key'],
@@ -339,14 +340,14 @@ class ObjectUserHandler(ObjectUserMixin):
                 cluster_id=ctxt.cluster_id
             )
             key.create()
-            op_status = "CREATE_SUCCESS"
+            op_status = "CREATE_KEY_SUCCESS"
             msg = _("%s create key success") % user.uid
             err_msg = None
         except Exception as e:
             logger.exception(
                 'object_user_key update error,name=%s,reason:%s',
                 user.uid, str(e))
-            op_status = "CREATE_ERROR"
+            op_status = "CREATE_KEY_ERROR"
             msg = _("%s create key error") % user.uid
             err_msg = str(e)
         self.send_websocket(ctxt, user, op_status, msg)
@@ -373,7 +374,7 @@ class ObjectUserHandler(ObjectUserMixin):
             rgw.rgw.remove_key(access_key=key.access_key, uid=user.uid)
             key.destroy()
             logger.info('object_user_delete key success, name=%s', user.uid)
-            op_status = "DELETE_SUCCESS"
+            op_status = "DELETE_KEY_SUCCESS"
             msg = _("%s delete key success") % user.uid
             err_msg = None
             status = 'success'
@@ -381,7 +382,7 @@ class ObjectUserHandler(ObjectUserMixin):
             logger.exception(
                 'object_user_delete key error,name=%s,reason:%s',
                 user.uid, str(e))
-            op_status = "DELETE_ERROR"
+            op_status = "DELETE_KEY_ERROR"
             msg = _("%s delete key error") % user.uid
             err_msg = str(e)
             status = 'error'
