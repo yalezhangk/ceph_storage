@@ -296,6 +296,18 @@ class ObjectBucketActionHandler(ClusterAPIHandler):
         return owner
 
     @gen.coroutine
+    def _set_access_control(self, client, ctxt, bucket_id, bucket_data):
+        access_control = yield client.bucket_update_access_control(
+                ctxt, bucket_id, bucket_data)
+        return access_control
+
+    @gen.coroutine
+    def _versioning(self, client, ctxt, bucket_id, bucket_data):
+        versioning = yield client.bucket_versioning_update(
+                ctxt, bucket_id, bucket_data)
+        return versioning
+
+    @gen.coroutine
     def put(self, bucket_id):
         ctxt = self.get_context()
         data = json_decode(self.request.body)
@@ -304,7 +316,9 @@ class ObjectBucketActionHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         map_action = {
             'quota': self._bucket_quota,
-            'owner': self._bucket_owner
+            'owner': self._bucket_owner,
+            'versioning': self._versioning,
+            'access_control': self._set_access_control
         }
         fun_action = map_action.get(action)
         if fun_action is None:
