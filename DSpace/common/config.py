@@ -128,6 +128,9 @@ global_opts = [
     cfg.IntOpt('rados_timeout',
                default=30,
                help='Ceph Rados client timeout'),
+    cfg.IntOpt('collect_metrics_time',
+               default=15,
+               help='DSM: MetricsHandler collect metrics time interval'),
 ]
 
 etcd_opts = [
