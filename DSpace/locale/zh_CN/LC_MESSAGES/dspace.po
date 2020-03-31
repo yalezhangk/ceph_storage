@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-03-31 03:00-0400\n"
+"POT-Creation-Date: 2020-03-31 13:36+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -622,6 +622,9 @@ msgstr "用户不存在"
 msgid "rgw service do not exists"
 msgstr "对象存储网关不存在"
 
+msgid "access key do not exists"
+msgstr "认证密钥不存在"
+
 msgid "quota is not enough"
 msgstr "配额不足"
 
@@ -654,6 +657,18 @@ msgstr "存储桶 {} 更新用户成功"
 
 msgid "bucket {} update owner error"
 msgstr "存储桶 {} 更新用户失败"
+
+msgid "bucket {} update access control success"
+msgstr "存储桶 {} 更新访问权限成功"
+
+msgid "bucket {} update access control error"
+msgstr "存储桶 {} 更新访问权限失败"
+
+msgid "bucket {} {} versioning success"
+msgstr "存储桶 {} {} 多版本成功"
+
+msgid "bucket {} {} versioning error"
+msgstr "存储桶{} {} 多版本错误"
 
 msgid "Ceph config %s update failed"
 msgstr "配置%s修改失败"

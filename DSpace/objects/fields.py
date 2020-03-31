@@ -450,6 +450,9 @@ class AllActionType(BaseStorEnum):
     DOWNLOAD_LICENSE = 'download_license'
     QUOTA_UPDATE = 'quota_update'  # 更新存储桶配额
     OWNER_UPDATE = 'owner_update'  # 更新存储桶用户
+    ACCESS_CONTROL_UPDATE = 'access_control_update'
+    UPDATE_VERSIONING_SUSPENDED = 'update_versioning_suspended'
+    UPDATE_VERSIONING_OPEN = 'update_versioning_open'
     CLIENT_GROUP_UPDATE_NAME = 'client_group_update_name'
     CLIENT_GROUP_UPDATE_CLIENT = 'client_group_update_client'
     CLIENT_GROUP_UPDATE_CHAP = 'client_group_update_chap'
@@ -486,7 +489,8 @@ class AllActionType(BaseStorEnum):
            ACCESS_PATH_REMOVE_VOLUME, ACCESS_PATH_UPDATE_CLIENT_GROUP,
            OBJECT_STORE_INITIALIZE, SET_DEFAULT, SET_COMPRESSION,
            SET_LIFECYCLE, UPDATE_WORK_TIME, QUOTA_UPDATE, OWNER_UPDATE,
-           CREATE_KEY)
+           CREATE_KEY, ACCESS_CONTROL_UPDATE, UPDATE_VERSIONING_OPEN,
+           UPDATE_VERSIONING_SUSPENDED)
 
 
 class AllActionStatus(BaseStorEnum):

@@ -42,6 +42,39 @@ class BucketHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("rgw service do not exists"))
         return server
 
+    def _get_bucket_owner_access_keys(self, ctxt, obj_user_id):
+        accesskey = objects.ObjectAccessKeyList.get_all(
+                ctxt, filters={'obj_user_id': obj_user_id})[0]
+        if not accesskey:
+            raise exception.InvalidInput(_("access key do not exists"))
+        access_key = accesskey.access_key
+        secret_access_key = accesskey.secret_key
+        return access_key, secret_access_key
+
+    def _add_acls(self, uid, data):
+        acls = [{
+            "Type": "CanonicalUser",
+            "ID": uid,
+            "Permission": data['owner_permission']
+        }]
+        if data['auth_user_permission'] != '':
+            auth_per_list = data['auth_user_permission'].split(',')
+            for auth_permission in auth_per_list:
+                acls.append({
+                        "Type": "Group",
+                        "URI": "AuthenticatedUsers",
+                        "Permission": auth_permission
+                })
+        if data['all_user_permission'] != '':
+            auth_per_list = data['all_user_permission'].split(',')
+            for auth_permission in auth_per_list:
+                acls.append({
+                        "Type": "Group",
+                        "URI": "AllUsers",
+                        "Permission": auth_permission
+                })
+        return acls
+
     def object_buckets_create(self, ctxt, data):
         placement = self._check_policy_exist(ctxt, data)
         server = self._check_server_exist(ctxt)
@@ -107,39 +140,10 @@ class BucketHandler(AdminBaseHandler):
                               uid, begin_action):
         try:
             name = bucket.name
-            acls = [{
-                "Type": "CanonicalUser",
-                "ID": uid,
-                "Permission": bucket.owner_permission
-            }]
-            if bucket.auth_user_permission != '':
-                auth_user_list = bucket.auth_user_permission.split(',')
-                acls.append({
-                        "Type": "Group",
-                        "URI": "AuthenticatedUsers",
-                        "Permission": auth_user_list[0]
-                    })
-                if len(auth_user_list) == 2:
-                    add_auth_user_permission = {
-                                "Type": "Group",
-                                "URI": "AuthenticatedUsers",
-                                "Permission": auth_user_list[1]
-                            }
-                    acls.append(add_auth_user_permission)
-            if bucket.all_user_permission != '':
-                all_user_list = bucket.all_user_permission.split(',')
-                acls.append({
-                        "Type": "Group",
-                        "URI": "AllUsers",
-                        "Permission": all_user_list[0]
-                    })
-                if len(all_user_list) == 2:
-                    add_all_user_permission = {
-                                "Type": "Group",
-                                "URI": "AllUsers",
-                                "Permission": all_user_list[1]
-                            }
-                    acls.append(add_all_user_permission)
+            data = {"owner_permission": bucket.owner_permission,
+                    "auth_user_permission": bucket.auth_user_permission,
+                    "all_user_permission": bucket.all_user_permission}
+            acls = self._add_acls(uid, data)
             logger.info("acls info %s", acls)
             s3 = S3Client('http://' + endpoint_url,
                           access_key, secret_access_key)
@@ -204,7 +208,7 @@ class BucketHandler(AdminBaseHandler):
             err_msg = str(err)
             status = "ERROR"
             op_status = "UPDATE_BUCKET_QUOTA_ERROR"
-        self.finish_action(self, begin_action, bucket.id, name, bucket,
+        self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
@@ -245,7 +249,7 @@ class BucketHandler(AdminBaseHandler):
             err_msg = str(err)
             status = "ERROR"
             op_status = "DELETE_BUCKET_ERROR"
-        self.finish_action(self, begin_action, bucket.id, name, bucket,
+        self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
@@ -301,6 +305,91 @@ class BucketHandler(AdminBaseHandler):
                            status, err_msg=err_msg)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
-    def bucket_mutil_version(self, ctxt, bucket_id):
-        # TODO
-        pass
+    def bucket_update_access_control(self, ctxt, bucket_id, data):
+        server = self._check_server_exist(ctxt)
+        logger.debug('bucket access control: %s update begin', bucket_id)
+        bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+        begin_action = self.begin_action(
+            ctxt, Resource.OBJECT_BUCKET,
+            Action.ACCESS_CONTROL_UPDATE, bucket)
+        self.task_submit(self._bucket_update_access_control, ctxt, bucket,
+                         data, server, begin_action)
+        return bucket
+
+    def _bucket_update_access_control(self, ctxt, bucket, data, server,
+                                      begin_action):
+        users = objects.ObjectUser.get_by_id(ctxt, bucket.owner_id)
+        uid = users.uid
+        try:
+            acls = self._add_acls(uid, data)
+            name = bucket.name
+            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            obj_user_id = bucket.owner_id
+            access_key, secret_access_key = \
+                self._get_bucket_owner_access_keys(ctxt, obj_user_id)
+            s3 = S3Client('http://' + endpoint_url,
+                          access_key, secret_access_key)
+            s3.bucket_acl_set(name, acls)
+            bucket.auth_user_permission = data['auth_user_permission']
+            bucket.all_user_permission = data['all_user_permission']
+            bucket.save()
+            status = "SUCCESS"
+            op_status = "UPDATE_BUCKET_ACCESS_CONTROL_SUCCESS"
+            msg = _("bucket {} update access control success").format(name)
+            err_msg = None
+        except Exception as err:
+            logger.error("bucket update access control error: %s", err)
+            status = "ERROR"
+            op_status = "UPDATE_BUCKET_ACCESS_CONTROL_ERROR"
+            msg = _("bucket {} update access control error").format(name)
+            err_msg = str(err)
+        self.finish_action(begin_action, bucket.id, name, bucket,
+                           status, err_msg=err_msg)
+        self.send_websocket(ctxt, bucket, op_status, msg)
+
+    def bucket_versioning_update(self, ctxt, bucket_id, data):
+        server = self._check_server_exist(ctxt)
+        logger.debug('bucket multi version: %s update begin', bucket_id)
+        action = Action.UPDATE_VERSIONING_OPEN if data['version'] \
+            else Action.UPDATE_VERSIONING_SUSPENDED
+        bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+        uid, max_buckets = self._check_user_exist(
+                ctxt, data={"owner_id": bucket.owner_id})
+        begin_action = self.begin_action(
+            ctxt, Resource.OBJECT_BUCKET, action, bucket)
+        self.task_submit(self._bucket_versioning_update, ctxt, bucket,
+                         data, server, begin_action)
+        return bucket
+
+    def _bucket_versioning_update(self, ctxt, bucket, data,
+                                  server, begin_action):
+        try:
+            name = bucket.name
+            version_status = "open" if data['version'] else "suspended"
+            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            obj_user_id = bucket.owner_id
+            access_key, secret_access_key = \
+                self._get_bucket_owner_access_keys(ctxt, obj_user_id)
+            s3 = S3Client('http://' + endpoint_url,
+                          access_key, secret_access_key)
+            s3.bucket_versioning_set(name, enabled=data['versioned'])
+            bucket.versioned = data['versioned']
+            bucket.save()
+            status = "SUCCESS"
+            op_status = "OPEN_BUCKET_VERSIONING_SUCCESS" if \
+                data['version'] else "SUSPENDED_BUCKET_VERSIONING_SUCCESS"
+            msg = _("bucket {} {} versioning success").format(
+                    name, version_status)
+            err_msg = None
+        except Exception as err:
+            version_status = "open" if data['version'] else "suspended"
+            logger.error("bucket update versioning error: %s", err)
+            status = "ERROR"
+            op_status = "OPEN_BUCKET_VERSIONING_ERROR" if \
+                data['version'] else "SUSPENDED_BUCKET_VERSIONING_ERROR"
+            msg = _("bucket {} {} versioning error").format(
+                    name, version_status)
+            err_msg = str(err)
+        self.finish_action(begin_action, bucket.id, name, bucket,
+                           status, err_msg=err_msg)
+        self.send_websocket(ctxt, bucket, op_status, msg)
