@@ -419,3 +419,32 @@ class ObjectUserKeyHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "object_user": user
         }))
+
+    @gen.coroutine
+    def delete(self, object_user_key_id):
+        """Delete object_user
+
+        ---
+        tags:
+        - object_user_key
+        summary: delete object_user_key
+        produces:
+        - application/json
+        parameters:
+        - in: URL
+          name: id
+          description: object_user_id
+          required: true
+          schema:
+            type: int
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        object_user_key = yield client.object_user_key_delete(
+            ctxt, object_user_key_id)
+        self.write(objects.json_encode({
+            "object_user_key": object_user_key
+        }))
