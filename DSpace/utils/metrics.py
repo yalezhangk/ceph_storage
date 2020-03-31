@@ -9,6 +9,9 @@ class Metric(object):
         self.labelnames = labels  # tuple if present
         self.value = {}  # indexed by label values
 
+    def __repr__(self):
+        return 'UtilsMetricObj: %s' % self.value
+
     def clear(self):
         self.value = {}
 
