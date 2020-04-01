@@ -453,3 +453,37 @@ class RadosgwAdmin(object):
             self.rgw.remove_bucket(bucket, purge_objects=force)
         except RGWAdminException as e:
             raise RadosgwAdminException(reason=e)
+
+    def get_rgw_usage(self, uid=None, start=None, end=None, show_entries=False,
+                      show_summary=False):
+        try:
+            return self.rgw.get_usage(uid, start, end, show_entries,
+                                      show_summary)
+        except RGWAdminException as e:
+            raise RadosgwAdminException(reason=e)
+
+    def get_user_usage(self, uid):
+        result = self.get_rgw_usage(uid, show_summary=True)
+        summary = result['summary']
+        if not summary:
+            error = 'rgw user: %s not exist' % uid
+            raise RadosgwAdminException(reason=error)
+        else:
+            categories = summary[0]['categories']
+            return categories
+
+    def get_bucket_stats(self, bucket=None, uid=None, stats=True):
+        try:
+            results = self.rgw.get_bucket(bucket, uid, stats)
+        except Exception as e:
+            raise RadosgwAdminException(reason=e)
+        return results
+
+    def get_all_buckets_capacity(self):
+        results = self.get_bucket_stats()
+        return results
+
+    def get_all_buckets_usage(self):
+        result = self.get_rgw_usage(show_entries=True)
+        entries = result['entries']
+        return entries
