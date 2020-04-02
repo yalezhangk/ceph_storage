@@ -386,7 +386,44 @@ class ObjectUserHandler(ObjectUserMixin):
             msg = _("%s delete key error") % user.uid
             err_msg = str(e)
             status = 'error'
-        self.send_websocket(ctxt, user, op_status, msg)
+        self.send_websocket(ctxt, key, op_status, msg)
         self.finish_action(begin_action, user.id, user.uid, user,
                            status, err_msg=err_msg)
+        return key
+
+    def object_user_key_update(self, ctxt, object_user_key_id, data):
+        key = objects.ObjectAccessKey.get_by_id(
+            ctxt, object_user_key_id)
+        user = objects.ObjectUser.get_by_id(
+            ctxt, key.obj_user_id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.UPDATE_KEY)
+        logger.debug('object_user begin update key: %s', user.uid)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
+        rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                           secret_key=admin_access_key.secret_key,
+                           server=str(radosgw.ip_address) +
+                           ":" + str(radosgw.port)
+                           )
+        try:
+            rgw.rgw.modify_user(uid=user.uid, access_key=key.access_key,
+                                secret_key=data['secret_key'])
+            key.secret_key = data['secret_key']
+            key.save()
+            op_status = "UPDATE_KEY_SUCCESS"
+            msg = _("%s update key success") % user.uid
+            err_msg = None
+            logger.info('object_user: %s begin update key',
+                        user.uid)
+        except Exception as e:
+            logger.exception(
+                'object_user update error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "UPDATE_KEY_ERROR"
+            msg = _("%s update key error") % user.uid
+            err_msg = str(e)
+        self.send_websocket(ctxt, key, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           err_msg=err_msg)
         return key
