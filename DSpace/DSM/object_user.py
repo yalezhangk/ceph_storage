@@ -150,7 +150,6 @@ class ObjectUserHandler(ObjectUserMixin):
                     secret_key=data['keys'][0]['secret_key'],
                     email=data.get('email'),
                     max_buckets=data['max_buckets'])
-
             rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
                                secret_key=admin_access_key.secret_key,
                                server=str(radosgw.ip_address) +
@@ -427,3 +426,37 @@ class ObjectUserHandler(ObjectUserMixin):
         self.finish_action(begin_action, user.id, user.uid, user,
                            err_msg=err_msg)
         return key
+
+    def object_user_email_update(self, ctxt, object_user_id, data):
+        user = objects.ObjectUser.get_by_id(
+            ctxt, object_user_id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.UPDATE_EMAIL)
+        logger.debug('object_user begin update email: %s', user.uid)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
+        rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                           secret_key=admin_access_key.secret_key,
+                           server=str(radosgw.ip_address) +
+                           ":" + str(radosgw.port)
+                           )
+        try:
+            rgw.rgw.modify_user(uid=user.uid, email=data['email'])
+            user.email = data['email']
+            user.save()
+            op_status = "UPDATE_EMAIL_SUCCESS"
+            msg = _("%s update email success") % user.uid
+            err_msg = None
+            logger.info('object_user: %s begin update email',
+                        user.uid)
+        except Exception as e:
+            logger.exception(
+                'object_user update error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "UPDATE_EMAIL_ERROR"
+            msg = _("%s update email error") % user.uid
+            err_msg = str(e)
+        self.send_websocket(ctxt, user, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           err_msg=err_msg)
+        return user

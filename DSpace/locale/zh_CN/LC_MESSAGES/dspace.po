@@ -1123,6 +1123,12 @@ msgstr "%s修改密钥对成功"
 msgid "%s update key error"
 msgstr "%s修改密钥对失败"
 
+msgid "%s update email success"
+msgstr "%s修改邮箱成功"
+
+msgid "%s update email error"
+msgstr "%s修改邮箱失败"
+
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
 
