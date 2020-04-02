@@ -93,6 +93,22 @@ update_object_user_key_schema = {
     "required": ["object_user_key"],
 }
 
+update_object_user_email_schema = {
+    "type": "object",
+    "properties": {
+        "object_user_email": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+            },
+        },
+    },
+    "required": ["object_user_email"],
+}
+
 
 @URLRegistry.register(r"/object_user/")
 class ObjectUserListHandler(ClusterAPIHandler):
@@ -490,7 +506,7 @@ class ObjectUserKeyHandler(ClusterAPIHandler):
         "200":
           description: successful operation
         """
-        # 更改描述
+        # 修改密钥对
         ctxt = self.get_context()
         data = json_decode(self.request.body)
         validate(data, schema=update_object_user_key_schema,
@@ -501,4 +517,46 @@ class ObjectUserKeyHandler(ClusterAPIHandler):
             ctxt, object_user_key_id, object_user_key_data)
         self.write(objects.json_encode({
             "object_user_key": object_user_key
+        }))
+
+
+@URLRegistry.register(r"/object_user/([0-9]*)/email/")
+class ObjectUserEmailHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, object_user_id):
+        """Update ObjectUser
+
+        ---
+        tags:
+        - object_user
+        summary: update object_user
+        description: update object_user email
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: object_user
+          description: update object_user email
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                email: new email
+        responses:
+        "200":
+          description: successful operation
+        """
+        # 更改邮箱
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=update_object_user_email_schema,
+                 format_checker=draft7_format_checker)
+        object_user_data = data.get('object_user_email')
+        client = self.get_admin_client(ctxt)
+        object_user = yield client.object_user_email_update(
+            ctxt, object_user_id, object_user_data)
+        self.write(objects.json_encode({
+            "object_user": object_user
         }))
