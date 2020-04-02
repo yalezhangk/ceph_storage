@@ -78,6 +78,21 @@ create_object_user_key_schema = {
     "required": ["object_user"],
 }
 
+update_object_user_key_schema = {
+    "type": "object",
+    "properties": {
+        "object_user_key": {
+            "type": "object",
+            "properties": {
+                "object_user_key": {
+                    "type": "string"
+                },
+            },
+        },
+    },
+    "required": ["object_user_key"],
+}
+
 
 @URLRegistry.register(r"/object_user/")
 class ObjectUserListHandler(ClusterAPIHandler):
@@ -445,6 +460,45 @@ class ObjectUserKeyHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         object_user_key = yield client.object_user_key_delete(
             ctxt, object_user_key_id)
+        self.write(objects.json_encode({
+            "object_user_key": object_user_key
+        }))
+
+    @gen.coroutine
+    def put(self, object_user_key_id):
+        """Update ObjectUserKey
+
+        ---
+        tags:
+        - object_user_key
+        summary: update object_user_key
+        description: update object_user_key
+        produces:
+        - application/json
+        parameters:
+        - in: body
+          name: object_user_key
+          object_user_key: update object_user_key
+          required: true
+          schema:
+            type: object
+            properties:
+              object_user_key:
+                type: string
+                object_user_key: new object_user_key
+        responses:
+        "200":
+          description: successful operation
+        """
+        # 更改描述
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=update_object_user_key_schema,
+                 format_checker=draft7_format_checker)
+        object_user_key_data = data.get('object_user_key')
+        client = self.get_admin_client(ctxt)
+        object_user_key = yield client.object_user_key_update(
+            ctxt, object_user_key_id, object_user_key_data)
         self.write(objects.json_encode({
             "object_user_key": object_user_key
         }))
