@@ -282,6 +282,47 @@ class BucketHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/object_buckets/([0-9]*)/capacity/")
+class ObjectBucketCapacityHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self, bucket_id):
+        """ObjectBucket Capacity
+
+        ---
+        tags:
+        - object_bucket
+        summary: Capacity of the object_bucket
+        description: Return capacity infomation of object_bucket by id
+        operationId: object_buckets.api.object_bucket_capacity
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: ObjectBucket ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        bucket = yield client.bucket_get_capacity(
+            ctxt, bucket_id)
+        self.write(objects.json_encode({"bucket": bucket}))
+
+
 @URLRegistry.register(r"/object_buckets/([0-9]*)/action/")
 class ObjectBucketActionHandler(ClusterAPIHandler):
 
