@@ -88,7 +88,6 @@ class PermissionMixin(BaseAPIHandler):
     def default_page(self):
         return [
             "cluster",
-            "object-storage-gateways",
             "download",
             "volume-client-groups",
             "volume-access-paths",
@@ -112,14 +111,13 @@ class PermissionMixin(BaseAPIHandler):
             "object-user",
             "object-bucket",
             "object-policy",
+            "object-storage-gateways",
         ]
 
     def import_page(self):
         return [
             "cluster",
-            "object-storage-gateways",
             "download",
-            "object-router",
             "caches",
             "osds",
             "alert-center",
