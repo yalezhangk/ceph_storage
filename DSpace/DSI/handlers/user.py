@@ -91,10 +91,6 @@ class PermissionMixin(BaseAPIHandler):
             "object-storage-gateways",
             "download",
             "volume-client-groups",
-            "object-router",
-            "object-user",
-            "object-bucket",
-            "object-policy",
             "volume-access-paths",
             "caches",
             "osds",
@@ -108,6 +104,14 @@ class PermissionMixin(BaseAPIHandler):
             "servers",
             "cluster-plan",
             "pools",
+        ]
+
+    def objects_page(self):
+        return [
+            "object-router",
+            "object-user",
+            "object-bucket",
+            "object-policy",
         ]
 
     def import_page(self):
@@ -169,6 +173,10 @@ class PermissionMixin(BaseAPIHandler):
                 pages = self.import_page()
             else:
                 pages = self.default_page()
+            enable_objects_page = objects.sysconfig.sys_config_get(
+                ctxt, 'enable_objects_page')
+            if enable_objects_page:
+                pages.append(self.objects_page())
             for p in pages:
                 self.add_page(permission, p)
         else:
