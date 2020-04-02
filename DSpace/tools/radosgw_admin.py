@@ -426,6 +426,21 @@ class RadosgwAdmin(object):
             }
         }
 
+    def get_bucket_capacity(self, bucket_info):
+        size_info = bucket_info.get("usage", {})
+        size_info = size_info.get("rgw.main", {})
+        bucket_quota_info = bucket_info.get("bucket_quota")
+        return {
+            "size": {
+                "used": size_info.get("size_kb_actual", 0),
+                "max": bucket_quota_info.get("max_size_kb")
+            },
+            "objects": {
+                "used": size_info.get("num_objects", 0),
+                "max": bucket_quota_info.get("max_objects") // 1000
+            }
+        }
+
     def bucket_owner_change(self, bucket, bucket_id, uid):
         """
         Change bucket owner

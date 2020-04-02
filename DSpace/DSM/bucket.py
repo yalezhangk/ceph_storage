@@ -253,13 +253,37 @@ class BucketHandler(AdminBaseHandler):
                            status, err_msg=err_msg)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
-    def bucket_get_all(self, ctxt, marker=None, limit=None,
+    def bucket_get_all(self, ctxt, tab, marker=None, limit=None,
                        sort_keys=None, sort_dirs=None, filters=None,
                        offset=None, expected_attrs=None):
-        return objects.ObjectBucketList.get_all(
-            ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset,
-            expected_attrs=expected_attrs)
+        server = self._check_server_exist(ctxt)
+        buckets = objects.ObjectBucketList.get_all(
+                ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
+                sort_dirs=sort_dirs, filters=filters, offset=offset,
+                expected_attrs=expected_attrs)
+        if tab == "default":
+            buckets = self.get_quota_objects(ctxt, server, buckets)
+        return buckets
+
+    def get_quota_objects(self, ctxt, server, buckets):
+        admin, access_key, secret_access_key = self.get_admin_user(ctxt)
+        endpoint_url = str(server.ip_address) + ':' + str(server.port)
+        rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+        bucket_infos = rgw.rgw.get_bucket(stats=True)
+        for bucket in buckets:
+            bucket_info = list(filter(lambda x: x['bucket'] ==
+                               bucket.name, bucket_infos))[0]
+            capacity = rgw.get_bucket_capacity(bucket_info)
+            capacity_quota = capacity["size"]
+            object_quota = capacity["objects"]
+            bucket.used_capacity_quota = capacity_quota["used"]
+            bucket.used_object_quota = object_quota["used"]
+            bucket.max_capacity_quota = capacity_quota["max"]
+            if object_quota['max'] == -1:
+                bucket.max_object_quota = 0
+            else:
+                bucket.max_object_quota = object_quota["max"]
+        return buckets
 
     def bucket_get_count(self, ctxt, filters=None):
         return objects.ObjectBucketList.get_count(ctxt, filters=filters)
@@ -402,16 +426,5 @@ class BucketHandler(AdminBaseHandler):
         endpoint_url = str(server.ip_address) + ':' + str(server.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
         bucket_info = rgw.rgw.get_bucket(bucket=name, stats=True)
-        size_info = bucket_info.get("usage", {})
-        size_info = size_info.get("rgw.main", {})
-        objects_info = bucket_info.get("bucket_quota")
-        return {
-                "size": {
-                    "used": size_info.get("size_kb_actual"),
-                    "max": objects_info.get("max_size_kb")
-                    },
-                "objects": {
-                    "used": size_info.get("num_objects"),
-                    "max": objects_info.get("max_objects")
-                    }
-                }
+        capacity = rgw.get_bucket_capacity(bucket_info)
+        return capacity
