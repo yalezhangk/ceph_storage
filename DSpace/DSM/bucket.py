@@ -393,3 +393,25 @@ class BucketHandler(AdminBaseHandler):
         self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
         self.send_websocket(ctxt, bucket, op_status, msg)
+
+    def bucket_get_capacity(self, ctxt, bucket_id):
+        server = self._check_server_exist(ctxt)
+        bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+        name = bucket.name
+        admin, access_key, secret_access_key = self.get_admin_user(ctxt)
+        endpoint_url = str(server.ip_address) + ':' + str(server.port)
+        rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+        bucket_info = rgw.rgw.get_bucket(bucket=name, stats=True)
+        size_info = bucket_info.get("usage", {})
+        size_info = size_info.get("rgw.main", {})
+        objects_info = bucket_info.get("bucket_quota")
+        return {
+                "size": {
+                    "used": size_info.get("size_kb_actual"),
+                    "max": objects_info.get("max_size_kb")
+                    },
+                "objects": {
+                    "used": size_info.get("num_objects"),
+                    "max": objects_info.get("max_objects")
+                    }
+                }
