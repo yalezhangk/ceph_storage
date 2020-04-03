@@ -174,7 +174,7 @@ class PermissionMixin(BaseAPIHandler):
             enable_objects_page = objects.sysconfig.sys_config_get(
                 ctxt, 'enable_objects_page')
             if enable_objects_page:
-                pages.append(self.objects_page())
+                pages.extend(self.objects_page())
             for p in pages:
                 self.add_page(permission, p)
         else:
