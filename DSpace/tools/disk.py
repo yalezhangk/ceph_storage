@@ -149,6 +149,8 @@ class DiskTool(ToolBase):
         path = self._wapper("/sys/class/block/")
         disk_mounts = self._get_disk_mounts()
         for block in os.listdir(path):
+            if block.startswith('sr'):
+                continue
             disk_info = self.get_disk_info(block, disk_mounts=disk_mounts)
             if disk_info:
                 res[block] = disk_info
