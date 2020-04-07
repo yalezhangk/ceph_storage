@@ -127,10 +127,10 @@ class BucketListHandler(ClusterAPIHandler):
         expected_attrs = ['policy', 'owner', 'lifecycles']
         fuzzy_filters = ['name']
         filters = self.get_support_filters(fuzzy_filters)
-        tab = self.get_query_argument('tab', default="default")
+        tab = self.get_query_argument('tab', default=None)
         object_user_id = self.get_query_argument(
                 'object_user_id', default=None)
-        if tab not in ["default"]:
+        if tab not in [None, "default", "performance"]:
             raise InvalidInput(_("this tab is not supported"))
         if object_user_id is None:
             pass
@@ -140,7 +140,7 @@ class BucketListHandler(ClusterAPIHandler):
             raise InvalidInput(_(
                 "The object_user_id ({}) is invalid").format(object_user_id))
         buckets = yield client.bucket_get_all(
-                ctxt, expected_attrs=expected_attrs,
+                ctxt, tab, expected_attrs=expected_attrs,
                 filters=filters, **page_args)
         bucket_count = yield client.bucket_get_count(ctxt, filters)
         self.write(objects.json_encode({
@@ -318,9 +318,9 @@ class ObjectBucketCapacityHandler(ClusterAPIHandler):
 
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        bucket = yield client.bucket_get_capacity(
+        bucket_capacity = yield client.bucket_get_capacity(
             ctxt, bucket_id)
-        self.write(objects.json_encode({"bucket": bucket}))
+        self.write(objects.json_encode({"bucket_capacity": bucket_capacity}))
 
 
 @URLRegistry.register(r"/object_buckets/([0-9]*)/action/")
