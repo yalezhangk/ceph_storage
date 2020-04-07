@@ -460,3 +460,97 @@ class ObjectUserHandler(ObjectUserMixin):
         self.finish_action(begin_action, user.id, user.uid, user,
                            err_msg=err_msg)
         return user
+
+    def object_user_set_op_mask(self, ctxt, object_user_id, data):
+        user = objects.ObjectUser.get_by_id(
+            ctxt, object_user_id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.UPDATE_OP_MASK)
+        logger.debug('object_user begin update op_mask: %s', user.uid)
+        node = self.get_first_mon_node(ctxt)
+        client = self.agent_manager.get_client(node_id=node.id)
+        try:
+            client.set_op_mask(ctxt, username=user.uid,
+                               op_mask=data['op_mask'])
+            user.op_mask = data['op_mask']
+            user.save()
+            op_status = "UPDATE_OP_MASK_SUCCESS"
+            msg = _("%s update op_mask success") % user.uid
+            err_msg = None
+            logger.info('object_user: %s begin update op_mask',
+                        user.uid)
+        except Exception as e:
+            logger.exception(
+                'object_user update error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "UPDATE_OP_MASK_ERROR"
+            msg = _("%s update op_mask error") % user.uid
+            err_msg = str(e)
+        self.send_websocket(ctxt, user, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           err_msg=err_msg)
+        return user
+
+    def object_user_set_user_quota(self, ctxt, object_user_id, data):
+        user = objects.ObjectUser.get_by_id(
+            ctxt, object_user_id)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.OBJECT_USER,
+            action=AllActionType.UPDATE_USER_QUOTA)
+        logger.debug('object_user begin update user_quota: %s', user.uid)
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
+        rgw = RadosgwAdmin(access_key=admin_access_key.access_key,
+                           secret_key=admin_access_key.secret_key,
+                           server=str(radosgw.ip_address) +
+                           ":" + str(radosgw.port)
+                           )
+        if (data['user_quota_max_size'] == 0 and
+                data['user_quota_max_objects'] == 0):
+            user_qutoa_enabled = False
+        else:
+            user_qutoa_enabled = True
+        if (data['bucket_quota_max_size'] == 0 and
+                data['bucket_quota_max_objects'] == 0):
+            bucket_qutoa_enabled = False
+        else:
+            bucket_qutoa_enabled = True
+        data['bucket_quota_max_size'] = \
+            data['bucket_quota_max_size'] * 1024 ** 2
+        data['bucket_quota_max_objects'] = \
+            data['bucket_quota_max_objects'] * 1000
+        data['user_quota_max_size'] = \
+            data['user_quota_max_size'] * 1024 ** 2
+        data['user_quota_max_objects'] = \
+            data['user_quota_max_objects'] * 1000
+        try:
+            rgw.set_user_quota(
+                uid=user.uid,
+                user_qutoa_enabled=user_qutoa_enabled,
+                user_quota_max_size=data['user_quota_max_size'],
+                user_quota_max_objects=data['user_quota_max_objects'],
+                bucket_qutoa_enabled=bucket_qutoa_enabled,
+                bucket_quota_max_size=data['bucket_quota_max_size'],
+                bucket_quota_max_objects=data['bucket_quota_max_objects']
+            )
+            user.user_quota_max_size = data['user_quota_max_size']
+            user.user_quota_max_objects = data['user_quota_max_objects']
+            user.bucket_quota_max_size = data['bucket_quota_max_size']
+            user.bucket_quota_max_objects = data['bucket_quota_max_objects']
+            user.save()
+            op_status = "UPDATE_USER_QUOTA_SUCCESS"
+            msg = _("%s update user_quota success") % user.uid
+            err_msg = None
+            logger.info('object_user: %s begin update user_quota',
+                        user.uid)
+        except Exception as e:
+            logger.exception(
+                'object_user update error,name=%s,reason:%s',
+                user.uid, str(e))
+            op_status = "UPDATE_USER_QUOTA_ERROR"
+            msg = _("%s update user_quota error") % user.uid
+            err_msg = str(e)
+        self.send_websocket(ctxt, user, op_status, msg)
+        self.finish_action(begin_action, user.id, user.uid, user,
+                           err_msg=err_msg)
+        return user
