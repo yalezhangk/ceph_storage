@@ -533,10 +533,12 @@ class ObjectUserHandler(ObjectUserMixin):
                 bucket_quota_max_size=data['bucket_quota_max_size'],
                 bucket_quota_max_objects=data['bucket_quota_max_objects']
             )
+            rgw.rgw.modify_user(uid=user.uid, max_buckets=data['max_buckets'])
             user.user_quota_max_size = data['user_quota_max_size']
             user.user_quota_max_objects = data['user_quota_max_objects']
             user.bucket_quota_max_size = data['bucket_quota_max_size']
             user.bucket_quota_max_objects = data['bucket_quota_max_objects']
+            user.max_buckets = data['max_buckets']
             user.save()
             op_status = "UPDATE_USER_QUOTA_SUCCESS"
             msg = _("%s update user_quota success") % user.uid
