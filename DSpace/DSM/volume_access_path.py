@@ -61,11 +61,23 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                            after_obj=access_path)
         return access_path
 
+    def _check_volume_access_path_name(self, ctxt, name):
+        filters = {"name": name}
+        v = self.volume_access_path_get_all(ctxt, filters=filters)
+        if v:
+            logger.error("update access_path error, %s already exists",
+                         name)
+            raise exception.Duplicate(
+                    _("volume_access_path: {} is"
+                      "already exists!").format(name))
+
     def volume_access_path_update(self, ctxt, id, data):
         volume_access_path = objects.VolumeAccessPath.get_by_id(ctxt, id)
         if not volume_access_path:
             logger.error("access path<%s> not found", id)
             raise exception.VolumeAccessPathNotFound(access_path_id=id)
+        if volume_access_path.name != data.get('name'):
+            self._check_volume_access_path_name(self, ctxt, data.get('name'))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.ACCESS_PATH,
             action=AllActionType.UPDATE,
