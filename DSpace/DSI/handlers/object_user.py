@@ -109,6 +109,36 @@ update_object_user_email_schema = {
     "required": ["object_user_email"],
 }
 
+update_object_user_op_mask_schema = {
+    "type": "object",
+    "properties": {
+        "object_user_op_mask": {
+            "type": "object",
+            "properties": {
+                "op_mask": {
+                    "type": "string"
+                },
+            },
+        },
+    },
+    "required": ["object_user_op_mask"],
+}
+
+update_object_user_quota_schema = {
+    "type": "object",
+    "properties": {
+        "object_user_quota": {
+            "type": "object",
+            "properties": {
+                "user_quota": {
+                    "type": "string"
+                },
+            },
+        },
+    },
+    "required": ["object_user_quota"],
+}
+
 
 @URLRegistry.register(r"/object_user/")
 class ObjectUserListHandler(ClusterAPIHandler):
@@ -557,6 +587,118 @@ class ObjectUserEmailHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         object_user = yield client.object_user_email_update(
             ctxt, object_user_id, object_user_data)
+        self.write(objects.json_encode({
+            "object_user": object_user
+        }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/op_mask/")
+class ObjectUserOpMaskHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, object_user_id):
+        """
+        ---
+        tags:
+        - object_user op_mask
+        summary: Update object_user op_mask
+        description: update object_user op_mask
+        operationId: object_user.api.updateObjectUser
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: object_user ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: node
+          description: updated object_user op_mask
+          required: true
+          schema:
+            type: object
+            properties:
+              object_user:
+                type: object
+                properties:
+                  op_mask:
+                    type: string
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=update_object_user_op_mask_schema,
+                 format_checker=draft7_format_checker)
+        op_mask = data.get('object_user_op_mask')
+        client = self.get_admin_client(ctxt)
+        object_user = yield client.object_user_set_op_mask(
+            ctxt, object_user_id, op_mask)
+        self.write(objects.json_encode({
+            "object_user": object_user
+        }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/user_quota/")
+class ObjectUserquotaHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def put(self, object_user_id):
+        """
+        ---
+        tags:
+        - object_user quota
+        summary: Update object_user quota
+        description: update object_user quota
+        operationId: object_user.api.updateObjectUser
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: object_user ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: body
+          name: node
+          description: updated object_user quota
+          required: true
+          schema:
+            type: object
+            properties:
+              object_user:
+                type: object
+                properties:
+                  quota:
+                    type: string
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        data = json_decode(self.request.body)
+        validate(data, schema=update_object_user_quota_schema,
+                 format_checker=draft7_format_checker)
+        user_quota = data.get('object_user_quota')
+        client = self.get_admin_client(ctxt)
+        object_user = yield client.object_user_set_user_quota(
+            ctxt, object_user_id, user_quota)
         self.write(objects.json_encode({
             "object_user": object_user
         }))

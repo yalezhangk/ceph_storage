@@ -1129,6 +1129,18 @@ msgstr "%s修改邮箱成功"
 msgid "%s update email error"
 msgstr "%s修改邮箱失败"
 
+msgid "%s update op_mask success"
+msgstr "%s修改权限成功"
+
+msgid "%s update op_mask error"
+msgstr "%s修改权限失败"
+
+msgid "%s update user_quota success"
+msgstr "%s修改用户配额成功"
+
+msgid "%s update user_quota error"
+msgstr "%s修改用户配额失败"
+
 msgid "create success: osd.{}"
 msgstr "创建硬盘成功：osd.{}"
 
