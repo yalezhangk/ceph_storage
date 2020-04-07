@@ -411,8 +411,6 @@ class VolumeAccessPathHandler(ClusterAPIHandler, CheckVolumeAccessPath):
         if not data.get('name'):
             logger.error("edit volume access path error, no name input")
             raise exception.InvalidInput(_("name or type not found"))
-        yield self.check_volume_access_path_by_name(
-            ctxt, client, data.get('name'))
 
         volume_access_path = yield client.volume_access_path_update(
             ctxt, id, data)
