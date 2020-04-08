@@ -203,3 +203,57 @@ class DockerSocket(ToolBase):
         except docker.errors.APIError as e:
             logger.warning(e)
             raise DockerSockCmdError(cmd="restart", reason=str(e))
+
+    def get_sys_memory_total(self):
+        # return sys_memory_total_bytes, type:int
+        m_path = self._wapper('/proc/meminfo')
+        cmd = ['cat', m_path]
+        result = self.run_command(cmd)
+        memory_kb = int(result[1].split('\n')[0].split()[1].strip())
+        return memory_kb
+
+    def stats(self, container_name):
+        """
+        Stream statistics for this container. Similar to the
+        ``docker stats`` command.
+
+        Args:
+            decode (bool): If set to true, stream will be decoded into dicts
+                on the fly. Only applicable if ``stream`` is True.
+                False by default.
+            stream (bool): If set to false, only the current stats will be
+                returned instead of a stream. True by default.
+        return: CPU、Memory
+        """
+        logger.debug("Get container stats for %s", container_name)
+        try:
+            container = self.client.containers.get(container_name)
+            result = container.stats(stream=False)
+        except docker.errors.APIError as e:
+            logger.warning(e)
+            raise DockerSockCmdError(cmd="stats", reason=str(e))
+        # CPU
+        cpu_usage = result['cpu_stats']['cpu_usage']['total_usage']
+        precpu_usage = result['precpu_stats']['cpu_usage']['total_usage']
+        cpu_usage = cpu_usage - precpu_usage
+        system_cpu = result['cpu_stats']['system_cpu_usage']
+        presystem_cpu = result['precpu_stats']['system_cpu_usage']
+        system_cpu = system_cpu - presystem_cpu
+        cpu_usage_rate_percent = (cpu_usage/system_cpu) * 100
+        # Memory
+        memory_stats = result['memory_stats']
+        memory_used = memory_stats['usage']
+        active_file = memory_stats['stats']['active_file']
+        inactive_file = memory_stats['stats']['inactive_file']
+        memory_used_bytes = memory_used - active_file - inactive_file
+        sys_memory_kb = self.get_sys_memory_total()
+        memory_rate_percent = (memory_used_bytes/(sys_memory_kb * 1024)) * 100
+        return {
+            'cpu_usage': cpu_usage,
+            'system_cpu': system_cpu,
+            'cpu_usage_rate_percent': '{:.2f}'.format(cpu_usage_rate_percent),
+            'memory_used_bytes': memory_used_bytes,
+            'sys_memory_kb': sys_memory_kb,
+            'memory_rate_percent': '{:.2f}'.format(memory_rate_percent),
+            'container_name': container_name
+        }

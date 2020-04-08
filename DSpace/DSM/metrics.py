@@ -6,6 +6,7 @@ from DSpace import objects
 from DSpace.common.config import CONF
 from DSpace.context import get_context
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.exception import RPCConnectError
 from DSpace.utils.metrics import Metric
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,11 @@ class RgwMetricsKey(object):
     BUCKET_SENT_OPS = 'rgw_bucket_sent_ops'
     BUCKET_RECEIVED_OPS = 'rgw_bucket_received_ops'
     BUCKET_DELETE_OPS = 'rgw_bucket_delete_ops'
+    GATEWAY_CPU = 'rgw_gateway_cpu_rate_percent'
+    GATEWAY_MEMORY = 'rgw_gateway_memory_rate_percent'
+    ROUTER_CPU = 'rgw_router_cpu_rate_percent'
+    ROUTER_MEMORY = 'rgw_router_memory_rate_percent'
+    SYS_MEMORY = 'sys_total_memory_kb'
 
 
 class MetricsHandler(AdminBaseHandler):
@@ -55,8 +61,12 @@ class MetricsHandler(AdminBaseHandler):
         while True:
             try:
                 self.collect_rgw_metrics_values()
+            except RPCConnectError as e:
+                logger.warning('collect_rgw_metrics_values Warning: %s', e)
+                time.sleep(2)
+                continue
             except Exception as e:
-                logger.warning('collect_rgw_metrics_values Exception:%s', e)
+                logger.exception('collect_rgw_metrics_values Exception:%s', e)
             time.sleep(CONF.collect_metrics_time)
 
     def metrics_content(self, ctxt):
@@ -73,6 +83,7 @@ class MetricsHandler(AdminBaseHandler):
             ctxt.cluster_id = cluster.id
             active_rgws = objects.RadosgwList.get_all(
                 ctxt, filters={'status': 'active'})
+            # 1. set rgw user、bucket metrics
             if active_rgws:
                 rgw = active_rgws[0]
                 rgw_node = objects.Node.get_by_id(ctxt, rgw.node_id)
@@ -86,10 +97,23 @@ class MetricsHandler(AdminBaseHandler):
                 obj_buckets = objects.ObjectBucketList.get_all(ctxt)
                 self.set_rgw_buckets_metrics_values(
                     ctxt, client, obj_buckets, access_key, secret_key, service)
-            # TODO 每个agent上获取CPU等值
+            # 2. set rgw_gateway metrics
             rgw_nodes = self._get_rgw_node(ctxt)
             for rgw_node in rgw_nodes:
-                pass
+                self.check_agent_available(ctxt, rgw_node)
+                client = self.agent_manager.get_client(rgw_node.id)
+                rgw_gateways = objects.RadosgwList.get_all(
+                    ctxt, filters={'node_id': rgw_node.id})
+                self.set_rgw_gateway_metrics_values(ctxt, client, rgw_gateways)
+            # 3. set rgw_router metrics
+            router_services = objects.RouterServiceList.get_all(ctxt)
+            node_ids = set([r_ser.node_id for r_ser in router_services])
+            for node_id in node_ids:
+                router_node = objects.Node.get_by_id(ctxt, node_id)
+                self.check_agent_available(ctxt, router_node)
+                client = self.agent_manager.get_client(node_id)
+                self.set_rgw_router_metrics_values(ctxt, client, router_node)
+
         logger.debug('collect_rgw_metrics:%s', self.metrics.values())
 
     def set_rgw_users_metrics_values(self, ctxt, agent_client, obj_users,
@@ -184,6 +208,42 @@ class MetricsHandler(AdminBaseHandler):
             self.metrics[RgwMetricsKey.BUCKET_DELETE_OPS].set(
                 delete_ops, (cluster_id, bucket, owner))
 
+    def set_rgw_gateway_metrics_values(self, ctxt, agent_client, rgw_gateways):
+        cluster_id = ctxt.cluster_id
+        names = [rgw.name for rgw in rgw_gateways]
+        results = agent_client.get_rgw_gateway_cup_memory(ctxt, names)
+        for data in results:
+            ceph_daemon = data['ceph_daemon']
+            cpu_percent = data['cpu_percent']
+            memory_percent = data['memory_percent']
+            self.metrics[RgwMetricsKey.GATEWAY_CPU].set(
+                cpu_percent, (cluster_id, ceph_daemon))
+            self.metrics[RgwMetricsKey.GATEWAY_MEMORY].set(
+                memory_percent, (cluster_id, ceph_daemon))
+
+    def set_rgw_router_metrics_values(self, ctxt, agent_client, router_node):
+        cluster_id = ctxt.cluster_id
+        hostname = router_node.hostname
+        result_keep, result_ha = agent_client.get_rgw_router_cup_memory(ctxt)
+        keep_service_name = result_keep['container_name']
+        keep_cpu_percent = float(result_keep['cpu_usage_rate_percent'])
+        keep_memory_percent = float(result_keep['memory_rate_percent'])
+        ha_service_name = result_ha['container_name']
+        ha_cpu_percent = float(result_ha['cpu_usage_rate_percent'])
+        ha_memory_percent = float(result_ha['memory_rate_percent'])
+        sys_memory_kb = result_ha['sys_memory_kb']
+        # set values
+        self.metrics[RgwMetricsKey.ROUTER_CPU].set(
+            keep_cpu_percent, (cluster_id, hostname, keep_service_name))
+        self.metrics[RgwMetricsKey.ROUTER_MEMORY].set(
+            keep_memory_percent, (cluster_id, hostname, keep_service_name))
+        self.metrics[RgwMetricsKey.ROUTER_CPU].set(
+            ha_cpu_percent, (cluster_id, hostname, ha_service_name))
+        self.metrics[RgwMetricsKey.ROUTER_MEMORY].set(
+            ha_memory_percent, (cluster_id, hostname, ha_service_name))
+        self.metrics[RgwMetricsKey.SYS_MEMORY].set(
+            sys_memory_kb, (cluster_id, hostname))
+
     def rgw_metrics_init_keys(self):
         self.metrics[RgwMetricsKey.USER_USED] = Metric(
             'gauge',
@@ -198,31 +258,31 @@ class MetricsHandler(AdminBaseHandler):
             ('cluster_id', 'uid')
         )
         self.metrics[RgwMetricsKey.USER_SENT_NUM] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.USER_SENT_NUM,
             'Sent Num',
             ('cluster_id', 'uid')
         )
         self.metrics[RgwMetricsKey.USER_RECEIVED_NUM] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.USER_RECEIVED_NUM,
             'Received Num',
             ('cluster_id', 'uid')
         )
         self.metrics[RgwMetricsKey.USER_SENT_OPS] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.USER_SENT_OPS,
             'Sent Ops',
             ('cluster_id', 'uid')
         )
         self.metrics[RgwMetricsKey.USER_RECEIVED_OPS] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.USER_RECEIVED_OPS,
             'Received Ops',
             ('cluster_id', 'uid')
         )
         self.metrics[RgwMetricsKey.USER_DELETE_OPS] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.USER_DELETE_OPS,
             'Delete Ops',
             ('cluster_id', 'uid')
@@ -240,32 +300,62 @@ class MetricsHandler(AdminBaseHandler):
             ('cluster_id', 'bucket', 'owner')
         )
         self.metrics[RgwMetricsKey.BUCKET_SENT_NUM] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.BUCKET_SENT_NUM,
             'Sent Num',
             ('cluster_id', 'bucket', 'owner')
         )
         self.metrics[RgwMetricsKey.BUCKET_RECEIVED_NUM] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.BUCKET_RECEIVED_NUM,
             'Received Num',
             ('cluster_id', 'bucket', 'owner')
         )
         self.metrics[RgwMetricsKey.BUCKET_SENT_OPS] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.BUCKET_SENT_OPS,
             'Sent Ops',
             ('cluster_id', 'bucket', 'owner')
         )
         self.metrics[RgwMetricsKey.BUCKET_RECEIVED_OPS] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.BUCKET_RECEIVED_OPS,
             'Received Ops',
             ('cluster_id', 'bucket', 'owner')
         )
         self.metrics[RgwMetricsKey.BUCKET_DELETE_OPS] = Metric(
-            'count',
+            'counter',
             RgwMetricsKey.BUCKET_DELETE_OPS,
             'Delete Ops',
             ('cluster_id', 'bucket', 'owner')
+        )
+        self.metrics[RgwMetricsKey.GATEWAY_CPU] = Metric(
+            'gauge',
+            RgwMetricsKey.GATEWAY_CPU,
+            'CPU Rate %',
+            ('cluster_id', 'ceph_daemon')
+        )
+        self.metrics[RgwMetricsKey.GATEWAY_MEMORY] = Metric(
+            'gauge',
+            RgwMetricsKey.GATEWAY_MEMORY,
+            'Memory Rate %',
+            ('cluster_id', 'ceph_daemon')
+        )
+        self.metrics[RgwMetricsKey.ROUTER_CPU] = Metric(
+            'gauge',
+            RgwMetricsKey.ROUTER_CPU,
+            'CPU Rate %',
+            ('cluster_id', 'hostname', 'service_name')
+        )
+        self.metrics[RgwMetricsKey.ROUTER_MEMORY] = Metric(
+            'gauge',
+            RgwMetricsKey.ROUTER_MEMORY,
+            'Memory Rate %',
+            ('cluster_id', 'hostname', 'service_name')
+        )
+        self.metrics[RgwMetricsKey.SYS_MEMORY] = Metric(
+            'gauge',
+            RgwMetricsKey.SYS_MEMORY,
+            'Total Memory KB',
+            ('cluster_id', 'hostname')
         )
