@@ -1,6 +1,8 @@
 import logging
 
 from DSpace.DSA.base import AgentBaseHandler
+from DSpace.tools.docker import DockerSocket as DockerSockTool
+from DSpace.tools.radosgw import RadosgwTool
 from DSpace.tools.radosgw_admin import RadosgwAdmin
 
 logger = logging.getLogger(__name__)
@@ -54,7 +56,7 @@ class RgwMetricHandler(AgentBaseHandler):
     def get_all_rgw_buckets_capacity(self, ctxt, access_key, secret_key,
                                      server):
         rgw_admin = RadosgwAdmin(access_key, secret_key, server)
-        results = rgw_admin.get_all_buckets_capacity()
+        results = rgw_admin.get_bucket_stats()
         datas = []
         for data in results:
             bucket_data = {'bucket': data['bucket'], 'owner': data['owner']}
@@ -100,3 +102,17 @@ class RgwMetricHandler(AgentBaseHandler):
                 datas.append(data)
         logger.debug('get_all_rgw_buckets_usage:%s', datas)
         return datas
+
+    def get_rgw_gateway_cup_memory(self, ctxt, rgw_names):
+        rgw_tool = RadosgwTool(self._get_ssh_executor())
+        results = rgw_tool.get_rgw_gateway_cup_and_memory(rgw_names)
+        return results
+
+    def get_rgw_router_cup_memory(self, ctxt):
+        docket_socket_tool = DockerSockTool(self._get_executor())
+        container_keepalived = '{}_radosgw_keepalived'.format(
+            self.image_namespace)
+        container_haproxy = '{}_radosgw_haproxy'.format(self.image_namespace)
+        result_keep = docket_socket_tool.stats(container_keepalived)
+        result_ha = docket_socket_tool.stats(container_haproxy)
+        return result_keep, result_ha

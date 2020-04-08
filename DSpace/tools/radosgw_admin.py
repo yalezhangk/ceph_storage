@@ -494,10 +494,6 @@ class RadosgwAdmin(object):
             raise RadosgwAdminException(reason=e)
         return results
 
-    def get_all_buckets_capacity(self):
-        results = self.get_bucket_stats()
-        return results
-
     def get_all_buckets_usage(self):
         result = self.get_rgw_usage(show_entries=True)
         entries = result['entries']

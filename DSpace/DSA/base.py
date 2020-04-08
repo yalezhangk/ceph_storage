@@ -29,6 +29,7 @@ class AgentBaseHandler(object):
         self.ctxt = RequestContext(user_id="agent %s" % CONF.node_id,
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
+        self.image_namespace = self.admin.image_namespace_get(self.ctxt)
 
     def _wapper(self, fun, *args, **kwargs):
         try:
