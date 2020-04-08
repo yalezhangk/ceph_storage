@@ -113,7 +113,7 @@ class VolumeClientGroupHandler(AdminBaseHandler):
             ctxt, filters=filters)
         if client_group:
             logger.error("client_group duplicate: %s", name)
-            raise exception.VolumeClientExists(VolumeClient=name)
+            raise exception.VolumeClientExists(name=name)
 
     def _client_group_update_direct(self, ctxt, client_group_id,
                                     update_add_clients,

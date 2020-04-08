@@ -325,7 +325,7 @@ class VolumeClientGroupNotFound(NotFound):
 
 
 class VolumeClientExists(Duplicate):
-    message = _("iqn %(iqn)s already exists.")
+    message = _("client %(name)s already exists.")
 
 
 class VolumeClientGroupExists(Duplicate):
