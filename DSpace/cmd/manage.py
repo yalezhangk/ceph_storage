@@ -187,7 +187,7 @@ class DbCommands(object):
             ConfigKey.OS_DISTRO: s_fields.ConfigType.STRING,
             ConfigKey.ENABLE_CEPH_REPO: s_fields.ConfigType.BOOL,
             ConfigKey.DISABLE_LICENSE: s_fields.ConfigType.BOOL,
-
+            ConfigKey.ENABLE_OBJS_PAGE: s_fields.ConfigType.BOOL,
         }
         for c in configs:
             key, value = c.split("=", 1)
