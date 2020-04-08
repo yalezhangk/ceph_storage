@@ -5118,7 +5118,9 @@ def _object_bucket_load_attr(ctxt, object_bucket, expected_attrs=None,
     if 'policy' in expected_attrs:
         object_bucket.policy = object_bucket._object_policy
     if 'lifecycles' in expected_attrs:
-        object_bucket.lifecycles = object_bucket._lifecycles
+        object_bucket.lifecycles = [lifecycle for lifecycle in
+                                    object_bucket._lifecycles
+                                    if not lifecycle.deleted]
 
 
 @require_context
