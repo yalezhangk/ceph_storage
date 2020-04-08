@@ -29,7 +29,8 @@ class ObjectUser(base.StorPersistentObject, base.StorObject,
         'is_admin': fields.BooleanField(),
         'description': fields.StringField(nullable=True),
         'access_keys': fields.ListOfObjectsField('ObjectAccessKey',
-                                                 nullable=True)
+                                                 nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
 
     }
 

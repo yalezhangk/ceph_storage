@@ -185,10 +185,10 @@ class ObjectUserListHandler(ClusterAPIHandler):
         expected_attrs = ['access_keys']
         fuzzy_filters = ['name']
         filters = self.get_support_filters(fuzzy_filters=fuzzy_filters)
-
+        tab = self.get_query_argument('tab', default=None)
         object_users = yield client.object_user_get_all(
             ctxt, expected_attrs=expected_attrs,
-            filters=filters, **page_args)
+            filters=filters, tab=tab, **page_args)
         count = yield client.object_user_get_count(ctxt, filters=filters)
         self.write(objects.json_encode({
             "object_users": object_users,

@@ -71,11 +71,17 @@ class ObjectUserHandler(ObjectUserMixin):
 
     def object_user_get_all(self, ctxt, marker=None, limit=None,
                             sort_keys=None, sort_dirs=None, filters=None,
-                            offset=None, expected_attrs=None):
-        return objects.ObjectUserList.get_all(
+                            offset=None, expected_attrs=None, tab=None):
+        users = objects.ObjectUserList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
+        if tab == "metrics":
+            for user in users:
+                capactity = self.object_user_get_capacity(
+                    ctxt, object_user_id=user['id'])
+                user.metrics = capactity
+        return users
 
     def object_user_get_count(self, ctxt, filters=None):
         return objects.ObjectUserList.get_count(ctxt, filters=filters)
@@ -88,6 +94,14 @@ class ObjectUserHandler(ObjectUserMixin):
         logger.debug('object_user begin crate, name:%s' % user_name)
         self.check_object_user_name_exist(ctxt, user_name)
         self.check_object_user_email_exist(ctxt, data.get('email'))
+        data['bucket_quota_max_size'] = \
+            data['bucket_quota_max_size'] * 1024 ** 2
+        data['bucket_quota_max_objects'] = \
+            data['bucket_quota_max_objects'] * 1000
+        data['user_quota_max_size'] = \
+            data['user_quota_max_size'] * 1024 ** 2
+        data['user_quota_max_objects'] = \
+            data['user_quota_max_objects'] * 1000
         if len(data['keys']) != 0:
             self.check_access_key_exist(ctxt, data['keys'][0]['access_key'])
         object_user = objects.ObjectUser(
@@ -124,14 +138,6 @@ class ObjectUserHandler(ObjectUserMixin):
         else:
             bucket_qutoa_enabled = True
         try:
-            data['bucket_quota_max_size'] = \
-                data['bucket_quota_max_size'] * 1024 ** 2
-            data['bucket_quota_max_objects'] = \
-                data['bucket_quota_max_objects'] * 1000
-            data['user_quota_max_size'] = \
-                data['user_quota_max_size'] * 1024 ** 2
-            data['user_quota_max_objects'] = \
-                data['user_quota_max_objects'] * 1000
             node = self.get_first_mon_node(ctxt)
             client = self.agent_manager.get_client(node_id=node.id)
             if len(data['keys']) == 0:
