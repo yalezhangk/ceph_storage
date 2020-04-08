@@ -158,7 +158,7 @@ class CheckVolumeClientGroup():
             if vc:
                 logger.error("volume client %s already in another "
                              "cilent group", iqn)
-                raise exception.VolumeClientExists(iqn=iqn)
+                raise exception.VolumeClientExists(name=iqn)
 
     @gen.coroutine
     def check_volume_client_group_mutual_chap(self, ctxt, data):
