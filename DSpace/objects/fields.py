@@ -748,6 +748,7 @@ class ConfigKey(BaseStorEnum):
     DISABLE_LICENSE = 'disable_license'
     OBJECT_STORE_INIT = 'object_store_init'
     OBJECT_META_POOL = 'object_meta_pool'
+    ENABLE_OBJS_PAGE = 'enable_objects_page'
 
 
 class DSMStatus(BaseStorEnum):
