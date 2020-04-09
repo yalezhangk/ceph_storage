@@ -1432,6 +1432,9 @@ msgstr "不能超过当前存储池大小"
 msgid "Volume name {} already exists!"
 msgstr "块存储卷: {} 已存在"
 
+msgid "Volume mapped to access path can not extend or shrink"
+msgstr "块存储卷已被映射至访问路径无法扩容或缩容"
+
 msgid "create volume success: %s"
 msgstr "创建块存储卷成功：%s"
 
