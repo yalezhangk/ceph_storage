@@ -702,3 +702,102 @@ class ObjectUserquotaHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "object_user": object_user
         }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/metrics/")
+class ObjectUserMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, object_user_id):
+        """
+        ---
+        tags:
+        - object_user
+        summary: object_user's Metrics
+        description: return the Metrics of object_user by id
+        operationId: object_user.api.getMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: object_user's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.object_user_metrics_get(
+            ctxt, object_user_id=object_user_id)
+        self.write(objects.json_encode({
+            "object_user_metrics": data
+        }))
+
+
+@URLRegistry.register(r"/object_users/([0-9]*)/history_metrics/")
+class ObjectUserMetricsHistoryHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, object_user_id):
+        """
+        ---
+        tags:
+        - object_user
+        summary: object_user's History Metrics
+        description: return the History Metrics of object_user by id
+        operationId: object_users.api.getHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: object_user's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        client = self.get_admin_client(ctxt)
+        data = yield client.object_user_metrics_history_get(
+            ctxt, obj_user_id=object_user_id, start=his_args['start'],
+            end=his_args['end'])
+        self.write(objects.json_encode({
+            "object_user_history_metrics": data
+        }))
