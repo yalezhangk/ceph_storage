@@ -311,3 +311,102 @@ class RadosgwInitHandler(ClusterAPIHandler):
         self.write(objects.json_encode({
             "object_store_status": status
         }))
+
+
+@URLRegistry.register(r"/radosgws/([0-9]*)/metrics/")
+class RadosgwMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, rgw_id):
+        """
+        ---
+        tags:
+        - radosgw
+        summary: radosgw's Metrics
+        description: return the Metrics of radosgw by id
+        operationId: radosgw.api.getMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: radosgw's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        data = yield client.radosgw_metrics_get(
+            ctxt, rgw_id=rgw_id)
+        self.write(objects.json_encode({
+            "radosgw_metrics": data
+        }))
+
+
+@URLRegistry.register(r"/radosgws/([0-9]*)/history_metrics/")
+class RadosgwMetricsHistoryHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, rgw_id):
+        """
+        ---
+        tags:
+        - radosgw
+        summary: radosgw's History Metrics
+        description: return the History Metrics of radosgw by id
+        operationId: radosgw.api.getHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: radosgw's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        client = self.get_admin_client(ctxt)
+        data = yield client.radosgw_metrics_history_get(
+            ctxt, rgw_id=rgw_id, start=his_args['start'],
+            end=his_args['end'])
+        self.write(objects.json_encode({
+            "radosgw_history_metrics": data
+        }))

@@ -214,6 +214,44 @@ class RadosgwRouterListHandler(ClusterAPIHandler):
 
 @URLRegistry.register(r"/radosgw_routers/([0-9]*)/")
 class RadosgwRouterHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self, rgw_router_id):
+        """Get Radosgw router
+
+        ---
+        tags:
+        - radosgw_router
+        summary: Get the router by id
+        description: Get router by id
+        operationId: radosgw_router.api.GetRadosgwRouter
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: router's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        rgw_router = yield client.rgw_router_get(ctxt, rgw_router_id)
+        self.write(objects.json_encode({
+            "rgw_router": rgw_router
+        }))
+
     @gen.coroutine
     def delete(self, rgw_router_id):
         """Delete Radosgw router
@@ -316,4 +354,107 @@ class RadosgwRouterHandler(ClusterAPIHandler):
             ctxt, rgw_router_id, data)
         self.write(objects.json_encode({
             "rgw_routers": rgw_router
+        }))
+
+
+@URLRegistry.register(r"/radosgw_routers/([0-9]*)/metrics/")
+class RadosgwRouterMetricsHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, rgw_router_id):
+        """
+        ---
+        tags:
+        - radosgw_router
+        summary: radosgw_router's Metrics
+        description: return the Metrics of radosgw_router by id
+        operationId: radosgw_router.api.getMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: radosgw_router's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        router_service = self.get_query_argument('router_service',
+                                                 default=None)
+        data = yield client.radosgw_router_metrics_get(
+            ctxt, rgw_router_id, router_service)
+        self.write(objects.json_encode({
+            "radosgw_router_metrics": data
+        }))
+
+
+@URLRegistry.register(r"/radosgw_routers/([0-9]*)/history_metrics/")
+class RadosgwRouterMetricsHistoryHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, rgw_router_id):
+        """
+        ---
+        tags:
+        - radosgw_router
+        summary: radosgw_router's History Metrics
+        description: return the History Metrics of radosgw_router by id
+        operationId: radosgw_router.api.getHistoryMetrics
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: radosgw_router's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: start
+          description: the start of the history, it must be a time stamp.
+                       eg.1573600118.935
+          schema:
+            type: integer
+            format: int32
+          required: true
+        - in: request
+          name: end
+          description: the end of the history, it must be a time stamp.
+                       eg.1573600118.936
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        his_args = self.get_metrics_history_args()
+        router_service = self.get_query_argument('router_service',
+                                                 default=None)
+        client = self.get_admin_client(ctxt)
+        data = yield client.radosgw_router_metrics_history_get(
+            ctxt, rgw_router_id, his_args['start'], his_args['end'],
+            router_service)
+        self.write(objects.json_encode({
+            "radosgw_router_history_metrics": data
         }))

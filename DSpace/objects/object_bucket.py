@@ -33,12 +33,13 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
         'used_capacity_quota': fields.IntegerField(nullable=True),
         'used_object_quota': fields.IntegerField(nullable=True),
         "max_capacity_quota": fields.IntegerField(nullable=True),
-        "max_object_quota": fields.IntegerField(nullable=True)
+        "max_object_quota": fields.IntegerField(nullable=True),
+        'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
     OPTIONAL_FIELDS = ('owner', 'policy', 'lifecycles',
                        'used_capacity_quota', 'used_object_quota',
-                       'max_capacity_quota', 'max_object_quota')
+                       'max_capacity_quota', 'max_object_quota', 'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):

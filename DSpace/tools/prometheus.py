@@ -83,6 +83,18 @@ object_user_perf_attrs = [MeK.USER_SENT_NUM, MeK.USER_RECEIVED_NUM,
                           MeK.USER_SENT_OPS, MeK.USER_RECEIVED_OPS,
                           MeK.USER_DELETE_OPS]
 
+object_bucket_capacity_attrs = [MeK.BUCKET_USED, MeK.BUCKET_OBJ_NUM]
+
+object_bucket_perf_attrs = [MeK.BUCKET_SENT_NUM, MeK.BUCKET_RECEIVED_NUM,
+                            MeK.BUCKET_SENT_OPS, MeK.BUCKET_RECEIVED_OPS,
+                            MeK.BUCKET_DELETE_OPS]
+
+rgw_gateway_cpu_memory_attrs = [MeK.GATEWAY_CPU, MeK.GATEWAY_MEMORY]
+
+rgw_gateway_perf_attrs = ['rgw_put', 'rgw_get', 'rgw_put_b', 'rgw_get_b']
+
+rgw_router_cpu_memory_attrs = [MeK.ROUTER_CPU, MeK.ROUTER_MEMORY]
+
 
 class PrometheusTool(object):
     prometheus_url = None
@@ -844,15 +856,15 @@ class PrometheusTool(object):
             })
         return disks
 
-    def object_user_get_capacity(self, obj_user):
+    def object_user_get_capacity(self, obj_user, metrics):
         for m in object_user_capacity_attrs:
             metric = "ceph_" + m
             value = self.prometheus_get_metric(
                 metric, filter={"uid": obj_user.uid,
                                 'cluster_id': obj_user.cluster_id})
-            obj_user.metrics.update({m: value})
+            metrics.update({m: value})
 
-    def object_user_get_perf(self, object_user):
+    def object_user_get_perf(self, object_user, metrics):
         uid = object_user.uid
         cluster_id = object_user.cluster_id
         for m in object_user_perf_attrs:
@@ -861,7 +873,7 @@ class PrometheusTool(object):
             irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_metric(irate_metrics, not_filter=True)
-            object_user.metrics.update({m: value})
+            metrics.update({m: value})
 
     def object_user_get_histroy_capacity(self, obj_user, start, end, metrics):
         for m in object_user_capacity_attrs:
@@ -883,4 +895,107 @@ class PrometheusTool(object):
                 metric=metric, filters=filters)
             value = self.prometheus_get_histroy_metric(
                 irate_metrics, start=start, end=end, not_filter=True)
+            metrics.update({m: value})
+
+    def object_bucket_get_capacity(self, object_bucket, metrics):
+        for m in object_bucket_capacity_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_metric(
+                metric, filter={"bucket": object_bucket.name,
+                                "cluster_id": object_bucket.cluster_id})
+            metrics.update({m: value})
+
+    def object_bucket_get_perf(self, object_bucket, metrics):
+        bucket = object_bucket.name
+        cluster_id = object_bucket.cluster_id
+        for m in object_bucket_perf_attrs:
+            metric = "ceph_" + m
+            filters = "bucket='{}', cluster_id='{}'".format(bucket, cluster_id)
+            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+                metric=metric, filters=filters)
+            value = self.prometheus_get_metric(irate_metrics, not_filter=True)
+            metrics.update({m: value})
+
+    def object_bucket_get_histroy_capacity(self, obj_bucket, start, end,
+                                           metrics):
+        for m in object_bucket_capacity_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_histroy_metric(
+                metric, start=start, end=end, filter={
+                    "bucket": obj_bucket.name,
+                    "cluster_id": obj_bucket.cluster_id
+                })
+            metrics.update({m: value})
+
+    def object_bucket_get_histroy_perf(self, obj_bucket, start, end, metrics):
+        bucket = obj_bucket.name
+        cluster_id = obj_bucket.cluster_id
+        for m in object_bucket_perf_attrs:
+            metric = "ceph_" + m
+            filters = "bucket='{}', cluster_id='{}'".format(bucket, cluster_id)
+            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+                metric=metric, filters=filters)
+            value = self.prometheus_get_histroy_metric(
+                irate_metrics, start=start, end=end, not_filter=True)
+            metrics.update({m: value})
+
+    def radosgw_get_cpu_memory(self, rgw, metrics):
+        for m in rgw_gateway_cpu_memory_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_metric(
+                metric, filter={"ceph_daemon": rgw.name,
+                                "cluster_id": rgw.cluster_id})
+            metrics.update({m: value})
+
+    def radosgw_get_perf(self, rgw, metrics):
+        cluster_id = rgw.cluster_id
+        for m in rgw_gateway_perf_attrs:
+            metric = "ceph_" + m
+            filters = "ceph_daemon='rgw.{}', cluster_id='{}'".format(
+                rgw.name, cluster_id)
+            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+                metric=metric, filters=filters)
+            value = self.prometheus_get_metric(irate_metrics, not_filter=True)
+            metrics.update({m: value})
+
+    def radosgw_get_histroy_cpu_memory(self, rgw, start, end, metrics):
+        for m in rgw_gateway_cpu_memory_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_histroy_metric(
+                metric, start=start, end=end, filter={
+                    "ceph_daemon": rgw.name,
+                    "cluster_id": rgw.cluster_id})
+            metrics.update({m: value})
+
+    def radosgw_get_histroy_perf(self, rgw, start, end, metrics):
+        cluster_id = rgw.cluster_id
+        for m in rgw_gateway_perf_attrs:
+            metric = "ceph_" + m
+            filters = "ceph_daemon='rgw.{}', cluster_id='{}'".format(
+                rgw.name, cluster_id)
+            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+                metric=metric, filters=filters)
+            value = self.prometheus_get_histroy_metric(
+                irate_metrics, start=start, end=end, not_filter=True)
+            metrics.update({m: value})
+
+    def rgw_router_get_cpu_memory(self, rgw_router, metrics, service_name,
+                                  hostname):
+        for m in rgw_router_cpu_memory_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_metric(
+                metric, filter={"hostname": hostname,
+                                "service_name": service_name,
+                                "cluster_id": rgw_router.cluster_id})
+            metrics.update({m: value})
+
+    def rgw_router_get_histroy_cpu_memory(self, rgw_router, start, end,
+                                          metrics, service_name, hostname):
+        for m in rgw_router_cpu_memory_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_histroy_metric(
+                metric, start=start, end=end, filter={
+                    "hostname": hostname,
+                    "service_name": service_name,
+                    "cluster_id": rgw_router.cluster_id})
             metrics.update({m: value})

@@ -2,6 +2,8 @@ from oslo_log import log as logging
 
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.exception import InvalidInput
+from DSpace.i18n import _
 from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
@@ -137,9 +139,10 @@ class PrometheusHandler(AdminBaseHandler):
     def object_user_metrics_get(self, ctxt, object_user_id):
         obj_user = objects.ObjectUser.get_by_id(ctxt, object_user_id)
         prometheus = PrometheusTool(ctxt)
-        prometheus.object_user_get_capacity(obj_user)
-        prometheus.object_user_get_perf(obj_user)
-        return obj_user.metrics
+        metrics = {}
+        prometheus.object_user_get_capacity(obj_user, metrics)
+        prometheus.object_user_get_perf(obj_user, metrics)
+        return metrics
 
     def object_user_metrics_history_get(self, ctxt, obj_user_id, start, end):
         obj_user = objects.ObjectUser.get_by_id(ctxt, obj_user_id)
@@ -150,3 +153,75 @@ class PrometheusHandler(AdminBaseHandler):
         prometheus.object_user_get_histroy_perf(
             obj_user, float(start), float(end), metrics)
         return metrics
+
+    def object_bucket_metrics_get(self, ctxt, object_bucket_id):
+        object_bucket = objects.ObjectBucket.get_by_id(ctxt, object_bucket_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.object_bucket_get_capacity(object_bucket, metrics)
+        prometheus.object_bucket_get_perf(object_bucket, metrics)
+        return metrics
+
+    def object_bucket_metrics_history_get(self, ctxt, object_bucket_id, start,
+                                          end):
+        obj_bucket = objects.ObjectBucket.get_by_id(ctxt, object_bucket_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.object_bucket_get_histroy_capacity(
+            obj_bucket, float(start), float(end), metrics)
+        prometheus.object_bucket_get_histroy_perf(
+            obj_bucket, float(start), float(end), metrics)
+        return metrics
+
+    def radosgw_metrics_get(self, ctxt, rgw_id):
+        rgw = objects.Radosgw.get_by_id(ctxt, rgw_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.radosgw_get_cpu_memory(rgw, metrics)
+        prometheus.radosgw_get_perf(rgw, metrics)
+        return metrics
+
+    def radosgw_metrics_history_get(self, ctxt, rgw_id, start, end):
+        rgw = objects.Radosgw.get_by_id(ctxt, rgw_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.radosgw_get_histroy_cpu_memory(
+            rgw, float(start), float(end), metrics)
+        prometheus.radosgw_get_histroy_perf(
+            rgw, float(start), float(end), metrics)
+        return metrics
+
+    def radosgw_router_metrics_get(self, ctxt, rgw_router_id, router_service):
+        rgw_router = objects.RadosgwRouter.get_by_id(
+            ctxt, rgw_router_id, expected_attrs=['router_services'])
+        service_name = self.router_service_map(router_service)
+        node_id = rgw_router.router_services[0].node_id
+        node = objects.Node.get_by_id(ctxt, node_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.rgw_router_get_cpu_memory(
+            rgw_router, metrics, service_name, node.hostname)
+        return metrics
+
+    def radosgw_router_metrics_history_get(self, ctxt, rgw_router_id, start,
+                                           end, router_service):
+        rgw_router = objects.RadosgwRouter.get_by_id(
+            ctxt, rgw_router_id, expected_attrs=['router_services'])
+        service_name = self.router_service_map(router_service)
+        node_id = rgw_router.router_services[0].node_id
+        node = objects.Node.get_by_id(ctxt, node_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.rgw_router_get_histroy_cpu_memory(
+            rgw_router, float(start), float(end), metrics, service_name,
+            node.hostname)
+        return metrics
+
+    def router_service_map(self, router_service):
+        r_service_map = {'haproxy': 'athena_radosgw_haproxy',
+                         'keepalived': 'athena_radosgw_keepalived'}
+        name = r_service_map.get(router_service)
+        if not name:
+            raise InvalidInput(_('router_service name：%s not exist') %
+                               router_service)
+        return name

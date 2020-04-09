@@ -371,3 +371,8 @@ class RadosgwRouterHandler(RadosgwMixin):
         self.task_submit(self._rgw_router_update, ctxt, rgw_router, data,
                          begin_action)
         return rgw_router
+
+    def rgw_router_get(self, ctxt, rgw_router_id):
+        rgw_router = objects.RadosgwRouter.get_by_id(
+            ctxt, rgw_router_id, expected_attrs=['router_services'])
+        return rgw_router
