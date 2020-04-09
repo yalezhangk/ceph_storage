@@ -270,9 +270,12 @@ class BucketHandler(AdminBaseHandler):
         endpoint_url = str(server.ip_address) + ':' + str(server.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
         bucket_infos = rgw.rgw.get_bucket(stats=True)
+        bucket_infos = {bucket_info['bucket']: bucket_info
+                        for bucket_info in bucket_infos}
         for bucket in buckets:
-            bucket_info = list(filter(lambda x: x['bucket'] ==
-                               bucket.name, bucket_infos))[0]
+            bucket_info = bucket_infos.get(bucket.name)
+            if not bucket_info:
+                continue
             capacity = rgw.get_bucket_capacity(bucket_info)
             capacity_quota = capacity["size"]
             object_quota = capacity["objects"]
