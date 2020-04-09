@@ -1078,6 +1078,9 @@ msgstr "对象策略设置数据压缩失败：%s"
 msgid "object_user name %s already exists!"
 msgstr "对象用户：%s 已存在"
 
+msgid "radosgw not exists can not create user"
+msgstr "对象存储网关不存在无法创建用户"
+
 msgid "object_user email %s already exists!"
 msgstr "对象用户邮箱：%s 已存在"
 
