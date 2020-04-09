@@ -31,9 +31,9 @@ class BucketHandler(AdminBaseHandler):
                 ctxt, filters=filters)
         if not users:
             raise exception.InvalidInput(_("owner do not exists"))
-        uid = users.uid
-        max_buckets = users.max_buckets
-        logger.info('owner name %s', users.uid)
+        uid = users[0].uid
+        max_buckets = users[0].max_buckets
+        logger.info('owner name %s', users[0].uid)
         return uid, max_buckets
 
     def _check_server_exist(self, ctxt):
