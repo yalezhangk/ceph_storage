@@ -133,3 +133,20 @@ class PrometheusHandler(AdminBaseHandler):
                                                 float(start),
                                                 float(end))
         return data
+
+    def object_user_metrics_get(self, ctxt, object_user_id):
+        obj_user = objects.ObjectUser.get_by_id(ctxt, object_user_id)
+        prometheus = PrometheusTool(ctxt)
+        prometheus.object_user_get_capacity(obj_user)
+        prometheus.object_user_get_perf(obj_user)
+        return obj_user.metrics
+
+    def object_user_metrics_history_get(self, ctxt, obj_user_id, start, end):
+        obj_user = objects.ObjectUser.get_by_id(ctxt, obj_user_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.object_user_get_histroy_capacity(
+            obj_user, float(start), float(end), metrics)
+        prometheus.object_user_get_histroy_perf(
+            obj_user, float(start), float(end), metrics)
+        return metrics

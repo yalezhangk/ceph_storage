@@ -8,6 +8,7 @@ from prometheus_http_client.prometheus import relabel
 
 from DSpace import exception
 from DSpace import objects
+from DSpace.DSM.metrics import RgwMetricsKey as MeK
 
 
 class DSpaceNodeExporter(NodeExporter):
@@ -76,6 +77,12 @@ node_network_attrs = ['network_transmit_packets_rate',
                       'network_transmit_rate', 'network_receive_rate',
                       'network_errs_rate', 'network_drop_rate']
 
+object_user_capacity_attrs = [MeK.USER_USED, MeK.USER_OBJ_NUM]
+
+object_user_perf_attrs = [MeK.USER_SENT_NUM, MeK.USER_RECEIVED_NUM,
+                          MeK.USER_SENT_OPS, MeK.USER_RECEIVED_OPS,
+                          MeK.USER_DELETE_OPS]
+
 
 class PrometheusTool(object):
     prometheus_url = None
@@ -126,13 +133,16 @@ class PrometheusTool(object):
                      node_id, ipaddr, net_name)
         return net_name
 
-    def prometheus_get_metric(self, metric, filter=None):
+    def prometheus_get_metric(self, metric, filter=None, not_filter=None):
         """Get metrics from prometheus
+        when not_filter is True, filter=None
         Returns: metrics value
         """
         filter = filter or {}
         if "cluster_id" not in filter.keys():
             filter['cluster_id'] = self.ctxt.cluster_id
+        if not_filter is True:
+            filter = None
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query(metric=metric, filter=filter))
@@ -171,13 +181,17 @@ class PrometheusTool(object):
             logger.info('get metric:%s data is None from prometheus', metric)
             return None
 
-    def prometheus_get_histroy_metric(self, metric, start, end, filter=None):
+    def prometheus_get_histroy_metric(self, metric, start, end, filter=None,
+                                      not_filter=None):
         """Get metrics from prometheus
+        when not_filter is True, filter=None
         Returns: metrics value
         """
         filter = filter or {}
         if "cluster_id" not in filter.keys():
             filter['cluster_id'] = self.ctxt.cluster_id
+        if not_filter is True:
+            filter = None
         prometheus = PrometheusClient(url=self.prometheus_url)
         try:
             value = json.loads(prometheus.query_rang(
@@ -829,3 +843,44 @@ class PrometheusTool(object):
                 "value": data['value'][1]
             })
         return disks
+
+    def object_user_get_capacity(self, obj_user):
+        for m in object_user_capacity_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_metric(
+                metric, filter={"uid": obj_user.uid,
+                                'cluster_id': obj_user.cluster_id})
+            obj_user.metrics.update({m: value})
+
+    def object_user_get_perf(self, object_user):
+        uid = object_user.uid
+        cluster_id = object_user.cluster_id
+        for m in object_user_perf_attrs:
+            metric = "ceph_" + m
+            filters = "uid='{}', cluster_id='{}'".format(uid, cluster_id)
+            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+                metric=metric, filters=filters)
+            value = self.prometheus_get_metric(irate_metrics, not_filter=True)
+            object_user.metrics.update({m: value})
+
+    def object_user_get_histroy_capacity(self, obj_user, start, end, metrics):
+        for m in object_user_capacity_attrs:
+            metric = "ceph_" + m
+            value = self.prometheus_get_histroy_metric(
+                metric, start=start, end=end, filter={
+                    "uid": obj_user.uid,
+                    "cluster_id": obj_user.cluster_id
+                })
+            metrics.update({m: value})
+
+    def object_user_get_histroy_perf(self, obj_user, start, end, metrics):
+        uid = obj_user.uid
+        cluster_id = obj_user.cluster_id
+        for m in object_user_perf_attrs:
+            metric = "ceph_" + m
+            filters = "uid='{}', cluster_id='{}'".format(uid, cluster_id)
+            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+                metric=metric, filters=filters)
+            value = self.prometheus_get_histroy_metric(
+                irate_metrics, start=start, end=end, not_filter=True)
+            metrics.update({m: value})

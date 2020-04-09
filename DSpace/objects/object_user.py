@@ -34,7 +34,7 @@ class ObjectUser(base.StorPersistentObject, base.StorObject,
 
     }
 
-    OPTIONAL_FIELDS = ('access_keys')
+    OPTIONAL_FIELDS = ('access_keys', 'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):
