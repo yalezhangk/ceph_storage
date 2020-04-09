@@ -64,6 +64,14 @@ class VolumeHandler(AdminBaseHandler):
                 reason=_('Volume name {} already exists!').format(
                     display_name))
 
+    def _check_volume_mappings(self, ctxt, volume_id):
+        volume_mappings = objects.VolumeMappingList.get_all(
+            ctxt, filters={'volume_id': volume_id})
+        if volume_mappings:
+            raise exception.InvalidInput(
+                reason=_(
+                    'Volume mapped to access path can not extend or shrink'))
+
     def volume_create(self, ctxt, data):
         self.check_mon_host(ctxt)
         self._check_volume_size(ctxt, data)
@@ -224,6 +232,7 @@ class VolumeHandler(AdminBaseHandler):
 
     def volume_extend(self, ctxt, volume_id, data):
         # 扩容
+        self._check_volume_mappings(ctxt, volume_id)
         volume = objects.Volume.get_by_id(ctxt, volume_id, joined_load=True)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
@@ -283,6 +292,7 @@ class VolumeHandler(AdminBaseHandler):
 
     def volume_shrink(self, ctxt, volume_id, data):
         # 缩容
+        self._check_volume_mappings(ctxt, volume_id)
         volume = objects.Volume.get_by_id(ctxt, volume_id, joined_load=True)
         if not volume:
             raise exception.VolumeNotFound(volume_id=volume_id)
