@@ -431,4 +431,7 @@ class BucketHandler(AdminBaseHandler):
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
         bucket_info = rgw.rgw.get_bucket(bucket=name, stats=True)
         capacity = rgw.get_bucket_capacity(bucket_info)
+        max_objects = capacity['objects']['max']
+        if max_objects == -1:
+            capacity['objects']['max'] = 0
         return capacity
