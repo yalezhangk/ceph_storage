@@ -25,9 +25,10 @@ class BucketHandler(AdminBaseHandler):
         placement = policy.name
         return placement
 
-    def _check_user_exist(self, ctxt, data):
-        users = objects.ObjectUser.get_by_id(
-                ctxt, data['owner_id'])
+    def _check_active_user_exist(self, ctxt, data):
+        filters = {'id': data['owner_id'], 'status': "active"}
+        users = objects.ObjectUserList.get_all(
+                ctxt, filters=filters)
         if not users:
             raise exception.InvalidInput(_("owner do not exists"))
         uid = users.uid
@@ -78,7 +79,7 @@ class BucketHandler(AdminBaseHandler):
     def object_buckets_create(self, ctxt, data):
         placement = self._check_policy_exist(ctxt, data)
         server = self._check_server_exist(ctxt)
-        uid, max_buckets = self._check_user_exist(ctxt, data)
+        uid, max_buckets = self._check_active_user_exist(ctxt, data)
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
         endpoint_url = str(server.ip_address) + ':' + str(server.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
@@ -295,7 +296,7 @@ class BucketHandler(AdminBaseHandler):
 
     def bucket_update_owner(self, ctxt, bucket_id, data):
         server = self._check_server_exist(ctxt)
-        uid, max_buckets = self._check_user_exist(ctxt, data)
+        uid, max_buckets = self._check_active_user_exist(ctxt, data)
         logger.debug('object_bucket owner: %s update begin',
                      bucket_id)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
@@ -377,7 +378,7 @@ class BucketHandler(AdminBaseHandler):
         action = Action.UPDATE_VERSIONING_OPEN if data['versioned'] \
             else Action.UPDATE_VERSIONING_SUSPENDED
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
-        uid, max_buckets = self._check_user_exist(
+        uid, max_buckets = self._check_active_user_exist(
                 ctxt, data={"owner_id": bucket.owner_id})
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET, action, bucket)
