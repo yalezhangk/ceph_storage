@@ -47,12 +47,15 @@ class ObjectUserMixin(AdminBaseHandler):
 
     def object_user_info_get(self, ctxt):
         admin_user = self.get_admin_user_info(ctxt)
-        radosgw = objects.RadosgwList.get_all(
-            ctxt, filters={"status": "active"})[0]
+        radosgws = objects.RadosgwList.get_all(
+            ctxt, filters={"status": "active"})
+        if not radosgws:
+            raise exception.InvalidInput(
+                reason=_('radosgw not exists can not create user'))
         admin_access_key = objects.ObjectAccessKeyList.get_all(
             ctxt, filters={"obj_user_id": admin_user.id}
         )[0]
-        return radosgw, admin_access_key
+        return radosgws[0], admin_access_key
 
     def check_object_user_del(self, ctxt, rgw, uid):
         self.object_user_info_get(ctxt)
@@ -74,7 +77,8 @@ class ObjectUserHandler(ObjectUserMixin):
                             offset=None, expected_attrs=None, tab=None):
         users = objects.ObjectUserList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters=filters, offset=offset,
+            sort_dirs=sort_dirs, filters={
+                "uid": objects.ObjectUser.Not('t2stor')}, offset=offset,
             expected_attrs=expected_attrs)
         if tab == "metrics":
             for user in users:
@@ -94,6 +98,7 @@ class ObjectUserHandler(ObjectUserMixin):
         logger.debug('object_user begin crate, name:%s' % user_name)
         self.check_object_user_name_exist(ctxt, user_name)
         self.check_object_user_email_exist(ctxt, data.get('email'))
+        radosgw, admin_access_key = self.object_user_info_get(ctxt)
         data['bucket_quota_max_size'] = \
             data['bucket_quota_max_size'] * 1024 ** 2
         data['bucket_quota_max_objects'] = \
@@ -119,14 +124,14 @@ class ObjectUserHandler(ObjectUserMixin):
             is_admin=0)
         object_user.create()
         self.task_submit(self._object_user_create, ctxt, user_name, data,
-                         begin_action, object_user)
+                         begin_action, object_user, radosgw, admin_access_key)
         logger.info('object_user_create task has begin, user_name: %s',
                     user_name)
         return object_user
 
     def _object_user_create(self, ctxt, user_name, data,
-                            begin_action, object_user):
-        radosgw, admin_access_key = self.object_user_info_get(ctxt)
+                            begin_action, object_user,
+                            radosgw, admin_access_key):
         if (data['user_quota_max_size'] == 0 and
                 data['user_quota_max_objects'] == 0):
             user_qutoa_enabled = False
