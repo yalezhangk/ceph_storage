@@ -481,8 +481,8 @@ class RadosgwAdmin(object):
         result = self.get_rgw_usage(uid, show_summary=True)
         summary = result['summary']
         if not summary:
-            error = 'rgw user: %s not exist' % uid
-            raise RadosgwAdminException(reason=error)
+            # summary is [] when not user_usage
+            return summary
         else:
             categories = summary[0]['categories']
             return categories
