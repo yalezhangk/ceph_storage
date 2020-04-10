@@ -99,10 +99,8 @@ update_object_user_email_schema = {
         "object_user_email": {
             "type": "object",
             "properties": {
-                "email": {
-                    "type": "string",
-                    "format": "email"
-                },
+                "email":
+                    {"type": ["string", "null"], "format": "email"}
             },
         },
     },
