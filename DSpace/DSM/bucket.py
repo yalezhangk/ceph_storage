@@ -36,12 +36,18 @@ class BucketHandler(AdminBaseHandler):
         logger.info('owner name %s', users[0].uid)
         return uid, max_buckets
 
-    def _check_server_exist(self, ctxt):
-        server = objects.RadosgwList.get_all(
-                 ctxt, filters={'status': s_fields.RadosgwStatus.ACTIVE})[0]
-        if not server:
+    def _check_active_rgw_exist(self, ctxt):
+        rgws = objects.RadosgwList.get_all(
+               ctxt, filters={'status': s_fields.RadosgwStatus.ACTIVE})
+        if not rgws:
+            return None
+        return rgws[0]
+
+    def _assert_rgw_active(self, ctxt):
+        rgw = self._check_active_rgw_exist(ctxt)
+        if rgw is None:
             raise exception.InvalidInput(_("rgw service do not exists"))
-        return server
+        return rgw
 
     def _get_bucket_owner_access_keys(self, ctxt, obj_user_id):
         accesskey = objects.ObjectAccessKeyList.get_all(
@@ -78,10 +84,10 @@ class BucketHandler(AdminBaseHandler):
 
     def object_buckets_create(self, ctxt, data):
         placement = self._check_policy_exist(ctxt, data)
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         uid, max_buckets = self._check_active_user_exist(ctxt, data)
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
-        endpoint_url = str(server.ip_address) + ':' + str(server.port)
+        endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
         user_buckets_number = rgw.count_user_buckets(uid)
         logger.info('user buckets count %s', user_buckets_number)
@@ -173,16 +179,16 @@ class BucketHandler(AdminBaseHandler):
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_update_quota(self, ctxt, bucket_id, data):
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         logger.debug('bucket quota: %s update begin', bucket_id)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET, Action.QUOTA_UPDATE, bucket)
         self.task_submit(self._bucket_update_quota, ctxt, bucket, data,
-                         server, begin_action)
+                         rgw, begin_action)
         return bucket
 
-    def _bucket_update_quota(self, ctxt, bucket, data, server,
+    def _bucket_update_quota(self, ctxt, bucket, data, rgw,
                              begin_action):
         try:
             quota_max_size = data['quota_max_size']
@@ -190,7 +196,7 @@ class BucketHandler(AdminBaseHandler):
             name = bucket.name
             users = objects.ObjectUser.get_by_id(ctxt, bucket.owner_id)
             uid = users.uid
-            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
             admin, access_key, secret_access_key = self.get_admin_user(ctxt)
             rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
             rgw.rgw.set_bucket_quota(
@@ -214,7 +220,7 @@ class BucketHandler(AdminBaseHandler):
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def object_bucket_delete(self, ctxt, bucket_id, force):
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         if bucket.status not in [s_fields.BucketStatus.ACTIVE,
                                  s_fields.BucketStatus.ERROR]:
@@ -226,17 +232,17 @@ class BucketHandler(AdminBaseHandler):
         bucket.status = s_fields.BucketStatus.DELETING
         bucket.save()
         self.task_submit(self._object_bucket_delete, ctxt, bucket,
-                         server, force, begin_action)
+                         rgw, force, begin_action)
         logger.info('object_bucket_delete task has begin, bucket_name: %s',
                     bucket.name)
         return bucket
 
-    def _object_bucket_delete(self, ctxt, bucket, server,
+    def _object_bucket_delete(self, ctxt, bucket, rgw,
                               force, begin_action):
         try:
             name = bucket.name
             admin, access_key, secret_access_key = self.get_admin_user(ctxt)
-            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
             rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
             rgw.bucket_remove(name, force)
             bucket.destroy()
@@ -257,18 +263,21 @@ class BucketHandler(AdminBaseHandler):
     def bucket_get_all(self, ctxt, tab, marker=None, limit=None,
                        sort_keys=None, sort_dirs=None, filters=None,
                        offset=None, expected_attrs=None):
-        server = self._check_server_exist(ctxt)
         buckets = objects.ObjectBucketList.get_all(
                 ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
                 sort_dirs=sort_dirs, filters=filters, offset=offset,
                 expected_attrs=expected_attrs)
+        if not buckets:
+            return []
         if tab == "default":
-            buckets = self.get_quota_objects(ctxt, server, buckets)
+            rgw = self._check_active_rgw_exist(ctxt)
+            if rgw:
+                buckets = self.get_quota_objects(ctxt, rgw, buckets)
         return buckets
 
-    def get_quota_objects(self, ctxt, server, buckets):
+    def get_quota_objects(self, ctxt, rgw, buckets):
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
-        endpoint_url = str(server.ip_address) + ':' + str(server.port)
+        endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
         bucket_infos = rgw.rgw.get_bucket(stats=True)
         bucket_infos = {bucket_info['bucket']: bucket_info
@@ -298,7 +307,7 @@ class BucketHandler(AdminBaseHandler):
         return bucket
 
     def bucket_update_owner(self, ctxt, bucket_id, data):
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         uid, max_buckets = self._check_active_user_exist(ctxt, data)
         logger.debug('object_bucket owner: %s update begin',
                      bucket_id)
@@ -306,14 +315,14 @@ class BucketHandler(AdminBaseHandler):
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET, Action.OWNER_UPDATE, bucket)
         self.task_submit(self._bucket_update_owner, ctxt, bucket, data,
-                         server, uid, begin_action)
+                         rgw, uid, begin_action)
         return bucket
 
-    def _bucket_update_owner(self, ctxt, bucket, data, server,
+    def _bucket_update_owner(self, ctxt, bucket, data, rgw,
                              uid, begin_action):
         try:
             name = bucket.name
-            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
             admin, access_key, secret_access_key = self.get_admin_user(ctxt)
             rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
             rgw.bucket_owner_change(name, bucket['bucket_id'], uid)
@@ -334,24 +343,24 @@ class BucketHandler(AdminBaseHandler):
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_update_access_control(self, ctxt, bucket_id, data):
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         logger.debug('bucket access control: %s update begin', bucket_id)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET,
             Action.ACCESS_CONTROL_UPDATE, bucket)
         self.task_submit(self._bucket_update_access_control, ctxt, bucket,
-                         data, server, begin_action)
+                         data, rgw, begin_action)
         return bucket
 
-    def _bucket_update_access_control(self, ctxt, bucket, data, server,
+    def _bucket_update_access_control(self, ctxt, bucket, data, rgw,
                                       begin_action):
         users = objects.ObjectUser.get_by_id(ctxt, bucket.owner_id)
         uid = users.uid
         try:
             acls = self._add_acls(uid, data)
             name = bucket.name
-            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
             obj_user_id = bucket.owner_id
             access_key, secret_access_key = \
                 self._get_bucket_owner_access_keys(ctxt, obj_user_id)
@@ -376,7 +385,7 @@ class BucketHandler(AdminBaseHandler):
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_versioning_update(self, ctxt, bucket_id, data):
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         logger.debug('bucket versioning: %s update begin', bucket_id)
         action = Action.UPDATE_VERSIONING_OPEN if data['versioned'] \
             else Action.UPDATE_VERSIONING_SUSPENDED
@@ -386,15 +395,15 @@ class BucketHandler(AdminBaseHandler):
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET, action, bucket)
         self.task_submit(self._bucket_versioning_update, ctxt, bucket,
-                         data, server, begin_action)
+                         data, rgw, begin_action)
         return bucket
 
     def _bucket_versioning_update(self, ctxt, bucket, data,
-                                  server, begin_action):
+                                  rgw, begin_action):
         try:
             name = bucket.name
             version_status = "open" if data['versioned'] else "suspended"
-            endpoint_url = str(server.ip_address) + ':' + str(server.port)
+            endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
             obj_user_id = bucket.owner_id
             access_key, secret_access_key = \
                 self._get_bucket_owner_access_keys(ctxt, obj_user_id)
@@ -423,11 +432,11 @@ class BucketHandler(AdminBaseHandler):
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_get_capacity(self, ctxt, bucket_id):
-        server = self._check_server_exist(ctxt)
+        rgw = self._assert_rgw_active(ctxt)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         name = bucket.name
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
-        endpoint_url = str(server.ip_address) + ':' + str(server.port)
+        endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
         bucket_info = rgw.rgw.get_bucket(bucket=name, stats=True)
         capacity = rgw.get_bucket_capacity(bucket_info)
