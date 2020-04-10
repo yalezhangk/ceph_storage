@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-04-08 17:03+0800\n"
+"POT-Creation-Date: 2020-04-10 16:21+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1078,14 +1078,14 @@ msgstr "对象策略设置数据压缩失败：%s"
 msgid "object_user name %s already exists!"
 msgstr "对象用户：%s 已存在"
 
-msgid "radosgw not exists can not create user"
-msgstr "对象存储网关不存在无法创建用户"
-
 msgid "object_user email %s already exists!"
 msgstr "对象用户邮箱：%s 已存在"
 
 msgid "object_user access_key %s already exists!"
 msgstr "用户密钥对：%s 已存在"
+
+msgid "radosgw not exists can not create user"
+msgstr "对象存储网关不存在无法创建用户"
 
 msgid "%s is already in use by bucket"
 msgstr "%s 已被存储桶使用"
@@ -1300,6 +1300,9 @@ msgstr "超过一个存储池使用这个故障域规划，不允许修改故障
 msgid "No available undo"
 msgstr "无可用撤销"
 
+msgid "router_service name：%s not exist"
+msgstr "对象路由服务名称: %s 不存在"
+
 msgid "rack: {} is already exists!"
 msgstr "机架 {} 已存在"
 
@@ -1494,6 +1497,9 @@ msgstr "块存储卷克隆成功：%s"
 
 msgid "volume clone error: %s"
 msgstr "块存储卷克隆失败：%s"
+
+msgid "volume_access_path: {} isalready exists!"
+msgstr "卷访问路径：{} 已存在"
 
 msgid "has mounted gateway"
 msgstr "还存在已挂载的网关服务器"

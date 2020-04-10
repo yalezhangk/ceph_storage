@@ -4586,7 +4586,7 @@ def _radosgw_router_load_attr(ctxt, rgw_router, expected_attrs=None):
     if 'radosgws' in expected_attrs:
         rgw_router.radosgws = [rgw for rgw in rgw_router._radosgws
                                if not rgw.deleted]
-    if 'radosgws' in expected_attrs:
+    if 'router_services' in expected_attrs:
         rgw_router.router_services = [service for service in
                                       rgw_router._router_services
                                       if not service.deleted]
