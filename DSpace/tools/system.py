@@ -81,12 +81,16 @@ class System(ToolBase):
     def _interfaces_retrieve(self):
         cmd = ['ls', '/sys/class/net']
         rc, stdout, stderr = self.run_command(cmd)
-        if not rc:
-            stdout = stdout.strip()
-            nics = stdout.split('\n')
-            return nics
-        raise RunCommandError(cmd=cmd, return_code=rc,
-                              stdout=stdout, stderr=stderr)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        stdout = stdout.strip()
+        nics = list(filter(
+            lambda x: x != 'bonding_masters',
+            stdout.split('\n')
+        ))
+
+        return nics
 
     def _network_retrieve(self, device):
         cmd = ['ip', 'addr', 'show', 'primary', device]
