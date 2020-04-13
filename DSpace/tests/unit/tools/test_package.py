@@ -18,27 +18,30 @@ class TestServiceTool(test.TestCase):
         tool = YumPackage(Executor())
         tool.install(package_name)
         run_command.assert_called_once_with(
-            ['yum', 'install', '-y', package_name]
+            ['yum', 'install', '-y',
+             '--setopt=skip_missing_names_on_install=False', package_name]
         )
 
     @mock.patch.object(Executor, 'run_command')
     def test_package_install_multiple(self, run_command):
         run_command.return_value = (0, "", "")
-        package_names = ['a']
+        package_names = ['a', 'b']
         tool = YumPackage(Executor())
         tool.install(package_names)
-        cmd = ['yum', 'install', '-y']
+        cmd = ['yum', 'install', '-y',
+               '--setopt=skip_missing_names_on_install=False']
         cmd.extend(package_names)
         run_command.assert_called_once_with(cmd)
 
     @mock.patch.object(Executor, 'run_command')
     def test_package_install_enable_repos(self, run_command):
         run_command.return_value = (0, "", "")
-        package_names = ['a']
-        enable_repos = ['r1']
+        package_names = ['a', 'b']
+        enable_repos = ['r1', 'r2']
         tool = YumPackage(Executor())
         tool.install(package_names, enable_repos=enable_repos)
-        cmd = ['yum', 'install', '-y']
+        cmd = ['yum', 'install', '-y',
+               '--setopt=skip_missing_names_on_install=False']
         cmd.extend([
             '--disablerepo=*',
             '--enablerepo={}'.format(','.join(enable_repos))
