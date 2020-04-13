@@ -34,7 +34,8 @@ class PackageBase(ToolBase):
 class YumPackage(PackageBase):
     def install(self, names, **kwargs):
         logger.debug("Install Package: {}".format(names))
-        cmd = ["yum", "install", "-y"]
+        cmd = ["yum", "install", "-y",
+               "--setopt=skip_missing_names_on_install=False"]
         enable_repos = kwargs.pop("enable_repos", None)
         if enable_repos:
             if isinstance(enable_repos, six.string_types):
@@ -43,12 +44,12 @@ class YumPackage(PackageBase):
             cmd.append("--enablerepo={}".format(','.join(enable_repos)))
         if isinstance(names, six.string_types):
             names = [names]
-        for package in names:
-            rc, stdout, stderr = self.run_command(cmd + [package])
-            if rc:
-                raise RunCommandError(cmd=cmd, return_code=rc,
-                                      stdout=stdout, stderr=stderr)
-        return True
+        cmd.extend(names)
+        rc, stdout, stderr = self.run_command(cmd)
+        if not rc:
+            return True
+        raise RunCommandError(cmd=cmd, return_code=rc,
+                              stdout=stdout, stderr=stderr)
 
     def install_docker(self):
         docker_pkgs = ["docker-ce", "docker-ce-cli", "containerd.io"]
