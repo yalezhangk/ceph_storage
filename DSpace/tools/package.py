@@ -43,12 +43,12 @@ class YumPackage(PackageBase):
             cmd.append("--enablerepo={}".format(','.join(enable_repos)))
         if isinstance(names, six.string_types):
             names = [names]
-        cmd.extend(names)
-        rc, stdout, stderr = self.run_command(cmd)
-        if not rc:
-            return True
-        raise RunCommandError(cmd=cmd, return_code=rc,
-                              stdout=stdout, stderr=stderr)
+        for package in names:
+            rc, stdout, stderr = self.run_command(cmd + [package])
+            if rc:
+                raise RunCommandError(cmd=cmd, return_code=rc,
+                                      stdout=stdout, stderr=stderr)
+        return True
 
     def install_docker(self):
         docker_pkgs = ["docker-ce", "docker-ce-cli", "containerd.io"]
