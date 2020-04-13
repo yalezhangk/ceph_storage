@@ -75,6 +75,11 @@ class RadosgwMixin(AdminBaseHandler):
 
 class RadosgwHandler(RadosgwMixin):
 
+    def radosgw_get(self, ctxt, radosgw_id):
+        radosgw = objects.Radosgw.get_by_id(
+            ctxt, radosgw_id)
+        return radosgw
+
     def _check_radosgw_status(self, ctxt, radosgws):
         for rgw in radosgws:
             time_now = timeutils.utcnow(with_timezone=True)
