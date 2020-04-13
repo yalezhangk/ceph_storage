@@ -24,7 +24,7 @@ class TestServiceTool(test.TestCase):
     @mock.patch.object(Executor, 'run_command')
     def test_package_install_multiple(self, run_command):
         run_command.return_value = (0, "", "")
-        package_names = ['a', 'b']
+        package_names = ['a']
         tool = YumPackage(Executor())
         tool.install(package_names)
         cmd = ['yum', 'install', '-y']
@@ -34,8 +34,8 @@ class TestServiceTool(test.TestCase):
     @mock.patch.object(Executor, 'run_command')
     def test_package_install_enable_repos(self, run_command):
         run_command.return_value = (0, "", "")
-        package_names = ['a', 'b']
-        enable_repos = ['r1', 'r2']
+        package_names = ['a']
+        enable_repos = ['r1']
         tool = YumPackage(Executor())
         tool.install(package_names, enable_repos=enable_repos)
         cmd = ['yum', 'install', '-y']
