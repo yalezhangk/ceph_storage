@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-04-10 16:21+0800\n"
+"POT-Creation-Date: 2020-04-13 17:25+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1252,6 +1252,9 @@ msgstr "创建存储池成功：{}"
 msgid "create pool error: {}"
 msgstr "创建存储池失败：{}"
 
+msgid "pool_name only support Letters, numbers, underscores"
+msgstr "名称仅支持字母、数字、下划线"
+
 msgid "delete pool success: {}"
 msgstr "删除存储池成功：{}"
 
@@ -1284,6 +1287,9 @@ msgstr "移除的osd数量不能超过副本数"
 
 msgid "can't remove osds more than pool's available domain"
 msgstr "移除的osd数量不能超过副本数"
+
+msgid "not support modify name"
+msgstr "暂不支持改名"
 
 msgid "{} update policy success"
 msgstr "{} 修改数据安全策略成功"

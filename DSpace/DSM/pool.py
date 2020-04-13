@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 
 from oslo_log import log as logging
@@ -11,6 +12,7 @@ from DSpace.objects import fields as s_fields
 from DSpace.objects import utils as obj_utils
 from DSpace.objects.fields import AllActionType
 from DSpace.objects.fields import AllResourceType
+from DSpace.objects.fields import ConfigKey
 from DSpace.taskflows.ceph import CephTask
 from DSpace.taskflows.crush import CrushContentGen
 from DSpace.tools.prometheus import PrometheusTool
@@ -176,12 +178,26 @@ class PoolHandler(AdminBaseHandler):
             logger.error("pool display_name duplicate: %s", display_name)
             raise exception.PoolExists(pool=display_name)
 
+    def _check_pool_id_same_as_name(self, ctxt, display_name):
+        # ConfigKey.POOL_ID_SAME_AS_NAME is True, return True, else False
+        pool_id_same_as_name = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.POOL_ID_SAME_AS_NAME)
+        if pool_id_same_as_name:
+            if not re.match("^[A-Za-z0-9_-]*$", display_name):
+                raise exception.InvalidInput(_(
+                    'pool_name only support Letters, numbers, underscores'))
+        return pool_id_same_as_name or False
+
     def pool_create(self, ctxt, data):
         self.check_mon_host(ctxt)
         uid = str(uuid.uuid4())
         pool_display_name = data.get("name")
         self._check_pool_display_name(ctxt, pool_display_name)
-        pool_name = "pool-{}".format(uid.replace('-', ''))
+        is_display_name = self._check_pool_id_same_as_name(
+            ctxt, pool_display_name)
+
+        pool_name = (pool_display_name if is_display_name else
+                     "pool-{}".format(uid.replace('-', '')))
         osds = data.get('osds')
         pool = objects.Pool(
             ctxt,
@@ -443,6 +459,10 @@ class PoolHandler(AdminBaseHandler):
 
     def pool_update_display_name(self, ctxt, id, name):
         pool = objects.Pool.get_by_id(ctxt, id)
+        not_support_modify = self._check_pool_id_same_as_name(ctxt, name)
+        if not_support_modify:
+            # 不支持改名
+            raise exception.InvalidInput(_('not support modify name'))
         if pool.display_name != name:
             self._check_pool_display_name(ctxt, name)
         begin_action = self.begin_action(

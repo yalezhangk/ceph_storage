@@ -749,6 +749,7 @@ class ConfigKey(BaseStorEnum):
     OBJECT_STORE_INIT = 'object_store_init'
     OBJECT_META_POOL = 'object_meta_pool'
     ENABLE_OBJS_PAGE = 'enable_objects_page'
+    POOL_ID_SAME_AS_NAME = 'pool_id_same_as_name'
 
 
 class DSMStatus(BaseStorEnum):
