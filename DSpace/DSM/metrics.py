@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class RgwMetricsKey(object):
     USER_USED = 'rgw_user_kb_used'
+    USER_TOTAL = 'rgw_user_kb_total'
     USER_OBJ_NUM = 'rgw_user_object_num'
     USER_SENT_NUM = 'rgw_user_sent_bytes_total'  # 上传带宽
     USER_RECEIVED_NUM = 'rgw_user_received_bytes_total'  # 下载带宽
@@ -21,6 +22,7 @@ class RgwMetricsKey(object):
     USER_RECEIVED_OPS = 'rgw_user_received_ops_total'  # 下载请求
     USER_DELETE_OPS = 'rgw_user_delete_ops_total'  # 删除请求
     BUCKET_USED = 'rgw_bucket_kb_used'
+    BUCKET_TOTAL = 'rgw_bucket_kb_total'
     BUCKET_OBJ_NUM = 'rgw_bucket_object_num'
     BUCKET_SENT_NUM = 'rgw_bucket_sent_bytes_total'
     BUCKET_RECEIVED_NUM = 'rgw_bucket_received_bytes_total'
@@ -133,10 +135,13 @@ class MetricsHandler(AdminBaseHandler):
         uid = result['uid']
         size_used = result['size_used']
         obj_num = result['obj_num']
+        kb_size_total = result['kb_size_total']
         self.metrics[RgwMetricsKey.USER_USED].set(
             size_used, (cluster_id, uid))
         self.metrics[RgwMetricsKey.USER_OBJ_NUM].set(
             obj_num, (cluster_id, uid))
+        self.metrics[RgwMetricsKey.USER_TOTAL].set(
+            kb_size_total, (cluster_id, uid))
 
     def set_user_bandwidth_and_ops(self, ctxt, agent_client, access_key,
                                    secret_key, service, uid):
@@ -176,10 +181,13 @@ class MetricsHandler(AdminBaseHandler):
             owner = result['owner']
             bucket_kb_used = result['bucket_kb_used']
             bucket_object_num = result['bucket_object_num']
+            bucket_kb_total = result['bucket_kb_total']
             self.metrics[RgwMetricsKey.BUCKET_USED].set(
                 bucket_kb_used, (cluster_id, bucket, owner))
             self.metrics[RgwMetricsKey.BUCKET_OBJ_NUM].set(
                 bucket_object_num, (cluster_id, bucket, owner))
+            self.metrics[RgwMetricsKey.BUCKET_TOTAL].set(
+                bucket_kb_total, (cluster_id, bucket, owner))
 
     def set_buckets_bandwidth_and_ops(self, ctxt, agent_client, obj_buckets,
                                       access_key, secret_key, service):
@@ -358,4 +366,16 @@ class MetricsHandler(AdminBaseHandler):
             RgwMetricsKey.SYS_MEMORY,
             'Total Memory KB',
             ('cluster_id', 'hostname')
+        )
+        self.metrics[RgwMetricsKey.USER_TOTAL] = Metric(
+            'counter',
+            RgwMetricsKey.USER_TOTAL,
+            'Total Size KB, -1 is Unlimited',
+            ('cluster_id', 'uid')
+        )
+        self.metrics[RgwMetricsKey.BUCKET_TOTAL] = Metric(
+            'counter',
+            RgwMetricsKey.BUCKET_TOTAL,
+            'Total Size KB, -1 is Unlimited',
+            ('cluster_id', 'bucket', 'owner')
         )

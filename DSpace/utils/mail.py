@@ -62,4 +62,11 @@ alert_rule_translation = {
     "pool_usage": _("pool_usage"),
     "service_status": _("service_status"),
     "osd_status": _("osd_status"),
+    "disk_usage": _("disk_usage"),
+    "transmit_bandwidth_usage": _("transmit_bandwidth_usage"),
+    "receive_bandwidth_usage": _("receive_bandwidth_usage"),
+    "object_user_size_usage": _("object_user_size_usage"),
+    "object_bucket_size_usage": _("object_bucket_size_usage"),
+    "disk_online": _("disk_online"),
+    "disk_offline": _("disk_offline"),
 }

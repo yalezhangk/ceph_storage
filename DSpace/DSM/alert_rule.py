@@ -152,6 +152,10 @@ class AlertLogHelper(object):
             resu_data = self.collect_osd_log()
         elif self.resource_type == 'network_interface':
             resu_data = self.collect_network_interface_log()
+        elif self.resource_type == 'object_user':
+            resu_data = self.collect_object_user_log()
+        elif self.resource_type == 'object_bucket':
+            resu_data = self.collect_object_bucket_log()
         else:
             resu_data = None
         if resu_data:
@@ -217,6 +221,22 @@ class AlertLogHelper(object):
             logger.warning('network_name: %s not found', name)
             return None
         return network[0]
+
+    def is_exist_obj_user(self, uid):
+        obj_user = objects.ObjectUserList.get_all(
+            self.ctxt, filters={'uid': uid, 'cluster_id': self.cluster_id})
+        if not obj_user:
+            logger.warning('obj_user, uid: %s not found', uid)
+            return None
+        return obj_user[0]
+
+    def is_exist_obj_bucket(self, b_name):
+        obj_bucket = objects.ObjectBucketList.get_all(
+            self.ctxt, filters={'name': b_name, 'cluster_id': self.cluster_id})
+        if not obj_bucket:
+            logger.warning('obj_bucket, name: %s not found', b_name)
+            return None
+        return obj_bucket[0]
 
     def collect_cluster_log(self):
         resource_id = self.cluster_id
@@ -362,6 +382,44 @@ class AlertLogHelper(object):
             'resource_name': net_name,
             'alert_value': alert_value,
             'resource_obj': net
+        }
+
+    def collect_object_user_log(self):
+        uid = self.resu_metric.get('uid')
+        obj_user = self.is_exist_obj_user(uid)
+        if not obj_user:
+            return None
+        if self.rule_type == 'object_user_size_usage':
+            alert_value = _("obj_user: {}, size_usage is above {} (current "
+                            "value is: {})").format(uid,
+                                                    self.trigger_value,
+                                                    self.current_value)
+        else:
+            return None
+        return {
+            'resource_id': obj_user.id,
+            'resource_name': uid,
+            'alert_value': alert_value,
+            'resource_obj': obj_user
+        }
+
+    def collect_object_bucket_log(self):
+        bucket_name = self.resu_metric.get('bucket')
+        bucket = self.is_exist_obj_bucket(bucket_name)
+        if not bucket:
+            return None
+        if self.rule_type == 'object_bucket_size_usage':
+            alert_value = _("obj_bucket: {}, size_usage is above {} (current "
+                            "value is: {})").format(bucket_name,
+                                                    self.trigger_value,
+                                                    self.current_value)
+        else:
+            return None
+        return {
+            'resource_id': bucket.id,
+            'resource_name': bucket_name,
+            'alert_value': alert_value,
+            'resource_obj': bucket
         }
 
 
@@ -855,6 +913,28 @@ class AlertRuleInitMixin(object):
                 'data_source': 'prometheus',
                 'query_grammar':
                     "irate(node_network_receive_bytes_total{{}}[{avg_time}])"
+            },
+            {
+                'resource_type': 'object_user',
+                'type': 'object_user_size_usage',
+                'trigger_mode': 'gt',
+                'trigger_value': '0.8',
+                'level': 'WARN',
+                'trigger_period': '1440',
+                'data_source': 'prometheus',
+                'query_grammar':
+                    "ceph_rgw_user_kb_used/ceph_rgw_user_kb_total"
+            },
+            {
+                'resource_type': 'object_bucket',
+                'type': 'object_bucket_size_usage',
+                'trigger_mode': 'gt',
+                'trigger_value': '0.8',
+                'level': 'WARN',
+                'trigger_period': '1440',
+                'data_source': 'prometheus',
+                'query_grammar':
+                    "ceph_rgw_bucket_kb_used/ceph_rgw_bucket_kb_total"
             },
             {
                 'resource_type': 'disk',
