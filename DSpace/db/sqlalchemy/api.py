@@ -4654,8 +4654,7 @@ def radosgw_router_update(context, rgw_router_id, values):
 
 def _router_service_get_query(context, session=None):
     return model_query(
-        context, models.RouterService, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+        context, models.RouterService, session=session)
 
 
 def _router_service_get(context, router_service_id, session=None):
@@ -4744,8 +4743,7 @@ def router_service_update(context, router_service_id, values):
 
 def _object_policy_get_query(context, session=None):
     return model_query(
-        context, models.ObjectPolicy, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+        context, models.ObjectPolicy, session=session)
 
 
 def _object_policy_get(context, object_policy_id, session=None):
@@ -4855,8 +4853,7 @@ def object_policy_update(context, object_policy_id, values):
 
 def _object_user_get_query(context, session=None):
     return model_query(
-        context, models.ObjectUser, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+        context, models.ObjectUser, session=session)
 
 
 def _object_user_get(context, object_user_id, session=None):
@@ -4963,8 +4960,7 @@ def object_user_update(context, object_user_id, values):
 
 def _object_access_key_get_query(context, session=None):
     return model_query(
-        context, models.ObjectAccessKey, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+        context, models.ObjectAccessKey, session=session)
 
 
 def _object_access_key_get(context, object_access_key_id, session=None):
@@ -5070,8 +5066,7 @@ def object_access_key_update(context, object_access_key_id, values):
 
 def _object_bucket_get_query(context, session=None):
     return model_query(
-        context, models.ObjectBucket, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+        context, models.ObjectBucket, session=session)
 
 
 def _object_bucket_get(context, object_user_id, session=None):
@@ -5187,8 +5182,7 @@ def object_bucket_update(context, object_policy_id, values):
 
 def _object_lifecycle_get_query(context, session=None):
     return model_query(
-        context, models.ObjectLifecycle, session=session
-    ).filter_by(cluster_id=context.cluster_id)
+        context, models.ObjectLifecycle, session=session)
 
 
 def _object_lifecycle_get(context, object_lifecycle_id, session=None):

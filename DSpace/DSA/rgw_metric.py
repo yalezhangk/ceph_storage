@@ -21,10 +21,15 @@ class RgwMetricHandler(AgentBaseHandler):
         result = self.get_rgw_obj_user_capacity(ctxt, access_key, secret_key,
                                                 server, uid)
         size_used = result.get('size').get('used')
+        size_max = result.get('size').get('max')
+        if int(size_max) == 0:
+            # if quota is unlimited, return -1
+            size_max = -1
         obj_num = result.get('objects').get('used')
         return {'uid': uid,
                 'size_used': size_used,
-                'obj_num': obj_num
+                'obj_num': obj_num,
+                'kb_size_total': size_max
                 }
 
     def get_rgw_user_usage(self, ctxt, access_key, secret_key, server, uid):
@@ -61,6 +66,12 @@ class RgwMetricHandler(AgentBaseHandler):
         for data in results:
             bucket_data = {'bucket': data['bucket'], 'owner': data['owner']}
             usage = data['usage'].get('rgw.main', {})
+            bucket_quota = data['bucket_quota']
+            max_size_kb = bucket_quota['max_size_kb']
+            if int(max_size_kb) == 0:
+                # if quota is unlimited, return -1
+                max_size_kb = -1
+            bucket_data['bucket_kb_total'] = max_size_kb
             bucket_data['bucket_kb_used'] = usage.get('size_kb_actual', 0)
             bucket_data['bucket_object_num'] = usage.get('num_objects', 0)
             datas.append(bucket_data)

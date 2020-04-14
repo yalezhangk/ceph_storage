@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-04-13 17:25+0800\n"
+"POT-Creation-Date: 2020-04-14 13:58+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -606,6 +606,12 @@ msgid ""
 "hostname: {}, network_name: {}, receive bandwidth usage is above {} (current "
 "value is: {})"
 msgstr "{}: 网卡({})接收带宽使用率 > {}，当前值是{}"
+
+msgid "obj_user: {}, size_usage is above {} (current value is: {})"
+msgstr "对象用户{}: 容量使用率 > {}，当前值是{}"
+
+msgid "obj_bucket: {}, size_usage is above {} (current value is: {})"
+msgstr "存储桶{}: 容量使用率 > {}，当前值是{}"
 
 msgid "alert_rule upda param not exist"
 msgstr "告警规则要更新的字段参数不存在"
@@ -1742,6 +1748,27 @@ msgstr "服务状态异常"
 
 msgid "osd_status"
 msgstr "硬盘状态异常"
+
+msgid "disk_usage"
+msgstr "磁盘使用率超过阈值"
+
+msgid "transmit_bandwidth_usage"
+msgstr "发送带宽使用率超过阈值"
+
+msgid "receive_bandwidth_usage"
+msgstr "接受带宽使用率超过阈值"
+
+msgid "object_user_size_usage"
+msgstr "对象用户容量使用率超过阈值"
+
+msgid "object_bucket_size_usage"
+msgstr "存储桶容量使用率超过阈值"
+
+msgid "disk_online"
+msgstr "磁盘上线"
+
+msgid "disk_offline"
+msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
