@@ -637,7 +637,13 @@ class ResourceAction(object):
                 [AllActionType.OBJECT_STORE_INITIALIZE],
 
             AllResourceType.OBJECT_BUCKET:
-                [AllActionType.SET_LIFECYCLE],
+                [AllActionType.SET_LIFECYCLE, AllActionType.CREATE,
+                 AllActionType.UPDATE_VERSIONSING_SUSPENDED,
+                 AllActionType.UPDATE_VERSIONSING_OPEN,
+                 AllActionType.ACCESS_CONTROL_UPDATE,
+                 AllActionType.OWNER_UPDATE,
+                 AllActionType.QUOTA_UPDATE,
+                 AllActionType.DELETE],
 
             AllResourceType.OBJECT_LIFECYCLE:
                 [AllActionType.UPDATE_WORK_TIME],
