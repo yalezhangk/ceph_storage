@@ -56,7 +56,7 @@ class YumPackage(PackageBase):
         self.install(docker_pkgs)
 
     def install_rgw(self):
-        rgw_pkgs = ["ceph-radosgw"]
+        rgw_pkgs = ["ceph-radosgw", "sysstat"]
         self.install(rgw_pkgs)
 
     def uninstall(self, names):
@@ -153,7 +153,7 @@ class AptPackage(PackageBase):
         self.install(docker_pkgs)
 
     def install_rgw(self):
-        rgw_pkgs = ["radosgw"]
+        rgw_pkgs = ["radosgw", "sysstat"]
         self.install(rgw_pkgs)
 
     def uninstall(self, names):
