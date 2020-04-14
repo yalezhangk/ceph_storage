@@ -380,7 +380,7 @@ class ServiceHandler(AdminBaseHandler):
     def get_service_obj(self, ctxt, filters, name, status, node, role):
         service = objects.ServiceList.get_all(ctxt, filters=filters)
         if not service:
-            if role in ["base", "role_monitor"]:
+            if role in ["base", "role_monitor", "role_block_gateway"]:
                 return None
             service_db = objects.Service(
                 ctxt, name=name, status=status,
