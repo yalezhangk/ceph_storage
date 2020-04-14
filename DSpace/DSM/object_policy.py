@@ -131,6 +131,8 @@ class ObjectPolicyHandler(ObjectPolicyMixin):
             status = 'error'
         self.finish_action(begin_action, policy.id, policy.name, policy,
                            status, err_msg=err_msg)
+        policy = objects.ObjectPolicy.get_by_id(ctxt, policy.id,
+                                                joined_load=True)
         # send ws message
         self.send_websocket(ctxt, policy, op_status, msg)
 
