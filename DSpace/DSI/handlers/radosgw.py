@@ -165,6 +165,44 @@ class RadosgwListHandler(ClusterAPIHandler):
 
 @URLRegistry.register(r"/radosgws/([0-9]*)/")
 class RadosgwHandler(ClusterAPIHandler):
+
+    @gen.coroutine
+    def get(self, radosgw_id):
+        """ Radosgw Detail
+
+        ---
+        tags:
+        -  Radosgw
+        summary: Detail of the  Radosgw
+        description: Return detail infomation of  Radosgw by id
+        operationId: Radosgw.api.Radosgw_detail
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description:  Radosgw ID
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        radosgw = yield client.radosgw_get(
+            ctxt, radosgw_id)
+        self.write(objects.json_encode({"radosgw": radosgw}))
+
     @gen.coroutine
     def delete(self, rgw_id):
         """Delete radosgw
