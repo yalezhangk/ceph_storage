@@ -641,6 +641,17 @@ class ResourceAction(object):
 
             AllResourceType.OBJECT_LIFECYCLE:
                 [AllActionType.UPDATE_WORK_TIME],
+
+            AllResourceType.OBJECT_USER:
+                [AllActionType.CREATE, AllActionType.UPDATE,
+                 AllActionType.DELETE, AllActionType.UPDATE_EMAIL,
+                 AllResourceType.SET_OBJECT_USER_ENABLE,
+                 AllResourceType.SET_OBJECT_USER_DISABLE,
+                 AllResourceType.CREATE_KEY,
+                 AllResourceType.DELETE_KEY,
+                 AllResourceType.UPDATE_KEY,
+                 AllResourceType.UPDATE_OP_MASK,
+                 AllResourceType.UPDATE_USER_QUOTA]
         }
         return relation
 
