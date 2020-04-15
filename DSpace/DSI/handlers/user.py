@@ -89,12 +89,9 @@ class PermissionMixin(BaseAPIHandler):
         return [
             "cluster",
             "download",
-            "volume-client-groups",
-            "volume-access-paths",
             "caches",
             "osds",
             "alert-center",
-            "volumes",
             "event-center",
             "configs",
             "topology",
@@ -112,6 +109,13 @@ class PermissionMixin(BaseAPIHandler):
             "object-bucket",
             "object-policy",
             "object-storage-gateways",
+        ]
+
+    def block_stor_page(self):
+        return [
+            'volumes',
+            'volume-access-paths',
+            'volume-client-groups'
         ]
 
     def import_page(self):
@@ -172,9 +176,13 @@ class PermissionMixin(BaseAPIHandler):
             else:
                 pages = self.default_page()
             enable_objects_page = objects.sysconfig.sys_config_get(
-                ctxt, 'enable_objects_page')
+                ctxt, ConfigKey.ENABLE_OBJS_PAGE)
             if enable_objects_page:
                 pages.extend(self.objects_page())
+            enable_blocks_page = objects.sysconfig.sys_config_get(
+                ctxt, ConfigKey.ENABLE_BLOCKS_PAGE)
+            if enable_blocks_page:
+                pages.extend(self.block_stor_page())
             for p in pages:
                 self.add_page(permission, p)
         else:
