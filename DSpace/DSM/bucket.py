@@ -176,6 +176,10 @@ class BucketHandler(AdminBaseHandler):
             op_status = "CREATE_BUCKET_ERROR"
             self.finish_action(begin_action, bucket.id, name,
                                bucket, 'error', err_msg=err_msg)
+        bucket.policy = objects.ObjectPolicy.get_by_id(
+                ctxt, bucket.policy_id)
+        bucket.owner = objects.ObjectUser.get_by_id(
+                ctxt, bucket.owner_id)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_update_quota(self, ctxt, bucket_id, data):
