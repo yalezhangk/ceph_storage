@@ -638,8 +638,8 @@ class ResourceAction(object):
 
             AllResourceType.OBJECT_BUCKET:
                 [AllActionType.SET_LIFECYCLE, AllActionType.CREATE,
-                 AllActionType.UPDATE_VERSIONSING_SUSPENDED,
-                 AllActionType.UPDATE_VERSIONSING_OPEN,
+                 AllActionType.UPDATE_VERSIONING_SUSPENDED,
+                 AllActionType.UPDATE_VERSIONING_OPEN,
                  AllActionType.ACCESS_CONTROL_UPDATE,
                  AllActionType.OWNER_UPDATE,
                  AllActionType.QUOTA_UPDATE,
