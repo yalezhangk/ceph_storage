@@ -1,4 +1,5 @@
 from oslo_log import log as logging
+from oslo_utils import strutils
 
 from DSpace import exception
 from DSpace import objects
@@ -229,7 +230,9 @@ class ObjectUserHandler(ObjectUserMixin):
                            server=str(radosgw.ip_address) +
                            ":" + str(radosgw.port)
                            )
-        self.check_object_user_del(ctxt, rgw, uid=user.uid)
+        force_delete = strutils.bool_from_string(force_delete)
+        if not force_delete:
+            self.check_object_user_del(ctxt, rgw, uid=user.uid)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.OBJECT_USER,
             action=AllActionType.DELETE)
@@ -253,6 +256,10 @@ class ObjectUserHandler(ObjectUserMixin):
                 key = objects.ObjectAccessKey.get_by_id(ctxt, str(i))
                 key.destroy()
             user.destroy()
+            buckets = objects.ObjectBucketList.get_all(
+                ctxt, filters={'owner_id': user.id})
+            for bucket in buckets:
+                bucket.destroy()
             logger.info('object_user_delete success, name=%s', user_name)
             op_status = "DELETE_SUCCESS"
             msg = _("%s delete success") % user_name
