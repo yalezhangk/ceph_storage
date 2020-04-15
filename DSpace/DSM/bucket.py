@@ -209,7 +209,7 @@ class BucketHandler(AdminBaseHandler):
             bucket.quota_max_size = data['quota_max_size']
             bucket.quota_max_objects = data['quota_max_objects']
             bucket.save()
-            status = "SUCCESS"
+            status = "success"
             op_status = "UPDATE_BUCKET_QUOTA_SUCCESS"
             msg = _("bucket {} update quota success").format(name)
             err_msg = None
@@ -217,7 +217,7 @@ class BucketHandler(AdminBaseHandler):
             logger.error("update bucket quota error: %s", err)
             msg = _("bucket {} update quota error").format(name)
             err_msg = str(err)
-            status = "ERROR"
+            status = "error"
             op_status = "UPDATE_BUCKET_QUOTA_ERROR"
         self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
@@ -250,7 +250,7 @@ class BucketHandler(AdminBaseHandler):
             rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
             rgw.bucket_remove(name, force)
             bucket.destroy()
-            status = "SUCCESS"
+            status = "success"
             op_status = "DELETE_BUCKET_SUCCESS"
             msg = _("delete bucket {} success").format(name)
             err_msg = None
@@ -258,7 +258,7 @@ class BucketHandler(AdminBaseHandler):
             logger.error("delete bucket error: %s", err)
             msg = _("delete bucket {} error").format(name)
             err_msg = str(err)
-            status = "ERROR"
+            status = "error"
             op_status = "DELETE_BUCKET_ERROR"
         self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
@@ -332,7 +332,7 @@ class BucketHandler(AdminBaseHandler):
             rgw.bucket_owner_change(name, bucket['bucket_id'], uid)
             bucket.owner_id = data['owner_id']
             bucket.save()
-            status = "SUCCESS"
+            status = "success"
             op_status = "UPDATE_BUCKET_OWNER_SUCCESS"
             msg = _("bucket {} update owner success").format(name)
             err_msg = None
@@ -340,7 +340,7 @@ class BucketHandler(AdminBaseHandler):
             logger.error("bucket update owner error: %s", err)
             msg = _("bucket {} update owner error").format(name)
             err_msg = str(err)
-            status = "ERROR"
+            status = "error"
             op_status = "UPDATE_BUCKET_OWNER_ERROR"
         self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
@@ -374,13 +374,13 @@ class BucketHandler(AdminBaseHandler):
             bucket.auth_user_permission = data['auth_user_permission']
             bucket.all_user_permission = data['all_user_permission']
             bucket.save()
-            status = "SUCCESS"
+            status = "success"
             op_status = "UPDATE_BUCKET_ACCESS_CONTROL_SUCCESS"
             msg = _("bucket {} update access control success").format(name)
             err_msg = None
         except Exception as err:
             logger.error("bucket update access control error: %s", err)
-            status = "ERROR"
+            status = "error"
             op_status = "UPDATE_BUCKET_ACCESS_CONTROL_ERROR"
             msg = _("bucket {} update access control error").format(name)
             err_msg = str(err)
@@ -416,7 +416,7 @@ class BucketHandler(AdminBaseHandler):
             s3.bucket_versioning_set(name, enabled=data['versioned'])
             bucket.versioned = data['versioned']
             bucket.save()
-            status = "SUCCESS"
+            status = "success"
             op_status = "OPEN_BUCKET_VERSIONING_SUCCESS" if \
                 data['versioned'] else "SUSPENDED_BUCKET_VERSIONING_SUCCESS"
             msg = _("bucket {} {} versioning success").format(
@@ -425,7 +425,7 @@ class BucketHandler(AdminBaseHandler):
         except Exception as err:
             version_status = "open" if data['versioned'] else "suspended"
             logger.error("bucket update versioning error: %s", err)
-            status = "ERROR"
+            status = "error"
             op_status = "OPEN_BUCKET_VERSIONING_ERROR" if \
                 data['versioned'] else "SUSPENDED_BUCKET_VERSIONING_ERROR"
             msg = _("bucket {} {} versioning error").format(
