@@ -496,7 +496,8 @@ class AllActionType(BaseStorEnum):
            SET_LIFECYCLE, UPDATE_WORK_TIME, QUOTA_UPDATE, OWNER_UPDATE,
            CREATE_KEY, ACCESS_CONTROL_UPDATE, UPDATE_VERSIONING_OPEN,
            UPDATE_VERSIONING_SUSPENDED, DELETE_KEY, UPDATE_KEY, UPDATE_EMAIL,
-           UPDATE_OP_MASK, UPDATE_USER_QUOTA)
+           UPDATE_OP_MASK, UPDATE_USER_QUOTA, SET_OBJECT_USER_ENABLE,
+           SET_OBJECT_USER_DISABLE)
 
 
 class AllActionStatus(BaseStorEnum):
@@ -651,13 +652,13 @@ class ResourceAction(object):
             AllResourceType.OBJECT_USER:
                 [AllActionType.CREATE, AllActionType.UPDATE,
                  AllActionType.DELETE, AllActionType.UPDATE_EMAIL,
-                 AllResourceType.SET_OBJECT_USER_ENABLE,
-                 AllResourceType.SET_OBJECT_USER_DISABLE,
-                 AllResourceType.CREATE_KEY,
-                 AllResourceType.DELETE_KEY,
-                 AllResourceType.UPDATE_KEY,
-                 AllResourceType.UPDATE_OP_MASK,
-                 AllResourceType.UPDATE_USER_QUOTA]
+                 AllActionType.SET_OBJECT_USER_ENABLE,
+                 AllActionType.SET_OBJECT_USER_DISABLE,
+                 AllActionType.CREATE_KEY,
+                 AllActionType.DELETE_KEY,
+                 AllActionType.UPDATE_KEY,
+                 AllActionType.UPDATE_OP_MASK,
+                 AllActionType.UPDATE_USER_QUOTA]
         }
         return relation
 

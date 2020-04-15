@@ -329,7 +329,7 @@ class ObjectUserHandler(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        force_delete = self.get_paginated_args()
+        force_delete = self.get_query_argument('force_delete')
         object_user = yield client.object_user_delete(
             ctxt, object_user_id, force_delete)
         self.write(objects.json_encode({
