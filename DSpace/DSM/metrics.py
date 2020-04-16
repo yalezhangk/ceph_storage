@@ -7,6 +7,7 @@ from DSpace.common.config import CONF
 from DSpace.context import get_context
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.exception import RPCConnectError
+from DSpace.objects.fields import RouterServiceStatus
 from DSpace.utils.metrics import Metric
 
 logger = logging.getLogger(__name__)
@@ -108,7 +109,8 @@ class MetricsHandler(AdminBaseHandler):
                     ctxt, filters={'node_id': rgw_node.id})
                 self.set_rgw_gateway_metrics_values(ctxt, client, rgw_gateways)
             # 3. set rgw_router metrics
-            router_services = objects.RouterServiceList.get_all(ctxt)
+            router_services = objects.RouterServiceList.get_all(
+                ctxt, filters={'status': RouterServiceStatus.ACTIVE})
             node_ids = set([r_ser.node_id for r_ser in router_services])
             for node_id in node_ids:
                 router_node = objects.Node.get_by_id(ctxt, node_id)
