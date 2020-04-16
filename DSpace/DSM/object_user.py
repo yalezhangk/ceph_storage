@@ -1,5 +1,4 @@
 from oslo_log import log as logging
-from oslo_utils import strutils
 
 from DSpace import exception
 from DSpace import objects
@@ -76,10 +75,10 @@ class ObjectUserHandler(ObjectUserMixin):
     def object_user_get_all(self, ctxt, marker=None, limit=None,
                             sort_keys=None, sort_dirs=None, filters=None,
                             offset=None, expected_attrs=None, tab=None):
+        filters['is_admin'] = objects.ObjectUser.Not('1')
         users = objects.ObjectUserList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
-            sort_dirs=sort_dirs, filters={
-                "uid": objects.ObjectUser.Not('t2stor')}, offset=offset,
+            sort_dirs=sort_dirs, filters=filters, offset=offset,
             expected_attrs=expected_attrs)
         if tab == "metrics":
             for user in users:
@@ -89,6 +88,7 @@ class ObjectUserHandler(ObjectUserMixin):
         return users
 
     def object_user_get_count(self, ctxt, filters=None):
+        filters['is_admin'] = objects.ObjectUser.Not('1')
         return objects.ObjectUserList.get_count(ctxt, filters=filters)
 
     def object_user_create(self, ctxt, data):
@@ -96,6 +96,7 @@ class ObjectUserHandler(ObjectUserMixin):
             ctxt, resource_type=AllResourceType.OBJECT_USER,
             action=AllActionType.CREATE)
         user_name = data.get('uid')
+        user_id = data.get('id')
         logger.debug('object_user begin crate, name:%s' % user_name)
         self.check_object_user_name_exist(ctxt, user_name)
         self.check_object_user_email_exist(ctxt, data.get('email'))
@@ -125,14 +126,15 @@ class ObjectUserHandler(ObjectUserMixin):
             is_admin=0)
         object_user.create()
         self.task_submit(self._object_user_create, ctxt, user_name, data,
-                         begin_action, object_user, radosgw, admin_access_key)
+                         begin_action, object_user, radosgw,
+                         admin_access_key, user_id)
         logger.info('object_user_create task has begin, user_name: %s',
                     user_name)
         return object_user
 
     def _object_user_create(self, ctxt, user_name, data,
                             begin_action, object_user,
-                            radosgw, admin_access_key):
+                            radosgw, admin_access_key, user_id):
         if (data['user_quota_max_size'] == 0 and
                 data['user_quota_max_objects'] == 0):
             user_qutoa_enabled = False
@@ -216,8 +218,8 @@ class ObjectUserHandler(ObjectUserMixin):
             op_status = 'CREATE_ERROR'
         object_user.status = status
         object_user.save()
-        self.finish_action(begin_action, user_name,
-                           'success', err_msg=None)
+        self.finish_action(begin_action, user_id, user_name,
+                           status, err_msg=None)
         self.send_websocket(ctxt, object_user, op_status, msg)
 
     def object_user_delete(self, ctxt, object_user_id, force_delete):
@@ -230,7 +232,6 @@ class ObjectUserHandler(ObjectUserMixin):
                            server=str(radosgw.ip_address) +
                            ":" + str(radosgw.port)
                            )
-        force_delete = strutils.bool_from_string(force_delete)
         if not force_delete:
             self.check_object_user_del(ctxt, rgw, uid=user.uid)
         begin_action = self.begin_action(
@@ -275,7 +276,7 @@ class ObjectUserHandler(ObjectUserMixin):
             status = 'error'
         user.save()
         self.send_websocket(ctxt, user, op_status, msg)
-        self.finish_action(begin_action, user.id, user.name, user,
+        self.finish_action(begin_action, user.id, user.uid,
                            status, err_msg=err_msg)
 
     def object_user_suspended_update(self, ctxt, object_user_id, data):
@@ -331,6 +332,12 @@ class ObjectUserHandler(ObjectUserMixin):
         object_user = objects.ObjectUser.get_by_id(
             ctxt, object_user_id)
         capacity = rgw.get_user_capacity(uid=object_user.uid)
+        if capacity['size']['max'] == -1:
+            capacity['size']['max'] = 0
+        if capacity['objects']['max'] == -1:
+            capacity['objects']['max'] = 0
+        if capacity['buckets']['max'] == -1:
+            capacity['buckets']['max'] = 0
         return capacity
 
     def object_user_key_create(self, ctxt, data, object_user_id):
@@ -368,7 +375,7 @@ class ObjectUserHandler(ObjectUserMixin):
             msg = _("%s create key error") % user.uid
             err_msg = str(e)
         self.send_websocket(ctxt, user, op_status, msg)
-        self.finish_action(begin_action, user.id, user.uid, user,
+        self.finish_action(begin_action, user.id, user.uid, op_status,
                            err_msg=err_msg)
         return user
 
@@ -409,6 +416,7 @@ class ObjectUserHandler(ObjectUserMixin):
         return key
 
     def object_user_key_update(self, ctxt, object_user_key_id, data):
+        self.check_access_key_exist(ctxt, access_key=data['access_key'])
         key = objects.ObjectAccessKey.get_by_id(
             ctxt, object_user_key_id)
         user = objects.ObjectUser.get_by_id(

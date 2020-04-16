@@ -2,6 +2,7 @@ import logging
 
 from jsonschema import draft7_format_checker
 from jsonschema import validate
+from oslo_utils import strutils
 from tornado import gen
 from tornado.escape import json_decode
 
@@ -181,7 +182,7 @@ class ObjectUserListHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         page_args = self.get_paginated_args()
         expected_attrs = ['access_keys']
-        fuzzy_filters = ['name']
+        fuzzy_filters = ['uid']
         filters = self.get_support_filters(fuzzy_filters=fuzzy_filters)
         tab = self.get_query_argument('tab', default=None)
         object_users = yield client.object_user_get_all(
@@ -330,6 +331,7 @@ class ObjectUserHandler(ClusterAPIHandler):
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
         force_delete = self.get_query_argument('force_delete')
+        force_delete = strutils.bool_from_string(force_delete)
         object_user = yield client.object_user_delete(
             ctxt, object_user_id, force_delete)
         self.write(objects.json_encode({
