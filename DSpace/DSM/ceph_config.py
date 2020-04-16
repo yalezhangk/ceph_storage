@@ -38,11 +38,16 @@ class CephConfigHandler(AdminBaseHandler):
         return objects.CephConfigList.get_count(
             ctxt, filters=filters)
 
-    def _get_rgw_node(self, ctxt):
-        all_rgws = objects.RadosgwList.get_all(ctxt)
-        ids = set([rgw.node_id for rgw in all_rgws])
-        rgw_nodes = [objects.Node.get_by_id(ctxt, node_id) for node_id in ids]
-        return rgw_nodes
+    def _get_rgw_node(self, ctxt, rgw_name):
+        if rgw_name == "*":
+            all_rgws = objects.RadosgwList.get_all(ctxt)
+            ids = set([rgw.node_id for rgw in all_rgws])
+            nodes = [objects.Node.get_by_id(ctxt, node_id) for node_id in ids]
+            return nodes
+        else:
+            rgw = objects.RadosgwList.get_all(
+                ctxt, filters={'name': rgw_name}, expected_attrs=['node'])[0]
+            return [rgw.node]
 
     def _get_mon_node(self, ctxt):
         mon_nodes = objects.NodeList.get_all(
@@ -88,7 +93,7 @@ class CephConfigHandler(AdminBaseHandler):
             elif 'mgr' in conf.get('owner'):
                 nodes += list(self._get_mon_node(ctxt))
             elif 'rgw' in conf.get('owner'):
-                nodes += list(self._get_rgw_node(ctxt))
+                nodes += list(self._get_rgw_node(ctxt, rgw_name='*'))
 
             if 'osd' in conf.get('owner'):
                 nodes += list(self._get_osd_node(ctxt, osd_name='*'))
@@ -120,6 +125,9 @@ class CephConfigHandler(AdminBaseHandler):
             nodes = self._get_mon_node(ctxt)
         elif group == 'mgr':
             nodes = self._get_mon_node(ctxt)
+        elif group.startswith('gateway'):
+            nodes = self._get_rgw_node(ctxt, rgw_name=group)
+            values['group'] = 'client.rgw.%s' % group
         else:
             logger.error("group %s not support now", group)
             return []
@@ -215,6 +223,8 @@ class CephConfigHandler(AdminBaseHandler):
             raise exc.InvalidInput(_("conf %s not in %s group") % (key, 'mds'))
         elif group == 'mgr' and 'mgr' not in conf.get('owner'):
             raise exc.InvalidInput(_("conf %s not in %s group") % (key, 'mgr'))
+        elif group == 'rgw' and 'rgw' not in conf.get('owner'):
+            raise exc.InvalidInput(_("conf %s not in %s group") % (key, 'rgw'))
 
     def ceph_config_set(self, ctxt, values):
         self._config_check(values['group'], values['key'])
@@ -264,7 +274,7 @@ class CephConfigHandler(AdminBaseHandler):
                                       'key': key,
                                       'value': value}]
             if 'rgw' in default_conf.get('owner'):
-                nodes += list(self._get_rgw_node(ctxt))
+                nodes += list(self._get_rgw_node(ctxt, rgw_name='*'))
                 if not default_conf.get('need_restart'):
                     temp_configs += [{'service': 'rgw.*',
                                       'key': key,
@@ -293,6 +303,9 @@ class CephConfigHandler(AdminBaseHandler):
                 temp_configs = [{'service': 'mon.*',
                                  'key': key,
                                  'value': value}]
+        elif group.startswith('client.rgw'):
+            rgw_name = group.replace("client.rgw.", '')
+            nodes = self._get_rgw_node(ctxt, rgw_name=rgw_name)
         else:
             logger.error("not support group %s", group)
             return []
