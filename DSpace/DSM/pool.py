@@ -273,17 +273,15 @@ class PoolHandler(AdminBaseHandler):
         if pool_id == pool.id:
             raise exception.Invalid(_("Pool %s is used by object store!")
                                     % pool.display_name)
+        if pool.policies:
+            raise exception.Invalid(_("Pool %s is used by object_policy!")
+                                    % pool.display_name)
 
     def pool_delete(self, ctxt, pool_id):
         self.check_mon_host(ctxt)
         pool = objects.Pool.get_by_id(
-            ctxt, pool_id, expected_attrs=['crush_rule', 'osds'])
+            ctxt, pool_id, expected_attrs=['crush_rule', 'osds', 'policies'])
         self._check_pool_status(ctxt, pool)
-        if pool['role'] == s_fields.PoolRole.INDEX:
-            rgw_db = objects.RadosgwList.get_all(ctxt)
-            if rgw_db:
-                raise exception.InvalidInput(
-                    _("Please remove the Object storage gateway first"))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.DELETE, before_obj=pool)

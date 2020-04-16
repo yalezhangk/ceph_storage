@@ -37,10 +37,11 @@ class Pool(base.StorPersistentObject, base.StorObject,
         'crush_rule': fields.ObjectField("CrushRule", nullable=True),
         'volumes': fields.ListOfObjectsField('Volume', nullable=True),
         'metrics': s_fields.DictOfNullableField(nullable=True),
+        'policies': fields.ListOfObjectsField('ObjectPolicy', nullable=True)
     }
 
     OPTIONAL_FIELDS = ('osds', 'crush_rule', 'volumes', 'metrics',
-                       'failure_domain_type')
+                       'failure_domain_type', 'policies')
 
     def need_metrics(self):
         return self.status not in [s_fields.PoolStatus.CREATING,
@@ -89,6 +90,11 @@ class Pool(base.StorPersistentObject, base.StorObject,
             obj.volumes = [objects.Volume._from_db_object(
                 context, objects.Volume(context), volume
             ) for volume in volumes]
+        if 'policies' in expected_attrs:
+            policies = db_obj.get('policies', [])
+            obj.policies = [objects.ObjectPolicy._from_db_object(
+                context, objects.ObjectPolicy(context), policy
+            ) for policy in policies]
         return super(Pool, cls)._from_db_object(context, obj, db_obj)
 
 
