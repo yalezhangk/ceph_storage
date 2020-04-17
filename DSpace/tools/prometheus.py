@@ -999,3 +999,11 @@ class PrometheusTool(object):
                     "service_name": service_name,
                     "cluster_id": rgw_router.cluster_id})
             metrics.update({m: value})
+
+    def object_bucket_get_bandwidth_total(self, object_bucket, metrics):
+        for m in [MeK.BUCKET_SENT_NUM, MeK.BUCKET_RECEIVED_NUM]:
+            metric = "ceph_" + m
+            value = self.prometheus_get_metric(
+                metric, filter={"bucket": object_bucket.name,
+                                "cluster_id": object_bucket.cluster_id})
+            metrics.update({m: value})

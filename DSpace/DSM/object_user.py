@@ -85,6 +85,9 @@ class ObjectUserHandler(ObjectUserMixin):
                 capactity = self.object_user_get_capacity(
                     ctxt, object_user_id=user['id'])
                 user.metrics = capactity
+        elif tab == 'io':
+            for user in users:
+                user.metrics = self.object_user_metrics_get(ctxt, user.id)
         return users
 
     def object_user_get_count(self, ctxt, filters=None):
