@@ -1382,6 +1382,15 @@ def _pool_load_attr(ctxt, pool, expected_attrs=None):
         filters = {"pool_id": pool.id}
         volumes = volume_get_all(ctxt, filters=filters)
         pool.volumes = [volume for volume in volumes if not volume.deleted]
+    if 'policies' in expected_attrs:
+        if pool.role == 'index':
+            pool.policies = [policy for policy in pool._index_policies if
+                             not policy.deleted]
+        elif pool.role == 'data':
+            pool.policies = [policy for policy in pool._data_policies if
+                             not policy.deleted]
+        else:
+            pool.policies = []
 
 
 @require_context
