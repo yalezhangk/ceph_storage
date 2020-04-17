@@ -220,7 +220,7 @@ class ObjectLifecycleHandler(ObjectLifecycleMixin):
 
     def _object_lifecycle_update_execute_time(self, ctxt, cephconf, work_time,
                                               old_time, begin_action):
-        rgw_nodes = self._get_rgw_node(ctxt)
+        rgw_nodes = self._get_rgw_node(ctxt, rgw_name='*')
         active_rgw = objects.RadosgwList.get_all(
             ctxt, filters={'status': s_fields.RadosgwStatus.ACTIVE})
         default_time, *others = self.object_lifecycle_get_default_work_time(
