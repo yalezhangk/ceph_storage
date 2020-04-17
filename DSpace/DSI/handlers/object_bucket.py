@@ -130,7 +130,7 @@ class BucketListHandler(ClusterAPIHandler):
         tab = self.get_query_argument('tab', default=None)
         object_user_id = self.get_query_argument(
                 'object_user_id', default=None)
-        if tab not in [None, "default", "performance"]:
+        if tab not in [None, "default", "io"]:
             raise InvalidInput(_("this tab is not supported"))
         if object_user_id is None:
             pass

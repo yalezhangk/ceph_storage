@@ -225,3 +225,10 @@ class PrometheusHandler(AdminBaseHandler):
             raise InvalidInput(_('router_service name：%s not exist') %
                                router_service)
         return name
+
+    def object_bucket_bandwidth_total(self, ctxt, bucket_id):
+        object_bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+        prometheus = PrometheusTool(ctxt)
+        metrics = {}
+        prometheus.object_bucket_get_bandwidth_total(object_bucket, metrics)
+        return metrics

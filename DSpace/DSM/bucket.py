@@ -277,6 +277,13 @@ class BucketHandler(AdminBaseHandler):
             rgw = self._check_active_rgw_exist(ctxt)
             if rgw:
                 buckets = self.get_quota_objects(ctxt, rgw, buckets)
+            for bucket in buckets:
+                bucket.metrics = self.object_bucket_bandwidth_total(
+                    ctxt, bucket.id)
+        elif tab == 'io':
+            for bucket in buckets:
+                bucket.metrics = self.object_bucket_metrics_get(
+                    ctxt, bucket.id)
         return buckets
 
     def get_quota_objects(self, ctxt, rgw, buckets):
