@@ -287,36 +287,32 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                 raise e
 
     def volume_access_path_create_mapping(self, ctxt, id, mapping_list):
+        # 1. check
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_CREATE_MAPPING,
-            before_obj=access_path
-        )
         volume_gateways = access_path.volume_gateways
         if not volume_gateways:
             logger.error("no volume gateway, can't create volume mapping")
             raise exception.AccessPathNoGateway(access_path=access_path.name)
         gateway_node_ids = [i.node_id for i in volume_gateways]
+        new_volume_mappings = []
+        client_group_map_volumes = {}
         for mapping in mapping_list:
             client_group_id = mapping.get('client_group_id')
             client_group = objects.VolumeClientGroup.get_by_id(
-                ctxt, client_group_id, expected_attrs=["volume_clients"])
-            if not client_group:
-                logger.error("volume client group not found, id: %s",
-                             client_group_id)
-                raise exception.VolumeClientGroupNotFound(
-                    client_group_id=client_group_id)
-            volumes = []
+                ctxt, client_group_id)
+            available_volumes = []
             volume_ids = mapping.get('volume_ids')
             for volume_id in volume_ids:
                 volume = objects.Volume.get_by_id(
-                    ctxt, volume_id, expected_attrs=["pool"])
-                if not volume:
-                    logger.error("volume not found, id: %s", volume_id)
-                    raise exception.VolumeNotFound(volume_id=volume_id)
-                volumes.append(volume)
+                    ctxt, volume_id,
+                    expected_attrs=["pool", "volume_access_path"])
+                if volume.volume_access_path:
+                    # 卷不能属于多个访问路径
+                    raise exception.InvalidInput(
+                        reason=_(
+                            'The volume {} has related access_path').format(
+                            volume.display_name))
                 volume_mappings = objects.VolumeMappingList.get_all(
                     ctxt, filters={"volume_id": volume_id,
                                    "volume_access_path_id": access_path.id,
@@ -328,12 +324,24 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                         access_path=access_path.name,
                         client_group=client_group.name,
                         volume=volume.volume_name)
+                available_volumes.append(volume)
                 volume_mapping = objects.VolumeMapping(
                     ctxt, volume_id=volume_id,
                     volume_access_path_id=access_path.id,
                     volume_client_group_id=client_group_id,
                     cluster_id=ctxt.cluster_id)
-                volume_mapping.create()
+                new_volume_mappings.append(volume_mapping)
+            client_group_map_volumes[client_group_id] = available_volumes
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_CREATE_MAPPING,
+            before_obj=access_path)
+        # 2. db create
+        for new_volume_mapping in new_volume_mappings:
+            new_volume_mapping.create()
+        for client_group_id, volumes in client_group_map_volumes.items():
+            client_group = objects.VolumeClientGroup.get_by_id(
+                ctxt, client_group_id, expected_attrs=["volume_clients"])
             volume_clients = client_group.volume_clients
             for volume_client in volume_clients:
                 self._create_mapping(ctxt, gateway_node_ids, access_path,
@@ -427,12 +435,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         client_group_id = data.get("client_group_id")
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_ADD_VOLUME,
-            before_obj=access_path
-        )
         volume_gateways = access_path.volume_gateways
+        # 1. check
         if not volume_gateways:
             logger.error("access path %s no volume gateways", access_path.name)
             raise exception.AccessPathNoGateway(access_path=access_path.name)
@@ -445,10 +449,16 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             ctxt, filters={"volume_access_path_id": access_path.id,
                            "volume_client_group_id": client_group_id})
         cg_vol_ids = [i.volume_id for i in volume_mappings]
-        volumes = []
+        available_volumes = []
+        new_volume_mapping = []
         for volume_id in volume_ids:
             volume = objects.Volume.get_by_id(
-                ctxt, volume_id, expected_attrs=["pool"])
+                ctxt, volume_id, expected_attrs=["pool", "volume_access_path"])
+            if volume.volume_access_path:
+                # 卷不能属于多个访问路径
+                raise exception.InvalidInput(
+                    reason=_('The volume {} has related access_path').format(
+                        volume.display_name))
             if volume_id in cg_vol_ids:
                 logger.error("volume mapping %s<-->%s already has volume %s",
                              access_path.name, client_group.name, volume.name)
@@ -456,16 +466,24 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                     access_path=access_path.name,
                     client_group=client_group.name,
                     volume=volume.name)
-            volumes.append(volume)
+            available_volumes.append(volume)
             volume_mapping = objects.VolumeMapping(
                 ctxt, volume_id=volume_id,
-                volume_access_path_id=access_path.id,
+                volume_access_path_id=id,
                 volume_client_group_id=client_group_id,
                 cluster_id=ctxt.cluster_id)
-            volume_mapping.create()
+            new_volume_mapping.append(volume_mapping)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_ADD_VOLUME,
+            before_obj=access_path
+        )
+        # 2. create db relations
+        for new_mapping in new_volume_mapping:
+            new_mapping.create()
         for volume_client in volume_clients:
             self._add_volume(ctxt, gateway_node_ids, access_path,
-                             volume_client, volumes)
+                             volume_client, available_volumes)
         self.finish_action(begin_action, resource_id=access_path.id,
                            resource_name=access_path.name,
                            after_obj=access_path)
