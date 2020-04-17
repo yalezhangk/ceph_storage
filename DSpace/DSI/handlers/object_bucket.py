@@ -126,7 +126,7 @@ class BucketListHandler(ClusterAPIHandler):
         page_args = self.get_paginated_args()
         expected_attrs = ['policy', 'owner', 'lifecycles']
         fuzzy_filters = ['name']
-        filters = self.get_support_filters(fuzzy_filters)
+        filters = self.get_support_filters(fuzzy_filters=fuzzy_filters)
         tab = self.get_query_argument('tab', default=None)
         object_user_id = self.get_query_argument(
                 'object_user_id', default=None)
