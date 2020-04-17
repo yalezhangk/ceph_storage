@@ -93,11 +93,13 @@ class MetricsHandler(AdminBaseHandler):
                 service = str(rgw.ip_address) + ':' + str(rgw.port)
                 self.check_agent_available(ctxt, rgw_node)
                 client = self.agent_manager.get_client(rgw_node.id)
-                obj_users = objects.ObjectUserList.get_all(ctxt)
+                obj_users = objects.ObjectUserList.get_all(
+                    ctxt, filters={'status': 'active'})
                 admin, access_key, secret_key = self.get_admin_user(ctxt)
                 self.set_rgw_users_metrics_values(
                     ctxt, client, obj_users, access_key, secret_key, service)
-                obj_buckets = objects.ObjectBucketList.get_all(ctxt)
+                obj_buckets = objects.ObjectBucketList.get_all(
+                    ctxt, filters={'status': 'active'})
                 self.set_rgw_buckets_metrics_values(
                     ctxt, client, obj_buckets, access_key, secret_key, service)
             # 2. set rgw_gateway metrics
@@ -106,7 +108,7 @@ class MetricsHandler(AdminBaseHandler):
                 self.check_agent_available(ctxt, rgw_node)
                 client = self.agent_manager.get_client(rgw_node.id)
                 rgw_gateways = objects.RadosgwList.get_all(
-                    ctxt, filters={'node_id': rgw_node.id})
+                    ctxt, filters={'node_id': rgw_node.id, 'status': 'active'})
                 self.set_rgw_gateway_metrics_values(ctxt, client, rgw_gateways)
             # 3. set rgw_router metrics
             router_services = objects.RouterServiceList.get_all(
