@@ -103,7 +103,7 @@ class MetricsHandler(AdminBaseHandler):
                 self.set_rgw_buckets_metrics_values(
                     ctxt, client, obj_buckets, access_key, secret_key, service)
             # 2. set rgw_gateway metrics
-            rgw_nodes = self._get_rgw_node(ctxt)
+            rgw_nodes = self._get_rgw_node(ctxt, rgw_name='*')
             for rgw_node in rgw_nodes:
                 self.check_agent_available(ctxt, rgw_node)
                 client = self.agent_manager.get_client(rgw_node.id)
