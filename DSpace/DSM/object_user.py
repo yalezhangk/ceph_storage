@@ -148,6 +148,14 @@ class ObjectUserHandler(ObjectUserMixin):
             bucket_qutoa_enabled = False
         else:
             bucket_qutoa_enabled = True
+        if data['bucket_quota_max_size'] == 0:
+            data['bucket_quota_max_size'] = -1
+        if data['bucket_quota_max_objects'] == 0:
+            data['bucket_quota_max_objects'] = -1
+        if data['user_quota_max_size'] == 0:
+            data['user_quota_max_size'] = -1
+        if data['user_quota_max_objects'] == 0:
+            data['user_quota_max_objects'] = -1
         try:
             node = self.get_first_mon_node(ctxt)
             client = self.agent_manager.get_client(node_id=node.id)
@@ -172,7 +180,6 @@ class ObjectUserHandler(ObjectUserMixin):
                                server=str(radosgw.ip_address) +
                                ":"+str(radosgw.port)
                                )
-
             rgw.set_user_quota(
                 uid=user_name,
                 user_qutoa_enabled=user_qutoa_enabled,
@@ -222,7 +229,7 @@ class ObjectUserHandler(ObjectUserMixin):
         object_user.status = status
         object_user.save()
         self.finish_action(begin_action, user_id, user_name,
-                           status, err_msg=None)
+                           status=status, err_msg=None)
         self.send_websocket(ctxt, object_user, op_status, msg)
 
     def object_user_delete(self, ctxt, object_user_id, force_delete):
@@ -280,7 +287,7 @@ class ObjectUserHandler(ObjectUserMixin):
         user.save()
         self.send_websocket(ctxt, user, op_status, msg)
         self.finish_action(begin_action, user.id, user.uid,
-                           status, err_msg=err_msg)
+                           status=status, err_msg=err_msg)
 
     def object_user_suspended_update(self, ctxt, object_user_id, data):
         logger.info('object_user: %s begin update supended: %s',
@@ -534,16 +541,8 @@ class ObjectUserHandler(ObjectUserMixin):
                            server=str(radosgw.ip_address) +
                            ":" + str(radosgw.port)
                            )
-        if (data['user_quota_max_size'] == 0 and
-                data['user_quota_max_objects'] == 0):
-            user_qutoa_enabled = False
-        else:
-            user_qutoa_enabled = True
-        if (data['bucket_quota_max_size'] == 0 and
-                data['bucket_quota_max_objects'] == 0):
-            bucket_qutoa_enabled = False
-        else:
-            bucket_qutoa_enabled = True
+        user_qutoa_enabled = True
+        bucket_qutoa_enabled = True
         data['bucket_quota_max_size'] = \
             data['bucket_quota_max_size'] * 1024 ** 2
         data['bucket_quota_max_objects'] = \
@@ -552,6 +551,14 @@ class ObjectUserHandler(ObjectUserMixin):
             data['user_quota_max_size'] * 1024 ** 2
         data['user_quota_max_objects'] = \
             data['user_quota_max_objects'] * 1000
+        if data['bucket_quota_max_size'] == 0:
+            data['bucket_quota_max_size'] = -1
+        if data['bucket_quota_max_objects'] == 0:
+            data['bucket_quota_max_objects'] = -1
+        if data['user_quota_max_size'] == 0:
+            data['user_quota_max_size'] = -1
+        if data['user_quota_max_objects'] == 0:
+            data['user_quota_max_objects'] = -1
         try:
             rgw.set_user_quota(
                 uid=user.uid,
@@ -563,6 +570,14 @@ class ObjectUserHandler(ObjectUserMixin):
                 bucket_quota_max_objects=data['bucket_quota_max_objects']
             )
             rgw.rgw.modify_user(uid=user.uid, max_buckets=data['max_buckets'])
+            if data['bucket_quota_max_size'] == -1:
+                data['bucket_quota_max_size'] = 0
+            if data['bucket_quota_max_objects'] == -1:
+                data['bucket_quota_max_objects'] = 0
+            if data['user_quota_max_size'] == -1:
+                data['user_quota_max_size'] = 0
+            if data['user_quota_max_objects'] == -1:
+                data['user_quota_max_objects'] = 0
             user.user_quota_max_size = data['user_quota_max_size']
             user.user_quota_max_objects = data['user_quota_max_objects']
             user.bucket_quota_max_size = data['bucket_quota_max_size']
