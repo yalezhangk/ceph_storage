@@ -745,6 +745,7 @@ class ConfigKey(BaseStorEnum):
     AGENT_PORT = 'agent_port'
     ADMIN_PORT = 'admin_port'
     DSPACE_REPO = 'dspace_repo'
+    DOCKER_REGISTRY = 'docker_registry'
     CONFIG_DIR = 'config_dir'
     CONFIG_DIR_CONTAINER = 'config_dir_container'
     LOG_DIR = 'log_dir'

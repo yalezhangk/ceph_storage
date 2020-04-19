@@ -190,6 +190,7 @@ class DbCommands(object):
             ConfigKey.ENABLE_OBJS_PAGE: s_fields.ConfigType.BOOL,
             ConfigKey.POOL_ID_SAME_AS_NAME: s_fields.ConfigType.BOOL,
             ConfigKey.ENABLE_BLOCKS_PAGE: s_fields.ConfigType.BOOL,
+            ConfigKey.DOCKER_REGISTRY: s_fields.ConfigType.STRING,
         }
         for c in configs:
             key, value = c.split("=", 1)
