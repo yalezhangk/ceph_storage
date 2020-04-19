@@ -5,18 +5,20 @@ import os
 
 import docker
 
+from DSpace.exception import ActionTimeoutError
 from DSpace.exception import DockerSockCmdError
 from DSpace.exception import DockerSockNotFound
 from DSpace.exception import ProgrammingError
 from DSpace.exception import RunCommandError
 from DSpace.tools.base import ToolBase
+from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
 
 class Docker(ToolBase):
     def run(self, name, image, command=None, volumes=None, envs=None,
-            privileged=False, restart=True):
+            privileged=False, restart=True, registry=None):
         """Run container
 
         :param name: the container name
@@ -26,6 +28,8 @@ class Docker(ToolBase):
         :param envs: container environments
         """
         logger.debug("Docker run: {}".format(name))
+        if registry:
+            image = "{}/{}".format(registry, image)
         cmd = ["docker", "run", "-d"]
         cmd.extend(["--name", name])
         cmd.extend(["--network", "host"])
@@ -126,6 +130,13 @@ class Docker(ToolBase):
             return False
         else:
             return True
+
+    @retry(ActionTimeoutError, retries=7)
+    def wait_available(self):
+        r = self.available()
+        if not r:
+            logger.info("Docker service not available")
+            raise ActionTimeoutError("Docker service not available")
 
     def status(self, name):
         """Show docker container status

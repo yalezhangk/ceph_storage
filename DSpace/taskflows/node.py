@@ -719,17 +719,13 @@ class InstallDocker(BaseTask):
 
         # load image
         docker_tool = DockerTool(ssh)
-        rc = False
-        for i in range(7):
-            rc = docker_tool.available()
-            if rc:
-                break
-            else:
-                time.sleep(2 ** i)
-        if not rc:
-            logger.error("Docker service not available")
-            raise exc.ProgrammingError("Docker service not available")
+        docker_tool.wait_available()
 
+        # skip download image from repo
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
+        if docker_registry:
+            return
         # pull images from repo
         dspace_repo = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_REPO)
@@ -836,6 +832,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ctxt, ConfigKey.IMAGE_NAMESPACE)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
 
         # write config
         file_tool = FileTool(ssh)
@@ -868,7 +866,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             command="dsa",
             privileged=True,
             restart=restart,
-            volumes=volumes
+            volumes=volumes,
+            registry=docker_registry,
         )
         context.agent_manager.add_node(node)
         self.wait_agent_ready(ctxt, node)
@@ -962,6 +961,8 @@ class DSpaceChronyInstall(BaseTask, NodeTask, ServiceMixin):
             ctxt, ConfigKey.IMAGE_NAMESPACE)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
         file_tool.write("{}/chrony.conf".format(config_dir),
@@ -974,7 +975,8 @@ class DSpaceChronyInstall(BaseTask, NodeTask, ServiceMixin):
             privileged=True,
             name="{}_chrony".format(image_namespace),
             volumes=[(config_dir, config_dir_container),
-                     (log_dir, log_dir_container)]
+                     (log_dir, log_dir_container)],
+            registry=docker_registry,
         )
         self.service_create(ctxt, "CHRONY", node.id, "base")
 
@@ -1065,6 +1067,8 @@ class DSpaceExpoterInstall(BaseTask, ServiceMixin):
             ctxt, ConfigKey.DSPACE_VERSION)
         node_exporter_port = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.NODE_EXPORTER_PORT)
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
         docker_tool.run(
             image="{}/node_exporter:{}".format(image_namespace,
                                                dspace_version),
@@ -1073,7 +1077,8 @@ class DSpaceExpoterInstall(BaseTask, ServiceMixin):
             volumes=[(config_dir, config_dir_container),
                      ("/", "/host", "ro,rslave")],
             envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
-                  ("NODE_EXPORTER_PORT", node_exporter_port)]
+                  ("NODE_EXPORTER_PORT", node_exporter_port)],
+            registry=docker_registry,
         )
         self.service_create(ctxt, "NODE_EXPORTER", node.id, "base")
 
@@ -1115,6 +1120,8 @@ class HaproxyInstall(BaseTask):
             ctxt, ConfigKey.IMAGE_NAMESPACE)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
 
         router_service = objects.RouterService(
             ctxt, name="haproxy",
@@ -1163,7 +1170,8 @@ class HaproxyInstall(BaseTask):
                 command="haproxy",
                 privileged=True,
                 restart=restart,
-                volumes=volumes
+                volumes=volumes,
+                registry=docker_registry,
             )
 
         if docker_tool.status(container_name):
@@ -1262,6 +1270,8 @@ class KeepalivedInstall(BaseTask):
             router_id=rgw_router.id,
             net_id=net_id
         )
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
 
         router_service.create()
         # write config
@@ -1291,7 +1301,8 @@ class KeepalivedInstall(BaseTask):
                 command="keepalived",
                 privileged=True,
                 restart=restart,
-                volumes=volumes
+                volumes=volumes,
+                registry=docker_registry,
             )
 
         if docker_tool.status(container_name):
