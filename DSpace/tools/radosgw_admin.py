@@ -413,8 +413,9 @@ class RadosgwAdmin(object):
         return {
             "size": {
                 # check_on_raw is false, if true used is size_kb
-                "used": user_stats.get("size_kb_actual"),
-                "max": user_quota.get('user_quota', {}).get("max_size_kb")
+                "used": user_stats.get("size_kb_actual") * 1024,
+                "max": user_quota.get('user_quota',
+                                      {}).get("max_size")
             },
             "objects": {
                 "used": user_stats.get("num_objects"),
