@@ -89,6 +89,10 @@ class BucketHandler(AdminBaseHandler):
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
         endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+        user_access = objects.ObjectAccessKeyList.get_all(
+                ctxt, filters={"obj_user_id": data["owner_id"]})
+        access_key = user_access[0].access_key
+        secret_access_key = user_access[0].secret_key
         user_buckets_number = rgw.count_user_buckets(uid)
         logger.info('user buckets count %s', user_buckets_number)
         available_bucket_qua = max_buckets - user_buckets_number
@@ -156,30 +160,28 @@ class BucketHandler(AdminBaseHandler):
                           access_key, secret_access_key)
             s3.bucket_create(name, placement=':' + placement,
                              acls=acls, versioning=bucket.versioned)
-            msg = _("bucket %s create success") % name
-            op_status = "CREATE_BUCKET_SUCCESS"
             if bucket.quota_max_size != 0 or bucket.quota_max_objects != 0:
                 rgw.rgw.set_bucket_quota(
                         uid, name, bucket.quota_max_size * 1024**2,
                         bucket.quota_max_objects * 1000, enabled=True)
             bucket_info = rgw.rgw.get_bucket(bucket=name)
             bucket.bucket_id = bucket_info['id']
-            bucket.status = s_fields.BucketStatus.ACTIVE
-            bucket.save()
-            rgw.bucket_owner_change(name, bucket_info['id'], uid)
-            self.finish_action(begin_action, bucket.id, name,
-                               bucket, 'success')
+            bucket.status = 'active'
+            msg = _("bucket %s create success") % name
+            op_status = "CREATE_BUCKET_SUCCESS"
+            status = 'success'
         except Exception as err:
-            logger.info("create bucket err info %s", err)
-            err_msg = str(err)
+            logger.error("create bucket err info %s", str(err))
+            bucket.status = 'error'
             msg = _("bucket %s create error") % name
             op_status = "CREATE_BUCKET_ERROR"
-            self.finish_action(begin_action, bucket.id, name,
-                               bucket, 'error', err_msg=err_msg)
+            status = 'error'
+        bucket.save()
         bucket.policy = objects.ObjectPolicy.get_by_id(
                 ctxt, bucket.policy_id)
         bucket.owner = objects.ObjectUser.get_by_id(
                 ctxt, bucket.owner_id)
+        self.finish_action(begin_action, bucket.id, name, bucket, status)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_update_quota(self, ctxt, bucket_id, data):
