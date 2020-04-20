@@ -85,7 +85,7 @@ update_node_role_schema = {
         "role": {
             "type": "string",
             "enum": [
-                "monitor", "storage", "mds", "radosgw", "blockgw"
+                "admin", "monitor", "storage", "mds", "radosgw", "blockgw"
             ]}},
     "type": "object",
     "properties": {
