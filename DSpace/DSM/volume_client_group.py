@@ -150,6 +150,28 @@ class VolumeClientGroupHandler(AdminBaseHandler):
                              " error: %s", e)
                 raise e
 
+    def _check_clients(self, ctxt, new_clients, old_clients):
+        all_vcs = self.volume_client_get_all(ctxt)
+        logger.debug("all client groups: %s", all_vcs)
+        all_clients = {}
+        diff = []
+        for i in all_vcs:
+            all_clients[i.iqn] = i
+        old_iqns = {}
+        for i in old_clients:
+            old_iqns[i.iqn] = i
+        diff = [i for i in new_clients
+                if i['iqn'] not in old_iqns]
+
+        logger.debug("new clients: %s", new_clients)
+        logger.debug("old clients: %s", old_iqns)
+        logger.debug("diff: %s", diff)
+
+        for client in diff:
+            if client['iqn'] in all_clients:
+                logger.exception("%s is exists", client['iqn'])
+                raise exception.VolumeClientExists(name=client['iqn'])
+
     def volume_client_group_update(self, ctxt, id, new_volume_clients):
         volume_client_group = objects.VolumeClientGroup.get_by_id(
             ctxt, id, expected_attrs=["volume_access_paths",
@@ -160,16 +182,16 @@ class VolumeClientGroupHandler(AdminBaseHandler):
             before_obj=volume_client_group)
         old_volume_clients = volume_client_group.volume_clients
         old_clients = []
+        self._check_clients(ctxt, new_volume_clients, old_volume_clients)
+
         for i in old_volume_clients:
             old_clients.append({"type": i.client_type, "iqn": i.iqn})
         update_add_clients = []
         update_del_clients = []
-        if len(new_volume_clients) > len(old_clients):
-            update_add_clients = [i for i in new_volume_clients
-                                  if i not in old_clients]
-        else:
-            update_del_clients = [i for i in old_clients
-                                  if i not in new_volume_clients]
+        update_add_clients = [i for i in new_volume_clients
+                              if i not in old_clients]
+        update_del_clients = [i for i in old_clients
+                              if i not in new_volume_clients]
         logger.info("will add clients: %s", update_add_clients)
         logger.info("will delete clients: %s", update_del_clients)
 
