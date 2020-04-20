@@ -898,19 +898,24 @@ class PrometheusTool(object):
             metrics.update({m: value})
 
     def object_bucket_get_capacity(self, object_bucket, metrics):
+        bucket = object_bucket.name
+        cluster_id = object_bucket.cluster_id
+        owner = object_bucket.owner.uid
         for m in object_bucket_capacity_attrs:
             metric = "ceph_" + m
             value = self.prometheus_get_metric(
-                metric, filter={"bucket": object_bucket.name,
-                                "cluster_id": object_bucket.cluster_id})
+                metric, filter={"bucket": bucket, "cluster_id": cluster_id,
+                                "owner": owner})
             metrics.update({m: value})
 
     def object_bucket_get_perf(self, object_bucket, metrics):
         bucket = object_bucket.name
         cluster_id = object_bucket.cluster_id
+        owner = object_bucket.owner.uid
         for m in object_bucket_perf_attrs:
             metric = "ceph_" + m
-            filters = "bucket='{}', cluster_id='{}'".format(bucket, cluster_id)
+            filters = "bucket='{}', cluster_id='{}', owner='{}'".format(
+                bucket, cluster_id, owner)
             irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_metric(irate_metrics, not_filter=True)
@@ -918,21 +923,25 @@ class PrometheusTool(object):
 
     def object_bucket_get_histroy_capacity(self, obj_bucket, start, end,
                                            metrics):
+        bucket = obj_bucket.name
+        cluster_id = obj_bucket.cluster_id
+        owner = obj_bucket.owner.uid
         for m in object_bucket_capacity_attrs:
             metric = "ceph_" + m
             value = self.prometheus_get_histroy_metric(
                 metric, start=start, end=end, filter={
-                    "bucket": obj_bucket.name,
-                    "cluster_id": obj_bucket.cluster_id
+                    "bucket": bucket, "cluster_id": cluster_id, "owner": owner
                 })
             metrics.update({m: value})
 
     def object_bucket_get_histroy_perf(self, obj_bucket, start, end, metrics):
         bucket = obj_bucket.name
         cluster_id = obj_bucket.cluster_id
+        owner = obj_bucket.owner.uid
         for m in object_bucket_perf_attrs:
             metric = "ceph_" + m
-            filters = "bucket='{}', cluster_id='{}'".format(bucket, cluster_id)
+            filters = "bucket='{}', cluster_id='{}', owner='{}'".format(
+                bucket, cluster_id, owner)
             irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_histroy_metric(
@@ -1001,9 +1010,12 @@ class PrometheusTool(object):
             metrics.update({m: value})
 
     def object_bucket_get_bandwidth_total(self, object_bucket, metrics):
+        bucket = object_bucket.name
+        cluster_id = object_bucket.cluster_id
+        owner = object_bucket.owner.uid
         for m in [MeK.BUCKET_SENT_NUM, MeK.BUCKET_RECEIVED_NUM]:
             metric = "ceph_" + m
             value = self.prometheus_get_metric(
-                metric, filter={"bucket": object_bucket.name,
-                                "cluster_id": object_bucket.cluster_id})
+                metric, filter={"bucket": bucket, "cluster_id": cluster_id,
+                                "owner": owner})
             metrics.update({m: value})
