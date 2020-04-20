@@ -437,7 +437,7 @@ class RadosgwAdmin(object):
             },
             "objects": {
                 "used": size_info.get("num_objects", 0),
-                "max": bucket_quota_info.get("max_objects") // 1000
+                "max": bucket_quota_info.get("max_objects")
             }
         }
 
