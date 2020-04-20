@@ -302,11 +302,6 @@ class BucketHandler(AdminBaseHandler):
             object_quota = capacity["objects"]
             bucket.used_capacity_quota = capacity_quota["used"]
             bucket.used_object_quota = object_quota["used"]
-            bucket.max_capacity_quota = capacity_quota["max"]
-            if object_quota['max'] == -1:
-                bucket.max_object_quota = 0
-            else:
-                bucket.max_object_quota = object_quota["max"]
         return buckets
 
     def bucket_get_count(self, ctxt, filters=None):

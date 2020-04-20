@@ -32,8 +32,6 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
                                                 nullable=True),
         'used_capacity_quota': fields.IntegerField(nullable=True),
         'used_object_quota': fields.IntegerField(nullable=True),
-        "max_capacity_quota": fields.IntegerField(nullable=True),
-        "max_object_quota": fields.IntegerField(nullable=True),
         'metrics': s_fields.DictOfNullableField(nullable=True),
     }
 
