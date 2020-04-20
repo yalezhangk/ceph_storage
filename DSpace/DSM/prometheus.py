@@ -4,6 +4,7 @@ from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
+from DSpace.objects.base import StorObject
 from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,8 @@ class PrometheusHandler(AdminBaseHandler):
         return metrics
 
     def object_bucket_metrics_get(self, ctxt, object_bucket_id):
-        object_bucket = objects.ObjectBucket.get_by_id(ctxt, object_bucket_id)
+        object_bucket = objects.ObjectBucket.get_by_id(
+            ctxt, object_bucket_id, expected_attrs=['owner'])
         prometheus = PrometheusTool(ctxt)
         metrics = {}
         prometheus.object_bucket_get_capacity(object_bucket, metrics)
@@ -164,7 +166,8 @@ class PrometheusHandler(AdminBaseHandler):
 
     def object_bucket_metrics_history_get(self, ctxt, object_bucket_id, start,
                                           end):
-        obj_bucket = objects.ObjectBucket.get_by_id(ctxt, object_bucket_id)
+        obj_bucket = objects.ObjectBucket.get_by_id(
+            ctxt, object_bucket_id, expected_attrs=['owner'])
         prometheus = PrometheusTool(ctxt)
         metrics = {}
         prometheus.object_bucket_get_histroy_capacity(
@@ -226,9 +229,14 @@ class PrometheusHandler(AdminBaseHandler):
                                router_service)
         return name
 
-    def object_bucket_bandwidth_total(self, ctxt, bucket_id):
-        object_bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+    def object_bucket_bandwidth_total(self, ctxt, bucket):
+        # bucket is bucket_obj or bucket.id
+        if isinstance(bucket, StorObject):
+            pass
+        else:
+            bucket = objects.ObjectBucket.get_by_id(
+                ctxt, bucket, expected_attrs=['owner'])
         prometheus = PrometheusTool(ctxt)
         metrics = {}
-        prometheus.object_bucket_get_bandwidth_total(object_bucket, metrics)
+        prometheus.object_bucket_get_bandwidth_total(bucket, metrics)
         return metrics

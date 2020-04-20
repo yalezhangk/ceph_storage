@@ -279,7 +279,7 @@ class BucketHandler(AdminBaseHandler):
                 buckets = self.get_quota_objects(ctxt, rgw, buckets)
             for bucket in buckets:
                 bucket.metrics = self.object_bucket_bandwidth_total(
-                    ctxt, bucket.id)
+                    ctxt, bucket)
         elif tab == 'io':
             for bucket in buckets:
                 bucket.metrics = self.object_bucket_metrics_get(
@@ -315,6 +315,7 @@ class BucketHandler(AdminBaseHandler):
     def bucket_get(self, ctxt, bucket_id, expected_attrs):
         bucket = objects.ObjectBucket.get_by_id(
             ctxt, bucket_id, expected_attrs)
+        bucket.metrics = self.object_bucket_bandwidth_total(ctxt, bucket)
         return bucket
 
     def bucket_update_owner(self, ctxt, bucket_id, data):

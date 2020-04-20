@@ -63,6 +63,7 @@ class MetricsHandler(AdminBaseHandler):
         self.wait_ready()
         while True:
             try:
+                self.clear_metrics_old_values()
                 self.collect_rgw_metrics_values()
             except RPCConnectError as e:
                 logger.warning('collect_rgw_metrics_values Warning: %s', e)
@@ -78,6 +79,11 @@ class MetricsHandler(AdminBaseHandler):
             return ""
         _metrics = [m.str_expfmt() for m in self.metrics.values()]
         return ''.join(_metrics) + '\n'
+
+    def clear_metrics_old_values(self):
+        # clear metrics before collect
+        for k in self.metrics.keys():
+            self.metrics[k].clear()
 
     def collect_rgw_metrics_values(self):
         ctxt = get_context()
