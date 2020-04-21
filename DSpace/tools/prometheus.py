@@ -870,7 +870,7 @@ class PrometheusTool(object):
         for m in object_user_perf_attrs:
             metric = "ceph_" + m
             filters = "uid='{}', cluster_id='{}'".format(uid, cluster_id)
-            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+            irate_metrics = 'rate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_metric(irate_metrics, not_filter=True)
             metrics.update({m: value})
@@ -891,7 +891,7 @@ class PrometheusTool(object):
         for m in object_user_perf_attrs:
             metric = "ceph_" + m
             filters = "uid='{}', cluster_id='{}'".format(uid, cluster_id)
-            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+            irate_metrics = 'rate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_histroy_metric(
                 irate_metrics, start=start, end=end, not_filter=True)
@@ -916,7 +916,7 @@ class PrometheusTool(object):
             metric = "ceph_" + m
             filters = "bucket='{}', cluster_id='{}', owner='{}'".format(
                 bucket, cluster_id, owner)
-            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+            irate_metrics = 'rate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_metric(irate_metrics, not_filter=True)
             metrics.update({m: value})
@@ -942,7 +942,7 @@ class PrometheusTool(object):
             metric = "ceph_" + m
             filters = "bucket='{}', cluster_id='{}', owner='{}'".format(
                 bucket, cluster_id, owner)
-            irate_metrics = 'irate({metric}{{{filters}}}[1m])'.format(
+            irate_metrics = 'rate({metric}{{{filters}}}[1m])'.format(
                 metric=metric, filters=filters)
             value = self.prometheus_get_histroy_metric(
                 irate_metrics, start=start, end=end, not_filter=True)
