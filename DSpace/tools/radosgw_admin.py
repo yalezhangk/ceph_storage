@@ -432,8 +432,8 @@ class RadosgwAdmin(object):
         bucket_quota_info = bucket_info.get("bucket_quota")
         return {
             "size": {
-                "used": size_info.get("size_kb_actual", 0),
-                "max": bucket_quota_info.get("max_size_kb")
+                "used": size_info.get("size_kb_actual", 0) * 1024,
+                "max": bucket_quota_info.get("max_size")
             },
             "objects": {
                 "used": size_info.get("num_objects", 0),

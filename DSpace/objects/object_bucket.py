@@ -37,7 +37,7 @@ class ObjectBucket(base.StorPersistentObject, base.StorObject,
 
     OPTIONAL_FIELDS = ('owner', 'policy', 'lifecycles',
                        'used_capacity_quota', 'used_object_quota',
-                       'max_capacity_quota', 'max_object_quota', 'metrics')
+                       'metrics')
 
     def create(self):
         if self.obj_attr_is_set('id'):
