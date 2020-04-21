@@ -162,8 +162,8 @@ class BucketHandler(AdminBaseHandler):
                              acls=acls, versioning=bucket.versioned)
             if bucket.quota_max_size != 0 or bucket.quota_max_objects != 0:
                 rgw.rgw.set_bucket_quota(
-                        uid, name, bucket.quota_max_size * 1024**2,
-                        bucket.quota_max_objects * 1000, enabled=True)
+                        uid, name, bucket.quota_max_size / 1024,
+                        bucket.quota_max_objects, enabled=True)
             bucket_info = rgw.rgw.get_bucket(bucket=name)
             bucket.bucket_id = bucket_info['id']
             bucket.status = 'active'
@@ -177,10 +177,13 @@ class BucketHandler(AdminBaseHandler):
             op_status = "CREATE_BUCKET_ERROR"
             status = 'error'
         bucket.save()
+        bucket.used_capacity_quota = 0
+        bucket.used_object_quota = 0
         bucket.policy = objects.ObjectPolicy.get_by_id(
                 ctxt, bucket.policy_id)
         bucket.owner = objects.ObjectUser.get_by_id(
                 ctxt, bucket.owner_id)
+        logger.info("bucket info %s", bucket)
         self.finish_action(begin_action, bucket.id, name, bucket, status)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
@@ -206,8 +209,8 @@ class BucketHandler(AdminBaseHandler):
             admin, access_key, secret_access_key = self.get_admin_user(ctxt)
             rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
             rgw.rgw.set_bucket_quota(
-                    uid, name, quota_max_size * 1024**2,
-                    quota_max_objects * 1000, enabled=True)
+                    uid, name, quota_max_size / 1024,
+                    quota_max_objects, enabled=True)
             bucket.quota_max_size = data['quota_max_size']
             bucket.quota_max_objects = data['quota_max_objects']
             bucket.save()
