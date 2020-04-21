@@ -1775,6 +1775,7 @@ def volume_access_path_append_gateway(context, access_path_id,
         volume_gateway_ref = _volume_gateway_get(
             context, volume_gateway_id, session=session)
         volume_access_path_ref._volume_gateways.append(volume_gateway_ref)
+        volume_access_path_ref.updated_at = timeutils.utcnow()
         volume_access_path_ref.save(session)
     return volume_access_path_ref
 
@@ -1790,6 +1791,7 @@ def volume_access_path_remove_gateway(context, access_path_id,
         volume_gateway_ref = _volume_gateway_get(
             context, volume_gateway_id, session=session)
         volume_access_path_ref._volume_gateways.remove(volume_gateway_ref)
+        volume_access_path_ref.updated_at = timeutils.utcnow()
         volume_access_path_ref.save(session)
     return volume_access_path_ref
 
