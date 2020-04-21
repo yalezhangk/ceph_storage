@@ -36,11 +36,13 @@ create_object_bucket_schema = {
                     },
                 "auth_permission": {
                     "type": "string",
-                    "enum": ["READ", "WRITE", "READ,WRITE", ""]
+                    "enum": ["READ", "WRITE", "READ,WRITE",
+                             "WRITE,READ", ""]
                     },
                 "all_user_permission": {
                     "type": "string",
-                    "enum": ["READ", "WRITE", "READ,WRITE", ""]
+                    "enum": ["READ", "WRITE", "READ,WRITE",
+                             "WRITE,READ", ""]
                     },
                 "quota_max_size": {"type": "integer"},
                 "quota_max_objects": {"type": "integer"}
