@@ -18,9 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class CronHandler(AgentBaseHandler):
+    container_namespace = "athena"
+
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
-        self.container_namespace = "athena"
+        self._get_namespace()
         self.map_util = ServiceMap(self.container_namespace)
         self.service_map = {}
         self.container_roles = self.map_util.container_roles
@@ -48,11 +50,13 @@ class CronHandler(AgentBaseHandler):
         except Exception as e:
             logger.exception("Setup Exception: %s", e)
 
-    def _service_map_init(self):
+    def _get_namespace(self):
         namespace = self.admin.image_namespace_get(self.ctxt)
         logger.info("Container namespace get: %s", namespace)
         if namespace:
             self.container_namespace = namespace
+
+    def _service_map_init(self):
         self.service_map = {
             "base": self.map_util.base,
             "role_block_gateway": {},
