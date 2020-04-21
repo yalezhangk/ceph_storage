@@ -95,10 +95,6 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         volume_access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways",
                                       "volume_client_groups"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.DELETE,
-            before_obj=volume_access_path)
         if volume_access_path.volume_gateways:
             logger.error("access path %s has mounted gateway, can't delete",
                          volume_access_path.name)
@@ -109,6 +105,10 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                          volume_access_path.name)
             raise exception.AccessPathDeleteError(
                 reason=_("has volume mappings"))
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.DELETE,
+            before_obj=volume_access_path)
         volume_access_path.destroy()
         self.finish_action(begin_action, resource_id=volume_access_path.id,
                            resource_name=volume_access_path.name,
@@ -120,10 +120,6 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                           'nodes', 'volumes', 'volume_clients']
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=expected_attrs)
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_MOUNT_GW,
-            before_obj=access_path)
         node_id = data.get("node_id")
         node = objects.Node.get_by_id(ctxt, node_id)
         volume_gateways = access_path.volume_gateways
@@ -136,6 +132,10 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             logger.error("node %s already has volume gateway filter by "
                          "access_path %s", node.hostname, access_path.name)
             raise exception.VolumeGatewayExists(node=node.hostname)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_MOUNT_GW,
+            before_obj=access_path)
         logger.debug("mount bgw in node: <%s>%s for access path: %s",
                      node_id, node, access_path)
         ap_gateway = objects.VolumeGateway(
@@ -176,10 +176,6 @@ class VolumeAccessPathHandler(AdminBaseHandler):
     def volume_access_path_unmount_gw(self, ctxt, id, data):
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_UNMOUNT_GW,
-            before_obj=access_path)
         node_id = data.get("node_id")
         volume_gateways = access_path.volume_gateways
         if not volume_gateways:
@@ -197,6 +193,10 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                          "bgw", access_path.name)
             raise exception.AccessPathUnmountBgwError(
                 reason=_("has volume mappings attached"))
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_UNMOUNT_GW,
+            before_obj=access_path)
         for gateway_id in gateway_ids:
             ap_gateway = objects.VolumeGateway.get_by_id(ctxt, gateway_id)
             if ap_gateway.node_id == node_id:
@@ -207,12 +207,16 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             node = objects.Node.get_by_id(ctxt, node_id)
             task = NodeTask(ctxt, node)
             task.unmount_bgw(ctxt, access_path)
+            self.finish_action(begin_action, resource_id=access_path.id,
+                               resource_name=access_path.name,
+                               after_obj=access_path)
         except exception.StorException as e:
             logger.error("unmount bgw error: %s", e)
+            self.finish_action(begin_action, resource_id=access_path.id,
+                               resource_name=access_path.name,
+                               after_obj=access_path, status='error',
+                               err_msg=str(e))
             raise e
-        self.finish_action(begin_action, resource_id=access_path.id,
-                           resource_name=access_path.name,
-                           after_obj=access_path)
         return access_path
 
     def volume_access_path_set_chap(self, ctxt, id, data):
@@ -221,17 +225,16 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         password = data.get("password")
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_UPDATE_CHAP,
-            before_obj=access_path
-        )
         volume_gateways = access_path.volume_gateways
         if not volume_gateways:
             logger.error("access_path %s has no volume gateway",
                          access_path.name)
             raise exception.AccessPathNoGateway(access_path=access_path.name)
-
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_UPDATE_CHAP,
+            before_obj=access_path
+        )
         volume_mappings = objects.VolumeMappingList.get_all(
             ctxt, filters={"volume_access_path_id": access_path.id})
 
@@ -370,35 +373,24 @@ class VolumeAccessPathHandler(AdminBaseHandler):
     def volume_access_path_remove_mapping(self, ctxt, id, mapping_list):
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_REMOVE_MAPPING,
-            before_obj=access_path
-        )
+        # 1. check
         volume_gateways = access_path.volume_gateways
         if not volume_gateways:
             logger.error("access path %s no gateway, can't remove mapping",
                          access_path.name)
             raise exception.AccessPathNoGateway(access_path=access_path.name)
         gateway_node_ids = [i.node_id for i in volume_gateways]
+        volume_mappings_list = []
+        volume_map_c_group = {}
         for mapping in mapping_list:
             client_group_id = mapping.get('client_group_id')
             volume_ids = mapping.get('volume_ids')
             client_group = objects.VolumeClientGroup.get_by_id(
                 ctxt, client_group_id)
-            if not client_group:
-                logger.error("volume client group not found, id: %s",
-                             client_group_id)
-                raise exception.VolumeClientGroupNotFound(
-                    client_group_id=client_group_id)
-
             volumes = []
             for volume_id in volume_ids:
                 volume = objects.Volume.get_by_id(
                     ctxt, volume_id, expected_attrs=["pool"])
-                if not volume:
-                    logger.error("volume not found, id: %s", volume_id)
-                    raise exception.VolumeNotFound(volume_id=volume_id)
                 volumes.append(volume)
                 volume_mappings = objects.VolumeMappingList.get_all(
                     ctxt, filters={'volume_id': volume_id,
@@ -411,9 +403,18 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                 if len(volume_mappings) > 1:
                     logger.error("volume mapping must be unique")
                     raise exception.ProgrammingError(reason="get multi rows")
-                volume_mappings[0].destroy()
+                volume_mappings_list.append(volume_mappings[0])
+            volume_map_c_group[client_group.id] = volumes
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_REMOVE_MAPPING,
+            before_obj=access_path)
+        # 2. db operate
+        for volume_mapping in volume_mappings_list:
+            volume_mapping.destroy()
+        for c_group_id, volumes in volume_map_c_group.items():
             volume_clients = objects.VolumeClientList.get_all(
-                ctxt, filters={'volume_client_group_id': client_group_id})
+                ctxt, filters={'volume_client_group_id': c_group_id})
             for volume_client in volume_clients:
                 self._remove_mapping(ctxt, gateway_node_ids, access_path,
                                      volume_client, volumes)
@@ -514,11 +515,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         volume_ids = data.get("volume_ids")
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_REMOVE_VOLUME,
-            before_obj=access_path
-        )
+
+        # 1. check
         volume_gateways = access_path.volume_gateways
         if not volume_gateways:
             logger.error("access path %s no volume gateways", access_path.name)
@@ -536,6 +534,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             logger.error("access path %s already no volumes, don't remove now")
             raise exception.AccessPathNoVolmues(access_path=access_path.name)
         volumes = []
+        volume_mappings_list = []
         for volume_id in volume_ids:
             volume = objects.Volume.get_by_id(
                 ctxt, volume_id, expected_attrs=["pool"])
@@ -544,7 +543,6 @@ class VolumeAccessPathHandler(AdminBaseHandler):
                              access_path.name, volume.name)
                 raise exception.AccessPathNoSuchVolume(
                     access_path=access_path.name, volume=volume.name)
-            volumes.append(volume)
             volume_mappings = objects.VolumeMappingList.get_all(
                 ctxt, filters={"volume_access_path_id": access_path.id,
                                "volume_client_group_id": client_group_id,
@@ -556,7 +554,16 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             if len(volume_mappings) > 1:
                 logger.error("volume mapping must be unique")
                 raise exception.ProgrammingError(reason="get multi rows")
-            volume_mappings[0].destroy()
+            volumes.append(volume)
+            volume_mappings_list.append(volume_mappings[0])
+        # 2. db operation
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_REMOVE_VOLUME,
+            before_obj=access_path
+        )
+        for volume_mapping in volume_mappings_list:
+            volume_mapping.destroy()
         for volume_client in volume_clients:
             self._remove_volume(ctxt, gateway_node_ids, access_path,
                                 volume_client, volumes)
@@ -587,11 +594,6 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         new_client_group_id = data.get("new_client_group_id")
         access_path = objects.VolumeAccessPath.get_by_id(
             ctxt, id, expected_attrs=["volume_gateways", "nodes"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.ACCESS_PATH,
-            action=AllActionType.ACCESS_PATH_UPDATE_CLIENT_GROUP,
-            before_obj=access_path
-        )
         client_group = objects.VolumeClientGroup.get_by_id(
             ctxt, client_group_id, expected_attrs=["volume_clients"])
         new_client_group = objects.VolumeClientGroup.get_by_id(
@@ -603,6 +605,10 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             logger.error("volume access path: %s, volume mapping not found",
                          access_path.name)
             raise exception.AccessPathNoMapping(access_path=access_path.name)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.ACCESS_PATH,
+            action=AllActionType.ACCESS_PATH_UPDATE_CLIENT_GROUP,
+            before_obj=access_path)
         volume_mapping_ids = [i.id for i in volume_mappings]
         logger.debug("access_path: %s, client_group_id: %s, "
                      "volume_mapping_ids: %s", access_path.name,
