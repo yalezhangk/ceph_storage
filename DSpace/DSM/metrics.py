@@ -105,7 +105,8 @@ class MetricsHandler(AdminBaseHandler):
                 self.set_rgw_users_metrics_values(
                     ctxt, client, obj_users, access_key, secret_key, service)
                 obj_buckets = objects.ObjectBucketList.get_all(
-                    ctxt, filters={'status': 'active'})
+                    ctxt, filters={'status': 'active'},
+                    expected_attrs=['owner'])
                 self.set_rgw_buckets_metrics_values(
                     ctxt, client, obj_buckets, access_key, secret_key, service)
             # 2. set rgw_gateway metrics
@@ -186,9 +187,13 @@ class MetricsHandler(AdminBaseHandler):
         cluster_id = ctxt.cluster_id
         results = agent_client.get_all_rgw_buckets_capacity(
             ctxt, access_key, secret_key, service)
+        buckets_map_owner = {bucket.name: bucket.owner.uid for bucket
+                             in obj_buckets}
         for result in results:
             bucket = result['bucket']
             owner = result['owner']
+            if buckets_map_owner.get(bucket) != owner:
+                continue
             bucket_kb_used = result['bucket_kb_used']
             bucket_object_num = result['bucket_object_num']
             bucket_kb_total = result['bucket_kb_total']
@@ -204,12 +209,13 @@ class MetricsHandler(AdminBaseHandler):
         cluster_id = ctxt.cluster_id
         results = agent_client.get_all_rgw_buckets_usage(ctxt, access_key,
                                                          secret_key, service)
-        bu_names = [bucket.name for bucket in obj_buckets]
+        buckets_map_owner = {bucket.name: bucket.owner.uid for bucket
+                             in obj_buckets}
         for data in results:
             bucket = data['bucket']
-            if bucket not in bu_names:
-                continue
             owner = data['owner']
+            if buckets_map_owner.get(bucket) != owner:
+                continue
             bytes_sent = data['bytes_sent']
             sent_ops = data['sent_ops']
             bytes_received = data['bytes_received']
