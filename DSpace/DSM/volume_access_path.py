@@ -2,6 +2,7 @@ import time
 import uuid
 
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from DSpace import exception
 from DSpace import objects
@@ -77,7 +78,7 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             logger.error("access path<%s> not found", id)
             raise exception.VolumeAccessPathNotFound(access_path_id=id)
         if volume_access_path.name != data.get('name'):
-            self._check_volume_access_path_name(self, ctxt, data.get('name'))
+            self._check_volume_access_path_name(ctxt, data.get('name'))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.ACCESS_PATH,
             action=AllActionType.UPDATE,
@@ -346,6 +347,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             for volume_client in volume_clients:
                 self._create_mapping(ctxt, gateway_node_ids, access_path,
                                      volume_client, volumes)
+        access_path.updated_at = timeutils.utcnow()
+        access_path.save()
         self.finish_action(begin_action, resource_id=access_path.id,
                            resource_name=access_path.name,
                            after_obj=access_path)
@@ -414,6 +417,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             for volume_client in volume_clients:
                 self._remove_mapping(ctxt, gateway_node_ids, access_path,
                                      volume_client, volumes)
+        access_path.updated_at = timeutils.utcnow()
+        access_path.save()
         self.finish_action(begin_action, resource_id=access_path.id,
                            resource_name=access_path.name,
                            after_obj=access_path)
@@ -484,6 +489,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         for volume_client in volume_clients:
             self._add_volume(ctxt, gateway_node_ids, access_path,
                              volume_client, available_volumes)
+        access_path.updated_at = timeutils.utcnow()
+        access_path.save()
         self.finish_action(begin_action, resource_id=access_path.id,
                            resource_name=access_path.name,
                            after_obj=access_path)
@@ -553,6 +560,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
         for volume_client in volume_clients:
             self._remove_volume(ctxt, gateway_node_ids, access_path,
                                 volume_client, volumes)
+        access_path.updated_at = timeutils.utcnow()
+        access_path.save()
         self.finish_action(begin_action, resource_id=access_path.id,
                            resource_name=access_path.name,
                            after_obj=access_path)
@@ -611,6 +620,8 @@ class VolumeAccessPathHandler(AdminBaseHandler):
             volume_mapping = objects.VolumeMapping.get_by_id(ctxt, mapping_id)
             volume_mapping.volume_client_group_id = new_client_group_id
             volume_mapping.save()
+        access_path.updated_at = timeutils.utcnow()
+        access_path.save()
         self.finish_action(begin_action, resource_id=access_path.id,
                            resource_name=access_path.name,
                            after_obj=access_path)
