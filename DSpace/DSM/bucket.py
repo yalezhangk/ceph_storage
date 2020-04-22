@@ -3,6 +3,7 @@ from oslo_log import log as logging
 from DSpace import exception
 from DSpace import objects
 from DSpace.DSM.base import AdminBaseHandler
+from DSpace.exception import InvalidInput
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import AllActionType as Action
@@ -168,10 +169,12 @@ class BucketHandler(AdminBaseHandler):
             bucket.bucket_id = bucket_info['id']
             bucket.status = 'active'
             msg = _("bucket %s create success") % name
+            err_msg = None
             op_status = "CREATE_BUCKET_SUCCESS"
             status = 'success'
         except Exception as err:
             logger.error("create bucket err info %s", str(err))
+            err_msg = str(err)
             bucket.status = 'error'
             msg = _("bucket %s create error") % name
             op_status = "CREATE_BUCKET_ERROR"
@@ -184,7 +187,8 @@ class BucketHandler(AdminBaseHandler):
         bucket.owner = objects.ObjectUser.get_by_id(
                 ctxt, bucket.owner_id)
         logger.info("bucket info %s", bucket)
-        self.finish_action(begin_action, bucket.id, name, bucket, status)
+        self.finish_action(begin_action, bucket.id, name,
+                           bucket, status, err_msg=err_msg)
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def bucket_update_quota(self, ctxt, bucket_id, data):
@@ -229,8 +233,16 @@ class BucketHandler(AdminBaseHandler):
         self.send_websocket(ctxt, bucket, op_status, msg)
 
     def object_bucket_delete(self, ctxt, bucket_id, force):
-        rgw = self._assert_rgw_active(ctxt)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
+        rgw = self._assert_rgw_active(ctxt)
+        admin, access_key, secret_access_key = self.get_admin_user(ctxt)
+        endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
+        rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+        bucket_info = rgw.rgw.get_bucket(bucket=bucket.name, stats=True)
+        capacity = rgw.get_bucket_capacity(bucket_info)
+        if capacity['size']['used'] != 0 and not force:
+            raise InvalidInput(_("bucket {} need to"
+                               "be forced to delete").format(bucket.name))
         if bucket.status not in [s_fields.BucketStatus.ACTIVE,
                                  s_fields.BucketStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
@@ -250,9 +262,6 @@ class BucketHandler(AdminBaseHandler):
                               force, begin_action):
         try:
             name = bucket.name
-            admin, access_key, secret_access_key = self.get_admin_user(ctxt)
-            endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
-            rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
             rgw.bucket_remove(name, force)
             bucket.destroy()
             status = "success"
