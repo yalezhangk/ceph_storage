@@ -65,14 +65,14 @@ class VolumeClientGroupHandler(AdminBaseHandler):
         # delete volume clients of the volume client group
         volume_client_group = objects.VolumeClientGroup.get_by_id(
             ctxt, group_id, expected_attrs=expected_attrs)
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.CLIENT_GROUP,
-            action=AllActionType.DELETE, before_obj=volume_client_group)
         if volume_client_group.volume_access_paths:
             logger.error("volume_client_group %s has attached mapping, "
                          "can't delete", volume_client_group.name)
             raise exception.VolumeClientGroupDeleteError(
                 reason=_("client group has attached mappings"))
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.CLIENT_GROUP,
+            action=AllActionType.DELETE, before_obj=volume_client_group)
         for vc in objects.VolumeClientList.get_all(ctxt, filters=filters):
             vc.destroy()
         volume_client_group.destroy()
@@ -92,16 +92,16 @@ class VolumeClientGroupHandler(AdminBaseHandler):
     def volume_client_group_update_name(self, ctxt, id, client_group):
         name = client_group.get("name")
         volume_client_group = objects.VolumeClientGroup.get_by_id(ctxt, id)
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.CLIENT_GROUP,
-            action=AllActionType.CLIENT_GROUP_UPDATE_NAME,
-            before_obj=volume_client_group)
         if volume_client_group.name != name:
             self._check_volume_client_group_name(ctxt, name)
             logger.info("update client group from %s to %s",
                         volume_client_group.name, name)
-            volume_client_group.name = name
-            volume_client_group.save()
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.CLIENT_GROUP,
+            action=AllActionType.CLIENT_GROUP_UPDATE_NAME,
+            before_obj=volume_client_group)
+        volume_client_group.name = name
+        volume_client_group.save()
         self.finish_action(begin_action, resource_id=volume_client_group.id,
                            resource_name=volume_client_group.name,
                            after_obj=volume_client_group)
@@ -254,13 +254,10 @@ class VolumeClientGroupHandler(AdminBaseHandler):
         mutual_password = data.get("mutual_password")
         volume_client_group = objects.VolumeClientGroup.get_by_id(
             ctxt, id, expected_attrs=["volume_access_paths", "volume_clients"])
-        begin_action = self.begin_action(
-            ctxt, resource_type=AllResourceType.CLIENT_GROUP,
-            action=AllActionType.CLIENT_GROUP_UPDATE_CHAP,
-            before_obj=volume_client_group)
         volume_clients = volume_client_group.volume_clients
         access_paths = volume_client_group.volume_access_paths
         access_path_ids = [i.id for i in access_paths]
+        access_paths_list = []
         for access_path_id in access_path_ids:
             access_path = objects.VolumeAccessPath.get_by_id(
                 ctxt, access_path_id, expected_attrs=["volume_gateways",
@@ -271,6 +268,12 @@ class VolumeClientGroupHandler(AdminBaseHandler):
                 raise exception.VolumeClientGroupEnableChapError(
                     access_path=access_path.name,
                     volume_client_group=volume_client_group.name)
+            access_paths_list.append(access_path)
+        begin_action = self.begin_action(
+            ctxt, resource_type=AllResourceType.CLIENT_GROUP,
+            action=AllActionType.CLIENT_GROUP_UPDATE_CHAP,
+            before_obj=volume_client_group)
+        for access_path in access_paths_list:
             nodes = access_path.nodes
             self._set_mutual_chap(ctxt, access_path, nodes, volume_clients,
                                   mutual_chap_enable, mutual_username,
