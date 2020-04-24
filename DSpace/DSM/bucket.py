@@ -241,7 +241,7 @@ class BucketHandler(AdminBaseHandler):
         bucket_info = rgw.rgw.get_bucket(bucket=bucket.name, stats=True)
         capacity = rgw.get_bucket_capacity(bucket_info)
         if capacity['size']['used'] != 0 and not force:
-            raise InvalidInput(_("bucket {} need to"
+            raise InvalidInput(_("bucket {} need to "
                                "be forced to delete").format(bucket.name))
         if bucket.status not in [s_fields.BucketStatus.ACTIVE,
                                  s_fields.BucketStatus.ERROR]:
