@@ -18,6 +18,7 @@ from DSpace.taskflows.crush import CrushContentGen
 from DSpace.tools.prometheus import PrometheusTool
 
 logger = logging.getLogger(__name__)
+DEFAULT_REPLICATE_SIZE = 3
 
 
 class PoolHandler(AdminBaseHandler):
@@ -123,7 +124,8 @@ class PoolHandler(AdminBaseHandler):
                 ctxt, rule_type=pool.failure_domain_type)
             gen = CrushContentGen(
                 ctxt, crush_rule.rule_name, crush_rule.rule_name,
-                fault_domain=data.get("failure_domain_type"), osds=osds)
+                fault_domain=data.get("failure_domain_type"), osds=osds,
+                crush_rule_type=pool.type)
             crush_rule.content = gen.gen_content()
             crush_rule.save()
             for osd in osds:
@@ -188,6 +190,29 @@ class PoolHandler(AdminBaseHandler):
                     'pool_name only support Letters, numbers, underscores'))
         return pool_id_same_as_name or False
 
+    def _check_pool_failure_domain(self, ctxt, pool_type, data):
+        osds = len(data['osds'])
+        if pool_type == s_fields.PoolType.REPLICATED:
+            replicate_size = data['replicate_size']
+            if replicate_size > osds:
+                raise exception.InvalidInput(_('replicate_size not more than '
+                                               'failure_domain_num'))
+        elif pool_type == s_fields.PoolType.ERASURE:
+            role = data['role']
+            if role != s_fields.PoolRole.DATA:
+                raise exception.InvalidInput(_('create ec_pool, rule must is '
+                                               'data'))
+            data_chunk_num = data['data_chunk_num']
+            coding_chunk_num = data['coding_chunk_num']
+            if (data_chunk_num + coding_chunk_num) > osds:
+                raise exception.InvalidInput(_('(K + M) not more than '
+                                               'failure_domain_num'))
+
+    def _get_default_replicate_size(self, ctxt):
+        replicate_size = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.REPLICATE_SIZE)
+        return replicate_size or DEFAULT_REPLICATE_SIZE
+
     def pool_create(self, ctxt, data):
         self.check_mon_host(ctxt)
         uid = str(uuid.uuid4())
@@ -198,7 +223,13 @@ class PoolHandler(AdminBaseHandler):
 
         pool_name = (pool_display_name if is_display_name else
                      "pool-{}".format(uid.replace('-', '')))
+        pool_type = data.get("type")
+        self._check_pool_failure_domain(ctxt, pool_type, data)
         osds = data.get('osds')
+        if pool_type == s_fields.PoolType.ERASURE:
+            replicate_size = self._get_default_replicate_size(ctxt)
+        else:
+            replicate_size = data.get("replicate_size")
         pool = objects.Pool(
             ctxt,
             cluster_id=ctxt.cluster_id,
@@ -211,7 +242,7 @@ class PoolHandler(AdminBaseHandler):
             coding_chunk_num=data.get("coding_chunk_num"),
             osd_num=len(osds),
             speed_type=data.get("speed_type"),
-            replicate_size=data.get("replicate_size"),
+            replicate_size=replicate_size,
             failure_domain_type=data.get("failure_domain_type"),
             data_pool=data.get("data_pool")
         )

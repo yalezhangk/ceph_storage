@@ -18,6 +18,7 @@ from DSpace.exception import PermissionDenied
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
 from DSpace.i18n import _
+from DSpace.objects.fields import PoolType
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
 
@@ -32,6 +33,15 @@ except ImportError:
 logger = logging.getLogger(__name__)
 DEFAULT_POOL = 'rbd'
 REQUIRED_VERSION = 'luminous'
+EC_POOL_RELATION_RE_POOL = '-link_by_ec_pool'
+ECP_NAME_END = '-ecp'
+"""
+eg:  ec_pool: ec_pool_asdf
+     ec_crush_rule: rule_01
+     re_pool: ec_pool_asdf-link_by_ec_pool
+     re_crush_rule: rule_01-link_by_ec_pool
+     ecp_name = rule_01-ecp
+"""
 
 
 class CephTool(ToolBase):
@@ -716,9 +726,42 @@ class RADOSClient(object):
     def pool_exists(self, pool):
         return self.client.pool_exists(pool)
 
-    # TODO
-    def _ec_pool_create(self):
-        pass
+    def _ec_pool_create(self, pg_num, rule_name, pool_name):
+        cmd_ec = {
+            "pool_type": "erasure",
+            "prefix": "osd pool create",
+            "pg_num": pg_num,
+            "erasure_code_profile": rule_name + ECP_NAME_END,
+            "pool": pool_name,
+            "rule": rule_name,
+        }
+        self._send_mon_command(json.dumps(cmd_ec))
+
+    def _ec_pool_set_true(self, pool_name):
+        cmd_set_true = {
+            "var": "allow_ec_overwrites",
+            "prefix": "osd pool set",
+            "pool": pool_name,
+            "val": "true"
+
+        }
+        self._send_mon_command(json.dumps(cmd_set_true))
+
+    def _erasure_pool_create(self, pool_name, rule_name, pg_num, pgp_num=None):
+        """
+        1. 创建ec池，2. set true, 3. 创建一个副本池
+        ceph osd pool create ec-pool 512 erasure ecp-2-1 erasure_2-1
+        ceph osd pool set ec-pool allow_ec_overwrites true
+        ceph osd pool create rep-pool 512
+        """
+        self._ec_pool_create(pg_num, rule_name, pool_name)
+        self._ec_pool_set_true(pool_name)
+        # create a replicated_pool
+        re_pool_name = pool_name + EC_POOL_RELATION_RE_POOL
+        re_rule_name = rule_name + EC_POOL_RELATION_RE_POOL
+        self._replicated_pool_create(
+            re_pool_name, pool_type='replicated', rule_name=re_rule_name,
+            pg_num=pg_num, pgp_num=pgp_num, rep_size=None)
 
     # TODO
     def pool_set_min_size(self, pool_name=DEFAULT_POOL, min_size=None):
@@ -740,7 +783,7 @@ class RADOSClient(object):
         if pool_type == 'erasure':
             # TODO if ec_profile is none, will use a default ec profile
             # osd_pool_default_erasure_code_profile
-            self._ec_pool_create()
+            self._erasure_pool_create(pool_name, rule_name, pg_num, pgp_num)
         else:   # replicated
             self._replicated_pool_create(pool_name, pool_type, rule_name,
                                          pg_num, pgp_num, rep_size)
@@ -804,11 +847,25 @@ class RADOSClient(object):
     def _pool_delete(self, pool_name):
         return self.client.delete_pool(pool_name)
 
-    def pool_delete(self, pool_name):
-        if not self.pool_exists(pool_name):
-            logger.warning("pool %s not exists, ignore it", pool_name)
-            return
-        return self.client.delete_pool(pool_name)
+    def pool_delete(self, pool_name, pool_type=None):
+        if pool_type == PoolType.REPLICATED:
+            # 删除副本池： 1. del 副本池
+            if self.pool_exists(pool_name):
+                self.client.delete_pool(pool_name)
+            else:
+                logger.warning("pool %s not exists, ignore it", pool_name)
+                return
+        elif pool_type == PoolType.ERASURE:
+            # 删除纠删码池：1. del 纠删码池，2. del 附属的副本池
+            extra_re_pool = pool_name + EC_POOL_RELATION_RE_POOL
+            if self.pool_exists(pool_name):
+                self.client.delete_pool(pool_name)
+            else:
+                logger.warning("pool %s not exists, ignore it", pool_name)
+            if self.pool_exists(extra_re_pool):
+                self.client.delete_pool(extra_re_pool)
+            else:
+                logger.warning("pool %s not exists, ignore it", extra_re_pool)
 
     def osd_df_list(self, pool_name=DEFAULT_POOL):
         pass
@@ -1056,18 +1113,63 @@ class RADOSClient(object):
         command_str = json.dumps(cmd)
         self._send_mon_command(command_str)
 
+    def create_ec_profile(self, ecp_name, choose_type, extra_data, root_name):
+        k, m = extra_data['k'], extra_data['m']
+        profile = ["k=%s" % k, "m=%s" % m, "crush-failure-domain=%s" %
+                   choose_type, "crush-root=%s" % root_name]
+        cmd_es_profile = {
+            "profile": profile,
+            "prefix": "osd erasure-code-profile set",
+            "name": ecp_name}
+        cmd_ecp = json.dumps(cmd_es_profile)
+        self._send_mon_command(cmd_ecp)
+
+    def create_replicated_rule(self, cmd_re_rule):
+        self._send_mon_command(json.dumps(cmd_re_rule))
+
+    def create_erasure_rule(self, rule_name, choose_type, extra_data,
+                            root_name, cmd_re_rule):
+        """
+        1.create es_profile 2.create erasure_rule 3.create replicated_rule
+        后台创建两个crush_rule(ec_rule, 副本_rule)
+        1. ceph osd erasure-code-profile set ecp-2-1 k=2 m=1
+        crush-failure-domain=host
+        2. ceph osd crush rule create-erasure erasure_2-1 ecp-2-1
+        when create erasure rule, ecp name ==
+        crush_rule_name + ECP_NAME_END
+        3. create replicated_rule
+        replicated_rule_name = crush_rule_name + EC_POOL_RELATION_RE_POOL
+        """
+        ecp_name = rule_name + ECP_NAME_END
+        self.create_ec_profile(ecp_name, choose_type, extra_data,
+                               root_name)
+        cmd_rule = {
+            "root": root_name,
+            "profile": ecp_name,
+            "prefix": "osd crush rule create-erasure",
+            "type": choose_type,
+            "name": rule_name}
+        self._send_mon_command(json.dumps(cmd_rule))
+        # create replicated rule
+        cmd_re_rule.update({'name': rule_name + EC_POOL_RELATION_RE_POOL})
+        self.create_replicated_rule(cmd_re_rule)
+
     def rule_add(self, rule_name='replicated_rule', root_name='default',
-                 choose_type='host', device_class=None):
-        cmd = {
+                 choose_type='host', device_class=None, rule_type=None,
+                 extra_data=None):
+        cmd_re_rule = {
             "root": root_name,
             "prefix": "osd crush rule create-replicated",
             "type": choose_type,
             "name": rule_name,
         }
         if device_class:
-            cmd["class"] = device_class
-        command_str = json.dumps(cmd)
-        self._send_mon_command(command_str)
+            cmd_re_rule["class"] = device_class
+        if rule_type == PoolType.REPLICATED:
+            self.create_replicated_rule(cmd_re_rule)
+        elif rule_type == PoolType.ERASURE:
+            self.create_erasure_rule(rule_name, choose_type, extra_data,
+                                     root_name, cmd_re_rule)
 
     def rule_get(self, rule_name='replicated_rule'):
         cmd = {

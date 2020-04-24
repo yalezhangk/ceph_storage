@@ -139,11 +139,12 @@ class PoolStatusField(BaseEnumField):
 
 
 class FaultDomain(BaseStorEnum):
+    OSD = 'osd'
     HOST = 'host'
     RACK = 'rack'
     DATACENTER = 'datacenter'
 
-    ALL = (HOST, RACK, DATACENTER)
+    ALL = (OSD, HOST, RACK, DATACENTER)
 
 
 class FaultDomainField(BaseEnumField):
@@ -770,6 +771,7 @@ class ConfigKey(BaseStorEnum):
     ENABLE_OBJS_PAGE = 'enable_objects_page'
     POOL_ID_SAME_AS_NAME = 'pool_id_same_as_name'
     ENABLE_BLOCKS_PAGE = 'enable_blocks_page'
+    REPLICATE_SIZE = 'pool_replicate_size'
 
 
 class DSMStatus(BaseStorEnum):
@@ -824,3 +826,13 @@ class ObjectUserStatus(BaseStorEnum):
 
 class ObjectUserStatusField(BaseEnumField):
     AUTO_TYPE = ObjectUserStatus()
+
+
+class PoolType(BaseStorEnum):
+    REPLICATED = 'replicated'
+    ERASURE = 'erasure'
+    ALL = (REPLICATED, REPLICATED)
+
+
+class PoolTypeField(BaseEnumField):
+    AUTO_TYPE = PoolType()

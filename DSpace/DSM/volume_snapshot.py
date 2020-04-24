@@ -55,7 +55,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             'display_description': data.get('display_description'),
             'volume_id': volume_id,
             'volume_name': volume.volume_name,
-            'pool_name': pool.pool_name
+            'pool_name': pool.pool_name,
+            'pool_type': pool.type
         }
         return snap_data
 
@@ -65,7 +66,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         begin_action = self.begin_action(ctxt, AllResourceType.SNAPSHOT,
                                          AllActionType.CREATE)
         extra_data = {'volume_name': snap_data.pop('volume_name'),
-                      'pool_name': snap_data.pop('pool_name')}
+                      'pool_name': snap_data.pop('pool_name'),
+                      'pool_type': snap_data.pop('pool_type')}
         snap = objects.VolumeSnapshot(ctxt, **snap_data)
         snap.create()
         snap = objects.VolumeSnapshot.get_by_id(ctxt, snap.id,
@@ -80,11 +82,14 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         pool_name = extra_data['pool_name']
         volume_name = extra_data['volume_name']
         snap_name = snap.uuid
+        pool_type = extra_data['pool_type']
         try:
             ceph_client = CephTask(ctxt)
-            ceph_client.rbd_snap_create(pool_name, volume_name, snap_name)
+            ceph_client.rbd_snap_create(pool_name, volume_name, snap_name,
+                                        pool_type=pool_type)
             # 新创建的快照均开启快照保护
-            ceph_client.rbd_protect_snap(pool_name, volume_name, snap_name)
+            ceph_client.rbd_protect_snap(pool_name, volume_name, snap_name,
+                                         pool_type=pool_type)
             status = s_fields.VolumeSnapshotStatus.ACTIVE
             logger.info('create snapshot success,%s/%s@%s',
                         pool_name, volume_name, snap_name)
@@ -130,11 +135,14 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         pool_name = extra_data['pool_name']
         volume_name = extra_data['volume_name']
         snap_name = snap.uuid
+        pool_type = extra_data['pool_type']
         try:
             ceph_client = CephTask(ctxt)
             # 关闭快照保护，再删除快照
-            ceph_client.rbd_unprotect_snap(pool_name, volume_name, snap_name)
-            ceph_client.rbd_snap_delete(pool_name, volume_name, snap_name)
+            ceph_client.rbd_unprotect_snap(pool_name, volume_name, snap_name,
+                                           pool_type=pool_type)
+            ceph_client.rbd_snap_delete(pool_name, volume_name, snap_name,
+                                        pool_type=pool_type)
             snap.destroy()
             status = 'success'
             logger.info('snapshot_delete success,snap_name=%s', snap_name)
@@ -177,7 +185,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
         return {
             'volume_name': volume.volume_name,
             'pool_name': pool.pool_name,
-            'snap': snap
+            'snap': snap,
+            'pool_type': pool.type
         }
 
     def volume_snapshot_delete(self, ctxt, volume_snapshot_id):
