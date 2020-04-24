@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-04-16 17:48+0800\n"
+"POT-Creation-Date: 2020-04-24 10:13+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -648,6 +648,9 @@ msgstr "存储桶 {} 更新配额成功"
 
 msgid "bucket {} update quota error"
 msgstr "存储桶{} 更新配额错误"
+
+msgid "bucket {} need to be forced to delete"
+msgstr "存储桶 {} 需要被强制删除"
 
 msgid "Only available and error bucket can be delete"
 msgstr "只能删除可用与错误的存储桶"
@@ -1772,4 +1775,3 @@ msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
