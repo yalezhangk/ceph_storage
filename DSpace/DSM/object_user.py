@@ -208,17 +208,17 @@ class ObjectUserHandler(ObjectUserMixin):
                 key = objects.ObjectAccessKey(ctxt, **access_key)
                 key.create()
             else:
-                for i in range(len(data['keys'])):
+                for i in data['keys']:
                     rgw.create_key(uid=user_name,
-                                   access_key=data['keys'][i]['access_key'],
-                                   secret_key=data['keys'][i]['secret_key'])
-                for i in range(len(data['keys'])):
+                                   access_key=i['access_key'],
+                                   secret_key=i['secret_key'])
+                for i in data['keys']:
                     access_key = {
                         'obj_user_id': object_user.id,
-                        'access_key': data['keys'][i]['access_key'],
-                        'secret_key': data['keys'][i]['secret_key'],
+                        'access_key': i['access_key'],
+                        'secret_key': i['secret_key'],
                         'type': "s3",
-                        'description': data['description'],
+                        'description': i.get('key_description'),
                         'cluster_id': ctxt.cluster_id
                     }
                     key = objects.ObjectAccessKey(ctxt, **access_key)
@@ -376,6 +376,7 @@ class ObjectUserHandler(ObjectUserMixin):
                 access_key=data['access_key'],
                 secret_key=data['secret_key'],
                 type="s3",
+                description=data.get('description'),
                 cluster_id=ctxt.cluster_id
             )
             key.create()
@@ -431,7 +432,6 @@ class ObjectUserHandler(ObjectUserMixin):
         return key
 
     def object_user_key_update(self, ctxt, object_user_key_id, data):
-        self.check_access_key_exist(ctxt, access_key=data['access_key'])
         key = objects.ObjectAccessKey.get_by_id(
             ctxt, object_user_key_id)
         user = objects.ObjectUser.get_by_id(
@@ -450,6 +450,7 @@ class ObjectUserHandler(ObjectUserMixin):
             rgw.rgw.modify_user(uid=user.uid, access_key=key.access_key,
                                 secret_key=data['secret_key'])
             key.secret_key = data['secret_key']
+            key.description = data.get('description')
             key.save()
             op_status = "UPDATE_KEY_SUCCESS"
             msg = _("%s update key success") % user.uid
