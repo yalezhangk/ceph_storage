@@ -72,7 +72,8 @@ create_object_user_key_schema = {
             "type": "object",
             "properties": {
                 "access_key": {"type": "string"},
-                "secret_key": {"type": "string"}
+                "secret_key": {"type": "string"},
+                "description": {"type": ["string", "null"]}
             }
         },
     },
