@@ -68,8 +68,7 @@ class VolumeClientGroupHandler(AdminBaseHandler):
         if volume_client_group.volume_access_paths:
             logger.error("volume_client_group %s has attached mapping, "
                          "can't delete", volume_client_group.name)
-            raise exception.VolumeClientGroupDeleteError(
-                reason=_("client group has attached mappings"))
+            raise exception.Invalid(_("client group has attached mappings"))
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.CLIENT_GROUP,
             action=AllActionType.DELETE, before_obj=volume_client_group)
