@@ -13,12 +13,14 @@ logger = logging.getLogger(__name__)
 
 class CrushContentGen(object):
     def __init__(self, ctxt, rule_name=None, root_name=None,
-                 fault_domain='host', osds=None, content=None):
+                 fault_domain='host', osds=None, content=None,
+                 crush_rule_type='replicated'):
         self.ctxt = ctxt
         self.rule_name = rule_name
         self.root_name = root_name or rule_name
         self.fault_domain = fault_domain
         self.osds = osds
+        self.crush_rule_type = crush_rule_type
         self.content = content or {
             "osds": {},
             "hosts": {},
@@ -184,6 +186,7 @@ class CrushContentGen(object):
         content["fault_domain"] = self.fault_domain
         content["root_name"] = self.root_name
         content["crush_rule_name"] = self.rule_name
+        content["crush_rule_type"] = self.crush_rule_type
         return content
 
     def _fix_host_name(self, exists_content):

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-04-24 10:13+0800\n"
+"POT-Creation-Date: 2020-04-24 14:27+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1263,6 +1263,15 @@ msgstr "创建存储池失败：{}"
 
 msgid "pool_name only support Letters, numbers, underscores"
 msgstr "名称仅支持字母、数字、下划线"
+
+msgid "replicate_size not more than failure_domain_num"
+msgstr "副本数应小于等于故障域数"
+
+msgid "create ec_pool, rule must is data"
+msgstr "仅能创建数据池型的纠删码池"
+
+msgid "(K + M) not more than failure_domain_num"
+msgstr "(K + M)应小于等于故障域数"
 
 msgid "delete pool success: {}"
 msgstr "删除存储池成功：{}"

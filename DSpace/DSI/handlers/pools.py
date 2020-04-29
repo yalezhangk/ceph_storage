@@ -34,7 +34,7 @@ create_pool_schema = {
                 "role": {"type": "string"},
                 "failure_domain_type": {
                     "type": "string",
-                    "enum": ["host", "rack", "datacenter"]
+                    "enum": ["osd", "host", "rack", "datacenter"]
                 },
                 "osds": {
                     "type": "array",

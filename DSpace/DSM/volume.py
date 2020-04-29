@@ -131,11 +131,13 @@ class VolumeHandler(AdminBaseHandler):
 
     def _volume_create(self, ctxt, volume, begin_action=None):
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        pool_type = pool.type
         volume_name = volume.volume_name
         size = volume.size
         try:
             ceph_client = CephTask(ctxt)
-            ceph_client.rbd_create(pool.pool_name, volume_name, size)
+            ceph_client.rbd_create(pool.pool_name, volume_name, size,
+                                   pool_type)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_create success,volume_name=%s', volume_name)
             op_status = "CREATE_SUCCESS"
@@ -206,10 +208,12 @@ class VolumeHandler(AdminBaseHandler):
 
     def _volume_delete(self, ctxt, volume, begin_action):
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
+        pool_type = pool.type
         volume_name = volume.volume_name
         try:
             ceph_client = CephTask(ctxt)
-            ceph_client.rbd_delete(pool.pool_name, volume_name)
+            ceph_client.rbd_delete(pool.pool_name, volume_name,
+                                   pool_type=pool_type)
             logger.info('volume_delete success,volume_name=%s', volume_name)
             msg = _("delete volume success: %s") % volume.display_name
             status = 'success'
@@ -264,9 +268,11 @@ class VolumeHandler(AdminBaseHandler):
         else:
             op_action = 'VOLUME_SHRINK'
             op_msg = _('volume shrink')
+        pool_type = pool.type
         try:
             ceph_client = CephTask(ctxt)
-            ceph_client.rbd_resize(pool.pool_name, volume_name, size)
+            ceph_client.rbd_resize(pool.pool_name, volume_name, size,
+                                   pool_type=pool_type)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_resize success,volume_name=%s, size=%s',
                         volume_name, size)
@@ -351,10 +357,11 @@ class VolumeHandler(AdminBaseHandler):
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
         volume_name = volume.volume_name
         snap_name = extra_data.get('snap_name')
+        pool_type = pool.type
         try:
             ceph_client = CephTask(ctxt)
             ceph_client.rbd_rollback_to_snap(pool.pool_name, volume_name,
-                                             snap_name)
+                                             snap_name, pool_type=pool_type)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('vulume_rollback success,%s@%s',
                         volume_name, snap_name)
@@ -401,9 +408,11 @@ class VolumeHandler(AdminBaseHandler):
             raise exception.PoolNotFound(pool_id=volume.pool_id)
         pool_name = pool.pool_name
         volume_name = volume.volume_name
+        pool_type = pool.type
         try:
             ceph_client = CephTask(ctxt)
-            ceph_client.rbd_flatten(pool_name, volume_name)
+            ceph_client.rbd_flatten(pool_name, volume_name,
+                                    pool_type=pool_type)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume_unlink success,%s/%s', pool_name, volume_name)
             op_status = "VOLUME_UNLINK_SUCCESS"
@@ -433,13 +442,17 @@ class VolumeHandler(AdminBaseHandler):
         new_volume = verify_data['new_volume']
         c_volume_name = new_volume.volume_name
         is_link_clone = verify_data['is_link_clone']
+        p_pool_type = verify_data['p_pool_type']
+        c_pool_type = verify_data['c_pool_type']
         try:
             ceph_client = CephTask(ctxt)
             ceph_client.rbd_clone_volume(
                 p_pool_name, p_volume_name, p_snap_name, c_pool_name,
-                c_volume_name)
+                c_volume_name, pool_type=p_pool_type,
+                child_pool_type=c_pool_type)
             if not is_link_clone:  # 独立克隆，断开关系链
-                ceph_client.rbd_flatten(c_pool_name, c_volume_name)
+                ceph_client.rbd_flatten(c_pool_name, c_volume_name,
+                                        pool_type=c_pool_type)
             status = s_fields.VolumeStatus.ACTIVE
             logger.info('volume clone success, volume_name=%s', c_volume_name)
             op_status = "VOLUME_CLONE_SUCCESS"
@@ -482,8 +495,12 @@ class VolumeHandler(AdminBaseHandler):
             raise exception.VolumeNotFound(volume_id=snap.volume_id)
         size = p_volume.size
         p_volume_name = p_volume.volume_name
-        p_pool_name = objects.Pool.get_by_id(ctxt, p_volume.pool_id).pool_name
-        c_pool_name = objects.Pool.get_by_id(ctxt, c_pool_id).pool_name
+        p_pool = objects.Pool.get_by_id(ctxt, p_volume.pool_id)
+        p_pool_name = p_pool.pool_name
+        p_pool_type = p_pool.type
+        c_pool = objects.Pool.get_by_id(ctxt, c_pool_id)
+        c_pool_name = c_pool.pool_name
+        c_pool_type = c_pool.type
         return {
             'p_pool_name': p_pool_name,
             'p_volume_name': p_volume_name,
@@ -494,6 +511,8 @@ class VolumeHandler(AdminBaseHandler):
             'size': size,
             'display_description': display_description,
             'is_link_clone': is_link_clone,
+            'p_pool_type': p_pool_type,
+            'c_pool_type': c_pool_type
         }
 
     def volume_create_from_snapshot(self, ctxt, snapshot_id, data):
