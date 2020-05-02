@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import configparser
 import logging
+import re
 import time
 from io import StringIO
 from os import path
@@ -61,7 +62,12 @@ class CephHandler(AgentBaseHandler):
             kwargs['fsid'] = osd.fsid
             kwargs['osd_id'] = osd.osd_id
         if osd.cache_partition_id:
-            kwargs['cache_partition'] = osd.cache_partition.name
+            cache_name = osd.cache_partition.name
+            kwargs['cache_partition'] = cache_name
+            cache_num = int(re.sub('.*?([0-9]*)$', r'\1', cache_name))
+            db_num = cache_num + osd.cache_partition.disk.partition_num
+            db_name = cache_name.rstrip(str(cache_num)) + str(db_num)
+            kwargs['db_partition'] = db_name
         if osd.db_partition_id:
             kwargs['db_partition'] = osd.db_partition.name
         if osd.wal_partition_id:

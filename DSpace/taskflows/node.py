@@ -312,6 +312,9 @@ class NodeTask(object):
         logger.debug("recreate %s(osd.%s)", osd.id, osd.osd_id)
         agent = self.get_agent()
         configs = self._osd_configs(osd)
+        if osd.cache_partition_id:
+            osd.cache_partition.disk = objects.Disk.get_by_id(
+                self.ctxt, osd.cache_partition.disk_id)
         guid = agent.ceph_osd_create(self.ctxt, osd, configs)
         return guid
 
