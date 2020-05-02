@@ -187,7 +187,7 @@ class CephTask(object):
                     client.host_move_to_rack(
                         host['crush_name'], rack['crush_name'])
         # move host to root
-        if fault_domain == FaultDomain.HOST:
+        if fault_domain in [FaultDomain.HOST, FaultDomain.OSD]:
             for name, host in six.iteritems(crush_content.get('hosts')):
                 client.host_add(host['crush_name'])
                 client.rack_move_to_root(
@@ -426,7 +426,7 @@ class CephTask(object):
             _move_osd_to_host()
 
         # move host to root
-        if fault_domain == FaultDomain.HOST:
+        if fault_domain in [FaultDomain.HOST, FaultDomain.OSD]:
             _add_host_to_root()
 
         self._crush_useless_delete(client, crush_content)
@@ -539,7 +539,7 @@ class CephTask(object):
             _check_osd_by_host()
 
         # move host to root
-        if fault_domain == FaultDomain.HOST:
+        if fault_domain in [FaultDomain.HOST, FaultDomain.OSD]:
             _check_host_by_root()
             _check_osd_by_host()
 
@@ -608,6 +608,7 @@ class CephTask(object):
                                                  rep_size=rep_size)
 
     def update_crush_policy(self, pools, crush_content):
+        rule_type = crush_content.get('crush_rule_type')
         rule_name = crush_content.get('crush_rule_name')
         fault_domain = crush_content.get('fault_domain')
         root_name = crush_content.get('root_name')
@@ -615,7 +616,8 @@ class CephTask(object):
             self._crush_rule_update(client, crush_content)
             tmp_rule_name = "{}-new".format(rule_name)
             client.rule_rename(rule_name, tmp_rule_name)
-            client.rule_add(rule_name, root_name, fault_domain)
+            client.rule_add(rule_name, root_name, fault_domain,
+                            rule_type=rule_type)
             for pool in pools:
                 pool_name = pool.pool_name
                 if not client.pool_exists(pool_name):

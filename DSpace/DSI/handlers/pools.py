@@ -134,7 +134,7 @@ update_pool_security_policy_schema = {
                 },
                 "failure_domain_type": {
                     "type": "string",
-                    "enum": ["host", "rack", "datacenter"]
+                    "enum": ["osd", "host", "rack", "datacenter"]
                 },
             }, "required": ["replicate_size", "failure_domain_type"],
         },
