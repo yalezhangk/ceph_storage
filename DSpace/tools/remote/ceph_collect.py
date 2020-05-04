@@ -33,8 +33,7 @@ except ImportError:
 
 ALLOWED_FAULT_DOMAIN = ['root', 'rack', 'datacenter', 'host', 'osd']
 PKGS = ['ceph-common', 'ceph-base', 'ceph-mgr', 'ceph-osd', 'python-cephfs',
-        'ceph-selinux', 'ceph-mds', 'libcephfs2', 'ceph-mon', 'librbd1',
-        'librados2']
+        'ceph-selinux', 'ceph-mds', 'libcephfs2', 'ceph-mon']
 CEPH_SYSTEMD_DIRS = [
     "/etc/systemd/system/ceph-mds.target.wants",
     "/etc/systemd/system/ceph-mgr.target.wants",

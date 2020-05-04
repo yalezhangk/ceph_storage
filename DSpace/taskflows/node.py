@@ -623,8 +623,6 @@ class NodeTask(object):
         result = ceph_tool.check_ceph_is_installed()
         sys_tool = SystemTool(ssh)
         result |= sys_tool.check_package('ceph')
-        result |= sys_tool.check_package('rbd')
-        result |= sys_tool.check_package('rados')
         result |= sys_tool.check_package('rgw')
         file_tool = FileTool(ssh)
         result |= file_tool.exist(CEPH_CONFIG_DIR)
