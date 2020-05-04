@@ -700,6 +700,8 @@ class InstallDocker(BaseTask):
         package_tool = PackageTool(ssh)
         remove_repo = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.REMOVE_ANOTHER_REPO)
+        enable_dspace_repo = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.ENABLE_DSPACE_REPO)
 
         if remove_repo:
             package_tool.backup_repo("dspace")
@@ -707,9 +709,10 @@ class InstallDocker(BaseTask):
         # set repo
         dspace_repo = objects.sysconfig.sys_config_get(ctxt, "dspace_repo")
 
-        repo_content = package_tool.render_repo(
-            "dspace", dspace_repo=dspace_repo)
-        package_tool.configure_repo("dspace", repo_content)
+        if enable_dspace_repo:
+            repo_content = package_tool.render_repo(
+                "dspace", dspace_repo=dspace_repo)
+            package_tool.configure_repo("dspace", repo_content)
         package_tool.install_docker()
 
         # start docker

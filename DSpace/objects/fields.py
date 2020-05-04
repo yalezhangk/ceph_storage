@@ -738,6 +738,7 @@ class RouterServiceStatusField(BaseEnumField):
 class ConfigKey(BaseStorEnum):
     ENABLE_CEPH_REPO = 'enable_ceph_repo'
     REMOVE_ANOTHER_REPO = 'remove_another_repo'
+    ENABLE_DSPACE_REPO = 'enable_dspace_repo'
     CEPH_VERSION = 'ceph_version'
     IMAGE_NAME = 'image_name'
     IMAGE_NAMESPACE = 'image_namespace'
