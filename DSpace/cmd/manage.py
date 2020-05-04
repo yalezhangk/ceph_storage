@@ -186,6 +186,7 @@ class DbCommands(object):
             ConfigKey.UDEV_DIR: s_fields.ConfigType.STRING,
             ConfigKey.OS_DISTRO: s_fields.ConfigType.STRING,
             ConfigKey.ENABLE_CEPH_REPO: s_fields.ConfigType.BOOL,
+            ConfigKey.ENABLE_DSPACE_REPO: s_fields.ConfigType.BOOL,
             ConfigKey.DISABLE_LICENSE: s_fields.ConfigType.BOOL,
             ConfigKey.ENABLE_OBJS_PAGE: s_fields.ConfigType.BOOL,
             ConfigKey.POOL_ID_SAME_AS_NAME: s_fields.ConfigType.BOOL,
