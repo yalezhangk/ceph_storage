@@ -74,7 +74,7 @@ class DiskHandler(AgentBaseHandler):
 
     def disk_partitions_create(self, ctxt, node, disk, values):
         logger.info('Make accelerate disk partition: %s', disk.name)
-        executor = self._get_executor()
+        executor = self._get_ssh_executor()
         disk_tool = DiskTool(executor)
         partition_num = values.get('partition_num')
         partition_role = values.get('partition_role')

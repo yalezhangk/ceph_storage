@@ -856,6 +856,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ("/", "/host"),
             ("/var/run", "/host/var/run"),
             ("/sys", "/sys"),
+            ("/dev", "/dev"),
             ("/root/.ssh/", "/root/.ssh", "ro,rslave")
         ]
         restart = True
