@@ -193,6 +193,7 @@ class DbCommands(object):
             ConfigKey.ENABLE_BLOCKS_PAGE: s_fields.ConfigType.BOOL,
             ConfigKey.DOCKER_REGISTRY: s_fields.ConfigType.STRING,
             ConfigKey.REPLICATE_SIZE: s_fields.ConfigType.INT,
+            ConfigKey.DOCKER_IMAGE_EXISTS: s_fields.ConfigType.BOOL,
         }
         for c in configs:
             key, value = c.split("=", 1)

@@ -727,7 +727,9 @@ class InstallDocker(BaseTask):
         # skip download image from repo
         docker_registry = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DOCKER_REGISTRY)
-        if docker_registry:
+        docker_image_exists = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_IMAGE_EXISTS)
+        if docker_registry or docker_image_exists:
             return
         # pull images from repo
         dspace_repo = objects.sysconfig.sys_config_get(
