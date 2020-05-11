@@ -32,6 +32,8 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
             ctxt, ConfigKey.DSA_LIB_DIR)
         docker_registry = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DOCKER_REGISTRY)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
 
         # run container
         volumes = [
@@ -46,7 +48,7 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
             image="{}/tcmu_runner:{}".format(image_namespace, dspace_version),
             command="tcmu-runner",
             privileged=True,
-            name="{}_tcmu_runner".format(image_namespace),
+            name="{}_tcmu_runner".format(container_prefix),
             volumes=volumes,
             registry=docker_registry,
         )
@@ -56,12 +58,12 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
 class DSpaceTcmuUninstall(BaseTask, ContainerUninstallMixin, ServiceMixin):
     def execute(self, ctxt, node, task_info):
         super(DSpaceTcmuUninstall, self).execute(task_info)
-        image_namespace = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         ssh = node.executer
         file_tool = FileTool(ssh)
         docker_tool = DockerTool(ssh)
-        container_name = '{}_{}'.format(image_namespace, "tcmu_runner")
+        container_name = '{}_{}'.format(container_prefix, "tcmu_runner")
         docker_tool.rm(container_name, force=True)
         file_tool.rm("/etc/dbus-1/system.d/tcmu-runner.conf")
         self.service_delete(ctxt, "TCMU", node.id)

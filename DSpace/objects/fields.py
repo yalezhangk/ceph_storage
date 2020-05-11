@@ -742,6 +742,7 @@ class ConfigKey(BaseStorEnum):
     CEPH_VERSION = 'ceph_version'
     IMAGE_NAME = 'image_name'
     IMAGE_NAMESPACE = 'image_namespace'
+    CONTAINER_PREFIX = 'container_prefix'
     DSPACE_VERSION = 'dspace_version'
     ADMIN_IP_ADDRESS = 'admin_ip_address'
     AGENT_PORT = 'agent_port'

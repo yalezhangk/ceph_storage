@@ -164,6 +164,7 @@ class DbCommands(object):
         allowed = {
             ConfigKey.IMAGE_NAME: s_fields.ConfigType.STRING,
             ConfigKey.IMAGE_NAMESPACE: s_fields.ConfigType.STRING,
+            ConfigKey.CONTAINER_PREFIX: s_fields.ConfigType.STRING,
             ConfigKey.DSPACE_VERSION: s_fields.ConfigType.STRING,
             ConfigKey.ADMIN_IP_ADDRESS: s_fields.ConfigType.STRING,
             ConfigKey.AGENT_PORT: s_fields.ConfigType.INT,

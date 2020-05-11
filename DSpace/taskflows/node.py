@@ -642,12 +642,14 @@ class ContainerUninstallMixin(object):
     def _node_remove_container(self, ctxt, ssh, container_name, image_name):
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         docker_image_ignore = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DOCKER_IMAGE_IGNORE)
         docker_tool = DockerTool(ssh)
-        container_name = '{}_{}'.format(image_namespace, container_name)
+        container_name = '{}_{}'.format(container_prefix, container_name)
         sys_tool = SystemTool(ssh)
         if not sys_tool.check_package('docker'):
             return
@@ -835,6 +837,8 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         docker_registry = objects.sysconfig.sys_config_get(
@@ -867,7 +871,7 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             restart = False
         docker_tool = DockerTool(ssh)
         docker_tool.run(
-            name="{}_dsa".format(image_namespace),
+            name="{}_dsa".format(container_prefix),
             image="{}/dspace:{}".format(image_namespace, dspace_version),
             command="dsa",
             privileged=True,
@@ -965,6 +969,8 @@ class DSpaceChronyInstall(BaseTask, NodeTask, ServiceMixin):
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         docker_registry = objects.sysconfig.sys_config_get(
@@ -979,7 +985,7 @@ class DSpaceChronyInstall(BaseTask, NodeTask, ServiceMixin):
         docker_tool.run(
             image="{}/chrony:{}".format(image_namespace, dspace_version),
             privileged=True,
-            name="{}_chrony".format(image_namespace),
+            name="{}_chrony".format(container_prefix),
             volumes=[(config_dir, config_dir_container),
                      (log_dir, log_dir_container)],
             registry=docker_registry,
@@ -1069,6 +1075,8 @@ class DSpaceExpoterInstall(BaseTask, ServiceMixin):
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         node_exporter_port = objects.sysconfig.sys_config_get(
@@ -1079,7 +1087,7 @@ class DSpaceExpoterInstall(BaseTask, ServiceMixin):
             image="{}/node_exporter:{}".format(image_namespace,
                                                dspace_version),
             privileged=True,
-            name="{}_node_exporter".format(image_namespace),
+            name="{}_node_exporter".format(container_prefix),
             volumes=[(config_dir, config_dir_container),
                      ("/", "/host", "ro,rslave")],
             envs=[("NODE_EXPORTER_ADDRESS", str(node.ip_address)),
@@ -1124,6 +1132,8 @@ class HaproxyInstall(BaseTask):
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER) + "/haproxy"
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         docker_registry = objects.sysconfig.sys_config_get(
@@ -1165,7 +1175,7 @@ class HaproxyInstall(BaseTask):
         ]
         restart = True
         docker_tool = DockerTool(ssh)
-        container_name = "{}_radosgw_haproxy".format(image_namespace)
+        container_name = "{}_radosgw_haproxy".format(container_prefix)
         # Check container, create or restart
         if docker_tool.exist(container_name):
             docker_tool.restart(container_name)
@@ -1266,6 +1276,8 @@ class KeepalivedInstall(BaseTask):
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER) + "/keepalived"
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         router_service = objects.RouterService(
@@ -1296,7 +1308,7 @@ class KeepalivedInstall(BaseTask):
         ]
         restart = True
         docker_tool = DockerTool(ssh)
-        container_name = "{}_radosgw_keepalived".format(image_namespace)
+        container_name = "{}_radosgw_keepalived".format(container_prefix)
         if docker_tool.exist(container_name):
             docker_tool.restart(container_name)
         else:
