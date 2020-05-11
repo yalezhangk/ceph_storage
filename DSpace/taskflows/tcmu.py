@@ -30,6 +30,8 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
             ctxt, ConfigKey.DSPACE_VERSION)
         dsa_lib_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSA_LIB_DIR)
+        docker_registry = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_REGISTRY)
 
         # run container
         volumes = [
@@ -45,7 +47,8 @@ class DSpaceTcmuInstall(BaseTask, NodeTask, ServiceMixin):
             command="tcmu-runner",
             privileged=True,
             name="{}_tcmu_runner".format(image_namespace),
-            volumes=volumes
+            volumes=volumes,
+            registry=docker_registry,
         )
         self.service_create(ctxt, "TCMU", node.id, "role_block_gateway")
 
@@ -70,10 +73,14 @@ class DSpaceTcmuRemove(BaseTask, ContainerUninstallMixin, ServiceMixin):
         ssh = node.executer
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
+        docker_image_ignore = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_IMAGE_IGNORE)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
         docker_tool = DockerTool(ssh)
         try:
+            if docker_image_ignore:
+                return
             docker_tool.image_rm(
                 "{}/{}:{}".format(image_namespace, "tcmu_runner",
                                   dspace_version))
