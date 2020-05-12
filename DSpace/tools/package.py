@@ -4,8 +4,11 @@ import logging
 
 import six
 
+from DSpace import objects
 from DSpace.common.config import CONF
+from DSpace.context import get_context
 from DSpace.exception import RunCommandError
+from DSpace.objects.fields import ConfigKey
 from DSpace.tools.base import ToolBase
 from DSpace.tools.file import File as FileTool
 from DSpace.utils import cluster_config
@@ -32,6 +35,7 @@ class PackageBase(ToolBase):
 
 
 class YumPackage(PackageBase):
+
     def install(self, names, **kwargs):
         logger.debug("Install Package: {}".format(names))
         cmd = ["yum", "install", "-y",
@@ -219,12 +223,53 @@ class AptPackage(PackageBase):
         self._update_cache()
 
 
+class NonePackage(PackageBase):
+
+    def install(self, names, **kwargs):
+        pass
+
+    def install_docker(self):
+        pass
+
+    def install_rgw(self):
+        pass
+
+    def uninstall(self, names):
+        pass
+
+    def uninstall_nodeps(self, packages):
+        pass
+
+    def uninstall_rgw(self):
+        pass
+
+    def clean(self):
+        pass
+
+    def _update_cache(self):
+        pass
+
+    def render_repo(self, repo_name, **kwargs):
+        pass
+
+    def backup_repo(self, repo_name):
+        pass
+
+    def configure_repo(self, repo_name, repo_content, **kwargs):
+        pass
+
+
 class Package(ToolBase):
     def __init__(self, executor, *args, **kwargs):
         super(Package, self).__init__(executor, *args, **kwargs)
         os_distro = CONF.os_distro
         logger.info("current os distro: %s", os_distro)
         self.pkg_mgr = cluster_config.PKG_MGR[os_distro]
+        package_ignore = self.is_package_ignore()
+        if package_ignore:
+            self.tool = NonePackage(executor)
+            logger.debug('already executed pre_install packages, will '
+                         'skip operate')
         if self.pkg_mgr == "yum":
             self.tool = YumPackage(executor)
         elif self.pkg_mgr == "apt":
@@ -232,6 +277,12 @@ class Package(ToolBase):
         else:
             logger.error("unknown os distro: %s", os_distro)
             raise NotImplementedError("unknown package manager, not implement")
+
+    def is_package_ignore(self):
+        # return True or False
+        package_ignore = objects.sysconfig.sys_config_get(
+            get_context(), ConfigKey.PACKAGE_IGNORE, default=False)
+        return package_ignore
 
     def install(self, names, **kwargs):
         self.tool.install(names=names, **kwargs)

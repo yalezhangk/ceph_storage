@@ -194,6 +194,7 @@ class DbCommands(object):
             ConfigKey.DOCKER_REGISTRY: s_fields.ConfigType.STRING,
             ConfigKey.REPLICATE_SIZE: s_fields.ConfigType.INT,
             ConfigKey.DOCKER_IMAGE_IGNORE: s_fields.ConfigType.BOOL,
+            ConfigKey.PACKAGE_IGNORE: s_fields.ConfigType.BOOL,
         }
         for c in configs:
             key, value = c.split("=", 1)
