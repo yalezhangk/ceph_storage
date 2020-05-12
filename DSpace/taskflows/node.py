@@ -644,6 +644,8 @@ class ContainerUninstallMixin(object):
             ctxt, ConfigKey.IMAGE_NAMESPACE)
         dspace_version = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DSPACE_VERSION)
+        docker_image_ignore = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_IMAGE_IGNORE)
         docker_tool = DockerTool(ssh)
         container_name = '{}_{}'.format(image_namespace, container_name)
         sys_tool = SystemTool(ssh)
@@ -660,8 +662,9 @@ class ContainerUninstallMixin(object):
             docker_tool.stop(container_name)
         try:
             docker_tool.rm(container_name)
-            docker_tool.image_rm(
-                "{}/{}:{}".format(image_namespace, image_name, dspace_version))
+            if not docker_image_ignore:
+                docker_tool.image_rm("{}/{}:{}".format(
+                    image_namespace, image_name, dspace_version))
         except exc.StorException as e:
             logger.warning("remove %s image failed, %s", image_name, e)
 
@@ -725,9 +728,9 @@ class InstallDocker(BaseTask):
         # skip download image from repo
         docker_registry = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DOCKER_REGISTRY)
-        docker_image_exists = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.DOCKER_IMAGE_EXISTS)
-        if docker_registry or docker_image_exists:
+        docker_image_ignore = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.DOCKER_IMAGE_IGNORE)
+        if docker_registry or docker_image_ignore:
             return
         # pull images from repo
         dspace_repo = objects.sysconfig.sys_config_get(

@@ -748,7 +748,7 @@ class ConfigKey(BaseStorEnum):
     ADMIN_PORT = 'admin_port'
     DSPACE_REPO = 'dspace_repo'
     DOCKER_REGISTRY = 'docker_registry'
-    DOCKER_IMAGE_EXISTS = 'docker_image_exists'
+    DOCKER_IMAGE_IGNORE = 'docker_image_ignore'
     CONFIG_DIR = 'config_dir'
     CONFIG_DIR_CONTAINER = 'config_dir_container'
     LOG_DIR = 'log_dir'
