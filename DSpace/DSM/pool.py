@@ -440,6 +440,9 @@ class PoolHandler(AdminBaseHandler):
             datacenter = objects.Datacenter.get_by_id(ctxt, rack.datacenter_id)
             if datacenter not in datacenters:
                 datacenters.append(datacenter)
+        if fault_domain == "osd":
+            logger.info("get osds: %s", osd_ids)
+            return len(osd_ids)
         if fault_domain == "host":
             logger.info("%s, get hosts: %s", osd_id, nodes)
             return len(nodes)
