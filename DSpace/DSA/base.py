@@ -29,7 +29,10 @@ class AgentBaseHandler(object):
         self.ctxt = RequestContext(user_id="agent %s" % CONF.node_id,
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
-        self.image_namespace = self.admin.image_namespace_get(self.ctxt)
+        dsm_sys_info = self.admin.get_dsm_sysinfo(self.ctxt)
+        self.image_namespace = dsm_sys_info['image_namespace']
+        self.package_ignore = dsm_sys_info['package_ignore']
+        CONF.package_ignore = self.package_ignore
 
     def _wapper(self, fun, *args, **kwargs):
         try:

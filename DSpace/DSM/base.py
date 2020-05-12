@@ -173,6 +173,7 @@ class AdminBaseHandler(AdminBaseMixin):
     def bootstrap(self):
         logger.info("DSpace admin bootstrap")
         ctxt = self.ctxt
+        CONF.package_ignore = self.package_ignore_get(ctxt)
         self._setup_agent_manager(ctxt)
         clusters = objects.ClusterList.get_all(ctxt)
         for cluster in clusters:

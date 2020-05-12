@@ -155,3 +155,18 @@ class SysConfigHandler(AdminBaseHandler):
         image_namespace = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.IMAGE_NAMESPACE)
         return image_namespace
+
+    def package_ignore_get(self, ctxt):
+        # True or False
+        package_ignore = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.PACKAGE_IGNORE, default=False)
+        return package_ignore
+
+    def get_dsm_sysinfo(self, ctxt):
+        # support DSA call
+        image_namespace = self.image_namespace_get(ctxt)
+        package_ignore = self.package_ignore_get(ctxt)
+        return {
+            'image_namespace': image_namespace,
+            'package_ignore': package_ignore
+        }

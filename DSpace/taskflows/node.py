@@ -697,7 +697,6 @@ class InstallDocker(BaseTask):
         file_tool = FileTool(ssh)
         # backup repo
         # not remove old repo
-
         package_tool = PackageTool(ssh)
         remove_repo = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.REMOVE_ANOTHER_REPO)
