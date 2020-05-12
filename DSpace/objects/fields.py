@@ -774,6 +774,7 @@ class ConfigKey(BaseStorEnum):
     POOL_ID_SAME_AS_NAME = 'pool_id_same_as_name'
     ENABLE_BLOCKS_PAGE = 'enable_blocks_page'
     REPLICATE_SIZE = 'pool_replicate_size'
+    PACKAGE_IGNORE = 'package_ignore'
 
 
 class DSMStatus(BaseStorEnum):
