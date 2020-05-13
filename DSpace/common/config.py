@@ -131,6 +131,9 @@ global_opts = [
     cfg.IntOpt('collect_metrics_time',
                default=15,
                help='DSM: MetricsHandler collect metrics time interval'),
+    cfg.BoolOpt('package_ignore',
+                default=False,
+                help='is or not package_ignore'),
 ]
 
 etcd_opts = [
