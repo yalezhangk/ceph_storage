@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class IscsiHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(IscsiHandler, self).__init__(*args, **kwargs)
-        container_name = "athena_tcmu_runner"
+        container_name = "%s_tcmu_runner" % self.container_prefix
 
         # try restore iscsi target config
         retry_interval = 5

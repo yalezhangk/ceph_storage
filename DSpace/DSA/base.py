@@ -9,6 +9,7 @@ from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.context import RequestContext
 from DSpace.DSM.client import AdminClientManager
+from DSpace.objects.fields import ConfigKey
 from DSpace.tools.base import Executor
 from DSpace.tools.base import SSHExecutor
 from DSpace.utils import retry
@@ -29,9 +30,12 @@ class AgentBaseHandler(object):
         self.ctxt = RequestContext(user_id="agent %s" % CONF.node_id,
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
-        dsm_sys_info = self.admin.get_dsm_sysinfo(self.ctxt)
-        self.image_namespace = dsm_sys_info['image_namespace']
-        self.package_ignore = dsm_sys_info['package_ignore']
+        dsm_sys_info = self.admin.get_sysinfo(self.ctxt, [
+            ConfigKey.CONTAINER_PREFIX,
+            ConfigKey.PACKAGE_IGNORE,
+        ])
+        self.container_prefix = dsm_sys_info[ConfigKey.CONTAINER_PREFIX]
+        self.package_ignore = dsm_sys_info[ConfigKey.PACKAGE_IGNORE]
         CONF.package_ignore = self.package_ignore
 
     def _wapper(self, fun, *args, **kwargs):

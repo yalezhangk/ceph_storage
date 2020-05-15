@@ -33,9 +33,9 @@ class AdminBaseMixin(object):
 
     def __init__(self):
         ctxt = context.get_context(user_id="admin")
-        self.container_namespace = objects.sysconfig.sys_config_get(
-            ctxt, "image_namespace")
-        self.map_util = ServiceMap(self.container_namespace)
+        self.container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, "container_prefix")
+        self.map_util = ServiceMap(self.container_prefix)
         self.debug_mode = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DEBUG_MODE)
         self._executor = futures.ThreadPoolExecutor(

@@ -170,3 +170,11 @@ class SysConfigHandler(AdminBaseHandler):
             'image_namespace': image_namespace,
             'package_ignore': package_ignore
         }
+
+    def get_sysinfo(self, ctxt, keys):
+        # support DSA call
+        res = {}
+        for key in keys:
+            value = objects.sysconfig.sys_config_get(ctxt, key)
+            res[key] = value
+        return res

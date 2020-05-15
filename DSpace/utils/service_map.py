@@ -1,33 +1,33 @@
 class ServiceMap(object):
 
-    def __init__(self, namspace):
-        self.container_namespace = namspace
+    def __init__(self, prefix):
+        self.container_prefix = prefix
 
         self.container_roles = ["base", "role_admin", "role_radosgw_router",
                                 "role_block_gateway"]
 
         self.debug_services = [
-            self.container_namespace + "_dsm",
-            self.container_namespace + "_dsi",
-            self.container_namespace + "_dsa",
+            self.container_prefix + "_dsm",
+            self.container_prefix + "_dsi",
+            self.container_prefix + "_dsa",
         ]
 
         self.base = {
-            "NODE_EXPORTER": self.container_namespace + "_node_exporter",
-            "CHRONY": self.container_namespace + "_chrony",
-            "DSA": self.container_namespace + "_dsa",
+            "NODE_EXPORTER": self.container_prefix + "_node_exporter",
+            "CHRONY": self.container_prefix + "_chrony",
+            "DSA": self.container_prefix + "_dsa",
         }
 
         self.role_admin = {
-            "PROMETHEUS": self.container_namespace + "_prometheus",
-            "ETCD": self.container_namespace + "_etcd",
-            "NGINX": self.container_namespace + "_nginx",
-            "DSM": self.container_namespace + "_dsm",
-            "DSI": self.container_namespace + "_dsi",
-            "MARIADB": self.container_namespace + "_mariadb",
-            "REDIS": self.container_namespace + "_redis",
-            "REDIS_SENTINEL": self.container_namespace + "_redis_sentinel",
-            "TOOLBOX": self.container_namespace + "_toolbox",
+            "PROMETHEUS": self.container_prefix + "_prometheus",
+            "ETCD": self.container_prefix + "_etcd",
+            "NGINX": self.container_prefix + "_nginx",
+            "DSM": self.container_prefix + "_dsm",
+            "DSI": self.container_prefix + "_dsi",
+            "MARIADB": self.container_prefix + "_mariadb",
+            "REDIS": self.container_prefix + "_redis",
+            "REDIS_SENTINEL": self.container_prefix + "_redis_sentinel",
+            "TOOLBOX": self.container_prefix + "_toolbox",
         }
 
         self.role_monitor = {
@@ -37,7 +37,7 @@ class ServiceMap(object):
         }
 
         self.role_block_gateway = {
-            "TCMU": self.container_namespace + "_tcmu_runner",
+            "TCMU": self.container_prefix + "_tcmu_runner",
         }
 
         self.map = {}

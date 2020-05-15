@@ -122,8 +122,8 @@ class RgwMetricHandler(AgentBaseHandler):
     def get_rgw_router_cup_memory(self, ctxt):
         docket_socket_tool = DockerSockTool(self._get_executor())
         container_keepalived = '{}_radosgw_keepalived'.format(
-            self.image_namespace)
-        container_haproxy = '{}_radosgw_haproxy'.format(self.image_namespace)
+            self.container_prefix)
+        container_haproxy = '{}_radosgw_haproxy'.format(self.container_prefix)
         result_keep = docket_socket_tool.stats(container_keepalived)
         result_ha = docket_socket_tool.stats(container_haproxy)
         return result_keep, result_ha
