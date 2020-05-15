@@ -267,7 +267,7 @@ class Package(ToolBase):
             self.tool = NonePackage(executor)
             logger.info('already executed pre_install packages, will '
                         'skip operate')
-        if self.pkg_mgr == "yum":
+        elif self.pkg_mgr == "yum":
             self.tool = YumPackage(executor)
         elif self.pkg_mgr == "apt":
             self.tool = AptPackage(executor)
