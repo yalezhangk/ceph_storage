@@ -244,7 +244,7 @@ class ServiceManager(AdminBaseMixin):
             ctxt = context_tool.get_context(cluster_id=dsa.cluster_id)
             node = objects.Node.get_by_id(ctxt, dsa.node_id)
             dsa_helper = ContainerHelper(
-                ctxt, dsa, self.container_namespace + "_dsa", dsa.status, node)
+                ctxt, dsa, self.container_prefix + "_dsa", dsa.status, node)
             self.append("base", dsa_helper)
 
     def loop(self):

@@ -18,12 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class CronHandler(AgentBaseHandler):
-    container_namespace = "athena"
+    container_prefix = "athena"
 
     def __init__(self, *args, **kwargs):
         super(CronHandler, self).__init__(*args, **kwargs)
-        self._get_namespace()
-        self.map_util = ServiceMap(self.container_namespace)
+        self.map_util = ServiceMap(self.container_prefix)
         self.service_map = {}
         self.container_roles = self.map_util.container_roles
         self._service_map_init()
@@ -49,12 +48,6 @@ class CronHandler(AgentBaseHandler):
             self.node_summary_reporter()
         except Exception as e:
             logger.exception("Setup Exception: %s", e)
-
-    def _get_namespace(self):
-        namespace = self.admin.image_namespace_get(self.ctxt)
-        logger.info("Container namespace get: %s", namespace)
-        if namespace:
-            self.container_namespace = namespace
 
     def _service_map_init(self):
         self.service_map = {
@@ -92,7 +85,7 @@ class CronHandler(AgentBaseHandler):
                 for service in v:
                     self.service_map['role_radosgw_router'].update({
                         "radosgw_" + service.name:
-                            self.container_namespace + "_radosgw_" +
+                            self.container_prefix + "_radosgw_" +
                             service.name
                     })
         logger.info("Init service map sucess: %s", self.service_map)

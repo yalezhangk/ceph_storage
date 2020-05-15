@@ -200,15 +200,15 @@ class NodeTask(object):
         # install package
         config_dir = objects.sysconfig.sys_config_get(
             self.ctxt, ConfigKey.CONFIG_DIR)
-        image_namespace = objects.sysconfig.sys_config_get(
-            self.ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.CONTAINER_PREFIX)
         file_tool = FileTool(ssh)
         file_tool.write("{}/chrony.conf".format(config_dir),
                         self.get_chrony_conf(self.ctxt, self.node.ip_address))
 
         # restart container
         docker_tool = DockerTool(ssh)
-        docker_tool.restart('{}_chrony'.format(image_namespace))
+        docker_tool.restart('{}_chrony'.format(container_prefix))
 
     def node_exporter_install(self):
         logger.info("Install node exporter for %s", self.node.hostname)
@@ -592,12 +592,12 @@ class NodeTask(object):
         ssh = self.get_ssh_executor()
         service_tool = ServiceTool(ssh)
         if service_tool.status('docker'):
-            image_namespace = objects.sysconfig.sys_config_get(
-                self.ctxt, ConfigKey.IMAGE_NAMESPACE)
+            container_prefix = objects.sysconfig.sys_config_get(
+                self.ctxt, ConfigKey.CONTAINER_PREFIX)
             dspace_containers = [
-                "{}_dsa".format(image_namespace),
-                "{}_chrony".format(image_namespace),
-                "{}_node_exporter".format(image_namespace)
+                "{}_dsa".format(container_prefix),
+                "{}_chrony".format(container_prefix),
+                "{}_node_exporter".format(container_prefix)
             ]
             docker_tool = DockerTool(ssh)
             for container in dspace_containers:
@@ -1210,12 +1210,12 @@ def haproxy_update(ctxt, node):
     # get global config
     config_dir = objects.sysconfig.sys_config_get(
         ctxt, ConfigKey.CONFIG_DIR) + "/radosgw_haproxy/"
-    image_namespace = objects.sysconfig.sys_config_get(
-        ctxt, ConfigKey.IMAGE_NAMESPACE)
+    container_prefix = objects.sysconfig.sys_config_get(
+        ctxt, ConfigKey.CONTAINER_PREFIX)
 
     docker_tool = DockerTool(ssh)
     file_tool = FileTool(ssh)
-    container_name = "{}_radosgw_haproxy".format(image_namespace)
+    container_name = "{}_radosgw_haproxy".format(container_prefix)
     router_service = objects.RouterServiceList.get_all(
         ctxt, filters={'node_id': node.id, 'name': 'haproxy'}
     )
@@ -1339,9 +1339,9 @@ class KeepalivedUninstall(BaseTask):
         # get global config
         config_dir = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR) + "/radosgw_keepalived/"
-        image_namespace = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.IMAGE_NAMESPACE)
-        container_name = "{}_radosgw_keepalived".format(image_namespace)
+        container_prefix = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.CONTAINER_PREFIX)
+        container_name = "{}_radosgw_keepalived".format(container_prefix)
 
         file_tool = FileTool(ssh)
         file_tool.mkdir(config_dir)
@@ -1542,12 +1542,12 @@ class NodesCheck(object):
         return res
 
     def _check_container(self, containers):
-        image_namespace = objects.sysconfig.sys_config_get(
-            self.ctxt, ConfigKey.IMAGE_NAMESPACE)
+        container_prefix = objects.sysconfig.sys_config_get(
+            self.ctxt, ConfigKey.CONTAINER_PREFIX)
         dspace_containers = [
-            "{}_dsa".format(image_namespace),
-            "{}_chrony".format(image_namespace),
-            "{}_node_exporter".format(image_namespace)
+            "{}_dsa".format(container_prefix),
+            "{}_chrony".format(container_prefix),
+            "{}_node_exporter".format(container_prefix)
         ]
         for name in dspace_containers:
             if name in containers:
