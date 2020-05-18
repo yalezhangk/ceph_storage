@@ -246,7 +246,9 @@ class DbCommands(object):
     @args('password', type=str, help='Password')
     def set_password(self, user, password):
         ctxt = context.get_context()
-        users = objects.UserList.get_all(ctxt, filters={"name": user})
+        users = objects.UserList.get_all(
+            ctxt, filters={"name": user,
+                           "origin": s_fields.UserOriginType.LOCAL})
         if not users:
             raise exception.InvalidInput(_("User(%s) not found") % user)
         user = users[0]

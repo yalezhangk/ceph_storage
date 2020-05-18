@@ -17,6 +17,7 @@ from DSpace.DSI.auth import AuthRegistry
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.exception import NotAuthorized
+from DSpace.objects.fields import UserOriginType
 from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,8 @@ class DBAuth(AuthBackend):
         if not self._exist_session(handler):
             raise NotAuthorized
         user = objects.User(id=handler.session['user_id'],
-                            name=handler.session['username'])
+                            name=handler.session['username'],
+                            origin=UserOriginType.LOCAL)
         handler.current_user = user
 
 
@@ -113,7 +115,8 @@ class UserLoginHandler(BaseAPIHandler):
                  format_checker=draft7_format_checker)
         name = data.get('username')
         password = data.get('password')
-        users = objects.UserList.get_all(ctxt, filters={'name': name})
+        users = objects.UserList.get_all(
+            ctxt, filters={'name': name, "origin": UserOriginType.LOCAL})
         if not users:
             raise exception.UserNotFound(user_id=name)
         user = users[0]

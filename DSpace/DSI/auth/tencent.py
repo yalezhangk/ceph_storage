@@ -16,6 +16,7 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.exception import NotAuthorized
 from DSpace.exception import NotFound
+from DSpace.objects.fields import UserOriginType
 
 logger = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -91,7 +92,8 @@ class TencentTicket(AuthBackend):
         return self.tgt_validate(ticket)
 
     def _get_user_by_name(self, ctxt, username):
-        users = objects.UserList.get_all(ctxt, filters={"name": username})
+        users = objects.UserList.get_all(
+            ctxt, filters={"name": username, "origin": UserOriginType.TENCENT})
         if users:
             return users[0]
         raise exception.UserNotFound(user_id=username)
@@ -112,11 +114,13 @@ class UserLoginHandler(BaseAPIHandler):
         return self.ctxt
 
     def _get_or_create_user(self, ctxt, username):
-        users = objects.UserList.get_all(ctxt, filters={"name": username})
+        users = objects.UserList.get_all(
+            ctxt, filters={"name": username, "origin": UserOriginType.TENCENT})
         if users:
             user = users[0]
         else:
-            user = objects.User(ctxt, name=username)
+            user = objects.User(ctxt, name=username,
+                                origin=UserOriginType.TENCENT)
             user.create()
         return user
 

@@ -539,6 +539,7 @@ class User(BASE, StorBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(64))
     password = Column(String(255))
+    origin = Column(String(64))  # 来源
     current_cluster_id = Column(String(36), nullable=True)
 
 

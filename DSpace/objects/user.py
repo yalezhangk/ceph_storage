@@ -9,6 +9,7 @@ from DSpace import db
 from DSpace import exception
 from DSpace import objects
 from DSpace.objects import base
+from DSpace.objects.fields import UserOriginTypeField
 from DSpace.utils.security import encrypt_password
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class User(base.StorPersistentObject, base.StorObject,
         'id': fields.IntegerField(),
         'name': fields.StringField(),
         'password': fields.SensitiveStringField(nullable=True),
+        'origin': UserOriginTypeField(),
         'current_cluster_id': fields.UUIDField(nullable=True)
     }
 
