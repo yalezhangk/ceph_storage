@@ -64,7 +64,7 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
         expected_attrs = expected_attrs or []
 
         if 'user' in expected_attrs:
-            user = db_obj.get('user', [])
+            user = db_obj.get('user')
             obj.user = objects.User._from_db_object(
                 context, objects.User(context), user)
         return super(ActionLog, cls)._from_db_object(context, obj, db_obj)

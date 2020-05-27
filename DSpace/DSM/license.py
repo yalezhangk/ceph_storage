@@ -80,3 +80,9 @@ class LicenseHandler(AdminBaseHandler):
         self.finish_action(begin_action, license.id, 'license', license,
                            'success')
         return result
+
+    def download_license(self, ctxt, file_name):
+        begin_action = self.begin_action(
+            ctxt, Resource.LICENSE, Action.DOWNLOAD_LICENSE)
+        self.finish_action(begin_action, None, file_name, status='success')
+        return True

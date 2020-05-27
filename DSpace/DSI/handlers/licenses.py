@@ -9,11 +9,8 @@ from tornado import gen
 from DSpace import objects
 from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import BaseAPIHandler
-from DSpace.DSM.base import AdminBaseHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
-from DSpace.objects.fields import AllActionType as Action
-from DSpace.objects.fields import AllResourceType as Resource
 from DSpace.utils.license_verify import CA_FILE_PATH
 from DSpace.utils.license_verify import PRIVATE_FILE
 
@@ -79,8 +76,9 @@ class LicenseHandler(BaseAPIHandler):
 
 
 @URLRegistry.register(r"/licenses/download_file/")
-class DownloadlicenseHandler(BaseAPIHandler, AdminBaseHandler):
+class DownloadlicenseHandler(BaseAPIHandler):
 
+    @gen.coroutine
     def get(self):
         """
         ---
@@ -103,35 +101,26 @@ class DownloadlicenseHandler(BaseAPIHandler, AdminBaseHandler):
           description: successful operation
         """
         ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
         file_name = self.get_argument('file_name')
         cluster_id = self.get_argument('cluster_id', None)
-        begin_action = None
         if cluster_id:
             ctxt.cluster_id = cluster_id
-            begin_action = self.begin_action(
-                ctxt, Resource.LICENSE, Action.DOWNLOAD_LICENSE)
         if file_name == 'certificate.pem':
             file = {file_name: CA_FILE_PATH}
         elif file_name == 'private-key.pem':
             file = {file_name: PRIVATE_FILE}
         else:
             err_msg = _('file_name not exist')
-            if begin_action:
-                self.finish_action(begin_action, None, file_name,
-                                   status='fail', err_msg=err_msg)
+            raise InvalidInput(reason=err_msg)
+        if not os.path.exists(file[file_name]):
+            err_msg = _('file not yet generate or file path is error')
             raise InvalidInput(reason=err_msg)
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
                         'attachment; filename={}'.format(file_name))
-        if not os.path.exists(file[file_name]):
-            err_msg = _('file not yet generate or file path is error')
-            if begin_action:
-                self.finish_action(begin_action, None, file_name,
-                                   status='fail', err_msg=err_msg)
-            raise InvalidInput(reason=err_msg)
         with open(file[file_name], 'r') as f:
             file_content = f.read()
             self.write(file_content)
-        if begin_action:
-            self.finish_action(begin_action, None, file_name, status='success')
+        yield client.download_license(ctxt, file_name)
         self.finish()
