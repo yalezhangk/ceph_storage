@@ -36,7 +36,8 @@ class CrushContentGen(object):
             rule_name=content['crush_rule_name'],
             root_name=content['root_name'],
             osds=osds,
-            content=content
+            content=content,
+            crush_rule_type=content['crush_rule_type']
         )
 
     def _get_osd_info(self, osd):
