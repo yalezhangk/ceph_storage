@@ -117,4 +117,5 @@ class DiskHandler(AgentBaseHandler):
         disk_tool = DiskTool(ssh_executor)
         for name, data in six.iteritems(disks):
             disk_tool.update_udev_info(name, data)
+        disk_tool.update_disk_type(disks)
         return disks
