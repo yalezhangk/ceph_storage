@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
 import logging
 import os
 import uuid
 
 import six
-from oslo_utils import encodeutils
 
 from DSpace.exception import RunCommandError
 from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
+from DSpace.tools.storcli import StorCli as StorCliTool
 from DSpace.utils import retry
 from DSpace.utils.ptype import PTYPE
 
@@ -245,11 +244,11 @@ class DiskTool(ToolBase):
 
     def update_disk_type(self, disks):
         logger.debug("update disk type for raid disk")
-        cmd = ['storcli64', '/c0', 'show', 'all', 'J']
-        code, out, err = self.run_command(cmd)
-        if code:
+
+        storcli = StorCliTool(ssh=self.executor)
+        out_data = storcli.show_all()
+        if not out_data:
             return
-        out_data = json.loads(encodeutils.safe_decode(out))
         vd_list = {}
         pd_list = {}
         for controller in out_data.get('Controllers'):

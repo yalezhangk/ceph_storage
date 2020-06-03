@@ -42,12 +42,28 @@ class StorCli:
         for controller in out_data.get('Controllers'):
             if controller.get("Command Status").get("Status") != "Success":
                 return None
+
+            dg_id = None
+            for vd in controller.get("Response Data").get("VD LIST"):
+                dg_vd = vd.get('DG/VD').split('/')
+                if len(dg_vd) == 2 and dg_vd[1] == device_id:
+                    dg_id = dg_vd[0]
+                    break
+
             for pd_list in controller.get("Response Data").get("PD LIST"):
                 if ((pd_list.get("State") == "Onln" and
-                     pd_list.get("DG") == int(device_id)) or
+                     str(pd_list.get("DG")) == dg_id) or
                     (pd_list.get("State") == "JBOD" and
                      pd_list.get("DID") == int(device_id))):
                     return pd_list.get("EID:Slt").split(':')
+
+    def show_all(self):
+        cmd = [self.cli_path, '/c0', 'show', 'all', 'J']
+        code, out, err = self.ssh.run_command(cmd)
+        if code:
+            return None
+        out_data = json.loads(encodeutils.safe_decode(out))
+        return out_data
 
     def disk_light(self, cmd):
         es = self.get_eid_slt()
