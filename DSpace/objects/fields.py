@@ -844,7 +844,7 @@ class ObjectUserStatusField(BaseEnumField):
 class PoolType(BaseStorEnum):
     REPLICATED = 'replicated'
     ERASURE = 'erasure'
-    ALL = (REPLICATED, REPLICATED)
+    ALL = (REPLICATED, ERASURE)
 
 
 class PoolTypeField(BaseEnumField):
