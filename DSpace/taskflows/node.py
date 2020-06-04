@@ -788,11 +788,12 @@ class RouterImagesUninstall(BaseTask, ContainerUninstallMixin):
 class InstallDSpaceTool(BaseTask):
     def execute(self, ctxt, node, task_info):
         super(InstallDSpaceTool, self).execute(task_info)
-        logger.info("install dspace-disk tool")
+        logger.info("install dspace tools")
         ssh = node.executer
         package_tool = PackageTool(ssh)
-        # install dspace-disk
-        package_tool.install(["dspace-disk"], enable_repos="dspace-base")
+        # install dspace tools
+        package_tool.install(["dspace-disk, storcli"],
+                             enable_repos="dspace-base")
 
         os_distro = CONF.os_distro
         udev_dir = UDEV_DIR[os_distro]
@@ -817,11 +818,11 @@ class InstallDSpaceTool(BaseTask):
 class UninstallDSpaceTool(BaseTask):
     def execute(self, ctxt, node, task_info):
         super(UninstallDSpaceTool, self).execute(task_info)
-        logger.info("uninstall dspace-disk tool")
+        logger.info("uninstall dspace tools")
         ssh = node.executer
         package_tool = PackageTool(ssh)
-        # uninstall dspace-disk
-        package_tool.uninstall(["dspace-disk"])
+        # uninstall dspace tools
+        package_tool.uninstall(["dspace-disk", "storcli"])
 
         os_distro = CONF.os_distro
         udev_dir = UDEV_DIR[os_distro]
