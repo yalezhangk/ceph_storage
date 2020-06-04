@@ -173,6 +173,8 @@ class OsdHandler(AdminBaseHandler):
             accelerate_disk.append(osd.db_partition.disk_id)
         if osd.cache_partition_id:
             self._update_disk_status(osd.cache_partition)
+            osd.cache_partition.disk = objects.Disk.get_by_id(
+                ctxt, osd.cache_partition.disk_id)
             accelerate_disk.append(osd.cache_partition.disk_id)
         if osd.journal_partition_id:
             self._update_disk_status(osd.journal_partition)
@@ -651,10 +653,7 @@ class OsdHandler(AdminBaseHandler):
                         partitions.remove(part)
                         break
 
-            if values['partition_role'] == s_fields.DiskPartitionRole.MIX:
-                new_disk.partition_num = values['partition_num'] * 2
-            else:
-                new_disk.partition_num = values['partition_num']
+            new_disk.partition_num = values['partition_num']
             new_disk.role = s_fields.DiskRole.ACCELERATE
             new_disk.guid = guid
             new_disk.save()

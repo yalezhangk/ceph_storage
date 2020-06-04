@@ -316,6 +316,14 @@ class OsdBackendType(BaseStorEnum):
     ALL = (T2CE, KERNEL)
 
 
+class OsdDBLevel(BaseStorEnum):
+    LARGE = 340*1024*1024*1024
+    MEDIUM = 34*1024*1024*1024
+    SMALL = 4*1024*1024*1024
+
+    ALL = (LARGE, MEDIUM, SMALL)
+
+
 class OsdStatus(BaseStorEnum):
     ACTIVE = 'active'
     WARNING = 'warning'

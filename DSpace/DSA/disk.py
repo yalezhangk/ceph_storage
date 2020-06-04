@@ -39,31 +39,34 @@ class DiskHandler(AgentBaseHandler):
         return storcli.disk_light(action)
 
     def _get_disk_partition_steps(self, num, role, name, disk_size):
-        step = int(100 / num)
         i = 1
-        now = 0
         partitions = []
-        if role == s_fields.DiskPartitionRole.MIX:
-            db = int(step / 5)
-            db_size = disk_size * db / 100
-            cache_size = disk_size * (step - db) / 100
+        if role == s_fields.DiskPartitionRole.CACHE:
+            if (disk_size / num) >= s_fields.OsdDBLevel.LARGE * 2:
+                db_size = s_fields.OsdDBLevel.LARGE
+            elif (disk_size / num) >= s_fields.OsdDBLevel.MEDIUM * 2:
+                db_size = s_fields.OsdDBLevel.MEDIUM
+            else:
+                db_size = s_fields.OsdDBLevel.SMALL
+            cache_size = (disk_size / num) - db_size
+
             while i <= num:
                 partitions.append({
-                    "name": name + str(i * 2 - 1),
-                    "size": db_size,
-                    "role": "db",
-                })
-                partitions.append({
-                    "name": name + str(i * 2),
+                    "name": name + str(i),
                     "size": cache_size,
                     "role": "cache",
                 })
-                now += step
+                i += 1
+            while i <= num * 2:
+                partitions.append({
+                    "name": name + str(i),
+                    "size": db_size,
+                    "role": "db",
+                })
                 i += 1
         else:
-            partition_size = disk_size * step / 100
+            partition_size = disk_size / num
             while i <= num:
-                now += step
                 partitions.append({
                     "name": name + str(i),
                     "size": partition_size,
@@ -85,6 +88,10 @@ class DiskHandler(AgentBaseHandler):
             disk_tool.partitions_create(disk.name, partitions)
             guid = disk_tool.get_disk_guid(disk.name)
             logger.debug("Partitions: {}".format(partitions))
+            if partition_role == s_fields.DiskPartitionRole.CACHE:
+                partitions = list(filter(
+                    lambda x: x['role'] != s_fields.DiskPartitionRole.DB,
+                    partitions))
             return guid, partitions
         except exception.StorException as e:
             logger.error("Create partitions error: {}".format(e))
