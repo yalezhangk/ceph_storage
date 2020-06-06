@@ -9,6 +9,7 @@ import time
 import six
 from oslo_utils import encodeutils
 
+from DSpace.common.config import CONF
 from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephCommandTimeout
 from DSpace.exception import CephConnectTimeout
@@ -747,7 +748,8 @@ class RADOSClient(object):
         }
         self._send_mon_command(json.dumps(cmd_set_true))
 
-    def _erasure_pool_create(self, pool_name, rule_name, pg_num, pgp_num=None):
+    def _erasure_pool_create(self, pool_name, rule_name, pg_num,
+                             pgp_num=None, rep_size=None):
         """
         1. 创建ec池，2. set true, 3. 创建一个副本池
         ceph osd pool create ec-pool 512 erasure ecp-2-1 erasure_2-1
@@ -759,9 +761,10 @@ class RADOSClient(object):
         # create a replicated_pool
         re_pool_name = pool_name + EC_POOL_RELATION_RE_POOL
         re_rule_name = rule_name + EC_POOL_RELATION_RE_POOL
+        pg_num = pgp_num = CONF.erasure_default_pg_num
         self._replicated_pool_create(
             re_pool_name, pool_type='replicated', rule_name=re_rule_name,
-            pg_num=pg_num, pgp_num=pgp_num, rep_size=None)
+            pg_num=pg_num, pgp_num=pgp_num, rep_size=rep_size)
 
     # TODO
     def pool_set_min_size(self, pool_name=DEFAULT_POOL, min_size=None):
@@ -783,7 +786,8 @@ class RADOSClient(object):
         if pool_type == 'erasure':
             # TODO if ec_profile is none, will use a default ec profile
             # osd_pool_default_erasure_code_profile
-            self._erasure_pool_create(pool_name, rule_name, pg_num, pgp_num)
+            self._erasure_pool_create(pool_name, rule_name,
+                                      pg_num, pgp_num, rep_size)
         else:   # replicated
             self._replicated_pool_create(pool_name, pool_type, rule_name,
                                          pg_num, pgp_num, rep_size)
