@@ -792,7 +792,7 @@ class InstallDSpaceTool(BaseTask):
         ssh = node.executer
         package_tool = PackageTool(ssh)
         # install dspace tools
-        package_tool.install(["dspace-disk, storcli"],
+        package_tool.install(["dspace-disk", "storcli"],
                              enable_repos="dspace-base")
 
         os_distro = CONF.os_distro
