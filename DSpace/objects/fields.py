@@ -848,3 +848,14 @@ class PoolType(BaseStorEnum):
 
 class PoolTypeField(BaseEnumField):
     AUTO_TYPE = PoolType()
+
+
+class UserOriginType(BaseStorEnum):
+    LOCAL = 'local'
+    TENCENT = 'tencent'
+    HCI = 'hci'
+    ALL = (LOCAL, TENCENT, HCI)
+
+
+class UserOriginTypeField(BaseEnumField):
+    AUTO_TYPE = UserOriginType()

@@ -64,4 +64,5 @@ class AuthBackend(object):
 def register_all():
     __import__('DSpace.DSI.auth.tencent')
     __import__('DSpace.DSI.auth.db')
+    __import__('DSpace.DSI.auth.hci_sso')
     AuthRegistry().auth_cls.register_url()

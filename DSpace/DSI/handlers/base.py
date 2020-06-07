@@ -133,7 +133,11 @@ class BaseAPIHandler(AnonymousHandler):
         ctxt = RequestContext(user_id="anonymous", is_admin=False,
                               ws_ip=CONF.my_ip)
         self.auth.validate(ctxt, self)
-        user_id = self.current_user.id
+        if self.current_user:
+            user_id = self.current_user.id
+        else:
+            # no current_user
+            user_id = None
         ctxt.user_id = user_id
         logger.debug("Context: %s", ctxt.to_dict())
         client_ip = (self.request.headers.get("X-Real-IP") or
@@ -195,6 +199,14 @@ class BaseAPIHandler(AnonymousHandler):
                 fuzzy_filter = '{}~'.format(f)
                 filters.update({fuzzy_filter: value})
         return filters
+
+    def redirect_url(self, url):
+        logger.debug('redirect_url is:%s' % url)
+        self.finish(objects.json_encode({
+            "type": "External",
+            "url": url
+        }))
+        self.flush()
 
 
 class ClusterAPIHandler(BaseAPIHandler):
