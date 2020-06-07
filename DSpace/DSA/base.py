@@ -33,9 +33,11 @@ class AgentBaseHandler(object):
         dsm_sys_info = self.admin.get_sysinfo(self.ctxt, [
             ConfigKey.CONTAINER_PREFIX,
             ConfigKey.PACKAGE_IGNORE,
+            ConfigKey.SERVICE_IGNORE
         ])
         self.container_prefix = dsm_sys_info[ConfigKey.CONTAINER_PREFIX]
         self.package_ignore = dsm_sys_info[ConfigKey.PACKAGE_IGNORE]
+        self.service_ignore = dsm_sys_info[ConfigKey.SERVICE_IGNORE] or ""
         CONF.package_ignore = self.package_ignore
 
     def _wapper(self, fun, *args, **kwargs):

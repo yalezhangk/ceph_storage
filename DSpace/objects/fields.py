@@ -784,6 +784,7 @@ class ConfigKey(BaseStorEnum):
     ENABLE_BLOCKS_PAGE = 'enable_blocks_page'
     REPLICATE_SIZE = 'pool_replicate_size'
     PACKAGE_IGNORE = 'package_ignore'
+    SERVICE_IGNORE = 'service_ignore'  # use ',' when multi services
 
 
 class DSMStatus(BaseStorEnum):
