@@ -23,13 +23,9 @@ class TestDiskTool(test.TestCase):
         )
         run_command.assert_has_calls([
             mock.call(
-                ["sgdisk", "--largest-new=1",
-                 "--change-name='1:ceph block.db'",
-                 "--partition-guid=1:b14030e6-0ce5-11ea-b4e9-000e1eeb6272",
-                 "--typecode=1:30cd0809-c2b2-499c-8879-2d6b78529987",
-                 "--mbrtogpt", "--", "/host/dev/sdg"]
+                ["dspace-disk", "partition-create", "/host/dev/sdg",
+                 "b14030e6-0ce5-11ea-b4e9-000e1eeb6272", "block.db"]
             ),
-            mock.call(["partprobe", "/host/dev/sdg"]),
             mock.call(["blkid", "/host/dev/sdg1", "-o", "udev"])
         ])
 
