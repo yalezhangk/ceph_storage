@@ -67,7 +67,7 @@ class DiskTool(ToolBase):
         udev_info = self._get_disk_udev_info(disk_name)
         dev_bus = udev_info.get("ID_BUS")
         if dev_bus == "scsi":
-            slot = udev_info.get("ID_PATH").split("-")[-1]
+            slot = udev_info.get("DEVPATH").split("/")[-3]
             disk_info.update({
                 "slot": slot,
                 "serial": udev_info.get("ID_SCSI_SERIAL"),
