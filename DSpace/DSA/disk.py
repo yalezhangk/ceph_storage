@@ -117,9 +117,6 @@ class DiskHandler(AgentBaseHandler):
     @retry(exception.StorException, interval=1, retries=5)
     def disk_get_all(self, ctxt, node):
         try:
-            # run partprobe before scan disks
-            self._get_ssh_executor().run_command(['partprobe'])
-
             executor = self._get_executor()
             disk_tool = DiskTool(executor)
             disks = disk_tool.all()

@@ -22,11 +22,6 @@ class DiskTool(ToolBase):
         super(DiskTool, self).__init__(*args, **kwargs)
 
     def _get_disk_mounts(self):
-        cmd = ['partprobe']
-        code, out, err = self.run_command(cmd)
-        if code:
-            logger.error("partprobe error: %s %s" % (out, err))
-            return
         cmd = ["lsblk", "-P", "-o", "NAME,MOUNTPOINT,TYPE"]
         code, out, err = self.run_command(cmd)
         if code:
