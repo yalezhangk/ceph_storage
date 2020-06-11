@@ -90,11 +90,17 @@ class CephHandler(AgentBaseHandler):
         guid = disk_tool.get_disk_guid(osd.disk.name)
         return guid
 
-    @synchronized("ceph-config-{osd.id}")
+    @synchronized("active-disk-{osd.id}")
     def ceph_active_disk(self, context, osd):
         client = self._get_ssh_executor()
         ceph_tool = CephTool(client)
         ceph_tool.disk_active(osd.disk.name)
+
+    @synchronized("update-typecode-{osd.id}")
+    def ceph_update_typecode(self, context, osd):
+        client = self._get_ssh_executor()
+        ceph_tool = CephTool(client)
+        ceph_tool.update_typecode(osd.disk.name)
 
     def ceph_osd_package_install(self, context):
         logger.info('install ceph-osd package')

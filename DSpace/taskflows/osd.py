@@ -143,6 +143,15 @@ class OsdActive(Task, NodeAgentMixin):
         self.finish_task()
 
 
+class OsdUpdateTypecode(Task, NodeAgentMixin):
+    def execute(self, ctxt, osd, tf):
+        logger.info("%s update typecode task", osd.osd_name)
+        self.prepare_task(ctxt, tf)
+        agent = self._get_agent(ctxt, osd.node)
+        agent.ceph_update_typecode(ctxt, osd)
+        self.finish_task()
+
+
 class OsdWaitUp(Task):
     """Osd wait UP
 
@@ -213,6 +222,7 @@ class OsdCreateTaskflow(Taskflow, OsdTaskflowMixin):
         wf.add(OsdDiskPrepare())
         wf.add(OsdActive())
         wf.add(OsdWaitUp())
+        wf.add(OsdUpdateTypecode())
         return wf
 
     def format_args(self, osd=None):

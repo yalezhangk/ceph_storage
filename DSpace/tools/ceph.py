@@ -240,7 +240,7 @@ class CephTool(ToolBase):
         # --cluster {{ cluster }} --{{ store_backend }}
         # --block.db {{ item.0 }} --block.t2ce {{ item.1 }} {{ item.2 }}"
         cmd = ["dspace-disk", "--setuser", "ceph", "--setgroup", "ceph",
-               "prepare", ]
+               "prepare", "--no-locking"]
         if fsid and osd_id:
             cmd.extend(['--osd-uuid', fsid, "--osd-id", osd_id])
         cmd.extend(["--cluster", "ceph", "--%s" % backend])
@@ -261,6 +261,14 @@ class CephTool(ToolBase):
     @retry(RunCommandError)
     def disk_active(self, diskname):
         cmd = ["dspace-disk", "activate", "/dev/%s1" % diskname]
+        rc, stdout, stderr = self.run_command(cmd, timeout=300)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+
+    @retry(RunCommandError)
+    def update_typecode(self, diskname):
+        cmd = ["dspace-disk", "update-typecode", "/dev/%s" % diskname]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
