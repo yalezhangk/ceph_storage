@@ -19,6 +19,7 @@ from DSpace.DSI.handlers import URLRegistry
 from DSpace.DSI.handlers.base import ClusterAPIHandler
 from DSpace.exception import InvalidInput
 from DSpace.i18n import _
+from DSpace.objects import fields as s_fields
 
 logger = logging.getLogger(__name__)
 TPL_PATH = os.path.join(ROOT, 'templates')
@@ -42,7 +43,11 @@ create_node_schema = {
         "role": {
             "type": "string",
             "enum": [
-                "admin", "monitor", "storage", "radosgw", "blockgw"
+                s_fields.NodeRole.ADMIN,
+                s_fields.NodeRole.MONITOR,
+                s_fields.NodeRole.STORAGE,
+                s_fields.NodeRole.OBJECTGW,
+                s_fields.NodeRole.BLOCKGW
             ]
         },
     },
@@ -85,7 +90,11 @@ update_node_role_schema = {
         "role": {
             "type": "string",
             "enum": [
-                "admin", "monitor", "storage", "mds", "radosgw", "blockgw"
+                s_fields.NodeRole.ADMIN,
+                s_fields.NodeRole.MONITOR,
+                s_fields.NodeRole.STORAGE,
+                s_fields.NodeRole.OBJECTGW,
+                s_fields.NodeRole.BLOCKGW
             ]}},
     "type": "object",
     "properties": {

@@ -860,3 +860,17 @@ class UserOriginType(BaseStorEnum):
 
 class UserOriginTypeField(BaseEnumField):
     AUTO_TYPE = UserOriginType()
+
+
+class NodeRole(BaseStorEnum):
+    MONITOR = "monitor"
+    ADMIN = "admin"
+    STORAGE = "storage"
+    OBJECTGW = "objectgw"
+    BLOCKGW = "blockgw"
+
+    ALL = (MONITOR, ADMIN, STORAGE, OBJECTGW, BLOCKGW)
+
+
+class NodeRoleField(BaseEnumField):
+    AUTO_TYPE = NodeRole()
