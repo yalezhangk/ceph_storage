@@ -190,6 +190,7 @@ class NodeTask(object):
     def get_chrony_conf(self, ctxt, ip):
         chrony_server = objects.sysconfig.sys_config_get(ctxt,
                                                          "chrony_server")
+        chrony_server = chrony_server.split(",")
         tpl = template.get('chrony.conf.j2')
         chrony_conf = tpl.render(chrony_server=chrony_server,
                                  ip_address=str(ip))

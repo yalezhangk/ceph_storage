@@ -1,6 +1,8 @@
 {% set keyfile = '/etc/chrony.keys' %}
 
-server {{ chrony_server }} iburst
+{% for server in chrony_server %}
+server {{ server }} iburst
+{% endfor %}
 
 user chrony
 
@@ -21,10 +23,10 @@ dumponexit
 
 dumpdir /var/lib/chrony
 
-{% if ip_address == chrony_server %}
+{% if ip_address in chrony_server %}
 allow all
 # prevent chrony sync from self
-deny {{ chrony_server }}
+deny {{ ip_address }}
 local stratum 10
 {% else %}
 port 0

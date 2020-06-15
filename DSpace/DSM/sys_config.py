@@ -105,15 +105,17 @@ class SysConfigHandler(AdminBaseHandler):
         chrony_server = sysinfos.get('chrony_server')
         cluster_name = sysinfos.get('cluster_name')
         if chrony_server:
+            chrony_server = chrony_server.split(",")
             old_chrony = objects.sysconfig.sys_config_get(
                 ctxt, "chrony_server")
-            if old_chrony != chrony_server:
+            old_chrony = old_chrony.split(",")
+            if sorted(old_chrony) != sorted(chrony_server):
                 logger.info("trying to update chrony_server from %s to %s",
                             old_chrony, chrony_server)
                 begin_action = self.begin_action(ctxt, Resource.SYSCONFIG,
                                                  Action.UPDATE_CLOCK_SERVER)
                 objects.sysconfig.sys_config_set(ctxt, 'chrony_server',
-                                                 chrony_server)
+                                                 ",".join(chrony_server))
                 self.task_submit(self._update_chrony, ctxt, chrony_server,
                                  begin_action)
         if cluster_name:
