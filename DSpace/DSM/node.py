@@ -810,7 +810,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         return status
 
     def _admin_uninstall(self, ctxt, node):
-        logger.info("rgw uninstall on node %s, ip:%s",
+        logger.info("admin uninstall on node %s, ip:%s",
                     node.id, node.ip_address)
         begin_action = self.begin_action(
             ctxt, Resource.NODE, Action.SET_ROLES, node)
@@ -882,18 +882,18 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
 
     def _node_roles_set(self, ctxt, node, i_roles, u_roles):
         install_role_map = {
-            'monitor': self._mon_install,
-            'admin': self._admin_install,
-            'storage': self._storage_install,
-            'radosgw': self._rgw_install,
-            'blockgw': self._bgw_install
+            s_fields.NodeRole.MONITOR: self._mon_install,
+            s_fields.NodeRole.ADMIN: self._admin_install,
+            s_fields.NodeRole.STORAGE: self._storage_install,
+            s_fields.NodeRole.OBJECTGW: self._rgw_install,
+            s_fields.NodeRole.BLOCKGW: self._bgw_install
         }
         uninstall_role_map = {
-            'monitor': self._mon_uninstall,
-            'admin': self._admin_uninstall,
-            'storage': self._storage_uninstall,
-            'radosgw': self._rgw_uninstall,
-            'blockgw': self._bgw_uninstall
+            s_fields.NodeRole.MONITOR: self._mon_uninstall,
+            s_fields.NodeRole.ADMIN: self._admin_uninstall,
+            s_fields.NodeRole.STORAGE: self._storage_uninstall,
+            s_fields.NodeRole.OBJECTGW: self._rgw_uninstall,
+            s_fields.NodeRole.BLOCKGW: self._bgw_uninstall
         }
         try:
             for role in i_roles:
@@ -938,18 +938,18 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         if len(list(i_roles.intersection(u_roles))):
             raise exc.InvalidInput(_("Can't not set and unset the same role"))
         install_check_role_map = {
-            'monitor': self._mon_install_check,
-            'admin': self._admin_install_check,
-            'storage': self._storage_install_check,
-            'radosgw': self._rgw_install_check,
-            'blockgw': self._bgw_install_check
+            s_fields.NodeRole.MONITOR: self._mon_install_check,
+            s_fields.NodeRole.ADMIN: self._admin_install_check,
+            s_fields.NodeRole.STORAGE: self._storage_install_check,
+            s_fields.NodeRole.OBJECTGW: self._rgw_install_check,
+            s_fields.NodeRole.BLOCKGW: self._bgw_install_check
         }
         uninstall_check_role_map = {
-            'monitor': self._mon_uninstall_check,
-            'admin': self._admin_uninstall_check,
-            'storage': self._storage_uninstall_check,
-            'radosgw': self._rgw_uninstall_check,
-            'blockgw': self._bgw_uninstall_check
+            s_fields.NodeRole.MONITOR: self._mon_uninstall_check,
+            s_fields.NodeRole.ADMIN: self._admin_uninstall_check,
+            s_fields.NodeRole.STORAGE: self._storage_uninstall_check,
+            s_fields.NodeRole.OBJECTGW: self._rgw_uninstall_check,
+            s_fields.NodeRole.BLOCKGW: self._bgw_uninstall_check
         }
         for role in i_roles:
             func = install_check_role_map.get(role)
