@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 import logging
 import os
 import uuid
+
+import six
+from oslo_utils import encodeutils
 
 from DSpace.exception import RunCommandError
 from DSpace.objects import fields as s_fields
@@ -238,6 +242,35 @@ class DiskTool(ToolBase):
                 guid = attr.split(":")[-1].lstrip()
                 break
         return guid
+
+    def update_disk_type(self, disks):
+        logger.debug("update disk type for raid disk")
+        cmd = ['storcli64', '/c0', 'show', 'all', 'J']
+        code, out, err = self.run_command(cmd)
+        if code:
+            return
+        out_data = json.loads(encodeutils.safe_decode(out))
+        vd_list = {}
+        pd_list = {}
+        for controller in out_data.get('Controllers'):
+            if controller.get("Command Status").get("Status") != "Success":
+                return
+            for vd in controller.get("Response Data").get("VD LIST"):
+                dg_vd = vd.get('DG/VD').split('/')
+                if len(dg_vd) == 2:
+                    vd_list.update({dg_vd[1]: dg_vd[0]})
+            for pd in controller.get("Response Data").get("PD LIST"):
+                if pd.get('State') == 'Onln':
+                    pd_list.update({str(pd.get('DG')): pd.get('Med')})
+        if not vd_list:
+            return
+        for name, data in six.iteritems(disks):
+            slot = data.get('slot')
+            if slot:
+                slot_vd = slot.split(':')[2]
+                if slot_vd in vd_list:
+                    dg = vd_list.get(slot_vd)
+                    data['type'] = pd_list.get(dg).lower()
 
 
 if __name__ == '__main__':
