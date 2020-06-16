@@ -20,6 +20,7 @@ def upgrade(migrate_engine):
         'updated_at': now,
         'deleted': False,
         'current_cluster_id': None,
+        'origin': 'local'
     }
     user = user_table.insert()
     user.execute(user_data)
