@@ -70,6 +70,12 @@ class PrometheusTargetMixin(object):
                 ctxt, ConfigKey.MGR_DSPACE_PORT)
         return port
 
+    def _get_ip(self, node, service):
+        if service == 'node_exporter':
+            return str(node.ip_address)
+        elif service == "mgr":
+            return str(node.public_ip)
+
     def _get_path(self, ctxt):
         path = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
@@ -88,8 +94,9 @@ class PrometheusTargetMixin(object):
         if node.role_admin and service == 'node_exporter':
             targets = []
             for admin in admin_nodes:
+                ip = self._get_ip(admin, service)
                 targets.append({
-                    "targets": [str(admin.ip_address) + ":" + port],
+                    "targets": [str(ip) + ":" + port],
                     "labels": {
                         "hostname": admin.hostname,
                         "cluster_id": ctxt.cluster_id
@@ -105,15 +112,14 @@ class PrometheusTargetMixin(object):
         # for add target
         for admin in admin_nodes:
             client = context.agent_manager.get_client(node_id=admin.id)
-            ip = node.ip_address
+            ip = self._get_ip(node, service)
             hostname = node.hostname
 
             logger.info("Add to %s prometheus target file: %s, %s",
                         node.hostname, ip, port)
 
             client.prometheus_target_add(
-                ctxt, ip=str(ip), port=port,
-                hostname=hostname,
+                ctxt, ip=ip, port=port, hostname=hostname,
                 path=self._get_path(ctxt))
 
     def target_remove(self, ctxt, node, service):
