@@ -290,8 +290,10 @@ class NodeTask(object):
 
     def ceph_osd_package_install(self):
         logger.info("install ceph-osd package on node")
+        ceph_conf_content = objects.ceph_config.ceph_config_content(self.ctxt)
         agent = self.get_agent()
         agent.ceph_osd_package_install(self.ctxt)
+        agent.ceph_conf_write(self.ctxt, ceph_conf_content)
 
     def ceph_osd_package_uninstall(self):
         logger.info("uninstall ceph-osd package on node")
