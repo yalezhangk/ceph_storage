@@ -135,7 +135,11 @@ class DiskTool(ToolBase):
                 if mount_info['MOUNTPOINT'] in sys_partitions \
                         and mount_info['TYPE'] == 'part':
                     disk_info['is_sys_dev'] = True
-            part_uuid = self.get_partition_uuid(partition)
+            part_uuid = None
+            try:
+                part_uuid = self.get_partition_uuid(partition)
+            except RunCommandError:
+                logger.info("Can not get part %s uuid", partition)
             part_size = open(
                 os.path.join(path, partition, 'size')
             ).read().strip()
