@@ -698,7 +698,7 @@ msgid "Ceph config %s remove failed"
 msgstr "配置%s删除失败"
 
 msgid "Admin cluster exists"
-msgstr "管理节点已存在"
+msgstr "管理集群已存在"
 
 msgid "Cluster name exists"
 msgstr "集群名字已存在"
