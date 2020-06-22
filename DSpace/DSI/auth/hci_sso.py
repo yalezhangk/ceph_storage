@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
+import time
 
 import requests
 from oslo_config import cfg
@@ -106,6 +107,7 @@ class HciSSOAuth(AuthBackend):
         return user
 
     def validate(self, ctxt, handler):
+        begin_time = time.time()
         if not handler.cookies:
             redirect_url = self.sso_login_url
             logger.warning('request header not cookies, will redirect_url:%s'
@@ -114,6 +116,9 @@ class HciSSOAuth(AuthBackend):
             # 认证未通过，validate函数结束
             return
         user_name = self._hci_validate(handler)
+        end_time = time.time()
+        verify_time = end_time - begin_time
+        logger.info('hci api verify_time is: %s s' % verify_time)
         if user_name is False:
             # 认证未通过，validate函数结束
             return
