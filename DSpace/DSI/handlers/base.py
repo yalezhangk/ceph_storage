@@ -202,6 +202,7 @@ class BaseAPIHandler(AnonymousHandler):
 
     def redirect_url(self, url):
         logger.debug('redirect_url is:%s' % url)
+        self.set_status(401)
         self.finish(objects.json_encode({
             "type": "External",
             "url": url
