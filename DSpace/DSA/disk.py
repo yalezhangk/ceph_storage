@@ -10,6 +10,7 @@ from DSpace.objects import fields as s_fields
 from DSpace.tools.disk import DiskTool
 from DSpace.tools.pysmart import Device as DeviceTool
 from DSpace.tools.storcli import StorCli as StorCliTool
+from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -108,14 +109,23 @@ class DiskHandler(AgentBaseHandler):
             _success = False
         return _success
 
+    @retry(exception.StorException, interval=1, retries=5)
     def disk_get_all(self, ctxt, node):
-        executor = self._get_executor()
-        disk_tool = DiskTool(executor)
-        disks = disk_tool.all()
+        try:
+            # run partprobe before scan disks
+            self._get_ssh_executor().run_command(['partprobe'])
 
-        ssh_executor = self._get_ssh_executor()
-        disk_tool = DiskTool(ssh_executor)
-        for name, data in six.iteritems(disks):
-            disk_tool.update_udev_info(name, data)
-        disk_tool.update_disk_type(disks)
+            executor = self._get_executor()
+            disk_tool = DiskTool(executor)
+            disks = disk_tool.all()
+
+            ssh_executor = self._get_ssh_executor()
+            disk_tool = DiskTool(ssh_executor)
+            for name, data in six.iteritems(disks):
+                disk_tool.update_udev_info(name, data)
+            disk_tool.update_disk_type(disks)
+        except Exception as e:
+            logger.warning("failed to scan disks: %s", e)
+            raise exception.StorException(
+                message='disk scan failed')
         return disks
