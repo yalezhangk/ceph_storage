@@ -134,6 +134,9 @@ global_opts = [
     cfg.BoolOpt('package_ignore',
                 default=False,
                 help='is or not package_ignore'),
+    cfg.IntOpt('erasure_default_pg_num',
+               default=32,
+               help='DSM: Erasure pool default pg num'),
 ]
 
 etcd_opts = [
