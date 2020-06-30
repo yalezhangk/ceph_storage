@@ -139,7 +139,10 @@ global_opts = [
                help='DSM: Erasure pool default pg num'),
     cfg.ListOpt('support_raid_models',
                 default=['ServeRAID M5210', 'ServeRAID M5110e'],
-                help='DSA: Support raid models')
+                help='DSA: Support raid models'),
+    cfg.StrOpt('disk_blacklist',
+               default="^sr|fd|dm",
+               help='Disk blacklist')
 ]
 
 etcd_opts = [
