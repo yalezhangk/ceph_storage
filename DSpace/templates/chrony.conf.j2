@@ -23,17 +23,12 @@ dumponexit
 
 dumpdir /var/lib/chrony
 
-{% if ip_address in chrony_server %}
 allow all
 # prevent chrony sync from self
 deny {{ ip_address }}
 local stratum 10
-{% else %}
-port 0
-deny all
-{% endif %}
 
-bindaddress {{ ip_address }}
+bindaddress 0.0.0.0
 
 logchange 0.5
 
