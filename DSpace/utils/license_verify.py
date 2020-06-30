@@ -12,7 +12,7 @@ from DSpace.DSM.client import AdminClientManager
 LOG = logging.getLogger(__name__)
 CA_FILE_PATH = '/etc/dspace/license/certificate.pem'
 PRIVATE_FILE = '/etc/dspace/license/private-key.pem'
-LICENSE_PASSWORD = 'nPgyLwljRy#1OdYd'
+LICENSE_PASSWORD = 'default-pwd'
 
 
 class LicenseVerify(object):
@@ -55,9 +55,10 @@ class LicenseVerify(object):
     def license_cluster_size(self):
         if not self._licenses_data:
             return 0
-        size = self._extra_data.get('other_extra')
-        if size:
-            size = size.split(':')[1]
+        size = self._extra_data.get('capacity')
+        if size and size.isdigit():
+            # capacity is GB
+            size = int(size) * 1024 ** 3
         else:
             size = 0
         return size
