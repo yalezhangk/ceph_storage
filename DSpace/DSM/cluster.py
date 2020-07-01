@@ -42,6 +42,7 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
                 filter={'cluster_id': c.id})
             c.metrics.update({'capacity': capacity})
             if detail:
+                ctxt.cluster_id = c.id
                 c.capacity = self.cluster_capacity_status_get(ctxt)
         return clusters
 
