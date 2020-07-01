@@ -76,7 +76,10 @@ class ClusterListHandler(BaseAPIHandler):
         fuzzy_filters = ['display_name']
         filters = self.get_support_filters(exact_filters, fuzzy_filters)
         client = self.get_admin_client(ctxt)
+        detail = self.get_query_argument(
+            'detail', default="false").lower() == 'true'
         clusters = yield client.cluster_get_all(ctxt,
+                                                detail=detail,
                                                 filters=filters,
                                                 **page_args)
         cluster_count = yield client.cluster_get_count(ctxt, filters=filters)

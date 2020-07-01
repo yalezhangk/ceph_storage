@@ -28,8 +28,9 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
         cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
         return cluster
 
-    def cluster_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
-                        sort_dirs=None, filters=None, offset=None):
+    def cluster_get_all(self, ctxt, detail=False, marker=None, limit=None,
+                        sort_keys=None, sort_dirs=None, filters=None,
+                        offset=None):
         clusters = objects.ClusterList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
@@ -40,6 +41,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             capacity = prometheus.cluster_get_capacity(
                 filter={'cluster_id': c.id})
             c.metrics.update({'capacity': capacity})
+            if detail:
+                c.capacity = self.cluster_capacity_status_get(ctxt)
         return clusters
 
     def cluster_get_count(self, ctxt, filters=None):

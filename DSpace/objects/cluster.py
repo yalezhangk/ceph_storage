@@ -27,9 +27,10 @@ class Cluster(base.StorPersistentObject, base.StorObject,
         'status': s_fields.ClusterStatusField(),
         'ceph_status': fields.BooleanField(nullable=True),
         'metrics': s_fields.DictOfNullableField(nullable=True),
+        'capacity': s_fields.DictOfNullableField(nullable=True),
     }
 
-    OPTIONAL_FIELDS = ('metrics',)
+    OPTIONAL_FIELDS = ('metrics', 'capacity')
 
     @property
     def name(self):
@@ -59,6 +60,7 @@ class Cluster(base.StorPersistentObject, base.StorObject,
     @classmethod
     def _from_db_object(cls, context, obj, db_obj, expected_attrs=None):
         obj.metrics = {}
+        obj.capacity = None
         return super(Cluster, cls)._from_db_object(context, obj, db_obj)
 
 
