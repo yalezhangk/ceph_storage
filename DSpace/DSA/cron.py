@@ -9,9 +9,11 @@ import six
 from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.DSA.base import AgentBaseHandler
+from DSpace.exception import RPCConnectError
 from DSpace.objects import fields as s_fields
 from DSpace.tools.docker import DockerSocket as DockerTool
 from DSpace.tools.service import ServiceDbus as ServiceTool
+from DSpace.utils import retry
 from DSpace.utils.service_map import ServiceMap
 
 logger = logging.getLogger(__name__)
@@ -170,16 +172,19 @@ class CronHandler(AgentBaseHandler):
         logger.debug('Update service status success!')
         return True
 
+    @retry(RPCConnectError)
     def disks_reporter(self):
         disks = self.disk_get_all(self.ctxt, self.node)
         logger.info("Reporter disk info: %s", disks)
         self.admin.disk_reporter(self.ctxt, disks, self.node.id)
 
+    @retry(RPCConnectError)
     def network_reporter(self):
         networks = self.network_get_all(self.ctxt, self.node)
         logger.info("Reporter network info: %s", networks)
         self.admin.network_reporter(self.ctxt, networks, self.node.id)
 
+    @retry(RPCConnectError)
     def node_summary_reporter(self):
         node_summary = self.node_get_summary(self.ctxt, self.node)
         logger.info("Reporter node summary: %s", node_summary)
