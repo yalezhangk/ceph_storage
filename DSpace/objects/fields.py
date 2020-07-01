@@ -785,6 +785,7 @@ class ConfigKey(BaseStorEnum):
     REPLICATE_SIZE = 'pool_replicate_size'
     PACKAGE_IGNORE = 'package_ignore'
     SERVICE_IGNORE = 'service_ignore'  # use ',' when multi services
+    PLATFORM_TYPE = 'platform_type'
 
 
 class DSMStatus(BaseStorEnum):

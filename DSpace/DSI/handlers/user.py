@@ -164,6 +164,8 @@ class PermissionMixin(BaseAPIHandler):
         permission['license'] = license
         # platform_inited: true -> init done; false -> need init page
         permission['platform_inited'] = yield self.check_init_page(ctxt)
+        permission[ConfigKey.PLATFORM_TYPE] = objects.sysconfig.sys_config_get(
+                ctxt, ConfigKey.PLATFORM_TYPE)
         permission['user'] = user
         if permission['platform_inited']:
             if cluster_id:
