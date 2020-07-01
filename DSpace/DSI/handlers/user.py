@@ -77,12 +77,8 @@ class PermissionMixin(BaseAPIHandler):
             if not v.licenses_data:
                 is_available = False
             else:
-                if cluster_id:
-                    # verify: expire,cluster_size,node_num
-                    is_available = v.is_available()
-                else:
-                    # verify: expire
-                    is_available = v.check_licenses_expiry()
+                # verify: expire
+                is_available = v.check_licenses_expiry()
         return is_available
 
     def default_page(self):
