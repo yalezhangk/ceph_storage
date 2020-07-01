@@ -573,6 +573,77 @@ class NodeMetricsMonitorHandler(ClusterAPIHandler):
         }))
 
 
+@URLRegistry.register(r"/nodes/([0-9]*)/disks_update/")
+class NodeDisksUpdateHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self, node_id):
+        """
+        ---
+        tags:
+        - node
+        summary: update node disks
+        description: return node
+        operationId: nodes.api.node_disks_update
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        - in: url
+          name: id
+          description: node's id
+          schema:
+            type: integer
+            format: int32
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        node = yield client.node_disk_update(ctxt, node_id=node_id)
+        self.write(objects.json_encode({
+            "node": node
+        }))
+
+
+@URLRegistry.register(r"/nodes/disks_update/")
+class NodesDisksUpdateHandler(ClusterAPIHandler):
+    @gen.coroutine
+    def get(self):
+        """
+        ---
+        tags:
+        - node
+        summary: update node disks
+        description: return node
+        operationId: nodes.api.disks_update
+        produces:
+        - application/json
+        parameters:
+        - in: header
+          name: X-Cluster-Id
+          description: Cluster ID
+          schema:
+            type: string
+          required: true
+        responses:
+        "200":
+          description: successful operation
+        """
+        ctxt = self.get_context()
+        client = self.get_admin_client(ctxt)
+        nodes = yield client.nodes_disk_update(ctxt)
+        self.write(objects.json_encode({
+            "nodes": nodes
+        }))
+
+
 @URLRegistry.register(r"/nodes/([0-9]*)/history_metrics/")
 class NodeMetricsHistroyMonitorHandler(ClusterAPIHandler):
     @gen.coroutine

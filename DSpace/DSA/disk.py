@@ -109,6 +109,11 @@ class DiskHandler(AgentBaseHandler):
             _success = False
         return _success
 
+    def update_disks(self, ctxt, node):
+        disks = self.disk_get_all(ctxt, node)
+        logger.info("update disk info: %s", disks)
+        self.admin.disk_reporter(ctxt, disks, node.id)
+
     @retry(exception.StorException, interval=1, retries=5)
     def disk_get_all(self, ctxt, node):
         try:

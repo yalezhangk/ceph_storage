@@ -24,6 +24,7 @@ from DSpace.taskflows.include import include_flow
 from DSpace.taskflows.node import NodesCheck
 from DSpace.taskflows.node import NodeTask
 from DSpace.taskflows.node import PrometheusTargetMixin
+from DSpace.taskflows.node import disks_update
 from DSpace.taskflows.tcmu import TcmuTask
 from DSpace.tools.prometheus import PrometheusTool
 from DSpace.utils import cluster_config
@@ -1066,6 +1067,15 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         checker = NodesCheck(ctxt)
         res = checker.check(data)
         return res
+
+    def node_disk_update(self, ctxt, node_id):
+        node = objects.Node.get_by_id(ctxt, node_id)
+        disks_update(ctxt, node=node)
+        return objects.Node.get_by_id(ctxt, node_id, expected_attrs=['disks'])
+
+    def nodes_disk_update(self, ctxt):
+        disks_update(ctxt)
+        return objects.NodeList.get_all(ctxt, expected_attrs=['disks'])
 
     def _node_check_ip(self, ctxt, data):
         admin_cidr = objects.sysconfig.sys_config_get(

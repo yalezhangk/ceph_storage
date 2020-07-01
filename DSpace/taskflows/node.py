@@ -1706,3 +1706,37 @@ class NodesCheck(object):
         e.run()
         infos = e.storage.get('reducer')
         return infos
+
+
+class DisksUpdate(BaseTask):
+    def execute(self, ctxt, node, task_info):
+        super(DisksUpdate, self).execute(task_info)
+        logger.info("node %s disk update", node.hostname)
+        try:
+            agent = context.agent_manager.get_client(node.id)
+            agent.update_disks(ctxt, node)
+        except Exception as e:
+            logger.error("failed to update disks on node %s,"
+                         "reason: %s", node.hostname, e)
+
+
+def disks_update(ctxt, node=None):
+    logger.info("Node disks update")
+    store = {}
+    nodes = [node] if node else objects.NodeList.get_all(ctxt)
+    wf = lf.Flow('NodesDisksUpdate')
+    nodes_wf = uf.Flow("DisksUpdate")
+    for node in nodes:
+        node_id = node.id
+        arg = "node-%s" % node_id
+        wf.add(DisksUpdate("DiskUpdate-%s" % node_id,
+                           rebind={'node': arg}))
+        store[arg] = node
+    store.update({
+        "ctxt": ctxt,
+        'task_info': {}
+    })
+    wf.add(nodes_wf)
+    e = engines.load(wf, engine='parallel', store=store,
+                     max_workers=CONF.taskflow_max_workers)
+    e.run()
