@@ -6,6 +6,7 @@ import uuid
 
 import six
 
+from DSpace.common.config import CONF
 from DSpace.exception import RunCommandError
 from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
@@ -263,6 +264,10 @@ class DiskTool(ToolBase):
         pd_list = {}
         for controller in out_data.get('Controllers'):
             if controller.get("Command Status").get("Status") != "Success":
+                return
+            raid_model = controller["Response Data"]["Basics"]["Model"]
+            if raid_model not in CONF.support_raid_models:
+                logger.debug("raid model %s not support now", raid_model)
                 return
             for vd in controller.get("Response Data").get("VD LIST"):
                 dg_vd = vd.get('DG/VD').split('/')

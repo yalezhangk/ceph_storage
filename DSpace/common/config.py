@@ -137,6 +137,9 @@ global_opts = [
     cfg.IntOpt('erasure_default_pg_num',
                default=32,
                help='DSM: Erasure pool default pg num'),
+    cfg.ListOpt('support_raid_models',
+                default=['ServeRAID M5210', 'ServeRAID M5110e'],
+                help='DSA: Support raid models')
 ]
 
 etcd_opts = [
