@@ -21,6 +21,7 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import DSMStatus
 from DSpace.taskflows.base import task_manager
 from DSpace.taskflows.ceph import CephTask
+from DSpace.utils.license_verify import LicenseVerifyTool
 from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
 from DSpace.utils.mail import send_mail
@@ -345,3 +346,17 @@ class AdminBaseHandler(AdminBaseMixin):
         access_key = access_keys.access_key
         secret_access_key = access_keys.secret_key
         return admin, access_key, secret_access_key
+
+    def check_license_tool(self):
+        # 跳过license校验 or return license_tool
+        license = LicenseVerifyTool()
+        if license.is_skip:
+            # 跳过校验
+            logger.info('will skip license verify')
+            return
+        else:
+            license_tool = license.get_license_verify_tool()
+            if not license_tool:
+                raise exc.InvalidInput(_("license verify fail, please upload "
+                                         "authorized license file"))
+            return license_tool

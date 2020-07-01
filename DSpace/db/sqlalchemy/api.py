@@ -1282,8 +1282,11 @@ def osd_get_all(context, marker=None, limit=None, sort_keys=None,
                 expected_attrs=None):
     session = get_session()
     filters = filters or {}
-    if "cluster_id" not in filters.keys():
-        filters['cluster_id'] = context.cluster_id
+    if filters.get("cluster_id") != "*":
+        if "cluster_id" not in filters.keys():
+            filters['cluster_id'] = context.cluster_id
+    else:
+        filters.pop("cluster_id")
     with session.begin():
         # Generate the query
         query = _generate_paginate_query(

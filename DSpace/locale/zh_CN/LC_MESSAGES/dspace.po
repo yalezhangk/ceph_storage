@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-04-24 14:27+0800\n"
+"POT-Creation-Date: 2020-07-01 11:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -619,6 +619,9 @@ msgstr "告警规则要更新的字段参数不存在"
 msgid "DSA service in node(%s) not available"
 msgstr "节点（%s）上 DSA 服务不可用"
 
+msgid "license verify fail, please upload authorized license file"
+msgstr "产品许可证校验失败，请上传合法的产品许可后再试"
+
 msgid "Object policy placement do not exists"
 msgstr "对象策略不存在"
 
@@ -991,6 +994,9 @@ msgstr "节点{}创建成功"
 msgid "node {} create error"
 msgstr "节点{}创建失败"
 
+msgid "node num exceed quota"
+msgstr "产品许可校验失败：节点数量超标"
+
 msgid "Admin ip exists"
 msgstr "管理IP已存在"
 
@@ -1188,6 +1194,9 @@ msgstr "节点未处于空闲状态"
 
 msgid "Max osd num is %s"
 msgstr "最大硬盘数为 %s"
+
+msgid "cluser size exceed quota"
+msgstr "产品许可校验失败：集群容量超标"
 
 msgid "delete {} success"
 msgstr "删除硬盘成功：{}"

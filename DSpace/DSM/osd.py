@@ -265,6 +265,17 @@ class OsdHandler(AdminBaseHandler):
         if osd_num >= max_osd_num:
             raise exception.InvalidInput(_("Max osd num is %s") % max_osd_num)
 
+    def _check_license_cluster_size(self, add_size):
+        # 检查集群容量，若超标，返回
+        # 1. available: 大小是否超标，
+        # 2. authorize_size: 已授权的容量，
+        # 3. fact_size: 所有集群实际总容量
+        license_tool = self.check_license_tool()
+        if license_tool:
+            result = license_tool.check_size(add_size)
+            if not result['available']:
+                raise exception.InvalidInput(_("cluser size exceed quota"))
+
     def osd_create(self, ctxt, data):
         """Osd Create
 
@@ -276,11 +287,14 @@ class OsdHandler(AdminBaseHandler):
 
         # check mon available
         # osd num check
+
         self._osd_create_check(ctxt, data)
         self._osd_create_check_store(ctxt, data)
         disk_id = data.get('disk_id')
         # disk check
         disk = self._osd_create_disk_check(ctxt, disk_id)
+        logger.debug('check_license_cluster_size')
+        self._check_license_cluster_size(disk.size)
         # partitions check
         self._osd_create_partitions_check(ctxt, data, disk)
         logger.debug("Parameter check pass.")

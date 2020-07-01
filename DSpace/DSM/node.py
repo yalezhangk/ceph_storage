@@ -1019,8 +1019,21 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         self.send_websocket(ctxt, node, op_status, msg)
         return node
 
+    def _check_license_node_num(self):
+        # 检查节点数量，若超标，返回
+        # 1 available: 节点数是否超标，
+        # 2 authorize_node_num: 已授权的节点数，
+        # 3. fact_node_num: 所有集群实际总节点数
+        license_tool = self.check_license_tool()
+        if license_tool:
+            result = license_tool.check_node_number()
+            if not result['available']:
+                return exc.InvalidInput(_("node num exceed quota"))
+
     @synchronized('node-create', blocking=True)
     def node_create(self, ctxt, data):
+        logger.debug('check_license_node_num')
+        self._check_license_node_num()
         roles = data.get("roles")
         nodes_info = data.get("nodes")
         if len(roles):
