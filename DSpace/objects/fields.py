@@ -788,6 +788,10 @@ class ConfigKey(BaseStorEnum):
     PLATFORM_TYPE = 'platform_type'
 
 
+class PlatfromType(BaseStorEnum):
+    HCI = "hci"
+
+
 class DSMStatus(BaseStorEnum):
     INIT = "init"
     ACTIVE = "active"

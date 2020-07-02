@@ -16,6 +16,7 @@ from DSpace.DSI.handlers.base import BaseAPIHandler
 from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
+from DSpace.objects.fields import PlatfromType
 from DSpace.utils.license_verify import LicenseVerify
 from DSpace.utils.security import check_encrypted_password
 
@@ -153,6 +154,20 @@ class PermissionMixin(BaseAPIHandler):
             ).create()
         return inited
 
+    def enable_manager_cluster_page(self, ctxt, cluster_id, permission):
+        # disable manager cluster page in hci
+        is_hci = permission[ConfigKey.PLATFORM_TYPE] == PlatfromType.HCI
+        if is_hci:
+            return False
+
+        # enable page only in admin cluster
+        if cluster_id:
+            cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
+            if cluster.is_admin:
+                return True
+
+        return False
+
     @gen.coroutine
     def get_permission(self, ctxt, user, cluster_id=None):
         permission = copy.deepcopy(default_permission)
@@ -164,10 +179,8 @@ class PermissionMixin(BaseAPIHandler):
                 ctxt, ConfigKey.PLATFORM_TYPE)
         permission['user'] = user
         if permission['platform_inited']:
-            if cluster_id:
-                cluster = objects.Cluster.get_by_id(ctxt, cluster_id)
-                if cluster.is_admin:
-                    self.add_page(permission, "manage-cluster")
+            if self.enable_manager_cluster_page(ctxt, cluster_id, permission):
+                self.add_page(permission, "manage-cluster")
             include_tag = objects.sysconfig.sys_config_get(ctxt, 'is_import')
             if include_tag:
                 pages = self.import_page()
