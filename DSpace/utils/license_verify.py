@@ -82,6 +82,7 @@ class LicenseVerify(object):
 
     @property
     def license_cluster_size(self):
+        # 返回license授权容量,bytes
         if not self._licenses_data:
             return 0
         size = self._extra_data.get('capacity')
@@ -152,18 +153,21 @@ class LicenseVerify(object):
         """
         LOG.debug("开始检查licenses时间段")
         present_time = datetime.datetime.utcnow()
-        if not self.licenses_data or self.licenses_data.not_after < \
-                present_time\
-                or self.licenses_data.not_before > present_time:
-            LOG.error("licenses时间段不符")
+        not_before = self.licenses_data.not_before
+        not_after = self.licenses_data.not_after
+        if not self.licenses_data or not_after < present_time \
+                or not_before > present_time:
+            LOG.error("licenses时间段不符, 当前时间: %s, 激活日期: %s, 截止日期: %s"
+                      % (present_time, not_before, not_after))
             # todo 跳转到购买产品许可证页面
             return False
         else:
             return True
 
-    def check_node_number(self):
+    def check_node_number(self, add_node_num=None):
         """
         检查节点数
+        add_node_num, 待添加的节点数量，int
         :return:
         available: 节点数是否超标，
         authorize_node_num: 已授权的节点数，
@@ -171,13 +175,17 @@ class LicenseVerify(object):
         """
         LOG.debug("开始检查licenses授权节点数")
         licenses_node = self.licenses_node_number
+        fact_node_num = self.all_node_num()
+        if add_node_num:
+            fact_node_num += add_node_num
         result = {
             'available': False,
             'authorize_node_num': licenses_node,
-            'fact_node_num': self.all_node_num()
+            'fact_node_num': fact_node_num
         }
-        if licenses_node <= self.all_node_num():
-            LOG.error('license verify: node节点数量超标')
+        if licenses_node < fact_node_num:
+            LOG.error('license verify: 节点数量超标, 已授权: %s 个, 当前集群: %s 个'
+                      % (licenses_node, fact_node_num))
         else:
             result['available'] = True
         return result
@@ -185,29 +193,32 @@ class LicenseVerify(object):
     def check_size(self, add_size=None):
         """
         检查集群容量
+        add_size,待添加的容量，int, bytes
         :return:
         available: 大小是否超标，
         authorize_size: 已授权的容量，
         fact_size: 所有集群实际总容量
         """
-        total_size = self.license_cluster_size
+        LOG.debug("开始检查licenses集群容量")
+        license_size = self.license_cluster_size
         fact_size = self.all_cluster_size()
         if add_size:
             fact_size += add_size
         result = {
             'available': False,
-            'authorize_size': total_size,
+            'authorize_size': license_size,
             'fact_size': fact_size
         }
-        if int(total_size) <= fact_size:
-            LOG.error('license verify: 集群容量超标')
+        if license_size < fact_size:
+            LOG.error('license verify: 集群容量超标, 已授权: %s, 集群容量: %s'
+                      % (license_size, fact_size))
         else:
             result['available'] = True
         return result
 
     def is_available(self):
-        # 验证licese是否失效
-        LOG.debug('check license is_available')
+        # 验证licese是否可用
+        LOG.debug('check license is_available: expiry_time, size, node_num')
         if False in [self.check_licenses_expiry(),
                      self.check_node_number()['available'],
                      self.check_size()['available']]:
