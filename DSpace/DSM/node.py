@@ -1029,7 +1029,7 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         if license_tool:
             result = license_tool.check_node_number(node_num)
             if not result['available']:
-                return exc.InvalidInput(_("node num exceed quota"))
+                raise exc.InvalidInput(_("node num exceed quota"))
 
     @synchronized('node-create', blocking=True)
     def node_create(self, ctxt, data):
