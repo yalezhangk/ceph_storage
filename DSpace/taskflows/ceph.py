@@ -21,6 +21,7 @@ from DSpace.tools.ceph import EC_POOL_RELATION_RE_POOL as ECP
 from DSpace.tools.ceph import RADOSClient
 from DSpace.tools.ceph import RBDProxy
 from DSpace.tools.utils import change_erasure_pool_name
+from DSpace.utils.coordination import synchronized
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,53 @@ class CephTask(object):
     def get_host_osds(self, host_name):
         pass
 
+    @synchronized("crushmap_modify")
+    def _add_osd_to_crushmap(self, client, hosts, osds):
+        crushmap = client.get_crushmap()
+        exist_devices = {}
+        for device in crushmap["devices"]:
+            exist_devices[device["id"]] = device
+        crushmap["devices"] = []
+        exist_buckets = {}
+        for bucket in crushmap["buckets"]:
+            exist_buckets[bucket["name"]] = bucket
+        for name, host in six.iteritems(hosts):
+            host_osds = [osds.get(osd_id) for osd_id in host['osds']]
+            for osd in host_osds:
+                if int(osd["id"]) not in exist_devices:
+                    exist_devices[int(osd["id"])] = {
+                        "id": osd["id"],
+                        "name": "osd." + osd["id"],
+                        "class": osd["disk_type"]
+                    }
+                else:
+                    exist_devices[int(osd["id"])]["class"] = osd["disk_type"]
+                exist_buckets[host['crush_name']]["items"].append({
+                    "id": osd["id"],
+                    "weight": 65536 * float(osd['size']) / (2 ** 40)
+                })
+        for id, device in six.iteritems(exist_devices):
+            crushmap["devices"].append(device)
+
+        for name, bucket in six.iteritems(exist_buckets):
+            if "~" in name:
+                continue
+            if (bucket["type_name"] == "host") and (bucket["weight"] == 0):
+                for item in bucket["items"]:
+                    bucket["weight"] = int(bucket["weight"]) + \
+                                       int(item["weight"])
+        exist_buckets_id = {}
+        for name, bucket in six.iteritems(exist_buckets):
+            exist_buckets_id[bucket["id"]] = bucket
+        crushmap["buckets"] = []
+
+        for name, bucket in six.iteritems(exist_buckets):
+            if ("~" not in name) and bucket["weight"] == 0:
+                for item in bucket["items"]:
+                    item["weight"] = exist_buckets_id[item["id"]]["weight"]
+            crushmap["buckets"].append(bucket)
+        client.set_crushmap(crushmap)
+
     def _crush_rule_create(self, client, crush_content, pool_type,
                            extra_data=None):
         logger.info("rule create: %s", json.dumps(crush_content))
@@ -193,11 +241,7 @@ class CephTask(object):
                 client.rack_move_to_root(
                     host['crush_name'], default_root_name)
         # add osd
-        for name, host in six.iteritems(hosts):
-            host_osds = [osds.get(osd_id) for osd_id in host['osds']]
-            for osd in host_osds:
-                client.osd_add(osd['id'], osd['size'],
-                               host['crush_name'])
+        self._add_osd_to_crushmap(client, hosts, osds)
         # TODO osd
 
         client.rule_add(rule_name, default_root_name, fault_domain,
