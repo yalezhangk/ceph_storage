@@ -12,7 +12,6 @@ from DSpace.objects import fields as s_fields
 from DSpace.tools.base import ToolBase
 from DSpace.tools.storcli import StorCli as StorCliTool
 from DSpace.utils import retry
-from DSpace.utils.ptype import PTYPE
 
 logger = logging.getLogger(__name__)
 
@@ -182,24 +181,16 @@ class DiskTool(ToolBase):
         }
         for part in partitions:
             role = role_map[part["role"]]
-            size = part["size"] / 1024
-            partition_guid = "--partition-guid={}:{}".format(order,
-                                                             str(uuid.uuid4()))
-            if len(partitions) == order:
-                partition_size = "--largest-new={}".format(order)
-            else:
-                partition_size = "--new={}:0:+{}K".format(order, int(size))
-
-            type_code = "--typecode={}:{}"\
-                .format(order, PTYPE['regular'][role]['ready'])
-            cmd = ["sgdisk", partition_size,
-                   "--change-name='{}:ceph {}'".format(order, role),
-                   partition_guid, type_code, "--mbrtogpt", "--", _disk]
+            # MB for dspace-disk
+            size = int(part["size"] / (1024**2))
+            guid = str(uuid.uuid4())
+            cmd = ["dspace-disk", "partition-create", _disk, guid, role]
+            if len(partitions) != order:
+                cmd.extend(["--size", str(size), "--num", str(order)])
             code, out, err = self.run_command(cmd)
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,
                                       stdout=out, stderr=err)
-            self.partprobe(disk)
             part_uuid = self.get_partition_uuid(part['name'])
             part['uuid'] = part_uuid
             order += 1
