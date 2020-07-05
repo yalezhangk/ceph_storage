@@ -1,6 +1,7 @@
 import json
 import time
 
+import oslo_db
 from oslo_log import log as logging
 from oslo_utils import strutils
 from oslo_utils import timeutils
@@ -19,6 +20,7 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import DSMStatus
 from DSpace.taskflows.base import task_manager
 from DSpace.taskflows.ceph import CephTask
+from DSpace.utils import retry
 from DSpace.utils.license_verify import LicenseVerifyTool
 from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
@@ -155,6 +157,7 @@ class AdminBaseHandler(AdminBaseMixin):
         self.ignored_osds = {}
         taskflows.register_all()
 
+    @retry(oslo_db.exception.DBConnectionError, retries=10)
     def bootstrap(self):
         logger.info("DSpace admin bootstrap")
         ctxt = self.ctxt
