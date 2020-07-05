@@ -177,6 +177,8 @@ def create_flow(ctxt):
 
 
 class Task(task.Task):
+    _task = None
+
     def _get_task_name(self):
         name = self.name
         if '.' in name:
@@ -192,11 +194,13 @@ class Task(task.Task):
 
     def finish_task(self):
         t = self._task
-        t.finish()
+        if t:
+            t.finish()
 
     def failed_task(self):
         t = self._task
-        t.failed()
+        if t:
+            t.failed()
 
     def revert(self, result, flow_failures):
         if isinstance(result, Failure):
