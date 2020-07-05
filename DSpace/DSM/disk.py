@@ -153,9 +153,11 @@ class DiskHandler(AdminBaseHandler):
         if disk.status != s_fields.DiskStatus.AVAILABLE:
             raise exception.InvalidInput(_("Disk status not available"))
         disk.conditional_update({
-            "status": s_fields.DiskStatus.PROCESSING
+            "status": s_fields.DiskStatus.PROCESSING,
+            "role": s_fields.DiskRole.ACCELERATE
         }, expected_values={
-            "status": s_fields.DiskStatus.AVAILABLE
+            "status": s_fields.DiskStatus.AVAILABLE,
+            "role": s_fields.DiskRole.DATA
         })
         begin_action = self.begin_action(
             ctxt, Resource.ACCELERATE_DISK, Action.CREATE, disk)
