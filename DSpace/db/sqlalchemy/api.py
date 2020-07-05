@@ -843,6 +843,7 @@ def _rpc_service_get(context, rpc_service_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def rpc_service_create(context, values):
     rpc_service_ref = models.RPCService()
     rpc_service_ref.update(values)
@@ -918,6 +919,7 @@ def _node_get(context, node_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def node_create(context, values):
     node_ref = models.Node()
     node_ref.update(values)
@@ -1035,6 +1037,7 @@ def _datacenter_get(context, datacenter_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def datacenter_create(context, values):
     session = get_session()
     datacenter_ref = models.Datacenter()
@@ -1113,6 +1116,7 @@ def _rack_get(context, rack_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def rack_create(context, values):
     session = get_session()
     rack_ref = models.Rack()
@@ -1223,6 +1227,7 @@ def _osd_load_attr(osd, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def osd_create(context, values):
     osd_ref = models.Osd()
     osd_ref.cluster_id = context.cluster_id
@@ -1345,6 +1350,7 @@ def _pool_get(context, pool_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def pool_create(context, values):
     pool_ref = models.Pool()
     pool_ref.update(values)
@@ -1509,6 +1515,7 @@ def sys_config_get_by_key(context, key, cluster_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def sys_config_create(context, values):
     # TODO
     # get cluster id from context
@@ -2461,6 +2468,7 @@ def _process_license_filters(query, filters):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def license_create(context, values):
     license_ref = models.LicenseFile()
     license_ref.update(values)
@@ -2515,6 +2523,7 @@ def _network_get(context, net_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def network_create(context, values):
     net_ref = models.Network()
     net_ref.cluster_id = context.cluster_id
@@ -2629,6 +2638,7 @@ def alert_rule_get(context, alert_rule_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_rule_create(context, values):
     alert_rule_ref = models.AlertRule()
     alert_rule_ref.update(values)
@@ -2923,6 +2933,7 @@ def disk_partition_get_by_uuid(context, uuid, node_id, **kwargs):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def disk_partition_create(context, values):
     disk_part_ref = models.DiskPartition()
     disk_part_ref.cluster_id = context.cluster_id
@@ -3062,6 +3073,7 @@ def alert_group_get(context, alert_group_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_group_create(context, values):
     alert_group_ref = models.AlertGroup()
     alert_group_ref.cluster_id = context.cluster_id
@@ -3201,6 +3213,7 @@ def email_group_get(context, email_group_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def email_group_create(context, values):
     email_group_ref = models.EmailGroup()
     email_group_ref.update(values)
@@ -3310,6 +3323,7 @@ def alert_log_get(context, alert_log_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_log_create(context, values):
     alert_log_ref = models.AlertLog()
     alert_log_ref.update(values)
@@ -3428,6 +3442,7 @@ def log_file_get(context, log_file_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def log_file_create(context, values):
     log_file_ref = models.LogFile()
     log_file_ref.update(values)
@@ -3538,6 +3553,7 @@ def volume_snapshot_get(context, volume_snapshot_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_snapshot_create(context, values):
     volume_snapshot_ref = models.VolumeSnapshot()
     volume_snapshot_ref.update(values)
@@ -3765,6 +3781,7 @@ def _ceph_config_get(context, ceph_config_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def ceph_config_create(context, values):
     ceph_config_ref = models.CephConfig()
     ceph_config_ref.update(values)
@@ -3868,6 +3885,7 @@ def _crush_rule_get(context, crush_rule_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def crush_rule_create(context, values):
     crush_rule_ref = models.CrushRule()
     crush_rule_ref.update(values)
@@ -4008,6 +4026,7 @@ def action_log_destroy(context, action_log_id):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def action_log_create(context, values):
     action_log_ref = models.ActionLog()
     action_log_ref.update(values)
@@ -4095,6 +4114,7 @@ def user_get(context, user_id, expected_attrs=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def user_create(context, values):
     user_ref = models.User()
     user_ref.update(values)
@@ -4157,6 +4177,7 @@ def _taskflow_get(context, taskflow_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def taskflow_create(context, values):
     taskflow_ref = models.Taskflow()
     taskflow_ref.update(values)
@@ -4246,6 +4267,7 @@ def _task_get(context, task_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def task_create(context, values):
     task_ref = models.Task()
     task_ref.update(values)
@@ -4376,6 +4398,7 @@ def _radosgw_get(context, radosgw_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def radosgw_create(context, values):
     radosgw_ref = models.Radosgw()
     radosgw_ref.update(values)
@@ -4481,6 +4504,7 @@ def _radosgw_zone_get(context, rgw_zone_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def radosgw_zone_create(context, values):
     radosgw_zone_ref = models.RadosgwZone()
     radosgw_zone_ref.update(values)
@@ -4571,6 +4595,7 @@ def _radosgw_router_get(context, rgw_router_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def radosgw_router_create(context, values):
     radosgw_ref = models.RadosgwRouter()
     radosgw_ref.update(values)
@@ -4682,6 +4707,7 @@ def _router_service_get(context, router_service_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def router_service_create(context, values):
     router_service_ref = models.RouterService()
     router_service_ref.update(values)
@@ -4769,6 +4795,7 @@ def _object_policy_get(context, object_policy_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_policy_create(context, values):
     object_policy_ref = models.ObjectPolicy()
     object_policy_ref.update(values)
@@ -4879,6 +4906,7 @@ def _object_user_get(context, object_user_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_user_create(context, values):
     object_user_ref = models.ObjectUser()
     object_user_ref.update(values)
@@ -4987,6 +5015,7 @@ def _object_access_key_get(context, object_access_key_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_access_key_create(context, values):
     object_access_key_ref = models.ObjectAccessKey()
     object_access_key_ref.update(values)
@@ -5095,6 +5124,7 @@ def _object_bucket_get(context, object_user_id, session=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_bucket_create(context, values):
     object_policy_ref = models.ObjectBucket()
     object_policy_ref.update(values)
@@ -5208,6 +5238,7 @@ def _object_lifecycle_get(context, object_lifecycle_id, session=None):
             object_lifecycle_id=object_lifecycle_id)
 
 
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_lifecycle_create(context, values):
     object_lifecycle_ref = models.ObjectLifecycle()
     object_lifecycle_ref.update(values)
