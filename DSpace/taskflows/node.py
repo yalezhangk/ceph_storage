@@ -1729,8 +1729,8 @@ def disks_update(ctxt, node=None):
     for node in nodes:
         node_id = node.id
         arg = "node-%s" % node_id
-        wf.add(DisksUpdate("DiskUpdate-%s" % node_id,
-                           rebind={'node': arg}))
+        nodes_wf.add(DisksUpdate("DiskUpdate-%s" % node_id,
+                                 rebind={'node': arg}))
         store[arg] = node
     store.update({
         "ctxt": ctxt,
