@@ -54,12 +54,6 @@ class NodeMixin(object):
         if remove_map and node.id in self.task_map.keys():
             del self.task_map[node.id]
 
-    def _check_roles_tasking(self, ctxt):
-        logger.debug("checking if there are nodes updating nodes")
-        for node_id, tasks in six.iteritems(self.task_map):
-            if s_fields.NodeStatus.UPDATING_ROLES in tasks:
-                raise exc.InvalidInput(_("There are nodes updating roles"))
-
     def _check_node_status(self, ctxt, node, deleted=False):
         logger.debug("check node %s status", node.hostname)
         allowed_status = [s_fields.NodeStatus.ACTIVE,
@@ -317,7 +311,6 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             self._rgw_uninstall_check(ctxt, node)
         if has_roles:
             self.check_agent_available(ctxt, node)
-            self._check_roles_tasking(ctxt)
         self._check_node_disks(ctxt, node)
         return has_roles
 
@@ -930,7 +923,6 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
     def node_roles_set(self, ctxt, node_id, data):
         node = objects.Node.get_by_id(ctxt, node_id)
         self._check_node_status(ctxt, node)
-        self._check_roles_tasking(ctxt)
         self.check_agent_available(ctxt, node)
         i_roles = set(data.get('install_roles'))
         u_roles = set(data.get('uninstall_roles'))
@@ -1031,14 +1023,12 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             if not result['available']:
                 raise exc.InvalidInput(_("node num exceed quota"))
 
-    @synchronized('node-create', blocking=True)
     def node_create(self, ctxt, data):
         logger.debug('check_license_node_num')
         roles = data.get("roles")
         nodes_info = data.get("nodes")
         self._check_license_node_num(len(nodes_info))
         if len(roles):
-            self._check_roles_tasking(ctxt)
             if "monitor" in roles:
                 self._mon_install_check(
                     ctxt, new_mon_num=len(nodes_info))
