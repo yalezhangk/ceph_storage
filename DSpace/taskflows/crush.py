@@ -44,7 +44,8 @@ class CrushContentGen(object):
         osd_info = {
             "size": disk.size,
             "name": osd.osd_name,
-            "id": osd.osd_id
+            "id": osd.osd_id,
+            "disk_type": osd.disk_type,
         }
         return osd_info
 

@@ -14,12 +14,14 @@ from DSpace.exception import ActionTimeoutError
 from DSpace.exception import CephCommandTimeout
 from DSpace.exception import CephConnectTimeout
 from DSpace.exception import CephException
+from DSpace.exception import CrushMapNotFound
 from DSpace.exception import DeviceOrResourceBusy
 from DSpace.exception import PermissionDenied
 from DSpace.exception import RunCommandError
 from DSpace.exception import SystemctlRestartError
 from DSpace.i18n import _
 from DSpace.objects.fields import PoolType
+from DSpace.tools.base import Executor
 from DSpace.tools.base import ToolBase
 from DSpace.utils import retry
 
@@ -43,6 +45,21 @@ eg:  ec_pool: ec_pool_asdf
      re_crush_rule: rule_01-link_by_ec_pool
      ecp_name = rule_01-ecp
 """
+RULE_TYPE_MAP = {
+    1: "replicated",
+    3: "erasure",
+}
+SUPPORTED_TUNABLES = [
+    "choose_local_tries",
+    "choose_local_fallback_tries",
+    "choose_total_tries",
+    "chooseleaf_descend_once",
+    "chooseleaf_vary_r",
+    "chooseleaf_stable",
+    "straw_calc_version",
+    "allowed_bucket_algs"
+]
+DEFAULT_CURSH_PATH = "/tmp/crush"
 
 
 class CephTool(ToolBase):
@@ -477,6 +494,19 @@ class CephTool(ToolBase):
             return
         configer.remove_option(section, key)
         configer.write(open(path, 'w'))
+
+    def crushmap_compile(self, source=None):
+        if source is None:
+            source = DEFAULT_CURSH_PATH
+        if not os.path.exists(source):
+            raise CrushMapNotFound(path=source)
+        output = '/tmp/crush_compiled'
+        cmd = ["crushtool", "-c", source, "-o", output]
+        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
+        return output
 
 
 def get_json_output(json_databuf):
@@ -990,6 +1020,179 @@ class RADOSClient(object):
                 message="execute command failed: {}".format(command_str))
         logger.debug(mon_dump_outbuf)
 
+    def get_ceph_report(self):
+        """
+        Get ceph report
+        :return:
+        """
+        cmd = {
+            "format": "json",
+            "prefix": "report"
+        }
+        command_str = json.dumps(cmd)
+        logger.info('command_str: {}'.format(command_str))
+        report_info = self._send_mon_command(command_str)
+        logger.debug("Ceph report: %s", report_info)
+        return report_info
+
+    def get_crushmap(self):
+        """
+        Get crushmap json
+        :return: crushmap
+        """
+        logger.info("Get crush map")
+        cmd = {
+            "prefix": "osd crush dump"
+        }
+        command_str = json.dumps(cmd)
+        logger.info('command_str: {}'.format(command_str))
+        crushmap = self._send_mon_command(command_str)
+        logger.debug("Ceph crushmap: %s", crushmap)
+        return crushmap
+
+    def set_crushmap(self, map, source=None):
+        """
+        Set crushmap to ceph
+        :param map: json type of crushmap
+        :return: None
+        """
+        logger.info("Set cursh map: %s, %s", map, source)
+        if source is None:
+            source = DEFAULT_CURSH_PATH
+        # Convert map from json to text
+        self.convert_crushmap(map, source)
+        # Complie crushmap text
+        ceph_tool = CephTool(Executor())
+        dest = ceph_tool.crushmap_compile(source)
+        # Set crushmap
+        cmd = {
+            "prefix": "osd setcrushmap"
+        }
+        command_str = json.dumps(cmd)
+        logger.info('command_str: {}'.format(command_str))
+        with open(dest, "rb") as file:
+            inbuf = file.read()
+        self._send_mon_command(command_str, inbuf)
+
+    def convert_crushmap(self, map, path=None):
+        """
+        Convert crushmap from json to normal format
+        :param map: json crushmap
+        :return:
+        """
+        logger.info("Convert crush map %s", map)
+        if path is None:
+            path = DEFAULT_CURSH_PATH
+        if os.path.exists(path):
+            os.remove(path)
+        with open(path, "a") as file:
+            # tunables
+            tunables = map.get("tunables")
+            for k, v in six.iteritems(tunables):
+                if k not in SUPPORTED_TUNABLES:
+                    continue
+                file.write("tunable {} {}\n".format(k, v))
+            file.write("\n")
+            # devices
+            devices = map.get("devices")
+            for device in devices:
+                if device["name"].startswith("device"):
+                    device["name"] = "osd.{}".format(device["id"])
+                device_str = "device {} {}".format(
+                    device["id"], device["name"])
+                if device.get("class"):
+                    device_str += " class {}\n".format(device["class"])
+                else:
+                    device_str += "\n"
+                file.write(device_str)
+            file.write("\n")
+            # types
+            types = map.get("types")
+            for t in types:
+                file.write("type {} {}\n".format(t["type_id"], t["name"]))
+            file.write("\n")
+            # buckets
+            buckets_old = map.get("buckets")
+            buckets_new = {}
+            iname_map = {}
+            # combine buckets
+            for bucket in buckets_old:
+                bucket_name = bucket["name"]
+                bucket_class = ""
+                iname_map[bucket["id"]] = bucket["name"]
+                if "~" in bucket["name"]:
+                    tmp_name = bucket_name.split("~")
+                    bucket_name = tmp_name[0]
+                    bucket_class = tmp_name[1]
+
+                if buckets_new.get(bucket_name):
+                    buckets_new[bucket_name]["bucket_class"] = bucket_class
+                    buckets_new[bucket_name]["class_id"] = bucket["id"]
+                    if not bucket_class:
+                        buckets_new[bucket_name]["id"] = bucket["id"]
+                else:
+                    buckets_new[bucket_name] = bucket
+            logger.debug("Buckets combined: %s", buckets_new)
+            file.write("\n")
+            # write buckets
+            tail_buckets = []
+            for key, bucket in six.iteritems(buckets_new):
+                tail = False
+                seq = [
+                    ("%s %s {\n" % (bucket["type_name"], bucket["name"])),
+                    "id {}\n".format(bucket["id"])
+                ]
+                if bucket.get("class_id"):
+                    seq.append("id {} class {}\n".format(
+                        bucket["class_id"], bucket["bucket_class"]))
+                seq = seq + [
+                    "alg {}\n".format(bucket["alg"]),
+                    "hash {}\n".format(bucket["hash"])
+                ]
+                items = bucket.get("items")
+                if not items:
+                    seq.append("}\n")
+                    file.writelines(seq)
+                    continue
+                for i in items:
+                    if int(i["id"]) < 0:
+                        item_name = iname_map[i["id"]]
+                        # Need to be written after items
+                        tail = True
+                    else:
+                        item_name = "osd.{}".format(i["id"])
+                    seq.append("item {} weight {}\n".format(
+                        item_name, format(i["weight"]/65536, ".5f")))
+                seq.append("}\n")
+                if tail:
+                    tail_buckets.append(seq)
+                    continue
+                file.writelines(seq)
+            for b in tail_buckets:
+                file.writelines(b)
+            file.write("\n")
+            # rules
+            rules = map.get("rules")
+            for rule in rules:
+                seq = [
+                    ("rule %s {\n" % rule["rule_name"]),
+                    "id {}\n".format(rule["rule_id"]),
+                    "type {}\n".format(RULE_TYPE_MAP[rule["type"]]),
+                    "min_size {}\n".format(rule["min_size"]),
+                    "max_size {}\n".format(rule["max_size"]),
+                ]
+                for step in rule.get("steps"):
+                    if step["op"] == "take":
+                        seq.append("step take {}\n".format(step["item_name"]))
+                    if step["op"] == "chooseleaf_firstn":
+                        seq.append(
+                            "step chooseleaf firstn {} type {}\n".format(
+                                step["num"], step["type"]))
+                    if step["op"] == "emit":
+                        seq.append("step emit\n")
+                seq.append("}\n")
+                file.writelines(seq)
+
     def _bucket_add(self, bucket_type, bucket_name):
         """
         {
@@ -1025,8 +1228,8 @@ class RADOSClient(object):
     def root_add(self, root_name):
         self._bucket_add("root", root_name)
 
-    def _send_mon_command(self, command_str):
-        ret, outbuf, err = self.client.mon_command(command_str, '')
+    def _send_mon_command(self, command_str, inbuf=""):
+        ret, outbuf, err = self.client.mon_command(command_str, inbuf)
         if ret == -110:
             raise CephCommandTimeout()
         if ret:
