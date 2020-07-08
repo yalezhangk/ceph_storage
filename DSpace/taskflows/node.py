@@ -28,6 +28,7 @@ from DSpace.tools.package import Package as PackageTool
 from DSpace.tools.probe import ProbeTool
 from DSpace.tools.service import Service as ServiceTool
 from DSpace.tools.system import System as SystemTool
+from DSpace.utils import retry
 from DSpace.utils import template
 from DSpace.utils import validator
 from DSpace.utils.cluster_config import CEPH_CONFIG_DIR
@@ -81,6 +82,12 @@ class PrometheusTargetMixin(object):
             ctxt, ConfigKey.CONFIG_DIR_CONTAINER)
         return path + PROMETHEUS_TARGET_PATH
 
+    @retry(exc.RPCConnectError, interval=2, retries=60, backoff_rate=1)
+    def _send_target_add(self, ctxt, client, ip, port, hostname):
+        client.prometheus_target_add(
+            ctxt, ip=ip, port=port, hostname=hostname,
+            path=self._get_path(ctxt))
+
     def target_add(self, ctxt, node, service):
         logger.info("Config from prometheus target file: %s, %s, %s,"
                     " role admin(%s)",
@@ -116,11 +123,8 @@ class PrometheusTargetMixin(object):
             hostname = node.hostname
 
             logger.info("Add to %s prometheus target file: %s, %s",
-                        node.hostname, ip, port)
-
-            client.prometheus_target_add(
-                ctxt, ip=ip, port=port, hostname=hostname,
-                path=self._get_path(ctxt))
+                        admin.hostname, ip, port)
+            self._send_target_add(ctxt, client, ip, port, hostname)
 
     def target_remove(self, ctxt, node, service):
         logger.info("Config from prometheus target file: %s, %s, %s",
