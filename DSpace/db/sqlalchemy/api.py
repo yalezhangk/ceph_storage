@@ -633,6 +633,7 @@ def process_sort_params(sort_keys, sort_dirs, default_keys=None,
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_update(context, volume_id, values):
     session = get_session()
     with session.begin():
@@ -644,6 +645,7 @@ def volume_update(context, volume_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volumes_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -760,6 +762,7 @@ def osd_status_get(context):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def cluster_update(context, cluster_id, values):
     session = get_session()
     with session.begin():
@@ -771,6 +774,7 @@ def cluster_update(context, cluster_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def clusters_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -890,6 +894,7 @@ def rpc_service_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def rpc_service_update(context, rpc_service_id, values):
     session = get_session()
     with session.begin():
@@ -1010,6 +1015,7 @@ def node_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def node_update(context, node_id, values):
     session = get_session()
     with session.begin():
@@ -1089,6 +1095,7 @@ def datacenter_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def datacenter_update(context, datacenter_id, values):
     session = get_session()
     with session.begin():
@@ -1178,6 +1185,7 @@ def rack_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def rack_update(context, rack_id, values):
     session = get_session()
     with session.begin():
@@ -1323,6 +1331,7 @@ def osd_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def osd_update(context, osd_id, values):
     session = get_session()
     with session.begin():
@@ -1462,6 +1471,7 @@ def pool_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def pool_update(context, pool_id, values):
     session = get_session()
     with session.begin():
@@ -1569,6 +1579,7 @@ def sys_config_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def sys_config_update(context, sys_config_id, values):
     session = get_session()
     with session.begin():
@@ -1744,6 +1755,7 @@ def volume_access_path_get_count(context, filters=None):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_access_path_update(context, access_path_id, values):
     session = get_session()
     with session.begin():
@@ -1757,6 +1769,7 @@ def volume_access_path_update(context, access_path_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_access_paths_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -1909,6 +1922,7 @@ def volume_gateway_get_all(context, marker=None,
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_gateway_update(context, ap_gateway_id, values):
     session = get_session()
     with session.begin():
@@ -1922,6 +1936,7 @@ def volume_gateway_update(context, ap_gateway_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_gateways_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -2054,6 +2069,7 @@ def volume_mapping_get_all(context, marker=None,
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_mapping_update(context, volume_mapping_id, values):
     session = get_session()
     with session.begin():
@@ -2067,6 +2083,7 @@ def volume_mapping_update(context, volume_mapping_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_mappings_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -2184,6 +2201,7 @@ def volume_client_get_all(context, marker=None,
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_client_update(context, volume_client_id, values):
     session = get_session()
     with session.begin():
@@ -2197,6 +2215,7 @@ def volume_client_update(context, volume_client_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_clients_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -2376,6 +2395,7 @@ def volume_client_group_get_all(context, marker=None,
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_client_group_update(context, client_group_id, values):
     session = get_session()
     with session.begin():
@@ -2389,6 +2409,7 @@ def volume_client_group_update(context, client_group_id, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_client_groups_update(context, values_list):
     session = get_session()
     with session.begin():
@@ -2481,6 +2502,7 @@ def license_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def license_update(context, license_id, values):
     session = get_session()
     with session.begin():
@@ -2593,6 +2615,7 @@ def network_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def network_update(context, net_id, values):
     session = get_session()
     with session.begin():
@@ -2665,6 +2688,7 @@ def alert_rule_destroy(context, alert_rule_id):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_rule_update(context, alert_rule_id, values):
     session = get_session()
     with session.begin():
@@ -2858,6 +2882,7 @@ def disk_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def disk_update(context, disk_id, values):
     session = get_session()
     with session.begin():
@@ -3015,6 +3040,7 @@ def disk_partition_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def disk_partition_update(context, disk_part_id, values):
     session = get_session()
     with session.begin():
@@ -3094,6 +3120,7 @@ def alert_group_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_group_update(context, alert_group_id, values):
     session = get_session()
     with session.begin():
@@ -3226,6 +3253,7 @@ def email_group_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def email_group_update(context, email_group_id, values):
     session = get_session()
     with session.begin():
@@ -3336,6 +3364,7 @@ def alert_log_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_log_update(context, alert_log_id, values):
     session = get_session()
     with session.begin():
@@ -3401,6 +3430,7 @@ def alert_log_destroy(context, alert_log_id):
     return updated_values
 
 
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def alert_log_batch_update(context, filters=None, updates=None):
     session = get_session()
     with session.begin():
@@ -3455,6 +3485,7 @@ def log_file_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def log_file_update(context, log_file_id, values):
     session = get_session()
     with session.begin():
@@ -3566,6 +3597,7 @@ def volume_snapshot_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_snapshot_update(context, volume_snapshot_id, values):
     session = get_session()
     with session.begin():
@@ -3752,6 +3784,7 @@ def service_status_get(context, names, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def service_update(context, service_id, values):
     session = get_session()
     with session.begin():
@@ -3857,6 +3890,7 @@ def ceph_config_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def ceph_config_update(context, ceph_config_id, values):
     session = get_session()
     with session.begin():
@@ -3951,6 +3985,7 @@ def crush_rule_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def crush_rule_update(context, crush_rule_id, values):
     session = get_session()
     with session.begin():
@@ -4039,6 +4074,7 @@ def action_log_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def action_log_update(context, action_log_id, values):
     session = get_session()
     with session.begin():
@@ -4127,6 +4163,7 @@ def user_create(context, values):
 
 @handle_db_data_error
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def user_update(context, user_id, values):
     session = get_session()
     with session.begin():
@@ -4230,6 +4267,7 @@ def taskflow_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def taskflow_update(context, taskflow_id, values):
     session = get_session()
     with session.begin():
@@ -4320,6 +4358,7 @@ def task_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def task_update(context, task_id, values):
     session = get_session()
     with session.begin():
@@ -4477,6 +4516,7 @@ def radosgw_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def radosgw_update(context, radosgw_id, values):
     session = get_session()
     with session.begin():
@@ -4568,6 +4608,7 @@ def radosgw_zone_get_all(context, marker=None, limit=None, sort_keys=None,
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def radosgw_zone_update(context, rgw_zone_id, values):
     session = get_session()
     with session.begin():
@@ -4679,6 +4720,7 @@ def radosgw_router_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def radosgw_router_update(context, rgw_router_id, values):
     session = get_session()
     with session.begin():
@@ -4770,6 +4812,7 @@ def router_service_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def router_service_update(context, router_service_id, values):
     session = get_session()
     with session.begin():
@@ -4880,6 +4923,7 @@ def object_policy_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_policy_update(context, object_policy_id, values):
     session = get_session()
     with session.begin():
@@ -4988,6 +5032,7 @@ def object_user_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_user_update(context, object_user_id, values):
     session = get_session()
     with session.begin():
@@ -5094,6 +5139,7 @@ def object_access_key_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_access_key_update(context, object_access_key_id, values):
     session = get_session()
     with session.begin():
@@ -5211,6 +5257,7 @@ def object_bucket_get_count(context, filters=None):
 
 
 @require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_bucket_update(context, object_policy_id, values):
     session = get_session()
     with session.begin():
@@ -5317,6 +5364,7 @@ def object_lifecycle_get_count(context, filters=None):
         return query.count()
 
 
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def object_lifecycle_update(context, object_lifecycle_id, values):
     session = get_session()
     with session.begin():
