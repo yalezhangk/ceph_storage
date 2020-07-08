@@ -786,6 +786,7 @@ class ConfigKey(BaseStorEnum):
     PACKAGE_IGNORE = 'package_ignore'
     SERVICE_IGNORE = 'service_ignore'  # use ',' when multi services
     PLATFORM_TYPE = 'platform_type'
+    INIT_PORTAL_TIME = 'init_portal_time'  # hci portal 完成初始化的时间str
 
 
 class PlatfromType(BaseStorEnum):
