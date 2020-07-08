@@ -6,25 +6,45 @@ from tempfile import TemporaryFile
 
 from truepy import License
 
+from DSpace import exception as exc
 from DSpace import objects
 from DSpace.context import get_context
 from DSpace.DSM.client import AdminClientManager
+from DSpace.i18n import _
 from DSpace.objects.fields import ConfigKey
 
 LOG = logging.getLogger(__name__)
 CA_FILE_PATH = '/etc/dspace/license/certificate.pem'
 PRIVATE_FILE = '/etc/dspace/license/private-key.pem'
 LICENSE_PASSWORD = 'default-pwd'
+LICENSE_FREE_TIME = 24 * 60 * 60
 
 
 def skip_license_verify():
+    # 1. 开关license
+    # 2. 是否24h免费
     disable_license = objects.sysconfig.sys_config_get(
         get_context(), ConfigKey.DISABLE_LICENSE)
     if disable_license is True:
-        LOG.info('skip license verify, return default true')
+        LOG.info('disable_license is true, will skip license')
         return True
-    else:
-        return False
+    # 校验是否24h免费
+    init_portal_time = objects.sysconfig.sys_config_get(
+        get_context(), ConfigKey.INIT_PORTAL_TIME)
+    if not init_portal_time:
+        LOG.info('not set license free time, will skip license')
+        return True
+    init_portal_time = datetime.datetime.strptime(init_portal_time,
+                                                  '%Y-%m-%d %H:%M:%S')
+    now_time = datetime.datetime.utcnow()
+    time_diff = (now_time - init_portal_time).total_seconds()
+    if time_diff < LICENSE_FREE_TIME:
+        LOG.info('license in free time:%sS, time_diff:%sS, will skip '
+                 'license_verify' % (LICENSE_FREE_TIME, time_diff))
+        return True
+    LOG.debug('license: %s more than free time: %s, will verify license'
+              % (time_diff, LICENSE_FREE_TIME))
+    return False
 
 
 class LicenseVerifyTool(object):
@@ -36,11 +56,13 @@ class LicenseVerifyTool(object):
     def get_license_verify_tool(self):
         licenses = objects.LicenseList.get_all(self.ctxt)
         if not licenses:
-            return False
+            raise exc.InvalidInput(_("not license file, please upload "
+                                     "license file"))
         else:
             verify_tool = LicenseVerify(licenses[0].content, self.ctxt)
             if not verify_tool.licenses_data:
-                return False
+                raise exc.InvalidInput(_("license verify fail, please upload "
+                                         "authorized license file"))
         return verify_tool
 
 

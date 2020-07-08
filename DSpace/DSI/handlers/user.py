@@ -17,7 +17,7 @@ from DSpace.i18n import _
 from DSpace.objects import fields as s_fields
 from DSpace.objects.fields import ConfigKey
 from DSpace.objects.fields import PlatfromType
-from DSpace.utils.license_verify import LicenseVerify
+from DSpace.utils.license_verify import LicenseVerifyTool
 from DSpace.utils.security import check_encrypted_password
 
 logger = logging.getLogger(__name__)
@@ -65,22 +65,15 @@ class PermissionMixin(BaseAPIHandler):
     @staticmethod
     def license_verify(ctxt, cluster_id=None):
         # license校验
-        disable_license = objects.sysconfig.sys_config_get(
-            ctxt, ConfigKey.DISABLE_LICENSE)
-        if disable_license and (disable_license is True):
-            logger.info('skip license verify, return default true')
+        license = LicenseVerifyTool()
+        if license.is_skip:
+            # 跳过校验
+            logger.info('will skip license verify')
             return True
-        licenses = objects.LicenseList.get_all(ctxt)
-        if not licenses:
-            is_available = False
-        else:
-            v = LicenseVerify(licenses[0].content, ctxt)
-            if not v.licenses_data:
-                is_available = False
-            else:
-                # verify: expire
-                is_available = v.check_licenses_expiry()
-        return is_available
+        # 只校验时间是否过期
+        license_tool = license.get_license_verify_tool()
+        is_expire = license_tool.check_licenses_expiry()
+        return is_expire
 
     def default_page(self):
         return [

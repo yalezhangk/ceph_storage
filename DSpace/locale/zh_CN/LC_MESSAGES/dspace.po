@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-01 11:08+0000\n"
+"POT-Creation-Date: 2020-07-08 20:12+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -407,6 +407,9 @@ msgstr "存储桶 %(object_bucket_id)s 未找到"
 
 msgid "ObjectLifecycle %(object_lifecycle_id)s could not be found."
 msgstr "生命周期 %(object_lifecycle_id)s 未找到"
+
+msgid "CrushMap is not found in %(path)s."
+msgstr "CrushMap %(path)s 未找到"
 
 msgid "resource_type:{} not exist"
 msgstr "资源类型 {} 不存在"
@@ -843,9 +846,6 @@ msgstr "此证书不合法"
 
 msgid "current sys log type: {} not exist"
 msgstr "该系统日志类型：{} 不存在"
-
-msgid "There are nodes updating roles"
-msgstr "有节点正在设置角色中"
 
 msgid "Node %s status is error, not allow"
 msgstr "服务器%s状态错误，不允许操作"
@@ -1737,6 +1737,9 @@ msgstr "布尔"
 msgid "string"
 msgstr "字符串"
 
+msgid "not license file, please upload license file"
+msgstr "无产品许可，请上传产品许可后再试"
+
 msgid ""
 "The cluster receives an alert message:\n"
 "    {}\n"
@@ -1793,3 +1796,4 @@ msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
