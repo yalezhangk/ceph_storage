@@ -13,14 +13,17 @@ logger = logging.getLogger(__name__)
 class IscsiHandler(AgentBaseHandler):
     def __init__(self, *args, **kwargs):
         super(IscsiHandler, self).__init__(*args, **kwargs)
-        container_name = "%s_tcmu_runner" % self.container_prefix
+        self.container_name = "%s_tcmu_runner" % self.container_prefix
+        self.task_submit(self._check_tcmu_runner)
 
+    def _check_tcmu_runner(self):
         # try restore iscsi target config
         retry_interval = 5
         retry_times = 0
         while retry_times < 3:
             try:
-                status = self.docker_servcie_status(self.ctxt, container_name)
+                status = self.docker_servcie_status(self.ctxt,
+                                                    self.container_name)
                 logger.debug("tcmu container status: %s", status)
                 if status == "running" and self.node.role_block_gateway:
                     logger.info("trying to restore iscsi config")
