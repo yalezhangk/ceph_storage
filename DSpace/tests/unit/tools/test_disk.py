@@ -36,6 +36,7 @@ class TestDiskTool(test.TestCase):
         tool = DiskTool(Executor())
         tool.partitions_clear(diskname)
         run_command.assert_has_calls([
-            mock.call(['wipefs', '/host/dev/sdb', '-a']),
-            mock.call(['partprobe', '/host/dev/sdb'])
+            mock.call(['dspace-disk', 'zap', '/dev/sdb']),
+            mock.call(['wipefs', '/dev/sdb', '-a']),
+            mock.call(['sgdisk', '-o', '/dev/sdb'])
         ])

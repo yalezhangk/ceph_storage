@@ -194,13 +194,22 @@ class DiskTool(ToolBase):
         return True
 
     def partitions_clear(self, disk):
-        disk_path = self._wapper("/dev/%s" % disk)
+        disk_path = "/dev/%s" % disk
+        cmd = ["dspace-disk", "zap", disk_path]
+        code, out, err = self.run_command(cmd)
+        if code:
+            raise RunCommandError(cmd=cmd, return_code=code,
+                                  stdout=out, stderr=err)
         cmd = ["wipefs", disk_path, "-a"]
         code, out, err = self.run_command(cmd)
         if code:
             raise RunCommandError(cmd=cmd, return_code=code,
                                   stdout=out, stderr=err)
-        self.partprobe(disk)
+        cmd = ['sgdisk', '-o', disk_path]
+        rc, stdout, stderr = self.run_command(cmd)
+        if rc:
+            raise RunCommandError(cmd=cmd, return_code=rc,
+                                  stdout=stdout, stderr=stderr)
         return True
 
     def data_clear(self, disk):
