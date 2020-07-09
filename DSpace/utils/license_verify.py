@@ -32,8 +32,8 @@ def skip_license_verify():
     init_portal_time = objects.sysconfig.sys_config_get(
         get_context(), ConfigKey.INIT_PORTAL_TIME)
     if not init_portal_time:
-        LOG.info('not set license free time, will skip license')
-        return True
+        LOG.info('not set license free time, will verify license')
+        return False
     init_portal_time = datetime.datetime.strptime(init_portal_time,
                                                   '%Y-%m-%d %H:%M:%S')
     now_time = datetime.datetime.utcnow()
