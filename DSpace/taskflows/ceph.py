@@ -269,7 +269,11 @@ class CephTask(object):
                 logger.error("pool %s alread exists", pool_name)
                 raise exc.PoolExists(pool=pool_name)
 
-            pg_num = self._cal_pg_num(osd_num, rep_size)
+            if pool_type == PoolType.ERASURE:
+                size = data_chunk_num + coding_chunk_num
+            else:
+                size = rep_size
+            pg_num = self._cal_pg_num(osd_num, size)
             logger.info('creating pool pg_num: %s', pg_num)
             self._crush_rule_create(client, crush_content, pool_type,
                                     extra_data)
@@ -309,16 +313,16 @@ class CephTask(object):
             rule_detail = client.rule_get(rule_name)
             return rule_detail
 
-    def _cal_pg_num(self, osd_num, rep_size=3):
+    def _cal_pg_num(self, osd_num, size=3):
         if not osd_num:
             return 0
-        pg_num = (100 * osd_num) / rep_size
+        pg_num = (100 * osd_num) / size
         # mon_max_pg_per_osd
         if (pg_num * 3 / osd_num) >= 250:
             pg_num = 250 * (osd_num / 3)
         pg_log2 = int(math.floor(math.log(pg_num, 2)))
-        logger.debug("osd_num: {}, rep_size: {}, pg_log2: {}".format(
-            osd_num, rep_size, pg_log2))
+        logger.debug("osd_num: {}, size: {}, pg_log2: {}".format(
+            osd_num, size, pg_log2))
         if pg_num > (2**16):
             pg_log2 = 16
         return 2**pg_log2
