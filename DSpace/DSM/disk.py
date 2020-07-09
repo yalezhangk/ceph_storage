@@ -375,7 +375,9 @@ class DiskHandler(AdminBaseHandler):
             guid=data.get('guid'),
             node_id=node_id,
             partition_num=len(partitions),
-            role=role
+            role=role,
+            model=data.get('model'),
+            vender=data.get('vender'),
         )
         disk.create()
         return disk
@@ -527,7 +529,9 @@ class DiskHandler(AdminBaseHandler):
             part.destroy()
 
     def disk_reporter(self, ctxt, disks, node_id):
-        logger.info("get disks report: %s", disks)
+        node = objects.Node.get_by_id(ctxt, node_id)
+        logger.info("receive disks report for node %s: %s",
+                    node.hostname, disks)
         all_disk_objs = objects.DiskList.get_all(
             ctxt, filters={'node_id': node_id},
             expected_attrs=['partition_used']
@@ -539,15 +543,18 @@ class DiskHandler(AdminBaseHandler):
             disk for disk in all_disk_objs if not disk.guid
         ]
         for name, data in six.iteritems(disks):
-            logger.info("Check node_id %s disk %s: %s",
-                        node_id, name, data)
+            logger.info("Check node %s disk %s: %s",
+                        node.hostname, name, data)
             partitions = data.get("partitions")
             if data.get("guid") in disks_with_guid:
                 disk = disks_with_guid.pop(data.get('guid'))
+                # disk type not change, we don't know user has change it.
                 disk.name = name
                 disk.slot = data.get('slot')
                 disk.wwid = data.get('wwid')
                 disk.serial = data.get('serial')
+                disk.model = data.get('model')
+                disk.vender = data.get('vender')
                 disk.size = int(data.get('size'))
                 disk.save()
                 # disk check
@@ -563,8 +570,8 @@ class DiskHandler(AdminBaseHandler):
                     logger.debug("disk %s is system disk", disk.name)
                     disk.status = s_fields.DiskStatus.INUSE
                     disk.save()
-                logger.info("Update node_id %s disk %s: %s",
-                            node_id, name, data)
+                logger.info("Update node %s disk %s: %s",
+                            node.hostname, name, data)
             else:
                 disk = self._disk_add_new(ctxt, data, node_id)
                 self.disk_partitions_reporter(ctxt, partitions, disk)
@@ -591,7 +598,8 @@ class DiskHandler(AdminBaseHandler):
                 disk.destroy()
         # remove none guid disk
         for disk in disks_without_guid:
-            logger.info("Remove none guid disk %s", disk.id)
+            logger.info("Remove node %s none guid disk %s",
+                        node.hostname, disk.id)
             disk.destroy()
 
     def disk_get_all_available(self, ctxt, filters=None, expected_attrs=None):
