@@ -7,7 +7,7 @@ from oslo_utils import encodeutils
 
 
 class StorCli:
-    def __init__(self, cli_path='/opt/MegaRAID/storcli/storcli64',
+    def __init__(self, cli_path='storcli64',
                  ssh=None, disk_name=None):
         self.ssh = ssh
         self.cli_path = cli_path
