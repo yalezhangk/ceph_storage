@@ -373,6 +373,10 @@ class DictOfNullableField(fields.AutoTypedField):
     AUTO_TYPE = fields.Dict(fields.FieldType(), nullable=True)
 
 
+class LargeBinaryField(fields.AutoTypedField):
+    AUTO_TYPE = fields.FieldType()
+
+
 class AllResourceType(BaseStorEnum):
     ALERT_GROUP = 'alert_group'
     ALERT_RULE = 'alert_rule'

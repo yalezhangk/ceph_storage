@@ -64,6 +64,7 @@ def register_all():
     __import__('DSpace.DSI.handlers.email_group')
     __import__('DSpace.DSI.handlers.licenses')
     __import__('DSpace.DSI.handlers.log_file')
+    __import__('DSpace.DSI.handlers.logo')
     __import__('DSpace.DSI.handlers.metrics')
     __import__('DSpace.DSI.handlers.networks')
     __import__('DSpace.DSI.handlers.nodes')

@@ -5375,6 +5375,69 @@ def object_lifecycle_update(context, object_lifecycle_id, values):
             raise exception.ObjectLifecycleNotFound(
                 object_lifecycle_id=object_lifecycle_id)
 
+
+########################
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def logo_create(context, values):
+    object_logo = models.Logo()
+    object_logo.update(values)
+    session = get_session()
+    with session.begin():
+        object_logo.save(session)
+    return object_logo
+
+
+def _logo_get_query(context, session=None):
+    return model_query(
+        context, models.Logo, session=session)
+
+
+def _logo_get(context, logo_name, session=None):
+    result = _logo_get_query(context, session)
+    result = result.filter_by(name=logo_name).first()
+
+    if not result:
+        raise exception.LogoNotFound(logo_name=logo_name)
+    return result
+
+
+@require_context
+def logo_get(context, logo_name, expected_attrs=None):
+    session = get_session()
+    with session.begin():
+        logo = _logo_get(
+            context, logo_name, session)
+    return logo
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def logo_update(context, logo_name, values):
+    session = get_session()
+    with session.begin():
+        query = _logo_get_query(context, session)
+        result = query.filter_by(name=logo_name).update(values)
+        if not result:
+            raise exception.LogoNotFound(logo_name=logo_name)
+
+
+@require_context
+def logo_get_all(context, marker=None, limit=None, sort_keys=None,
+                 sort_dirs=None, filters=None, offset=None,
+                 expected_attrs=None):
+    filters = filters or {}
+    if "cluster_id" in filters.keys():
+        filters.pop('cluster_id')
+    session = get_session()
+    with session.begin():
+        query = _logo_get_query(context, session)
+        if query is None:
+            return []
+        return query
+
+
 ########################
 
 

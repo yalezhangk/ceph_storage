@@ -630,5 +630,9 @@ class ObjectLifecycleNotFound(NotFound):
     message = _("ObjectLifecycle %(object_lifecycle_id)s could not be found.")
 
 
+class LogoNotFound(NotFound):
+    message = _("Logo %(logo_name)s could not be found.")
+
+
 class CrushMapNotFound(NotFound):
     message = _("CrushMap is not found in %(path)s.")
