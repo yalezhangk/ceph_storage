@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+from datetime import datetime
 from functools import wraps
 
 from DSpace.objects.fields import PoolType
@@ -53,3 +54,15 @@ def change_erasure_pool_name(child_name_position=None):
             return fun(self, *tuple(new_args), **kwargs)
         return _wapper
     return _decorator
+
+
+def utc2local_time(utc_time):
+    # UTC ->local_time (+8: 00)
+    # utc_time is str or datetime
+    # return str local_time
+    if isinstance(utc_time, str):
+        utc_time = datetime.strptime(utc_time, '%Y-%m-%dT%H:%M:%S')
+    local_tm = datetime.fromtimestamp(0)
+    utc_tm = datetime.utcfromtimestamp(0)
+    offset = local_tm - utc_tm
+    return (utc_time + offset).strftime('%Y-%m-%dT%H:%M:%S')
