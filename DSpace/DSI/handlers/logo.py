@@ -28,7 +28,7 @@ logo_schame = {
 }
 
 
-@URLRegistry.register(r"/logo")
+@URLRegistry.register(r"/logo/")
 class LogoListHandler(AnonymousHandler):
     @gen.coroutine
     def get(self):
