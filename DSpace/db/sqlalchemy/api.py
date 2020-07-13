@@ -5283,6 +5283,7 @@ def _object_lifecycle_get(context, object_lifecycle_id, session=None):
     if not result:
         raise exception.ObjectLifecycleNotFound(
             object_lifecycle_id=object_lifecycle_id)
+    return result
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
