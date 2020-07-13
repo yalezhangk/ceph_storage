@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import re
 import uuid
 
 import six
@@ -157,7 +158,8 @@ class DiskTool(ToolBase):
         path = self._wapper("/sys/class/block/")
         disk_mounts = self._get_disk_mounts()
         for block in os.listdir(path):
-            if block.startswith('sr'):
+            if re.match(CONF.disk_blacklist, block):
+                logger.debug("Collect ignore block %s", block)
                 continue
             disk_info = self.get_disk_info(block, disk_mounts=disk_mounts)
             if disk_info:
