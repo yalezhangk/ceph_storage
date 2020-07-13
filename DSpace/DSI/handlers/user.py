@@ -71,7 +71,11 @@ class PermissionMixin(BaseAPIHandler):
             logger.info('will skip license verify')
             return True
         # 只校验时间是否过期
-        license_tool = license.get_license_verify_tool()
+        try:
+            license_tool = license.get_license_verify_tool()
+        except exception.StorException as e:
+            logger.error('permission license verify error:%s' % e)
+            return False
         is_expire = license_tool.check_licenses_expiry()
         return is_expire
 

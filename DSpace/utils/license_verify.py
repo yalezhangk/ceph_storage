@@ -12,6 +12,7 @@ from DSpace.context import get_context
 from DSpace.DSM.client import AdminClientManager
 from DSpace.i18n import _
 from DSpace.objects.fields import ConfigKey
+from DSpace.tools.utils import utc2local_time
 
 LOG = logging.getLogger(__name__)
 CA_FILE_PATH = '/etc/dspace/license/certificate.pem'
@@ -34,6 +35,7 @@ def skip_license_verify():
     if not init_portal_time:
         LOG.info('not set license free time, will verify license')
         return False
+    # init_portal_time 是utc时间
     init_portal_time = datetime.datetime.strptime(init_portal_time,
                                                   '%Y-%m-%d %H:%M:%S')
     now_time = datetime.datetime.utcnow()
@@ -155,36 +157,30 @@ class LicenseVerify(object):
             self.ctxt, filters={"cluster_id": "*"})
         return len(nodes)
 
-    @property
-    def not_before(self):
+    def not_before_format(self):
+        # format datetime
         if not self.licenses_data:
             return None
-        data = self.licenses_data.not_before.strftime('%Y-%m-%dT%H:%M:%S')
-        return data
+        return utc2local_time(self.licenses_data.not_before)
 
-    @property
-    def not_after(self):
+    def not_after_format(self):
+        # format datetime
         if not self.licenses_data:
             return None
-        data = self.licenses_data.not_after.strftime('%Y-%m-%dT%H:%M:%S')
-        return data
+        return utc2local_time(self.licenses_data.not_after)
 
     def check_licenses_expiry(self):
         """
-        检查licenses时间段是否在合法区间内
+        检查license到期时间
         """
-        LOG.debug("开始检查licenses时间段")
+        LOG.debug("开始检查license到期时间")
         present_time = datetime.datetime.utcnow()
-        not_before = self.licenses_data.not_before
         not_after = self.licenses_data.not_after
-        if not self.licenses_data or not_after < present_time \
-                or not_before > present_time:
-            LOG.error("licenses时间段不符, 当前时间: %s, 激活日期: %s, 截止日期: %s"
-                      % (present_time, not_before, not_after))
-            # todo 跳转到购买产品许可证页面
+        if not self.licenses_data or not_after < present_time:
+            LOG.error("license时间到期, 当前时间: %s, 截止日期: %s"
+                      % (present_time, not_after))
             return False
-        else:
-            return True
+        return True
 
     def check_node_number(self, add_node_num=None):
         """

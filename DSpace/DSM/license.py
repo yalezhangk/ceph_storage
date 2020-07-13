@@ -16,19 +16,6 @@ class LicenseHandler(AdminBaseHandler):
     def license_get_all(self, ctxt):
         # unauthorized:未授权，authorized:已授权， lapsed:已失效
         licenses = objects.LicenseList.get_all(ctxt)
-        has_cluster = objects.ClusterList.get_all(ctxt)
-        if has_cluster:
-            logging.info('try get cluster size, cluster_id:%s',
-                         ctxt.cluster_id)
-            cluster_info = self.ceph_cluster_info(ctxt)
-            size = int(cluster_info.get('total_cluster_byte', 0))
-            logger.info('try get current cluster:%s node_num', ctxt.cluster_id)
-            node_num = self.node_get_count(ctxt)
-        else:
-            logger.info('not yet cluster_id,'
-                        'cluser_size and node_num default is 0')
-            size = 0
-            node_num = 0
         result = {'license': []}
         if licenses:
             for per_license in licenses:
@@ -45,12 +32,12 @@ class LicenseHandler(AdminBaseHandler):
                     up_data = {
                         'id': per_license.id,
                         'status': status,
-                        'not_before': v.not_before,
-                        'not_after': v.not_after,
+                        'not_before': v.not_before_format(),
+                        'not_after': v.not_after_format(),
                         'product': 'T2STOR',
-                        'fact_size': size,
+                        'fact_size': v.all_cluster_size(),
                         'size': v.license_cluster_size,
-                        'fact_node_num': node_num,
+                        'fact_node_num': v.all_node_num(),
                         'node_num': v.licenses_node_number
                     }
                     result['license'].append(up_data)
