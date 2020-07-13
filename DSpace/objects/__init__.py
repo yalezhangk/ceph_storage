@@ -22,6 +22,7 @@ def register_all():
     __import__('DSpace.objects.email_group')
     __import__('DSpace.objects.license')
     __import__('DSpace.objects.log_file')
+    __import__('DSpace.objects.logo')
     __import__('DSpace.objects.network')
     __import__('DSpace.objects.node')
     __import__('DSpace.objects.object_access_key')

@@ -1366,6 +1366,30 @@ def object_lifecycle_update(context, object_lifecycle_id, values):
     return IMPL.object_lifecycle_update(context, object_lifecycle_id, values)
 
 
+############
+
+
+def logo_create(context, values):
+    return IMPL.logo_create(context, values)
+
+
+def logo_get(context, logo_name, expected_attrs=None):
+    return IMPL.logo_get(context, logo_name,
+                         expected_attrs=expected_attrs)
+
+
+def logo_get_all(context, filters, marker, limit, offset,
+                 sort_keys, sort_dirs, expected_attrs=None):
+    return IMPL.logo_get_all(
+        context, marker=marker, limit=limit, sort_keys=sort_keys,
+        sort_dirs=sort_dirs, filters=filters, offset=offset,
+        expected_attrs=expected_attrs)
+
+
+def logo_update(context, logo_name, values):
+    return IMPL.logo_update(context, logo_name, values)
+
+
 ###############
 
 

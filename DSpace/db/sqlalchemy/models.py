@@ -8,6 +8,7 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import LargeBinary
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import Text
@@ -712,3 +713,11 @@ class ObjectLifecycle(BASE, StorBase):
     policy = Column(JsonEncodedDict())  # 策略：json格式，目前只有del,时间点或时间段
     cluster_id = Column(String(36), ForeignKey('clusters.id'))
     bucket_id = Column(Integer, ForeignKey('object_buckets.id'))
+
+
+class Logo(BASE, StorBase):
+    __tablename__ = "logos"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), index=True)
+    data = Column(LargeBinary, default=True)  # 默认启用
