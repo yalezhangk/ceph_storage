@@ -687,7 +687,7 @@ class AlertRuleHandler(AdminBaseHandler):
         clusters = objects.ClusterList.get_all(self.ctxt)
         for cluster in clusters:
             self.update_notify_group(cluster.id)
-        self.task_submit(self._alert_watcher_check)
+        self.task_submit(self._alert_watcher_check, permanent=True)
         logger.info('alert_watcher_check task has begin')
 
     def _alert_watcher_check(self):

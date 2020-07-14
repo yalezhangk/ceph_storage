@@ -3,7 +3,6 @@
 import logging
 import os
 import time
-from concurrent import futures
 
 from DSpace import exception
 from DSpace.common.config import CONF
@@ -13,11 +12,12 @@ from DSpace.objects.fields import ConfigKey
 from DSpace.tools.base import Executor
 from DSpace.tools.base import SSHExecutor
 from DSpace.utils import retry
+from DSpace.utils.threadpool import TheadPoolMixin
 
 logger = logging.getLogger(__name__)
 
 
-class AgentBaseHandler(object):
+class AgentBaseHandler(TheadPoolMixin):
     node = None
     ctxt = None
     admin = None
@@ -25,8 +25,6 @@ class AgentBaseHandler(object):
     def __init__(self, *args, **kwargs):
         super(AgentBaseHandler, self).__init__(*args, **kwargs)
         self.state = 'setup'
-        self._executor = futures.ThreadPoolExecutor(
-            max_workers=CONF.task_workers)
         self.ctxt = RequestContext(user_id="agent %s" % CONF.node_id,
                                    is_admin=False, cluster_id=CONF.cluster_id)
         self._get_node()
@@ -39,15 +37,6 @@ class AgentBaseHandler(object):
         self.package_ignore = dsm_sys_info[ConfigKey.PACKAGE_IGNORE]
         self.service_ignore = dsm_sys_info[ConfigKey.SERVICE_IGNORE] or ""
         CONF.package_ignore = self.package_ignore
-
-    def _wapper(self, fun, *args, **kwargs):
-        try:
-            fun(*args, **kwargs)
-        except Exception as e:
-            logger.exception("Unexpected exception: %s", e)
-
-    def task_submit(self, fun, *args, **kwargs):
-        self._executor.submit(self._wapper, fun, *args, **kwargs)
 
     def _get_node(self):
         endpoints = {
