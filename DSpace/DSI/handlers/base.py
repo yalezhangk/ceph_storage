@@ -23,6 +23,23 @@ logger = logging.getLogger(__name__)
 
 class AnonymousHandler(RequestHandler):
 
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+        origin = self.request.headers.get('Origin')
+        if not origin:
+            return
+        self.set_header("Access-Control-Allow-Origin", origin)
+        self.set_header("Access-Control-Allow-Credentials", "true")
+        self.set_header("Access-Control-Allow-Headers",
+                        "x-requested-with, Content-Type, X-Cluster-Id, "
+                        "x-access-module")
+        self.set_header('Access-Control-Allow-Methods',
+                        'POST, GET, OPTIONS, PUT, DELETE')
+
+    def options(self, *args, **kwargs):
+        self.set_status(204)
+        self.finish()
+
     def get_context(self):
         return get_context()
 
@@ -109,23 +126,6 @@ class BaseAPIHandler(AnonymousHandler):
             self.ctxt = self.get_context()
         logger.info("uri(%s), method(%s), body(%s)",
                     self.request.uri, self.request.method, self.request.body)
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        origin = self.request.headers.get('Origin')
-        if not origin:
-            return
-        self.set_header("Access-Control-Allow-Origin", origin)
-        self.set_header("Access-Control-Allow-Credentials", "true")
-        self.set_header("Access-Control-Allow-Headers",
-                        "x-requested-with, Content-Type, X-Cluster-Id, "
-                        "x-access-module")
-        self.set_header('Access-Control-Allow-Methods',
-                        'POST, GET, OPTIONS, PUT, DELETE')
-
-    def options(self, *args, **kwargs):
-        self.set_status(204)
-        self.finish()
 
     def get_context(self):
         if self.ctxt:
