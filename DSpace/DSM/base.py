@@ -1,6 +1,5 @@
 import json
 import time
-from concurrent import futures
 
 from oslo_log import log as logging
 from oslo_utils import strutils
@@ -11,7 +10,6 @@ from DSpace import exception as exc
 from DSpace import objects
 from DSpace import taskflows
 from DSpace.common.config import CONF
-from DSpace.context import RequestContext
 from DSpace.DSA.client import AgentClientManager
 from DSpace.DSI.wsclient import WebSocketClientManager
 from DSpace.i18n import _
@@ -26,21 +24,21 @@ from DSpace.utils.mail import alert_rule_translation
 from DSpace.utils.mail import mail_template
 from DSpace.utils.mail import send_mail
 from DSpace.utils.service_map import ServiceMap
+from DSpace.utils.threadpool import TheadPoolMixin
 
 logger = logging.getLogger(__name__)
 
 
-class AdminBaseMixin(object):
+class AdminBaseMixin(TheadPoolMixin):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(AdminBaseMixin, self).__init__(*args, **kwargs)
         ctxt = context.get_context(user_id="admin")
         self.container_prefix = objects.sysconfig.sys_config_get(
             ctxt, "container_prefix")
         self.map_util = ServiceMap(self.container_prefix)
         self.debug_mode = objects.sysconfig.sys_config_get(
             ctxt, ConfigKey.DEBUG_MODE)
-        self._executor = futures.ThreadPoolExecutor(
-            max_workers=CONF.task_workers)
 
     def send_websocket(self, ctxt, obj, op_type, msg, resource_type=None):
         wb = WebSocketClientManager(context=ctxt)
@@ -145,20 +143,6 @@ class AdminBaseMixin(object):
                                s_fields.NodeStatus.DELETING]:
                 return False
         return True
-
-    def _wapper(self, fun, *args, **kwargs):
-        try:
-            # update ctxt
-            if len(args) > 0 and isinstance(args[0], RequestContext):
-                ctxt = args[0]
-                ctxt.update_store()
-            # run fun
-            fun(*args, **kwargs)
-        except Exception as e:
-            logger.exception("Unexpected exception: %s", e)
-
-    def task_submit(self, fun, *args, **kwargs):
-        self._executor.submit(self._wapper, fun, *args, **kwargs)
 
 
 class AdminBaseHandler(AdminBaseMixin):

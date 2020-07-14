@@ -31,7 +31,7 @@ class CronHandler(AgentBaseHandler):
         self._setup()
         logger.info("dsa ready")
         self.state = 'ready'
-        self.task_submit(self._cron)
+        self.task_submit(self._cron, permanent=True)
 
     def _cron(self):
         logger.debug("Start service check crontab")

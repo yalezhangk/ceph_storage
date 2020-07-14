@@ -356,7 +356,7 @@ class ServiceHandler(AdminBaseHandler):
     def bootstrap(self):
         super(ServiceHandler, self).bootstrap()
         if CONF.heartbeat_check:
-            self.task_submit(self._service_check)
+            self.task_submit(self._service_check, permanent=True)
 
     def _service_check(self):
         self.wait_ready()

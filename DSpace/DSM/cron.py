@@ -29,10 +29,10 @@ class CronHandler(AdminBaseHandler):
 
     def bootstrap(self):
         super(CronHandler, self).bootstrap()
-        self.task_submit(self._check_ceph_cluster_status)
-        self.task_submit(self._osd_slow_requests_get_all)
-        self.task_submit(self._osd_tree_cron)
-        self.task_submit(self._node_check_cron)
+        self.task_submit(self._check_ceph_cluster_status, permanent=True)
+        self.task_submit(self._osd_slow_requests_get_all, permanent=True)
+        self.task_submit(self._osd_tree_cron, permanent=True)
+        self.task_submit(self._node_check_cron, permanent=True)
 
     def _osd_slow_requests_get(self):
         for cluster in self.clusters:

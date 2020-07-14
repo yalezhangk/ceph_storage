@@ -240,7 +240,7 @@ class ServiceCell(ServiceBase):
                 logger.error("lease refresh exception. %s", e)
                 break
             time.sleep(3)
-        logger.exit("lease refresh failed. exit...")
+        logger.error("lease refresh failed. exit...")
         os._exit(1)
 
     @retry(etcd3.exceptions.ConnectionFailedError)
