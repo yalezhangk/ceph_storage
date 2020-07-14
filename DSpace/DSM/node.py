@@ -793,6 +793,8 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
             ctxt, Resource.NODE, Action.SET_ROLES, node)
         node.role_admin = True
         node.save()
+        PrometheusTargetMixin().target_reload(ctxt, node)
+
         status = 'success'
         msg = _("node %s: set admin role success") % node.hostname
         op_status = "SET_ROLE_ADMIN_SUCCESS"
