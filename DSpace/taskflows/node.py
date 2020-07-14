@@ -88,6 +88,27 @@ class PrometheusTargetMixin(object):
             ctxt, ip=ip, port=port, hostname=hostname,
             path=self._get_path(ctxt))
 
+    def target_reload(self, ctxt, admin):
+        nodes = objects.NodeList.get_all(ctxt)
+        for node in nodes:
+            client = context.agent_manager.get_client(node_id=admin.id)
+            hostname = node.hostname
+
+            if node.role_monitor:
+                service = 'mgr'
+                ip = self._get_ip(node, service)
+                port = str(self._get_port(ctxt, service))
+                logger.info("Add to %s prometheus target file: %s, %s",
+                            admin.hostname, ip, port)
+                self._send_target_add(ctxt, client, ip, port, hostname)
+
+            service = 'node_exporter'
+            ip = self._get_ip(node, service)
+            port = str(self._get_port(ctxt, service))
+            logger.info("Add to %s prometheus target file: %s, %s",
+                        admin.hostname, ip, port)
+            self._send_target_add(ctxt, client, ip, port, hostname)
+
     def target_add(self, ctxt, node, service):
         logger.info("Config from prometheus target file: %s, %s, %s,"
                     " role admin(%s)",
