@@ -18,7 +18,7 @@ def upgrade(migrate_engine):
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
-        Column('deleted', Boolean),
+        Column('deleted', Boolean, index=True),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(64), index=True),
         Column('data', LargeBinary),
