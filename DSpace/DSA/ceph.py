@@ -313,16 +313,16 @@ class CephHandler(AgentBaseHandler):
                               "ceph-mgr-dspace"])
         # create mon dir
         file_tool = FileTool(client)
+        file_tool.rm("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
         file_tool.mkdir("/var/lib/ceph/mon/ceph-{}".format(self.node.hostname))
-        file_tool.rm("/var/lib/ceph/mon/ceph-{}/*".format(self.node.hostname))
         file_tool.chown("/var/lib/ceph/mon", user='ceph', group='ceph')
         # create mgr dir
+        file_tool.rm("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
         file_tool.mkdir("/var/lib/ceph/mgr/ceph-{}".format(self.node.hostname))
-        file_tool.rm("/var/lib/ceph/mgr/ceph-{}/*".format(self.node.hostname))
         file_tool.chown("/var/lib/ceph/mgr", user='ceph', group='ceph')
         # create mds dir
+        file_tool.rm("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
         file_tool.mkdir("/var/lib/ceph/mds/ceph-{}".format(self.node.hostname))
-        file_tool.rm("/var/lib/ceph/mds/ceph-{}/*".format(self.node.hostname))
         file_tool.chown("/var/lib/ceph/mds", user='ceph', group='ceph')
 
         ceph_tool = CephTool(client)
