@@ -432,8 +432,9 @@ class RadosgwHandler(RadosgwMixin):
             # Create meta pools
             self._create_meta_pools(ctxt, index_pool, ceph_task)
             # Set zonegroup、zone and t2stor user
-            nodes = objects.NodeList.get_all(ctxt,
-                                             filters={"role_monitor": True})
+            filters = {"role_monitor": True,
+                       'status': s_fields.NodeStatus.ACTIVE}
+            nodes = objects.NodeList.get_all(ctxt, filters=filters)
             mon_node = nodes[0]
             client = context.agent_manager.get_client(node_id=mon_node.id)
             self._initialize_zone(ctxt, client)
