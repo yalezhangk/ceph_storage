@@ -28,7 +28,7 @@ create_cluster_schema = {
             "properties": {"cluster_name": {
                 "type": "string",
                 "minLength": 5,
-                "maxLength": 32
+                "maxLength": 64
             }}, "required": ["cluster_name"],
         },
     },
@@ -42,7 +42,7 @@ update_cluster_schema = {
             "properties": {"name": {
                 "type": "string",
                 "minLength": 5,
-                "maxLength": 32
+                "maxLength": 64
             }}, "required": ["name"],
             "additionalProperties": False
         },
