@@ -74,9 +74,10 @@ class MetricsHandler(AdminBaseHandler):
             time.sleep(CONF.collect_metrics_time)
 
     def metrics_content(self, ctxt):
-        logger.info('has sed metrics: %s', self.metrics.values())
         if not self.metrics:
+            logger.debug("has no metrics values, return ''")
             return ""
+        logger.debug('has sed metrics: %s', self.metrics.values())
         _metrics = [m.str_expfmt() for m in self.metrics.values()]
         return ''.join(_metrics) + '\n'
 
