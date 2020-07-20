@@ -171,14 +171,16 @@ class LicenseVerify(object):
 
     def check_licenses_expiry(self):
         """
-        检查license到期时间
+        检查license时间段是否在区间内
         """
-        LOG.debug("开始检查license到期时间")
+        LOG.debug("开始检查license时间段")
         present_time = datetime.datetime.utcnow()
         not_after = self.licenses_data.not_after
-        if not self.licenses_data or not_after < present_time:
-            LOG.error("license时间到期, 当前时间: %s, 截止日期: %s"
-                      % (present_time, not_after))
+        not_before = self.licenses_data.not_before
+        if not self.licenses_data or not_after < present_time or \
+                not_before > present_time:
+            LOG.error("license时间段不符, 当前时间: %s, 激活时间: %s, 截止时间: %s"
+                      % (present_time, not_before, not_after))
             return False
         return True
 
