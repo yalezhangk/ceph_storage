@@ -197,6 +197,7 @@ class DbCommands(object):
             ConfigKey.DOCKER_IMAGE_IGNORE: s_fields.ConfigType.BOOL,
             ConfigKey.PACKAGE_IGNORE: s_fields.ConfigType.BOOL,
             ConfigKey.SERVICE_IGNORE: s_fields.ConfigType.STRING,
+            ConfigKey.AUTO_RESTART_IGNORE: s_fields.ConfigType.STRING,
             ConfigKey.PLATFORM_TYPE: s_fields.ConfigType.STRING,
         }
         for c in configs:

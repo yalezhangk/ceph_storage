@@ -109,7 +109,23 @@ class CronHandler(AdminBaseHandler):
                 logger.warning("Osd check cron exception: %s", e)
             time.sleep(CONF.osd_check_interval)
 
+    def _check_restart(self, context):
+        if not CONF.service_auto_restart:
+            logger.info("Service check not enable")
+            return False
+
+        auto_restart_ignore = objects.sysconfig.sys_config_get(
+            context, s_fields.ConfigKey.AUTO_RESTART_IGNORE)
+        auto_restart_ignore = auto_restart_ignore.lower().split(",")
+        if "osd" in auto_restart_ignore:
+            logger.info(
+                "Service osd is in auto_restart_ignore list, ignore")
+            return False
+        return True
+
     def _restart_osd(self, context, osd):
+        if not self._check_restart(context):
+            return
         logger.info("osd.%s is down, try to restart", osd.osd_id)
         msg = _("osd.{} service status is inactive, trying to restart").format(
             osd.osd_id)

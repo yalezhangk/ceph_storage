@@ -137,7 +137,7 @@ class CronHandler(AgentBaseHandler):
         for role, sers in six.iteritems(self.service_map):
             services.update({role: []})
             for k, v in six.iteritems(sers):
-                if k.lower() in self.service_ignore.lower():
+                if k.lower() in self.service_ignore:
                     logging.debug("Skip to check service '%s'" % k)
                     continue
                 if v.find('$HOSTNAME'):
