@@ -117,6 +117,8 @@ class RPCClient(object):
             _context = self.serializer.serialize_context(context)
             _args = self.serializer.serialize_entity(context, args)
             _kwargs = self.serializer.serialize_entity(context, kwargs)
+            if self._stub is None:
+                self._stub = self.get_stub(self.endpoint)
             response = self._stub.call(stor_pb2.Request(
                 context=json.dumps(_context),
                 method=method,
@@ -126,6 +128,7 @@ class RPCClient(object):
             ))
         except grpc.RpcError as e:
             logger.warning("rpc connect error: %s", e)
+            self._stub = None
             raise exception.RPCConnectError()
         res = json.loads(response.value)
         # check redirect
@@ -154,6 +157,7 @@ class RPCClient(object):
                     context, res)
                 future.set_result(ret)
         except Exception as e:
+            self._stub = None
             future.set_exception(e)
 
     def _async_call(self, context, method, *args, **kwargs):
@@ -161,6 +165,8 @@ class RPCClient(object):
             _context = self.serializer.serialize_context(context)
             _args = self.serializer.serialize_entity(context, args)
             _kwargs = self.serializer.serialize_entity(context, kwargs)
+            if self._stub is None:
+                self._stub = self.get_stub(self.endpoint)
             gf = self._stub.call.future(stor_pb2.Request(
                 context=json.dumps(_context),
                 method=method,
@@ -170,6 +176,7 @@ class RPCClient(object):
             ))
         except grpc.RpcError as e:
             logger.exception("rpc connect error: %s", e)
+            self._stub = None
             raise exception.RPCConnectError()
 
         f = Future()
