@@ -7,6 +7,7 @@ from enum import Enum
 
 import etcd3
 import grpc
+import oslo_db
 from oslo_config import cfg
 
 from DSpace import exception
@@ -195,6 +196,9 @@ class ServiceCell(ServiceBase):
                 self._watch_master()
             except etcd3.exceptions.ConnectionFailedError as e:
                 logger.warning("ectd error: %s", e)
+            except oslo_db.exception.DBConnectionError as e:
+                logger.error("Connect db failed: %s", e)
+                os._exit(1)
 
     def clear_etcd_key(self):
         value = self.etcd_get(self.etcd_master_key)
