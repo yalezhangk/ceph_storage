@@ -236,6 +236,20 @@ class ServiceManager(AdminBaseMixin):
         self.ctxt = context_tool.get_context()
         self._services = {}
         self.add_dsa_service_helper()
+        self._init_service_map()
+
+    def _init_service_map(self):
+        services = objects.ServiceList.get_all(
+            self.ctxt, filters={'cluster_id': '*'})
+        for service in services:
+            ctxt = context_tool.get_context(cluster_id=service.cluster_id)
+            node = objects.Node.get_by_id(ctxt, service.node_id)
+            logger.debug("Init service_map from db: %s, node %s(id %s)",
+                         service.name, node.hostname, node.id)
+            service_name = getattr(self.map_util, service.role)[service.name]
+            service_helper = ContainerHelper(
+                ctxt, service, service_name, service.status, node)
+            self.append(service.role, service_helper)
 
     def add_dsa_service_helper(self):
         dsas = objects.ServiceList.get_all(
@@ -260,6 +274,9 @@ class ServiceManager(AdminBaseMixin):
 
     def _check_time_interval(self, helper):
         if helper.is_timeout:
+            logger.info("Service %s on node %s(id %s) is already timeout, "
+                        "return.", helper.obj_name, helper.node.hostname,
+                        helper.node.id)
             return False
         if (helper.last_update_interval().total_seconds() >
                 CONF.service_max_interval):
@@ -268,8 +285,6 @@ class ServiceManager(AdminBaseMixin):
                            helper.node.hostname, helper.node.id)
             helper.status = helper.status_field.INACTIVE
             helper.is_timeout = True
-            if helper.obj_name != "DSA":
-                return False
         return True
 
     def _check_node(self, role, helper):
@@ -317,9 +332,12 @@ class ServiceManager(AdminBaseMixin):
         if status == status_field.INACTIVE:
             if helper.node.status == s_fields.NodeStatus.DELETING:
                 return
-            if helper.obj_name == "DSA" or last_status == status_field.ACTIVE:
+            if last_status == status_field.ACTIVE:
                 helper.to_inactive()
-                helper.to_starting()
+                # Timeout is usually caused by dsa down or node down, so we
+                # only try to start dsa
+                if helper.obj_name == "DSA" or not helper.is_timeout:
+                    helper.to_starting()
         if status == status_field.ACTIVE:
             service.counter += 1
             try:
@@ -362,16 +380,11 @@ class ServiceHandler(AdminBaseHandler):
         self.wait_ready()
         self.service_manager.loop()
 
-    def _check_service_status(self, ctxt, services):
-        for service in services:
-            self.check_service_status(ctxt, service)
-
     def services_get_all(self, ctxt, marker=None, limit=None, sort_keys=None,
                          sort_dirs=None, filters=None, offset=None):
         services = objects.ServiceList.get_all(
             ctxt, marker=marker, limit=limit, sort_keys=sort_keys,
             sort_dirs=sort_dirs, filters=filters, offset=offset)
-        self._check_service_status(ctxt, services)
         return services
 
     def service_get_count(self, ctxt, filters=None):
