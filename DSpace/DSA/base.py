@@ -35,8 +35,10 @@ class AgentBaseHandler(TheadPoolMixin):
         ])
         self.container_prefix = dsm_sys_info[ConfigKey.CONTAINER_PREFIX]
         self.package_ignore = dsm_sys_info[ConfigKey.PACKAGE_IGNORE]
-        self.service_ignore = dsm_sys_info[ConfigKey.SERVICE_IGNORE] or ""
         CONF.package_ignore = self.package_ignore
+
+        self.service_ignore = dsm_sys_info[ConfigKey.SERVICE_IGNORE] or ""
+        self.service_ignore = self.service_ignore.lower().split(",")
 
     def _get_node(self):
         endpoints = {

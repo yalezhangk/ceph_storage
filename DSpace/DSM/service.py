@@ -104,8 +104,19 @@ class ServiceHelper(AdminBaseMixin):
 
     def _check_restart(self):
         if not CONF.service_auto_restart:
-            logger.info("Service check not enable")
+            logger.info("Service auto restart is not enabled")
             return False
+
+        auto_restart_ignore = objects.sysconfig.sys_config_get(
+            self.ctxt, s_fields.ConfigKey.AUTO_RESTART_IGNORE)
+        auto_restart_ignore = auto_restart_ignore.lower().split(",")
+        if self.obj_name.lower() in auto_restart_ignore:
+            logger.info(
+                "Service %s is in auto_restart_ignore list, ignore",
+                self.obj_name
+            )
+            return False
+
         # TODO: add other status
         if not self.if_service_alert(ctxt=self.ctxt, node=self.node):
             logger.info("Node %s(id %s) or cluster %s is deleting or "
