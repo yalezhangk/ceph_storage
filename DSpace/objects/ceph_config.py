@@ -103,7 +103,7 @@ def ceph_config_group_get(ctxt, group):
     return res
 
 
-def ceph_config_content(ctxt):
+def ceph_config_content(ctxt, debug_config=True):
     ignore_section = ["keyring"]
     configer = configparser.ConfigParser()
     configs = objects.CephConfigList.get_all(ctxt)
@@ -112,6 +112,9 @@ def ceph_config_content(ctxt):
             continue
         if not configer.has_section(config.group):
             configer[config.group] = {}
+        if not debug_config:
+            if config.key.startswith('debug'):
+                continue
         configer[config.group][config.key] = config.value
     buf = StringIO()
     configer.write(buf)

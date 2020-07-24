@@ -177,8 +177,10 @@ class TestServiceTool(test.TestCase):
         re = tool.get_networks()
         self.assertEqual(("172.159.3.0/16", "172.159.3.0/16"), re)
         run_command.assert_has_calls([
-            mock.call("ceph-conf --lookup cluster_network", timeout=1),
-            mock.call("ceph-conf --lookup public_network", timeout=1)
+            mock.call("ceph-conf --lookup cluster_network", timeout=1,
+                      root_permission=False),
+            mock.call("ceph-conf --lookup public_network", timeout=1,
+                      root_permission=False)
         ])
 
 

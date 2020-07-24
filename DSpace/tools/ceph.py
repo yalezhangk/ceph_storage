@@ -72,14 +72,16 @@ class CephTool(ToolBase):
         logger.debug("detect cluster networks")
 
         cmd = "ceph-conf --lookup cluster_network"
-        rc, stdout, stderr = self.run_command(cmd, timeout=1)
+        rc, stdout, stderr = self.run_command(
+            cmd, timeout=1, root_permission=False)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         cluster_network = stdout
 
         cmd = "ceph-conf --lookup public_network"
-        rc, stdout, stderr = self.run_command(cmd, timeout=1)
+        rc, stdout, stderr = self.run_command(
+            cmd, timeout=1, root_permission=False)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
@@ -378,14 +380,14 @@ class CephTool(ToolBase):
             # 服务未启动 检查状态
             rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
             # 错误状态需要重置为 inactive 状态，才能启动
-            if s_out.strip('\n') == "failed":
+            if s_out.strip('\r\n') == "failed":
                 self.run_command(reset_cmd, timeout=5)
         # 重启
         rc, stdout, stderr = self.run_command(cmd, timeout=35)
         while True:
             s_rc, s_out, s_err = self.run_command(status_cmd, timeout=5)
-            if rc or s_out.strip('\n') != "active":
-                if retrys == 0 or s_out.strip('\n') == "failed":
+            if rc or s_out.strip('\r\n') != "active":
+                if retrys == 0 or s_out.strip('\r\n') == "failed":
                     logger.error("Service ceph - {}@{} Status: % {}."
                                  "Restart Failed!".format(
                                      types, service, s_out, s_err))

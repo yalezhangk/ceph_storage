@@ -224,8 +224,6 @@ class CronHandler(AdminBaseHandler):
                     self.send_service_alert(
                         context, osd, "osd_status", "Osd", "WARN", msg,
                         "OSD_OFFLINE")
-                    if self.debug_mode:
-                        return
                     res = osd.conditional_update({
                         "status": s_fields.OsdStatus.RESTARTING
                     }, expected_values={

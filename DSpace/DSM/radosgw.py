@@ -463,8 +463,8 @@ class RadosgwHandler(RadosgwMixin):
             op_status = "INIT_SUCCESS"
             err_msg = None
         except exception.StorException as e:
+            logger.exception("Object store init error: %s", e)
             self._clean_init_resources(ctxt, ceph_task)
-            logger.exception("create pool error: %s", e)
             err_msg = str(e)
             status = s_fields.ObjectStoreStatus.ERROR
             msg = _("Initialize object store failed!")

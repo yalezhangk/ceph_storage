@@ -145,7 +145,19 @@ global_opts = [
                help='Disk blacklist'),
     cfg.ListOpt('disk_bus_blacklist',
                 default=['usb'],
-                help='DSA: Unsupported dev bus')
+                help='DSA: Unsupported dev bus'),
+    cfg.StrOpt('ssh_user',
+               default="root",
+               help='User to establish ssh connection'),
+    cfg.StrOpt('ssh_password',
+               default="",
+               help='Passowrd of ssh user'),
+    cfg.StrOpt('ssh_private_key',
+               default='',
+               help='Private key of ssh user'),
+    cfg.StrOpt('sudo_prefix',
+               default="sudo",
+               help='Prefix to run command with root permission'),
 ]
 
 etcd_opts = [

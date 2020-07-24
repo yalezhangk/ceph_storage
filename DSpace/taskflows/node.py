@@ -972,7 +972,11 @@ class DSpaceAgentInstall(BaseTask, ServiceMixin, PrometheusTargetMixin):
             cluster_id=node.cluster_id,
             dsa_lib_dir=dsa_lib_dir,
             socket_file=socket_file,
-            os_distro=os_distro
+            os_distro=os_distro,
+            ssh_user=CONF.ssh_user,
+            ssh_password=CONF.ssh_password,
+            ssh_private_key=CONF.ssh_private_key,
+            sudo_prefix=CONF.sudo_prefix
         )
         return dsa_conf
 
@@ -1390,7 +1394,8 @@ class KeepalivedUninstall(BaseTask):
                         get_keepalived_cfg(ctxt, node))
 
         docker_tool = DockerTool(ssh)
-        docker_tool.restart(container_name)
+        if docker_tool.status(container_name):
+            docker_tool.restart(container_name)
 
         router_service = objects.RouterServiceList.get_all(
             ctxt, filters={'node_id': node.id, 'name': 'keepalived'}

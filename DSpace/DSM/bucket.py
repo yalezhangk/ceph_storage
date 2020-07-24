@@ -295,6 +295,8 @@ class BucketHandler(AdminBaseHandler):
             err_msg = None
         except Exception as err:
             logger.error("delete bucket error: %s", err)
+            bucket.status = s_fields.BucketStatus.ERROR
+            bucket.save()
             msg = _("delete bucket {} error").format(name)
             err_msg = str(err)
             status = "error"
@@ -490,6 +492,9 @@ class BucketHandler(AdminBaseHandler):
         bucket_info = rgw.rgw.get_bucket(bucket=name, stats=True)
         capacity = rgw.get_bucket_capacity(bucket_info)
         max_objects = capacity['objects']['max']
+        max_size = capacity['size']['max']
         if max_objects == -1:
             capacity['objects']['max'] = 0
+        if max_size == -1:
+            capacity['size']['max'] = 0
         return capacity

@@ -59,7 +59,8 @@ class CephTask(object):
         return admin_keyring
 
     def ceph_config(self):
-        content = objects.ceph_config.ceph_config_content(self.ctxt)
+        content = objects.ceph_config.ceph_config_content(
+            self.ctxt, debug_config=False)
         return content
 
     def rados_args(self):

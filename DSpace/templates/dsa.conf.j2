@@ -16,3 +16,17 @@ log_rotation_type = size
 max_logfile_size_mb = 256
 max_logfile_count = 10
 os_distro={{ os_distro }}
+
+{% if ssh_user %}
+ssh_user = {{ ssh_user }}
+{% if ssh_password %}
+ssh_password = {{ ssh_password }}
+{% endif %}
+{% if ssh_private_key %}
+ssh_private_key = {{ ssh_private_key }}
+{% endif %}
+{% endif %}
+
+{% if sudo_prefix %}
+sudo_prefix = {{ sudo_prefix }}
+{% endif %}
