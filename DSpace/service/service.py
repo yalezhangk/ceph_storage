@@ -222,7 +222,11 @@ class ServiceCell(ServiceBase):
     def to_master(self):
         logger.info("I am to master")
         self.role = Role.Master
-        self.handler.bootstrap()
+        try:
+            self.handler.bootstrap()
+        except Exception as e:
+            logger.exception("bootstrap error: %s", e)
+            os._exit(1)
 
     def lease_refresh(self, lease):
         logger.info("Start lease refresh")
