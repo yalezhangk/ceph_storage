@@ -221,10 +221,13 @@ class NodeTask(object):
     def get_chrony_conf(self, ctxt, ip):
         chrony_server = objects.sysconfig.sys_config_get(ctxt,
                                                          "chrony_server")
+        admin_ip_address = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.ADMIN_IP_ADDRESS)
         chrony_server = chrony_server.split(",")
         tpl = template.get('chrony.conf.j2')
         chrony_conf = tpl.render(chrony_server=chrony_server,
-                                 ip_address=str(ip))
+                                 ip_address=str(ip),
+                                 admin_ip_address=admin_ip_address)
         return chrony_conf
 
     def chrony_update(self):

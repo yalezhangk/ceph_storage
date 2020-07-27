@@ -25,6 +25,9 @@ dumpdir /var/lib/chrony
 
 allow all
 # prevent chrony sync from self
+{% if admin_ip_address != ip_address %}
+deny {{ admin_ip_address }}
+{% endif %}
 deny {{ ip_address }}
 local stratum 10
 
