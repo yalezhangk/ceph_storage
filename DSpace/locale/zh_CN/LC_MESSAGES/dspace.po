@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-08 20:12+0800\n"
+"POT-Creation-Date: 2020-07-29 17:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -407,6 +407,9 @@ msgstr "存储桶 %(object_bucket_id)s 未找到"
 
 msgid "ObjectLifecycle %(object_lifecycle_id)s could not be found."
 msgstr "生命周期 %(object_lifecycle_id)s 未找到"
+
+msgid "Logo %(logo_name)s could not be found."
+msgstr "Logo %(logo_name)s 未找到"
 
 msgid "CrushMap is not found in %(path)s."
 msgstr "CrushMap %(path)s 未找到"
@@ -1165,6 +1168,9 @@ msgstr "创建硬盘成功：osd.{}"
 msgid "create error: osd.{} is offline"
 msgstr "创建硬盘失败：osd.{} 离线"
 
+msgid "osd create {} error"
+msgstr "硬盘创建失败:{}"
+
 msgid "Disk(%s) status not available"
 msgstr "磁盘(%s)状态不可用"
 
@@ -1796,4 +1802,3 @@ msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-

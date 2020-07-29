@@ -145,7 +145,7 @@ class OsdHandler(AdminBaseHandler):
             res_name = osd.osd_name if osd.osd_id else osd.disk.name
             logger.info("%s create error", res_name)
             err_msg = str(e)
-            msg = _("create {} error").format(res_name)
+            msg = _("osd create {} error").format(res_name)
             op_status = 'CREATE_ERROR'
 
         res_name = osd.osd_name if osd.osd_id else osd.disk.name
