@@ -100,7 +100,7 @@ class DiskHandler(AgentBaseHandler):
 
     def disk_partitions_remove(self, ctxt, node, name):
         logger.debug('Remove cache disk partitions: %s', name)
-        executor = self._get_executor()
+        executor = self._get_ssh_executor()
         disk_tool = DiskTool(executor)
         try:
             _success = disk_tool.partitions_clear(name)
