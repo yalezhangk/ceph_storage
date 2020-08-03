@@ -720,4 +720,4 @@ class Logo(BASE, StorBase):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(64), index=True)
-    data = Column(LargeBinary, default=True)  # 默认启用
+    data = Column(LargeBinary(length=(2 ** 32) - 1), default=True)  # 默认启用

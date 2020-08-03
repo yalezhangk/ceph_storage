@@ -1,4 +1,3 @@
-
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -21,7 +20,7 @@ def upgrade(migrate_engine):
         Column('deleted', Boolean, index=True),
         Column('id', Integer, primary_key=True, nullable=False),
         Column('name', String(64), index=True),
-        Column('data', LargeBinary),
+        Column('data', LargeBinary(length=(2 ** 32) - 1)),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
