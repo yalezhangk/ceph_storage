@@ -399,6 +399,12 @@ msgstr "对象策略操作 %(action)s 只支持 'default, compression' "
 msgid "ObjectUser %(object_user_id)s could not be found."
 msgstr "对象用户 %(object_user_id)s 未找到"
 
+msgid "Object user %(user)s is not active. Current status is %(status)s"
+msgstr "对象用户 %(user)s 状态不是健康。当前状态为 %(status)s"
+
+msgid "Current operation requires '%(op_type)s' on user"
+msgstr "当前操作要求用户具有 '%(op_type)s' 权限"
+
 msgid "ObjectAccessKey %(object_access_key_id)s could not be found."
 msgstr "用户秘钥对 %(object_access_key_id)s 未找到"
 
@@ -630,9 +636,6 @@ msgstr "产品许可证校验失败，请上传合法的产品许可后再试"
 
 msgid "Object policy placement do not exists"
 msgstr "对象策略不存在"
-
-msgid "owner do not exists"
-msgstr "用户不存在"
 
 msgid "rgw service do not exists"
 msgstr "对象存储网关不存在"
@@ -1023,6 +1026,15 @@ msgstr "请先清理集群"
 
 msgid "Please Import First"
 msgstr "请先导入集群"
+
+msgid "read"
+msgstr "读"
+
+msgid "write"
+msgstr "写"
+
+msgid "delete"
+msgstr "删"
 
 msgid "bucket: %s status abnormal"
 msgstr "存储桶：%s 不可用"
@@ -1808,5 +1820,3 @@ msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
-
-

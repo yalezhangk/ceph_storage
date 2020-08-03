@@ -618,6 +618,15 @@ class ObjectUserNotFound(NotFound):
     message = _("ObjectUser %(object_user_id)s could not be found.")
 
 
+class ObjectUserNotActive(StorException):
+    message = _("Object user %(user)s is not active. "
+                "Current status is %(status)s")
+
+
+class OpMaskError(StorException):
+    message = _("Current operation requires '%(op_type)s' on user")
+
+
 class ObjectAccessKeyNotFound(NotFound):
     message = _("ObjectAccessKey %(object_access_key_id)s could not be found.")
 

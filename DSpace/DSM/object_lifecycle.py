@@ -15,19 +15,32 @@ from DSpace.tools.s3 import S3Client
 logger = logging.getLogger(__name__)
 RGW_LIFECYCLE_TIME_KEY = 'rgw_lifecycle_work_time'
 
+op_types = {
+    "read": _("read"),
+    "write": _("write"),
+    "delete": _("delete"),
+}
+
 
 class ObjectLifecycleMixin(AdminBaseHandler):
 
-    def check_object_storage_status(self, ctxt, bucket_id):
+    def check_object_storage_status(self, ctxt, bucket_id, op_type):
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
         bucket_name = bucket.name
         if bucket.status != 'active':
             raise exception.Invalid(_('bucket: %s status abnormal') %
                                     bucket_name)
         user = objects.ObjectUser.get_by_id(ctxt, bucket.owner_id)
+
+        # Check user status
         if user.status != 'active':
             raise exception.Invalid(_('obj_user: %s status abnormal') %
                                     user.display_name)
+        # Check user op_mask
+        op_mask = user.op_mask.split(',')
+        if op_type not in op_mask:
+            raise exception.OpMaskError(op_type=op_types[op_type])
+
         obj_access_keys = objects.ObjectAccessKeyList.get_all(
             ctxt, filters={'obj_user_id': user.id})
         if not obj_access_keys:
@@ -126,7 +139,7 @@ class ObjectLifecycleHandler(ObjectLifecycleMixin):
     def object_lifecycle_modify(self, ctxt, data):
         bucket_id = data['bucket_id']
         rgw, access_key, bucket = self.check_object_storage_status(
-            ctxt, bucket_id)
+            ctxt, bucket_id, 'write')
         bucket_name = bucket.name
         lifecycles = data['object_lifecycles']
         logger.debug('object_lifecycle begin modify, bucket_name=%s, data=%s',
