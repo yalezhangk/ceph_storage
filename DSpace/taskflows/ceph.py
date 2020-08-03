@@ -149,6 +149,50 @@ class CephTask(object):
     def get_host_osds(self, host_name):
         pass
 
+    def _calculate_weight(self, exist_buckets_id):
+        # Calculate host weight
+        for id, bucket in six.iteritems(exist_buckets_id):
+            if "~" in bucket["name"]:
+                continue
+            if (bucket["type_name"] == "host") and (bucket["weight"] == 0):
+                for item in bucket["items"]:
+                    bucket["weight"] = int(bucket["weight"]) + \
+                                       int(item["weight"])
+
+        # Calculate rack weight
+        for id, bucket in six.iteritems(exist_buckets_id):
+            if "~" in bucket["name"]:
+                continue
+            if (bucket["type_name"] == "rack") and (bucket["weight"] == 0):
+                for item in bucket["items"]:
+                    weight = exist_buckets_id[item["id"]]["weight"]
+                    item["weight"] = weight
+                    bucket["weight"] = int(bucket["weight"]) + weight
+
+        # Calculate datacenter weight
+        for id, bucket in six.iteritems(exist_buckets_id):
+            if "~" in bucket["name"]:
+                continue
+            if (bucket["type_name"] == "datacenter") and (
+                    bucket["weight"] == 0):
+                for item in bucket["items"]:
+                    weight = exist_buckets_id[item["id"]]["weight"]
+                    item["weight"] = weight
+                    bucket["weight"] = int(bucket["weight"]) + weight
+
+        # Calculate root weight
+        for id, bucket in six.iteritems(exist_buckets_id):
+            if "~" in bucket["name"]:
+                continue
+            if (bucket["type_name"] == "root") and (
+                    bucket["weight"] == 0):
+                for item in bucket["items"]:
+                    weight = exist_buckets_id[item["id"]]["weight"]
+                    item["weight"] = weight
+                    bucket["weight"] = int(bucket["weight"]) + weight
+
+        return exist_buckets_id
+
     @synchronized("crushmap_modify")
     def _add_osd_to_crushmap(self, client, hosts, osds):
         crushmap = client.get_crushmap()
@@ -159,6 +203,7 @@ class CephTask(object):
         exist_buckets = {}
         for bucket in crushmap["buckets"]:
             exist_buckets[bucket["name"]] = bucket
+
         for name, host in six.iteritems(hosts):
             host_osds = [osds.get(osd_id) for osd_id in host['osds']]
             for osd in host_osds:
@@ -177,22 +222,13 @@ class CephTask(object):
         for id, device in six.iteritems(exist_devices):
             crushmap["devices"].append(device)
 
-        for name, bucket in six.iteritems(exist_buckets):
-            if "~" in name:
-                continue
-            if (bucket["type_name"] == "host") and (bucket["weight"] == 0):
-                for item in bucket["items"]:
-                    bucket["weight"] = int(bucket["weight"]) + \
-                                       int(item["weight"])
         exist_buckets_id = {}
         for name, bucket in six.iteritems(exist_buckets):
             exist_buckets_id[bucket["id"]] = bucket
-        crushmap["buckets"] = []
 
-        for name, bucket in six.iteritems(exist_buckets):
-            if ("~" not in name) and bucket["weight"] == 0:
-                for item in bucket["items"]:
-                    item["weight"] = exist_buckets_id[item["id"]]["weight"]
+        exist_buckets_id = self._calculate_weight(exist_buckets_id)
+        crushmap["buckets"] = []
+        for bucket_id, bucket in six.iteritems(exist_buckets_id):
             crushmap["buckets"].append(bucket)
         client.set_crushmap(crushmap)
 
