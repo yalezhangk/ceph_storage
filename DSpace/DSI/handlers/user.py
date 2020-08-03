@@ -165,11 +165,22 @@ class PermissionMixin(BaseAPIHandler):
 
         return False
 
+    def get_sys_configs(self, ctxt):
+        sys_configs = {
+            ConfigKey.POOL_ID_SAME_AS_NAME: False
+        }
+        pool_id_same_as_name = objects.sysconfig.sys_config_get(
+            ctxt, ConfigKey.POOL_ID_SAME_AS_NAME)
+        if pool_id_same_as_name:
+            sys_configs[ConfigKey.POOL_ID_SAME_AS_NAME] = True
+        return sys_configs
+
     @gen.coroutine
     def get_permission(self, ctxt, user, cluster_id=None):
         permission = copy.deepcopy(default_permission)
         license = self.license_verify(ctxt, cluster_id)
         permission['license'] = license
+        permission['sys_configs'] = self.get_sys_configs(ctxt)
         # platform_inited: true -> init done; false -> need init page
         permission['platform_inited'] = yield self.check_init_page(ctxt)
         permission[ConfigKey.PLATFORM_TYPE] = objects.sysconfig.sys_config_get(
