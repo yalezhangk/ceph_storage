@@ -24,7 +24,7 @@ class PrometheusHandler(AdminBaseHandler):
         for m in cluster_perf:
             metric = 'ceph_{}'.format(m)
             res[m] = prometheus.prometheus_get_metric(metric)
-        prometheus.cluster_get_pg_state(res)
+        res['cluster_pg_state'] = prometheus.cluster_get_pg_state()
         return res
 
     def cluster_history_metrics_get(self, ctxt, start, end):

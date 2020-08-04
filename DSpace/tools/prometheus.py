@@ -461,8 +461,9 @@ class PrometheusTool(object):
             metrics.update({m: data})
         return metrics
 
-    def cluster_get_pg_state(self, cluster_metrics):
+    def cluster_get_pg_state(self):
         prometheus = PrometheusClient(url=self.prometheus_url)
+        cluster_pg_state = None
         try:
             pg_value = json.loads(
                 prometheus.query(metric='ceph_pg_metadata')
@@ -486,14 +487,16 @@ class PrometheusTool(object):
                 elif ('degraded' in state) or ('undersized' in state):
                     degraded += 1
 
-            cluster_metrics.update({'cluster_pg_state': {
+            cluster_pg_state = {
                 'healthy': round(healthy / pg_total, 3) if pg_total else 0,
                 'recovering': round(recovering / pg_total, 3) if pg_total
                 else 0,
                 'degraded': round(degraded / pg_total, 3) if pg_total else 0,
-                'unactive': round(unactive / pg_total, 3) if pg_total else 0}})
+                'unactive': round(unactive / pg_total, 3) if pg_total else 0}
         except Exception:
-            cluster_metrics.update({'cluster_pg_state': None})
+            logger.error("Failed to get cluster pg state")
+
+        return cluster_pg_state
 
     def pool_get_perf(self, pool):
         for m in pool_perf:

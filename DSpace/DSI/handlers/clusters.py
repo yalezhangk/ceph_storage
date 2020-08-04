@@ -587,7 +587,8 @@ class ClusterPgStatus(ClusterAPIHandler):
         """
         ctxt = self.get_context()
         client = self.get_admin_client(ctxt)
-        pg_status = yield client.cluster_pg_status_get(ctxt)
+        pool_id = self.get_argument('pool_id', default=None)
+        pg_status = yield client.cluster_pg_status_get(ctxt, pool_id)
         self.write(json.dumps({"pg_status": pg_status}))
 
 
