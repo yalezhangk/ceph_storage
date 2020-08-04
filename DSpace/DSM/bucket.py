@@ -421,9 +421,9 @@ class BucketHandler(AdminBaseHandler):
 
     def _bucket_versioning_update(self, ctxt, bucket, data,
                                   rgw, begin_action):
+        version_status = 'open' if data['versioned'] else 'suspended'
+        name = bucket.name
         try:
-            name = bucket.name
-            version_status = "open" if data['versioned'] else "suspended"
             endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
             obj_user_id = bucket.owner_id
             access_key, secret_access_key = \
@@ -436,17 +436,20 @@ class BucketHandler(AdminBaseHandler):
             status = "success"
             op_status = "OPEN_BUCKET_VERSIONING_SUCCESS" if \
                 data['versioned'] else "SUSPENDED_BUCKET_VERSIONING_SUCCESS"
-            msg = _("bucket {} {} versioning success").format(
-                    name, version_status)
+            if version_status == 'open':
+                msg = _("bucket {} open versioning success").format(name)
+            elif version_status == 'suspended':
+                msg = _("bucket {} suspended versioning success").format(name)
             err_msg = None
         except Exception as err:
-            version_status = "open" if data['versioned'] else "suspended"
             logger.error("bucket update versioning error: %s", err)
             status = "error"
             op_status = "OPEN_BUCKET_VERSIONING_ERROR" if \
                 data['versioned'] else "SUSPENDED_BUCKET_VERSIONING_ERROR"
-            msg = _("bucket {} {} versioning error").format(
-                    name, version_status)
+            if version_status == 'open':
+                msg = _("bucket {} open versioning error").format(name)
+            elif version_status == 'suspended':
+                msg = _("bucket {} suspended versioning error").format(name)
             err_msg = str(err)
         self.finish_action(begin_action, bucket.id, name, bucket,
                            status, err_msg=err_msg)
