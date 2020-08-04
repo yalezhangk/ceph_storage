@@ -504,34 +504,17 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
             capacity = None
         return capacity
 
-    def cluster_pg_status_get(self, ctxt):
-        _pools = objects.PoolList.get_all(ctxt)
-        pg_states = {}
-        pg_states["pools"] = []
+    def cluster_pg_status_get(self, ctxt, pool_id):
         prometheus = PrometheusTool(ctxt)
-        total = {
-            "total": {
-                "healthy": 0,
-                "recovering": 0,
-                "degraded": 0,
-                "unactive": 0
-            }
-        }
-        len_pool = len(_pools)
-        for pool in _pools:
+        if pool_id:
+            pool = objects.Pool.get_by_id(ctxt, int(pool_id))
             prometheus.pool_get_pg_state(pool)
             pg_state = pool.metrics.get("pg_state")
-            pg_state.update({
-                "pool_id": pool.pool_id,
-                "id": pool.id,
-                "display_name": pool.display_name})
-            pg_states["pools"].append(pg_state)
-            total["total"]["healthy"] += pg_state["healthy"] / len_pool
-            total["total"]["recovering"] += pg_state["recovering"] / len_pool
-            total["total"]["degraded"] += pg_state["degraded"] / len_pool
-            total["total"]["unactive"] += pg_state["unactive"] / len_pool
-        pg_states.update(total)
-        return pg_states
+            logger.debug('Get pg state from pool %s, %s', pool_id, pg_state)
+        else:
+            pg_state = prometheus.cluster_get_pg_state()
+            logger.debug('Get pg state from cluster, %s', pg_state)
+        return pg_state
 
     def cluster_switch(self, ctxt, cluster_id):
         user_id = ctxt.user_id
