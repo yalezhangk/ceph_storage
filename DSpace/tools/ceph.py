@@ -1123,7 +1123,7 @@ class RADOSClient(object):
             buckets_old = map.get("buckets")
             buckets_new = {}
             iname_map = {}
-            # combine buckets
+            # combine buckets end with ~hdd or ~ssd
             for bucket in buckets_old:
                 bucket_name = bucket["name"]
                 bucket_class = ""
@@ -1134,25 +1134,33 @@ class RADOSClient(object):
                     bucket_class = tmp_name[1]
 
                 if buckets_new.get(bucket_name):
-                    buckets_new[bucket_name]["bucket_class"] = bucket_class
+                    # buckets_new[bucket_name]["bucket_class"] = bucket_class
                     buckets_new[bucket_name]["class_id"] = bucket["id"]
                     if not bucket_class:
                         buckets_new[bucket_name]["id"] = bucket["id"]
+                        buckets_new[bucket_name]["items"] = bucket["items"]
                 else:
                     buckets_new[bucket_name] = bucket
+                    buckets_new[bucket_name]["name"] = bucket_name
             logger.debug("Buckets combined: %s", buckets_new)
             file.write("\n")
             # write buckets
             tail_buckets = []
+            datacenter_bucket = {
+                "rack": [],
+                "datacenter": [],
+                "root": []
+            }
             for key, bucket in six.iteritems(buckets_new):
                 tail = False
+                root = False
                 seq = [
                     ("%s %s {\n" % (bucket["type_name"], bucket["name"])),
                     "id {}\n".format(bucket["id"])
                 ]
-                if bucket.get("class_id"):
-                    seq.append("id {} class {}\n".format(
-                        bucket["class_id"], bucket["bucket_class"]))
+                # if bucket.get("class_id"):
+                #     seq.append("id {} class {}\n".format(
+                #         bucket["class_id"], bucket["bucket_class"]))
                 seq = seq + [
                     "alg {}\n".format(bucket["alg"]),
                     "hash {}\n".format(bucket["hash"])
@@ -1167,17 +1175,31 @@ class RADOSClient(object):
                         item_name = iname_map[i["id"]]
                         # Need to be written after items
                         tail = True
+                        if "datacenter" in item_name or "rack" in item_name:
+                            root = True
                     else:
                         item_name = "osd.{}".format(i["id"])
                     seq.append("item {} weight {}\n".format(
                         item_name, format(i["weight"]/65536, ".5f")))
                 seq.append("}\n")
+                if bucket["type_name"] == "rack":
+                    datacenter_bucket["rack"].append(seq)
+                    continue
+                if bucket["type_name"] == "datacenter":
+                    datacenter_bucket["datacenter"].append(seq)
+                    continue
+                if root:
+                    datacenter_bucket["root"].append((seq))
+                    continue
                 if tail:
                     tail_buckets.append(seq)
                     continue
                 file.writelines(seq)
             for b in tail_buckets:
                 file.writelines(b)
+            for bucket_type, buckets in six.iteritems(datacenter_bucket):
+                for bucket in buckets:
+                    file.writelines(bucket)
             file.write("\n")
             # rules
             rules = map.get("rules")
