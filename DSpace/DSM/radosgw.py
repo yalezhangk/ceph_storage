@@ -426,6 +426,24 @@ class RadosgwHandler(RadosgwMixin):
         cephconf.create()
         logger.info('lifecycle default work time: %s set success in db', value)
 
+    def _clean_init_resources(self, ctxt, ceph_task):
+        logger.info("Clean up radosgw init resources.")
+        # Remove metadata pools
+        pools = objects.PoolList.get_all(ctxt, filters={"role": "object_meta"})
+        for pool in pools:
+            ceph_task.pool_delete(pool)
+            pool.destroy()
+        objects.sysconfig.sys_config_set(
+            ctxt, ConfigKey.OBJECT_META_POOL, 0, "int")
+        # Remove portal user
+        users = objects.ObjectUserList.get_all(ctxt, filters={"is_admin": 1})
+        for user in users:
+            user.destroy()
+        # Remove radosgw zones
+        zones = objects.RadosgwZoneList.get_all(ctxt)
+        for zone in zones:
+            zone.destroy()
+
     def _object_store_init(self, ctxt, index_pool, begin_action):
         ceph_task = CephTask(ctxt)
         try:
@@ -445,6 +463,7 @@ class RadosgwHandler(RadosgwMixin):
             op_status = "INIT_SUCCESS"
             err_msg = None
         except exception.StorException as e:
+            self._clean_init_resources(ctxt, ceph_task)
             logger.exception("create pool error: %s", e)
             err_msg = str(e)
             status = s_fields.ObjectStoreStatus.ERROR
