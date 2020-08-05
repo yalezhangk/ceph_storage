@@ -238,11 +238,19 @@ class BucketHandler(AdminBaseHandler):
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
         endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
         rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
-        bucket_info = rgw.rgw.get_bucket(bucket=bucket.name, stats=True)
-        capacity = rgw.get_bucket_capacity(bucket_info)
-        if capacity['size']['used'] != 0 and not force:
-            raise InvalidInput(_("bucket {} need to "
-                               "be forced to delete").format(bucket.name))
+
+        # Get all bucket list in rgw
+        buckets = rgw.rgw.get_bucket()
+        bucket_in_rgw = False
+        if bucket.name in buckets:
+            bucket_in_rgw = True
+            bucket_info = rgw.rgw.get_bucket(bucket=bucket.name, stats=True)
+            capacity = rgw.get_bucket_capacity(bucket_info)
+            if capacity['size']['used'] != 0 and not force:
+                raise InvalidInput(_("bucket {} need to "
+                                     "be forced to delete").format(
+                    bucket.name))
+
         if bucket.status not in [s_fields.BucketStatus.ACTIVE,
                                  s_fields.BucketStatus.ERROR]:
             raise exception.InvalidInput(_("Only available and error"
@@ -253,16 +261,17 @@ class BucketHandler(AdminBaseHandler):
         bucket.status = s_fields.BucketStatus.DELETING
         bucket.save()
         self.task_submit(self._object_bucket_delete, ctxt, bucket,
-                         rgw, force, begin_action)
+                         rgw, force, bucket_in_rgw, begin_action)
         logger.info('object_bucket_delete task has begin, bucket_name: %s',
                     bucket.name)
         return bucket
 
-    def _object_bucket_delete(self, ctxt, bucket, rgw,
-                              force, begin_action):
+    def _object_bucket_delete(self, ctxt, bucket, rgw, force, bucket_in_rgw,
+                              begin_action):
+        name = bucket.name
         try:
-            name = bucket.name
-            rgw.bucket_remove(name, force)
+            if bucket_in_rgw:
+                rgw.bucket_remove(name, force)
             bucket.destroy()
             status = "success"
             op_status = "DELETE_BUCKET_SUCCESS"
