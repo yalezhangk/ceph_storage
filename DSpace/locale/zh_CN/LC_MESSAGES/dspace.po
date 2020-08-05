@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-29 17:19+0800\n"
+"POT-Creation-Date: 2020-08-04 16:34+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -682,11 +682,17 @@ msgstr "存储桶 {} 更新访问权限成功"
 msgid "bucket {} update access control error"
 msgstr "存储桶 {} 更新访问权限失败"
 
-msgid "bucket {} {} versioning success"
-msgstr "存储桶 {} {} 多版本成功"
+msgid "bucket {} open versioning success"
+msgstr "存储桶:{}开启多版本成功"
 
-msgid "bucket {} {} versioning error"
-msgstr "存储桶{} {} 多版本错误"
+msgid "bucket {} suspended versioning success"
+msgstr "存储桶:{}暂停多版本成功"
+
+msgid "bucket {} open versioning error"
+msgstr "存储桶:{}开启多版本失败"
+
+msgid "bucket {} suspended versioning error"
+msgstr "存储桶:{}暂停多版本失败"
 
 msgid "Ceph config %s update failed"
 msgstr "配置%s修改失败"
@@ -1802,3 +1808,5 @@ msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
+
