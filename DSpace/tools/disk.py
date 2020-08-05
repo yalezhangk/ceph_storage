@@ -44,12 +44,12 @@ class DiskTool(ToolBase):
 
     def _get_disk_udev_info(self, disk):
         # _disk = self._wapper("/dev/%s" % disk)
+        udev_info = {}
         _disk = "/dev/%s" % disk
         cmd = ["udevadm", "info", "-q", "property", _disk]
         code, out, err = self.run_command(cmd)
         if code:
-            return
-        udev_info = {}
+            return udev_info
         for attr in out.split('\n'):
             if '=' not in attr:
                 continue
@@ -58,22 +58,28 @@ class DiskTool(ToolBase):
         logger.info("get disk %s udev info: %s", disk, udev_info)
         return udev_info
 
-    def update_udev_info(self, disk_name, disk_info):
-        udev_info = self._get_disk_udev_info(disk_name)
-        dev_bus = udev_info.get("ID_BUS")
-        if dev_bus == "scsi":
-            slot = udev_info.get("DEVPATH").split("/")[-3]
-            disk_info.update({
-                "slot": slot,
-                "serial": udev_info.get("ID_SCSI_SERIAL"),
-                "wwid": udev_info.get("ID_WWN_WITH_EXTENSION"),
+    def update_udev_info(self, disks):
+        unsupported_disks = []
+        for name, data in six.iteritems(disks):
+            udev_info = self._get_disk_udev_info(name)
+            dev_bus = udev_info.get("ID_BUS")
+            if dev_bus in CONF.disk_bus_blacklist:
+                unsupported_disks.append(name)
+            elif dev_bus == "scsi":
+                slot = udev_info.get("DEVPATH").split("/")[-3]
+                data.update({
+                    "slot": slot,
+                    "serial": udev_info.get("ID_SCSI_SERIAL"),
+                    "wwid": udev_info.get("ID_WWN_WITH_EXTENSION"),
+                })
+            else:
+                data.update({"serial": udev_info.get("ID_SERIAL")})
+            data.update({
+                "model": udev_info.get("ID_MODEL"),
+                "vender": udev_info.get("ID_VENDOR"),
             })
-        else:
-            disk_info.update({"serial": udev_info.get("ID_SERIAL")})
-        disk_info.update({
-            "model": udev_info.get("ID_MODEL"),
-            "vender": udev_info.get("ID_VENDOR"),
-        })
+        for disk in unsupported_disks:
+            disks.pop(disk)
 
     @retry(RunCommandError, interval=0.2, retries=5)
     def get_partition_uuid(self, part):
