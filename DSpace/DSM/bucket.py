@@ -26,13 +26,23 @@ class BucketHandler(AdminBaseHandler):
         placement = policy.name
         return placement
 
-    def _check_active_user_exist(self, ctxt, data):
-        filters = {'id': data['owner_id'], 'status': "active"}
+    def _check_user_status(self, ctxt, owner_id, op_type):
+        # Check user status
+        filters = {'id': owner_id}
         users = objects.ObjectUserList.get_all(
                 ctxt, filters=filters)
         if not users:
-            raise exception.InvalidInput(_("owner do not exists"))
-        uid = users[0].uid
+            raise exception.ObjectUserNotFound(object_user_id=owner_id)
+        user = users[0]
+        if user.status != s_fields.ObjectUserStatus.ACTIVE:
+            raise exception.ObjectUserNotActive(user=user.display_name,
+                                                status=user.status)
+        # Check user op_mask
+        op_mask = user.op_mask.split(',')
+        if op_type not in op_mask:
+            raise exception.OpMaskError(op_type=_(op_type))
+
+        uid = user.uid
         max_buckets = users[0].max_buckets
         logger.info('owner name %s', users[0].uid)
         return uid, max_buckets
@@ -84,17 +94,23 @@ class BucketHandler(AdminBaseHandler):
         return acls
 
     def object_buckets_create(self, ctxt, data):
+        logger.info("Create bucket with data: %s", data)
+        # Create check
         placement = self._check_policy_exist(ctxt, data)
         rgw = self._assert_rgw_active(ctxt)
-        uid, max_buckets = self._check_active_user_exist(ctxt, data)
+        # Get
+        uid, max_buckets = self._check_user_status(
+            ctxt, data['owner_id'], 'write')
         admin, access_key, secret_access_key = self.get_admin_user(ctxt)
         endpoint_url = str(rgw.ip_address) + ':' + str(rgw.port)
-        rgw = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+        rgw_cli = RadosgwAdmin(access_key, secret_access_key, endpoint_url)
+
         user_access = objects.ObjectAccessKeyList.get_all(
                 ctxt, filters={"obj_user_id": data["owner_id"]})
         access_key = user_access[0].access_key
         secret_access_key = user_access[0].secret_key
-        user_buckets_number = rgw.count_user_buckets(uid)
+
+        user_buckets_number = rgw_cli.count_user_buckets(uid)
         logger.info('user buckets count %s', user_buckets_number)
         available_bucket_qua = max_buckets - user_buckets_number
         batch_create = data.get('batch_create')
@@ -133,7 +149,7 @@ class BucketHandler(AdminBaseHandler):
             bucket.status = s_fields.BucketStatus.CREATING
             bucket.create()
             self.task_submit(self._object_bucket_create, ctxt, bucket,
-                             placement, rgw, endpoint_url, access_key,
+                             placement, rgw_cli, endpoint_url, access_key,
                              secret_access_key, uid, begin_action)
             logger.info('bucket_create task has begin, bucket_name: %s',
                         name)
@@ -147,7 +163,7 @@ class BucketHandler(AdminBaseHandler):
             raise exception.InvalidInput(
                 reason=_('bucket name %s already exists!') % name)
 
-    def _object_bucket_create(self, ctxt, bucket, placement, rgw,
+    def _object_bucket_create(self, ctxt, bucket, placement, rgw_cli,
                               endpoint_url, access_key, secret_access_key,
                               uid, begin_action):
         try:
@@ -162,10 +178,10 @@ class BucketHandler(AdminBaseHandler):
             s3.bucket_create(name, placement=':' + placement,
                              acls=acls, versioning=bucket.versioned)
             if bucket.quota_max_size != 0 or bucket.quota_max_objects != 0:
-                rgw.rgw.set_bucket_quota(
+                rgw_cli.rgw.set_bucket_quota(
                         uid, name, bucket.quota_max_size / 1024,
                         bucket.quota_max_objects, enabled=True)
-            bucket_info = rgw.rgw.get_bucket(bucket=name)
+            bucket_info = rgw_cli.rgw.get_bucket(bucket=name)
             bucket.bucket_id = bucket_info['id']
             bucket.status = 'active'
             msg = _("bucket %s create success") % name
@@ -338,7 +354,8 @@ class BucketHandler(AdminBaseHandler):
 
     def bucket_update_owner(self, ctxt, bucket_id, data):
         rgw = self._assert_rgw_active(ctxt)
-        uid, max_buckets = self._check_active_user_exist(ctxt, data)
+        uid, max_buckets = self._check_user_status(
+            ctxt, data['owner_id'], 'write')
         logger.debug('object_bucket owner: %s update begin',
                      bucket_id)
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
@@ -420,8 +437,7 @@ class BucketHandler(AdminBaseHandler):
         action = Action.UPDATE_VERSIONING_OPEN if data['versioned'] \
             else Action.UPDATE_VERSIONING_SUSPENDED
         bucket = objects.ObjectBucket.get_by_id(ctxt, bucket_id)
-        uid, max_buckets = self._check_active_user_exist(
-                ctxt, data={"owner_id": bucket.owner_id})
+        self._check_user_status(ctxt, bucket.owner_id, 'write')
         begin_action = self.begin_action(
             ctxt, Resource.OBJECT_BUCKET, action, bucket)
         self.task_submit(self._bucket_versioning_update, ctxt, bucket,
