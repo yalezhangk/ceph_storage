@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-import six
-
 from DSpace import exception
 from DSpace.DSA.base import AgentBaseHandler
 from DSpace.objects import fields as s_fields
@@ -123,8 +121,7 @@ class DiskHandler(AgentBaseHandler):
 
             ssh_executor = self._get_ssh_executor()
             disk_tool = DiskTool(ssh_executor)
-            for name, data in six.iteritems(disks):
-                disk_tool.update_udev_info(name, data)
+            disk_tool.update_udev_info(disks)
             disk_tool.update_disk_type(disks)
         except Exception as e:
             logger.warning("failed to scan disks: %s", e)

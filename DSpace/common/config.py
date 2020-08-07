@@ -142,7 +142,10 @@ global_opts = [
                 help='DSA: Support raid models'),
     cfg.StrOpt('disk_blacklist',
                default="^sr|fd|dm",
-               help='Disk blacklist')
+               help='Disk blacklist'),
+    cfg.ListOpt('disk_bus_blacklist',
+                default=['usb'],
+                help='DSA: Unsupported dev bus')
 ]
 
 etcd_opts = [
