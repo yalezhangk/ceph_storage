@@ -87,7 +87,7 @@ class SocketDomainHandler(AgentBaseHandler):
         if disk_info:
             ssh_executor = self._get_ssh_executor()
             disk_tool = DiskTool(ssh_executor)
-            disk_tool.update_udev_info(disk_info.get('name'), disk_info)
+            disk_tool.update_udev_info({disk_info.get('name'): disk_info})
             self.admin.disk_online(self.ctxt, disk_info, self.node.id)
 
     def network_remove(self, net):
