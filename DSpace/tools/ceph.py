@@ -258,9 +258,26 @@ class CephTool(ToolBase):
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
 
+    def disk_get_partition_name(self, diskname, part_num):
+        part_name = None
+        path = self._wapper("/sys/class/block/")
+        sys_entry = os.path.join(path, diskname)
+        for f in os.listdir(sys_entry):
+            if f.startswith(diskname) and f.endswith(str(part_num)):
+                # we want the shortest name that starts with the base name
+                # and ends with the partition number
+                if not part_name or len(f) < len(part_name):
+                    part_name = f
+        return part_name
+
     @retry(RunCommandError)
     def disk_active(self, diskname):
-        cmd = ["dspace-disk", "activate", "/dev/%s1" % diskname]
+        part_name = self.disk_get_partition_name(diskname, '1')
+        if not part_name:
+            part_name = "/dev/%s1" % diskname
+        else:
+            part_name = "/dev/%s" % part_name
+        cmd = ["dspace-disk", "activate", part_name]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
@@ -275,7 +292,13 @@ class CephTool(ToolBase):
                                   stdout=stdout, stderr=stderr)
 
     def osd_deactivate(self, diskname):
-        cmd = ["dspace-disk", "deactivate", "/dev/%s1" % diskname]
+        part_name = self.disk_get_partition_name(diskname, '1')
+        if not part_name:
+            part_name = "/dev/%s1" % diskname
+        else:
+            part_name = "/dev/%s" % part_name
+
+        cmd = ["dspace-disk", "deactivate", part_name]
         rc, stdout, stderr = self.run_command(cmd, timeout=300)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,

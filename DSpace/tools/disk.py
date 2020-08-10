@@ -194,6 +194,13 @@ class DiskTool(ToolBase):
             if code:
                 raise RunCommandError(cmd=cmd, return_code=code,
                                       stdout=out, stderr=err)
+            lines = out.split('\n')
+            for line in lines:
+                if "partition_name" in line:
+                    partition = str(line.split('=')[-1])
+                    if not partition:
+                        break
+                    part['name'] = partition.replace('/dev/', '')
             part_uuid = self.get_partition_uuid(part['name'])
             part['uuid'] = part_uuid
             order += 1
