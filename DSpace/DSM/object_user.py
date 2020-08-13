@@ -189,10 +189,10 @@ class ObjectUserHandler(ObjectUserMixin):
                 uid=user_name,
                 user_qutoa_enabled=user_qutoa_enabled,
                 user_quota_max_size=bucket_quota_max_size_kb,
-                user_quota_max_objects=user_quota_max_objects_k,
+                user_quota_max_objects=user_quota_max_objects_k * 1000,
                 bucket_qutoa_enabled=bucket_qutoa_enabled,
                 bucket_quota_max_size=user_quota_max_size_kb,
-                bucket_quota_max_objects=bucket_quota_max_objects_k
+                bucket_quota_max_objects=bucket_quota_max_objects_k * 1000
             )
             client.set_op_mask(ctxt, username=user_name,
                                op_mask=data['op_mask'])
@@ -575,10 +575,10 @@ class ObjectUserHandler(ObjectUserMixin):
                 uid=user.uid,
                 user_qutoa_enabled=user_qutoa_enabled,
                 user_quota_max_size=user_quota_max_size_kb,
-                user_quota_max_objects=user_quota_max_objects_k,
+                user_quota_max_objects=user_quota_max_objects_k * 1000,
                 bucket_qutoa_enabled=bucket_qutoa_enabled,
                 bucket_quota_max_size=bucket_quota_max_size_kb,
-                bucket_quota_max_objects=bucket_quota_max_objects_k
+                bucket_quota_max_objects=bucket_quota_max_objects_k * 1000
             )
             rgw.rgw.modify_user(uid=user.uid, max_buckets=data['max_buckets'])
             user.user_quota_max_size = data['user_quota_max_size']
