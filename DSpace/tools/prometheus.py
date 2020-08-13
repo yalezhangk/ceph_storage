@@ -600,8 +600,13 @@ class PrometheusTool(object):
             capacitys[osd.osd_id] = osd
         for m in osd_capacity:
             metric = "ceph_osd_capacity_" + m
-            values = json.loads(prometheus.query(
-                metric=metric, filter=filters))['data']['result']
+            try:
+                values = json.loads(
+                    prometheus.query(metric=metric, filter=filters))
+            except Exception as e:
+                logger.error("Get prometheus error: %s", e)
+                return None
+            values = values['data']['result']
             for value in values:
                 osd_id = value['metric']['osd_id']
                 v = value['value']
@@ -724,6 +729,13 @@ class PrometheusTool(object):
             pg_value = json.loads(prometheus.query(
                 metric='ceph_pg_metadata', filter=filters))['data']['result']
             pg_state = {}
+        except Exception as e:
+            logger.error("Get prometheus error: ", e)
+            return
+
+        for osd in osds:
+            osd.metrics.update({'pg_state': None})
+        try:
             for osd in osds:
                 pg_state[osd.osd_id] = {
                     'osd': osd,
@@ -765,12 +777,8 @@ class PrometheusTool(object):
                                       3) if pg_total else 0,
                     'unactive': round(unactive / pg_total,
                                       3) if pg_total else 0}})
-        except exception.StorException as e:
-            logger.error(e)
-            pass
         except Exception as e:
-            logger.error(e)
-            osd.metrics.update({'pg_state': None})
+            logger.error("Get osds_get_pg_state error", e)
 
     def cluster_get_capacity(self, filter=None):
         # 集群容量
