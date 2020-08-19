@@ -221,8 +221,11 @@ class PrometheusHandler(AdminBaseHandler):
         return metrics
 
     def router_service_map(self, router_service):
-        r_service_map = {'haproxy': 'athena_radosgw_haproxy',
-                         'keepalived': 'athena_radosgw_keepalived'}
+        prefix = self.container_prefix
+        r_service_map = {
+            'haproxy': '{}_radosgw_haproxy'.format(prefix),
+            'keepalived': '{}_radosgw_keepalived'.format(prefix)
+        }
         name = r_service_map.get(router_service)
         if not name:
             raise InvalidInput(_('router_service name：%s not exist') %
