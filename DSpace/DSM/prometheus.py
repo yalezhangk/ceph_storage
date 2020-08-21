@@ -1,3 +1,5 @@
+import json
+
 from oslo_log import log as logging
 
 from DSpace import objects
@@ -194,30 +196,41 @@ class PrometheusHandler(AdminBaseHandler):
             rgw, float(start), float(end), metrics)
         return metrics
 
-    def radosgw_router_metrics_get(self, ctxt, rgw_router_id, router_service):
-        rgw_router = objects.RadosgwRouter.get_by_id(
-            ctxt, rgw_router_id, expected_attrs=['router_services'])
+    def radosgw_router_metrics_get(self, ctxt, rgw_router_id, router_service,
+                                   hostname):
+        rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id)
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={'hostname': hostname})
+        if not nodes:
+            raise InvalidInput(_('node: %s not exist') % hostname)
+        node_ids = [node['node_id'] for node in json.loads(rgw_router.nodes)]
+        if nodes[0].id not in node_ids:
+            raise InvalidInput(_('rgw_router: %s has not sed on node: %s')
+                               % (rgw_router.name, hostname))
         service_name = self.router_service_map(router_service)
-        node_id = rgw_router.router_services[0].node_id
-        node = objects.Node.get_by_id(ctxt, node_id)
         prometheus = PrometheusTool(ctxt)
         metrics = {}
         prometheus.rgw_router_get_cpu_memory(
-            rgw_router, metrics, service_name, node.hostname)
+            rgw_router, metrics, service_name, hostname)
         return metrics
 
     def radosgw_router_metrics_history_get(self, ctxt, rgw_router_id, start,
-                                           end, router_service):
-        rgw_router = objects.RadosgwRouter.get_by_id(
-            ctxt, rgw_router_id, expected_attrs=['router_services'])
+                                           end, router_service, hostname):
+        rgw_router = objects.RadosgwRouter.get_by_id(ctxt, rgw_router_id)
+        nodes = objects.NodeList.get_all(
+            ctxt, filters={'hostname': hostname})
+        if not nodes:
+            raise InvalidInput(_('node: %s not exist') % hostname)
+        node_ids = [node['node_id'] for node in json.loads(rgw_router.nodes)]
+        if nodes[0].id not in node_ids:
+            raise InvalidInput(_('rgw_router: %s has not sed on node: %s')
+                               % (rgw_router.name, hostname))
         service_name = self.router_service_map(router_service)
-        node_id = rgw_router.router_services[0].node_id
-        node = objects.Node.get_by_id(ctxt, node_id)
         prometheus = PrometheusTool(ctxt)
         metrics = {}
         prometheus.rgw_router_get_histroy_cpu_memory(
             rgw_router, float(start), float(end), metrics, service_name,
-            node.hostname)
+            hostname)
         return metrics
 
     def router_service_map(self, router_service):

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: space 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-08-04 16:34+0800\n"
+"POT-Creation-Date: 2020-08-21 15:03+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -97,7 +97,7 @@ msgid "Radosgw Zone %(rgw_zone_id)s could not be found."
 msgstr "对象存储网关区域 %(rgw_zone_id)s 未找到"
 
 msgid "Radosgw router %(rgw_router_id)s could not be found."
-msgstr "对象路由 %(rgw_zone_id)s 无法找到"
+msgstr "对象路由 %(rgw_router_id)s 无法找到"
 
 msgid "Disk partition %(disk_part_id)s could not be found."
 msgstr "分区 %(disk_part_id)s 未找到"
@@ -1357,6 +1357,12 @@ msgstr "超过一个存储池使用这个故障域规划，不允许修改故障
 msgid "No available undo"
 msgstr "无可用撤销"
 
+msgid "node: %s not exist"
+msgstr "服务器: %s 不存在"
+
+msgid "rgw_router: %s has not sed on node: %s"
+msgstr "对象路由: %s 没有设置在节点: %s 上"
+
 msgid "router_service name：%s not exist"
 msgstr "对象路由服务名称: %s 不存在"
 
@@ -1820,3 +1826,4 @@ msgstr "磁盘下线"
 
 msgid "IP address {} format is incorrect!"
 msgstr "IP地址格式错误"
+
