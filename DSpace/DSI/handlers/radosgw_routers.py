@@ -393,8 +393,9 @@ class RadosgwRouterMetricsHandler(ClusterAPIHandler):
         client = self.get_admin_client(ctxt)
         router_service = self.get_query_argument('router_service',
                                                  default=None)
+        hostname = self.get_query_argument('hostname', default=None)
         data = yield client.radosgw_router_metrics_get(
-            ctxt, rgw_router_id, router_service)
+            ctxt, rgw_router_id, router_service, hostname)
         self.write(objects.json_encode({
             "radosgw_router_metrics": data
         }))
@@ -451,10 +452,11 @@ class RadosgwRouterMetricsHistoryHandler(ClusterAPIHandler):
         his_args = self.get_metrics_history_args()
         router_service = self.get_query_argument('router_service',
                                                  default=None)
+        hostname = self.get_query_argument('hostname', default=None)
         client = self.get_admin_client(ctxt)
         data = yield client.radosgw_router_metrics_history_get(
             ctxt, rgw_router_id, his_args['start'], his_args['end'],
-            router_service)
+            router_service, hostname)
         self.write(objects.json_encode({
             "radosgw_router_history_metrics": data
         }))
