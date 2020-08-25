@@ -114,16 +114,28 @@ class RgwMetricHandler(AgentBaseHandler):
         logger.debug('get_all_rgw_buckets_usage:%s', datas)
         return datas
 
-    def get_rgw_gateway_cup_memory(self, ctxt, rgw_names):
+    def get_rgw_gateway_cpu_memory(self, ctxt, rgw_names):
         rgw_tool = RadosgwTool(self._get_ssh_executor())
-        results = rgw_tool.get_rgw_gateway_cup_and_memory(rgw_names)
+        results = rgw_tool.get_rgw_gateway_cpu_and_memory(rgw_names)
+        logger.debug('get_rgw_gateways_cpu_memory:%s', results)
         return results
 
-    def get_rgw_router_cup_memory(self, ctxt):
+    def get_rgw_router_cpu_memory(self, ctxt):
         docket_socket_tool = DockerSockTool(self._get_executor())
         container_keepalived = '{}_radosgw_keepalived'.format(
             self.container_prefix)
         container_haproxy = '{}_radosgw_haproxy'.format(self.container_prefix)
-        result_keep = docket_socket_tool.stats(container_keepalived)
-        result_ha = docket_socket_tool.stats(container_haproxy)
+        try:
+            result_keep = docket_socket_tool.stats(container_keepalived)
+        except Exception as e:
+            logger.exception('get_rgw_router_cpu_memory keepalived error:%s',
+                             e)
+            result_keep = None
+        try:
+            result_ha = docket_socket_tool.stats(container_haproxy)
+        except Exception as e:
+            logger.exception('get_rgw_router_cpu_memory haproxy error:%s', e)
+            result_ha = None
+        logger.debug('get rgw_router_cpu_memory, haproxy:%s, keepalived:%s'
+                     % (result_ha, result_keep))
         return result_keep, result_ha

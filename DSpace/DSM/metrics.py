@@ -236,7 +236,7 @@ class MetricsHandler(AdminBaseHandler):
     def set_rgw_gateway_metrics_values(self, ctxt, agent_client, rgw_gateways):
         cluster_id = ctxt.cluster_id
         names = [rgw.name for rgw in rgw_gateways]
-        results = agent_client.get_rgw_gateway_cup_memory(ctxt, names)
+        results = agent_client.get_rgw_gateway_cpu_memory(ctxt, names)
         for data in results:
             ceph_daemon = data['ceph_daemon']
             cpu_percent = data['cpu_percent']
@@ -249,25 +249,26 @@ class MetricsHandler(AdminBaseHandler):
     def set_rgw_router_metrics_values(self, ctxt, agent_client, router_node):
         cluster_id = ctxt.cluster_id
         hostname = router_node.hostname
-        result_keep, result_ha = agent_client.get_rgw_router_cup_memory(ctxt)
-        keep_service_name = result_keep['container_name']
-        keep_cpu_percent = float(result_keep['cpu_usage_rate_percent'])
-        keep_memory_percent = float(result_keep['memory_rate_percent'])
-        ha_service_name = result_ha['container_name']
-        ha_cpu_percent = float(result_ha['cpu_usage_rate_percent'])
-        ha_memory_percent = float(result_ha['memory_rate_percent'])
-        sys_memory_kb = result_ha['sys_memory_kb']
-        # set values
-        self.metrics[RgwMetricsKey.ROUTER_CPU].set(
-            keep_cpu_percent, (cluster_id, hostname, keep_service_name))
-        self.metrics[RgwMetricsKey.ROUTER_MEMORY].set(
-            keep_memory_percent, (cluster_id, hostname, keep_service_name))
-        self.metrics[RgwMetricsKey.ROUTER_CPU].set(
-            ha_cpu_percent, (cluster_id, hostname, ha_service_name))
-        self.metrics[RgwMetricsKey.ROUTER_MEMORY].set(
-            ha_memory_percent, (cluster_id, hostname, ha_service_name))
-        self.metrics[RgwMetricsKey.SYS_MEMORY].set(
-            sys_memory_kb, (cluster_id, hostname))
+        result_keep, result_ha = agent_client.get_rgw_router_cpu_memory(ctxt)
+        if result_keep:
+            keep_service_name = result_keep['container_name']
+            keep_cpu_percent = float(result_keep['cpu_usage_rate_percent'])
+            keep_memory_percent = float(result_keep['memory_rate_percent'])
+            self.metrics[RgwMetricsKey.ROUTER_CPU].set(
+                keep_cpu_percent, (cluster_id, hostname, keep_service_name))
+            self.metrics[RgwMetricsKey.ROUTER_MEMORY].set(
+                keep_memory_percent, (cluster_id, hostname, keep_service_name))
+        if result_ha:
+            ha_service_name = result_ha['container_name']
+            ha_cpu_percent = float(result_ha['cpu_usage_rate_percent'])
+            ha_memory_percent = float(result_ha['memory_rate_percent'])
+            sys_memory_kb = result_ha['sys_memory_kb']
+            self.metrics[RgwMetricsKey.ROUTER_CPU].set(
+                ha_cpu_percent, (cluster_id, hostname, ha_service_name))
+            self.metrics[RgwMetricsKey.ROUTER_MEMORY].set(
+                ha_memory_percent, (cluster_id, hostname, ha_service_name))
+            self.metrics[RgwMetricsKey.SYS_MEMORY].set(
+                sys_memory_kb, (cluster_id, hostname))
 
     def rgw_metrics_init_keys(self):
         self.metrics[RgwMetricsKey.USER_USED] = Metric(
