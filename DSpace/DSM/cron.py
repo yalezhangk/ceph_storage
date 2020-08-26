@@ -131,13 +131,13 @@ class CronHandler(AdminBaseHandler):
             osd.osd_id)
         self.send_websocket(context, osd, "OSD_RESTART", msg)
         node = objects.Node.get_by_id(context, osd.node_id)
-        ssh = SSHExecutor(hostname=str(node.ip_address),
-                          password=node.password)
-        ceph_tool = CephTool(ssh)
         try:
+            ssh = SSHExecutor(hostname=str(node.ip_address),
+                              password=node.password)
+            ceph_tool = CephTool(ssh)
             ceph_tool.systemctl_restart('osd', osd.osd_id)
         except exception.StorException as e:
-            logger.error(e)
+            logger.error("Restart osd.%s err: %s", osd.osd_id, e)
             res = osd.conditional_update({
                 "status": s_fields.OsdStatus.OFFLINE
             }, expected_values={
@@ -348,6 +348,7 @@ class CronHandler(AdminBaseHandler):
         nodes = objects.NodeList.get_all(
             self.ctxt, filters={'cluster_id': '*'})
         for node in nodes:
+            logger.debug("Check node service status for %s", node.hostname)
             ctxt = context_tool.get_context(cluster_id=node.cluster_id)
             check_ok = True
             filters = {"node_id": node.id}
@@ -355,6 +356,8 @@ class CronHandler(AdminBaseHandler):
             for service in services:
                 if service.status in [s_fields.ServiceStatus.INACTIVE,
                                       s_fields.ServiceStatus.ERROR]:
+                    logger.warning("Node check: Service %s on node %s is %s",
+                                   service.name, node.hostname, service.status)
                     check_ok = False
                     break
             osds = objects.OsdList.get_all(ctxt, filters=filters)
@@ -362,12 +365,16 @@ class CronHandler(AdminBaseHandler):
                 if osd.status in [s_fields.OsdStatus.ERROR,
                                   s_fields.OsdStatus.WARNING,
                                   s_fields.OsdStatus.OFFLINE]:
+                    logger.warning("Node check: osd.%s on node %s is %s",
+                                   osd.osd_id, node.hostname, osd.status)
                     check_ok = False
                     break
             rgws = objects.RadosgwList.get_all(ctxt, filters=filters)
             for rgw in rgws:
                 if rgw.status in [s_fields.RadosgwStatus.INACTIVE,
                                   s_fields.RadosgwStatus.ERROR]:
+                    logger.warning("Node check: rgw %s on node %s is %s",
+                                   rgw.display_name, node.hostname, rgw.status)
                     check_ok = False
                     break
             if check_ok:
