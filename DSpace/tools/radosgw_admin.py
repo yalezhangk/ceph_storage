@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 class RadosgwAdminCMD(ToolBase):
 
     def _run_radosgw_admin(self, cmd):
-        rc, stdout, stderr = self.run_command(cmd, timeout=5)
+        rc, stdout, stderr = self.run_command(
+            cmd, timeout=5, root_permission=False)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)

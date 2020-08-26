@@ -165,7 +165,7 @@ class Docker(ToolBase):
         cmd = ['docker', 'ps', '-a', '|', 'grep', name]
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
-            if not stderr:
+            if not stderr.strip():
                 return False
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)

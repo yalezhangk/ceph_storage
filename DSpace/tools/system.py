@@ -212,7 +212,7 @@ class System(ToolBase):
         matched = []
         processes = self.get_all_process()
         for i in processes:
-            if(re.search(match, i[0])):
+            if re.search(match, i[0]):
                 matched.append(i)
         return matched
 
@@ -230,15 +230,16 @@ class System(ToolBase):
         path = "/etc/sysctl.conf"
         cmd = ["grep", "-r", "^" + key, path]
         rc, stdout, stderr = self.run_command(cmd)
-        if stderr:
+        if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         if stdout:
-            change = "s/{}/{}/g".format(stdout.split('\n')[0],
-                                        key + "=" + str(value))
+            change = "'s/{}/{}/g'".format(stdout.strip('\r\n'),
+                                          key + "=" + str(value))
             cmd = ["sed", "-i", change, path]
         else:
-            cmd = ["echo", key + "=" + str(value), ">>", path]
+            change = "'$a\\{}'".format(key + "=" + str(value))
+            cmd = ["sed", "-i", change, path]
         rc, stdout, stderr = self.run_command(cmd)
         if rc:
             raise RunCommandError(cmd=cmd, return_code=rc,

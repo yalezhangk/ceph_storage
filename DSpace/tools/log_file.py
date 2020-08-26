@@ -14,7 +14,7 @@ CEPH_LOG_DIR = '/var/log/ceph/'
 class LogFile(ToolBase):
     def get_logfile_metadata(self, service_type):
         file_dir = '{}*{}*'.format(CEPH_LOG_DIR, service_type)
-        cmd = 'stat -t {}'.format(file_dir)
+        cmd = 'bash -c "stat -t {}"'.format(file_dir)
         code, out, err = self.run_command(cmd)
         if code:
             logger.error('get_log_file_metadata error,out:%s', out)
