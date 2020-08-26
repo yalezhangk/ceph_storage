@@ -59,11 +59,12 @@ class SSHExecutor(Executor):
         #    None
         self.user = user or CONF.ssh_user
         self.password = password or CONF.ssh_password
+        self.pkey = pkey or CONF.ssh_private_key
         self.connect(hostname=hostname, port=self.ssh_port, user=self.user,
-                     password=self.password, pkey=pkey, timeout=timeout)
+                     password=self.password, pkey=self.pkey, timeout=timeout)
         self.host_prefix = None
 
-    def connect(self, hostname=None, port=CONF.ssh_port, user='root',
+    def connect(self, hostname=None, port=22, user='root',
                 password=None, pkey=None, timeout=None):
         """connect remote host
 
@@ -83,7 +84,10 @@ class SSHExecutor(Executor):
         if password:
             kwargs['password'] = password
         if pkey:
-            pkey = paramiko.RSAKey.from_private_key(pkey)
+            if os.path.isfile(pkey):
+                pkey = paramiko.RSAKey.from_private_key_file(pkey)
+            else:
+                pkey = paramiko.RSAKey.from_private_key(pkey)
             kwargs['pkey'] = pkey
 
         try:
