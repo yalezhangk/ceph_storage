@@ -56,7 +56,8 @@ class VolumeSnapshotHandler(AdminBaseHandler):
             'volume_id': volume_id,
             'volume_name': volume.volume_name,
             'pool_name': pool.pool_name,
-            'pool_type': pool.type
+            'pool_type': pool.type,
+            'size': volume.size
         }
         return snap_data
 

@@ -346,7 +346,8 @@ class VolumeHandler(AdminBaseHandler):
             volume)
         volume.status = s_fields.VolumeStatus.ROLLBACKING
         volume.save()
-        extra_data = {'snap_name': snap.uuid}
+        extra_data = {'snap_name': snap.uuid,
+                      'snap_size': snap.size}
         self.task_submit(self._volume_rollback, ctxt, volume, extra_data,
                          begin_action)
         logger.info('volume rollback task has begin,volume_name=%s',
@@ -357,6 +358,7 @@ class VolumeHandler(AdminBaseHandler):
         pool = objects.Pool.get_by_id(ctxt, volume.pool_id)
         volume_name = volume.volume_name
         snap_name = extra_data.get('snap_name')
+        snap_size = extra_data.get('snap_size')
         pool_type = pool.type
         try:
             ceph_client = CephTask(ctxt)
@@ -368,6 +370,8 @@ class VolumeHandler(AdminBaseHandler):
             op_status = "VOLUME_ROLLBACK_SUCCESS"
             msg = _("volume rollback success: %s") % volume.display_name
             err_msg = None
+            # 回滚成功到当前快照大小
+            volume.size = snap_size
         except exception.StorException as e:
             status = s_fields.VolumeStatus.ERROR
             logger.error('volume_rollback error,%s@%s,reason:%s',
@@ -493,7 +497,7 @@ class VolumeHandler(AdminBaseHandler):
         p_volume = objects.Volume.get_by_id(ctxt, snap.volume_id)
         if not p_volume:
             raise exception.VolumeNotFound(volume_id=snap.volume_id)
-        size = p_volume.size
+        size = snap.size
         p_volume_name = p_volume.volume_name
         p_pool = objects.Pool.get_by_id(ctxt, p_volume.pool_id)
         p_pool_name = p_pool.pool_name

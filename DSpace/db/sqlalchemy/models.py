@@ -280,6 +280,7 @@ class VolumeSnapshot(BASE, StorBase):
     uuid = Column(String(36))
     display_name = Column(String(255))
     is_protect = Column(Boolean, default=True)
+    size = Column(BigInteger)
     status = Column(String(32))
     display_description = Column(String(255))
     volume_id = Column(Integer, ForeignKey('volumes.id'))
