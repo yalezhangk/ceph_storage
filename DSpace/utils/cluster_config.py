@@ -26,14 +26,16 @@ PKG_MGR = {
     "Kylin": "apt",
     "Debian": "apt",
     "NeoKylin": "yum",
-    "RedHat": "yum"
+    "RedHat": "yum",
+    "uos": "apt",
 }
 
 UDEV_DIR = {
     "Kylin": "/lib/udev/rules.d/",
     "Debian": "/lib/udev/rules.d/",
     "NeoKylin": "/usr/lib/udev/rules.d/",
-    "RedHat": "/usr/lib/udev/rules.d/"
+    "RedHat": "/usr/lib/udev/rules.d/",
+    "uos": "/lib/udev/rules.d/",
 }
 
 # cluster configs
