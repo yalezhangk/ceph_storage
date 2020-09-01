@@ -498,7 +498,7 @@ class CephTool(ToolBase):
         path = "/var/lib/ceph/osd/ceph-%s" % osd_id
         cmd = ["umount", path]
         rc, stdout, stderr = self.run_command(cmd, timeout=5)
-        if rc == 32 and ("not found" in stderr or "not mounted" in stderr):
+        if rc == 32:
             return
         elif rc:
             raise RunCommandError(cmd=cmd, return_code=rc,
