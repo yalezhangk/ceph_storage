@@ -163,7 +163,7 @@ class ServiceHelper(AdminBaseMixin):
         try:
             _restart_retry()
         except exception.StorException as e:
-            logger.warning(e)
+            logger.warning("Restart service %s err: %s", self.obj_name, e)
             self.to_error()
 
     def get_context(self):
@@ -219,15 +219,15 @@ class ContainerHelper(ServiceHelper):
                             self.obj_name, self.node.hostname, self.node.id)
                 return
         except exception.StorException as e:
-            logger.warning("Restart %s on node %s(id %s) failed: %s",
-                           self.obj_name, self.node.hostname, self.node.id, e)
+            logger.error("Restart %s on node %s(id %s) failed: %s",
+                         self.obj_name, self.node.hostname, self.node.id, e)
         raise exception.RestartServiceFailed(service=self.obj_name)
 
     def _do_ssh_restart(self):
-        ssh = SSHExecutor(hostname=str(self.node.ip_address),
-                          password=self.node.password)
-        docker_tool = DockerTool(ssh)
         try:
+            ssh = SSHExecutor(hostname=str(self.node.ip_address),
+                              password=self.node.password)
+            docker_tool = DockerTool(ssh)
             docker_tool.restart(self.service_name)
             if docker_tool.status(self.service_name):
                 logger.info("%s on node %s(id %s) has been restarted",
