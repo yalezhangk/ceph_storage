@@ -1237,12 +1237,37 @@ class RADOSClient(object):
                     "max_size {}\n".format(rule["max_size"]),
                 ]
                 for step in rule.get("steps"):
+                    if step["op"] == "set_chooseleaf_tries":
+                        seq.append("step set_chooseleaf_tries {}\n".format(
+                            step["num"]))
+                    if step["op"] == "set_choose_tries":
+                        seq.append("step set_choose_tries {}\n".format(
+                            step["num"]))
                     if step["op"] == "take":
                         seq.append("step take {}\n".format(step["item_name"]))
+                    # fault domain is not osd
+                    # rep pool
                     if step["op"] == "chooseleaf_firstn":
                         seq.append(
                             "step chooseleaf firstn {} type {}\n".format(
                                 step["num"], step["type"]))
+                    # erasure pool
+                    if step["op"] == "chooseleaf_indep":
+                        seq.append(
+                            "step chooseleaf indep {} type {}\n".format(
+                                step["num"], step["type"]))
+                    # fault domain is osd
+                    # rep pool
+                    if step["op"] == "choose_firstn":
+                        seq.append(
+                            "step choose firstn {} type {}\n".format(
+                                step["num"], step["type"]))
+                    # erasure pool
+                    if step["op"] == "choose_indep":
+                        seq.append(
+                            "step choose indep {} type {}\n".format(
+                                step["num"], step["type"]))
+
                     if step["op"] == "emit":
                         seq.append("step emit\n")
                 seq.append("}\n")
