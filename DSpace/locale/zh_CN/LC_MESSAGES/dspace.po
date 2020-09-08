@@ -802,11 +802,11 @@ msgstr "osd.{}已恢复健康"
 msgid "osd.{} is offline"
 msgstr "osd.{}已离线"
 
-msgid "reconnect to ceph cluster {}"
-msgstr "已连接到ceph集群{}"
+msgid "reconnect to cluster {}"
+msgstr "已连接到集群:{}"
 
-msgid "Could not connect to ceph cluster {}"
-msgstr "无法连接到ceph集群{}"
+msgid "Could not connect to cluster {}"
+msgstr "无法连接到集群:{}"
 
 msgid "datacenter: {} is already exists!"
 msgstr "数据中心 {} 已存在"
