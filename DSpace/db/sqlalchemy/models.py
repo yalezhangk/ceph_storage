@@ -12,6 +12,7 @@ from sqlalchemy import LargeBinary
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import Text
+from sqlalchemy.dialects.mysql import DATETIME
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
@@ -507,8 +508,8 @@ class ActionLog(BASE, StorBase):
     __tablename__ = 'action_logs'
 
     id = Column(Integer, primary_key=True)
-    begin_time = Column(DateTime)
-    finish_time = Column(DateTime)
+    begin_time = Column(DATETIME(fsp=3))
+    finish_time = Column(DATETIME(fsp=3))
     client_ip = Column(String(64))
     user_id = Column(String(32))
     action = Column(String(32))
