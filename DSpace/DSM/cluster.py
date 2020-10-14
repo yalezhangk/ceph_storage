@@ -124,7 +124,8 @@ class ClusterHandler(AdminBaseHandler, AlertRuleInitMixin):
     def cluster_platform_check(self, ctxt):
         """Judge platform init success"""
         logger.debug("cluster platform check")
-        clusters = objects.ClusterList.get_all(ctxt)
+        clusters = objects.ClusterList.get_all(ctxt,
+                                               filters={"is_admin": True})
         if not len(clusters):
             return False
 
