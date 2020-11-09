@@ -19,8 +19,8 @@ class ActionLog(base.StorPersistentObject, base.StorObject,
 
     fields = {
         'id': fields.IntegerField(),
-        'begin_time': fields.DateTimeField(),
-        'finish_time': fields.DateTimeField(nullable=True),
+        'begin_time': fields.StringField(),
+        'finish_time': fields.StringField(nullable=True),
         'client_ip': fields.StringField(nullable=True),
         'user_id': fields.StringField(),
         'action': fields.StringField(nullable=True),
