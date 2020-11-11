@@ -75,7 +75,7 @@ class CephHandler(AgentBaseHandler):
         if osd.journal_partition_id:
             kwargs['journal_partition'] = osd.journal_partition.name
         # mkdir
-        client = self._get_executor()
+        client = self._get_ssh_executor()
         osd_dir = path.join(CEPH_LIB_DIR, 'osd')
         file_tool = FileTool(client)
         file_tool.mkdir(osd_dir)
