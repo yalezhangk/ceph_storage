@@ -230,7 +230,9 @@ class System(ToolBase):
         path = "/etc/sysctl.conf"
         cmd = ["grep", "-r", "^" + key, path]
         rc, stdout, stderr = self.run_command(cmd)
-        if rc:
+        # if not exit, rc=1, stdout=None, stderr=None
+        # if error, rc > 1, stderr != None
+        if stderr or rc > 1:
             raise RunCommandError(cmd=cmd, return_code=rc,
                                   stdout=stdout, stderr=stderr)
         if stdout:
