@@ -299,6 +299,7 @@ class PoolHandler(AdminBaseHandler):
             raise exception.InvalidInput(_("Pool %s is in processing, "
                                            "please wait") % pool.display_name)
 
+    def _check_object_store_used(self, ctxt, pool):
         pool_id = objects.sysconfig.sys_config_get(
             ctxt, s_fields.ConfigKey.OBJECT_META_POOL)
         if pool_id == pool.id:
@@ -313,6 +314,7 @@ class PoolHandler(AdminBaseHandler):
         pool = objects.Pool.get_by_id(
             ctxt, pool_id, expected_attrs=['crush_rule', 'osds', 'policies'])
         self._check_pool_status(ctxt, pool)
+        self._check_object_store_used(ctxt, pool)
         begin_action = self.begin_action(
             ctxt, resource_type=AllResourceType.POOL,
             action=AllActionType.DELETE, before_obj=pool)
