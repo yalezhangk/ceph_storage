@@ -10,6 +10,7 @@ import six
 from DSpace import exception
 from DSpace.common.config import CONF
 from DSpace.exception import RunCommandArgsError
+from DSpace.utils import retry
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class SSHExecutor(Executor):
                      password=self.password, pkey=self.pkey, timeout=timeout)
         self.host_prefix = None
 
+    @retry(exception.SSHException, interval=0.2, retries=5)
     def connect(self, hostname=None, port=22, user='root',
                 password=None, pkey=None, timeout=None):
         """connect remote host
