@@ -137,8 +137,8 @@ class Disk(BASE, StorBase):
     size = Column(BigInteger)  # bytes
     rotate_speed = Column(Integer)  # 转速
     slot = Column(String(32))  # 插槽
-    model = Column(String(32))
-    vendor = Column(String(32))
+    model = Column(String(64))
+    vendor = Column(String(64))
     serial = Column(String(64))
     wwid = Column(String(64))
     guid = Column(String(36))
