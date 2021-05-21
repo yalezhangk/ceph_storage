@@ -455,13 +455,17 @@ class NodeHandler(AdminBaseHandler, NodeMixin):
         cluster_network = objects.sysconfig.sys_config_get(
             ctxt, key="cluster_cidr"
         )
+        osd_down_out = objects.sysconfig.sys_config_get(
+            ctxt, key="mon_osd_down_out_interval", default=259200
+        )
         fsid = str(uuid.uuid4())
         init_configs = {
             'fsid': {'type': 'string', 'value': fsid},
             'osd_objectstore': {'type': 'string', 'value': 'bluestore',
                                 'group': 'mon'},
             'public_network': {'type': 'string', 'value': public_network},
-            'cluster_network': {'type': 'string', 'value': cluster_network}
+            'cluster_network': {'type': 'string', 'value': cluster_network},
+            'mon_osd_down_out_interval': {'type': 'int', 'value': osd_down_out}
         }
         init_configs.update(cluster_config.default_cluster_configs)
         mon_secret = None
