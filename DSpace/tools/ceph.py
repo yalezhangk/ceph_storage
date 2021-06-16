@@ -829,12 +829,8 @@ class RADOSClient(object):
             re_pool_name, pool_type='replicated', rule_name=re_rule_name,
             pg_num=pg_num, pgp_num=pgp_num, rep_size=rep_size)
 
-    # TODO
     def pool_set_min_size(self, pool_name=DEFAULT_POOL, min_size=None):
-        if min_size is None:
-            min_size = int(self.client.conf_get(
-                'osd_pool_default_size'))
-        pass
+        return self.set_pool_info(pool_name, "min_size", min_size)
 
     def pool_set_replica_size(self, pool_name=DEFAULT_POOL, rep_size=None):
         return self.set_pool_info(pool_name, "size", rep_size)
