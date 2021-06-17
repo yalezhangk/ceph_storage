@@ -328,6 +328,9 @@ class CephTask(object):
             if not can_specified_rep:
                 client.pool_set_replica_size(
                     pool_name=pool_name, rep_size=rep_size)
+            if pool_type == PoolType.ERASURE:
+                client.pool_set_min_size(
+                    pool_name=pool_name, min_size=data_chunk_num)
 
             return client.get_pool_stats(pool_name).get('pool_id')
 
